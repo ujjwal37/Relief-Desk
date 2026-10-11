@@ -77,17 +77,17 @@ python scripts/reset_demo
 
 ### Live Gemini versus the recorded demo
 
-`DEMO_MODE=true` (the default in `.env.example`) never calls Gemini. Intake, the chat that feeds intake, dedupe comparison, and the match explainer use cached or deterministic replies. CI and the recorded demo stay on this path.
+`DEMO_MODE=true` still loads the synthetic scenario and the demo login. It does not block Gemini. A real `GEMINI_API_KEY` calls the model named by `GEMINI_MODEL` (currently `gemini-3.8-flash`, from the Gemini models page dated 2026-10-09). No key, a placeholder key, or `GEMINI_ENABLED=false` uses the deterministic fallback. The case stores `ai.provider` as `gemini`, `cache`, or `fallback`, and the AI reading line shows Gemini, Recorded Gemini run, or Offline fallback.
 
-To call Gemini, set these only in `.env`. Do not commit a key:
+Set the key only in `.env`. Do not commit it.
 
 ```
-DEMO_MODE=false
 GEMINI_ENABLED=true
 GEMINI_API_KEY=your-key
+AI_MODE=auto
 ```
 
-A timeout, an error, a placeholder key (`replace-me`), or `GEMINI_ENABLED=false` uses the same deterministic replies. The case AI reading shows Gemini or Offline fallback for the path that produced it.
+A timeout, a 429, or invalid JSON after one repair retry uses the deterministic fallback and records `ai.fallback_reason`. CI mocks the client and does not call Gemini.
 
 ## Deploy
 See `deploy/cloudrun.md` (Cloud Run + Firebase Hosting/Auth + Firestore).

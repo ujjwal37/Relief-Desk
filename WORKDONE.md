@@ -860,4 +860,11 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - Files: WORKDONE.md
 - How verified: `pytest tests` from services/api — 144 passed. `node scripts/check-i18n.mjs` — 522 keys, template lint passed. `npx ng build web` succeeded. `npx playwright test --reporter=list` — 2 passed (desktop 1440x900, mobile 390x844).
 - Notes / risks / not done: The first Playwright run failed because a new "stranded" report folded into INC-003. RT-24 fixed that, then the spec passed. Type accuracy on the held-out split is 67.3%, still under the 90% target.
-- Next (suggested task id): none
+- Next (suggested task id): GM-01
+
+### 2026-10-12 06:15 IST — GM-01 — Cursor
+- What changed: DEMO_MODE no longer skips Gemini. A real GEMINI_API_KEY calls the configured model (`gemini-3.8-flash` by default, from the Gemini models page dated 2026-10-09). No key, a placeholder, or GEMINI_ENABLED=false stores provider=fallback and a reason (`no_api_key`, `disabled`, `quota`, `timeout`, `invalid_json`, `daily_cap`, `error`). Invalid JSON gets one repair retry, then the deterministic fallback. A 429 does not retry. AI_MODE=replay serves a cached Gemini reply as provider=cache. The case field `ai` has provider, model, latency_ms, tokens, cached, and fallback_reason. The AI reading line shows Gemini, Recorded Gemini run, or Offline fallback.
+- Files: services/api/app/llm/client.py, services/api/app/config.py, services/api/app/models/schemas.py, services/api/app/models/firestore_models.py, services/api/app/api/reports.py, services/api/app/agents/intake.py, services/api/tests/test_gemini_live.py, coordinator command html/ts/spec, request.model.ts, i18n en/hi/hinglish/ta, README.md, .env.example, TASKS.md
+- How verified: `pytest tests` — 147 passed, 1 skipped (live smoke, no GEMINI_API_KEY). `node scripts/check-i18n.mjs` — 523 keys. `npx ng build web` succeeded. Command spec 20 passed. Benchmark on the held-out split was not re-run; last measured type 67.3%, ward 100.0%.
+- Notes / risks / not done: CI does not call Gemini. Embeddings and the ADK pipeline are not in this step.
+- Next (suggested task id): GM-02

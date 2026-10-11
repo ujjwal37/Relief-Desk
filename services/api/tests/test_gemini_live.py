@@ -66,8 +66,9 @@ def live_gemini(monkeypatch, tmp_path):
 def test_placeholder_key_and_demo_mode_are_not_live(monkeypatch):
     monkeypatch.setattr(settings, "DEMO_MODE", True)
     monkeypatch.setattr(settings, "GEMINI_ENABLED", True)
+    monkeypatch.setattr(settings, "AI_MODE", "auto")
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "test-key-not-a-secret")
-    assert llm_client.gemini_live() is False
+    assert llm_client.gemini_live() is True
     monkeypatch.setattr(settings, "DEMO_MODE", False)
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "replace-me")
     assert llm_client.gemini_live() is False
@@ -90,6 +91,10 @@ def test_intake_uses_the_mocked_gemini_reply(live_gemini, monkeypatch):
     assert extracted.type == IncidentType.FOOD
     assert extracted.notes == "from-gemini"
     assert llm_client.last_source == "gemini"
+    assert llm_client.last_ai.provider == "gemini"
+    assert llm_client.last_ai.model == settings.GEMINI_MODEL
+    assert llm_client.last_ai.cached is False
+    assert llm_client.last_ai.fallback_reason is None
 
 
 def test_timeout_and_error_use_the_offline_fallback(live_gemini, monkeypatch):
@@ -110,22 +115,33 @@ def test_timeout_and_error_use_the_offline_fallback(live_gemini, monkeypatch):
 
 
 def test_demo_mode_does_not_call_gemini(monkeypatch, tmp_path):
+    """DEMO_MODE no longer skips a real key. A placeholder key still does not call."""
     monkeypatch.setattr(settings, "DEMO_MODE", True)
     monkeypatch.setattr(settings, "GEMINI_ENABLED", True)
+    monkeypatch.setattr(settings, "AI_MODE", "auto")
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "test-key-not-a-secret")
     monkeypatch.setattr("app.llm.client.CACHE_DIR", tmp_path)
     llm_client._memory_cache.clear()
+    llm_client._memory_source.clear()
     calls = {"n": 0}
 
     def fake_call(system, user, timeout_s=12.0):
         calls["n"] += 1
-        return _intake_json("medical", "should-not-run")
+        return _intake_json("medical", "from-gemini-in-demo")
 
     monkeypatch.setattr(llm_client, "_call_gemini", fake_call)
     extracted = intake_agent.parse_report(f"ZXDEMO{uuid.uuid4().hex[:8]} send a boat")
-    assert calls["n"] == 0
-    assert llm_client.last_source == "offline_fallback"
-    assert extracted.notes != "should-not-run"
+    assert calls["n"] == 1
+    assert extracted.notes == "from-gemini-in-demo"
+    assert llm_client.last_ai.provider == "gemini"
+
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "replace-me")
+    llm_client._memory_cache.clear()
+    blocked = intake_agent.parse_report(f"ZXNOKEY{uuid.uuid4().hex[:8]} send a boat")
+    assert calls["n"] == 1
+    assert llm_client.last_ai.provider == "fallback"
+    assert llm_client.last_ai.fallback_reason == "no_api_key"
+    assert blocked.notes != "from-gemini-in-demo"
 
 
 def test_chat_intake_uses_the_same_live_client(live_gemini, monkeypatch):
@@ -179,7 +195,7 @@ def test_explainer_uses_gemini_when_live_and_the_template_in_demo(live_gemini, m
     assert live.text_en.startswith("Test Boat is 2 km")
     assert llm_client.last_source == "gemini"
 
-    monkeypatch.setattr(settings, "DEMO_MODE", True)
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "replace-me")
     llm_client._memory_cache.clear()
     llm_client._memory_source.clear()
     for cached in tmp_path.glob("*.json"):
@@ -258,8 +274,14 @@ def test_live_report_stores_gemini_and_demo_stores_offline(live_gemini, monkeypa
     match = [row for row in listed.json() if token in (row.get("raw_text") or "")]
     assert match
     assert match[0]["ai_source"] == "gemini"
+    assert match[0]["ai"]["provider"] == "gemini"
+    assert match[0]["ai"]["model"] == settings.GEMINI_MODEL
+    assert match[0]["ai"]["cached"] is False
+    assert "latency_ms" in match[0]["ai"]
+    assert "tokens" in match[0]["ai"]
+    assert match[0]["ai"]["fallback_reason"] is None
 
-    monkeypatch.setattr(settings, "DEMO_MODE", True)
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "replace-me")
     calls = {"n": 0}
 
     def should_not(system, user, timeout_s=12.0):
@@ -285,3 +307,65 @@ def test_live_report_stores_gemini_and_demo_stores_offline(live_gemini, monkeypa
     match2 = [row for row in listed2.json() if token2 in (row.get("raw_text") or "")]
     assert match2
     assert match2[0]["ai_source"] == "offline_fallback"
+    assert match2[0]["ai"]["provider"] == "fallback"
+    assert match2[0]["ai"]["fallback_reason"] == "no_api_key"
+
+
+def test_quota_and_invalid_json_fall_back(live_gemini, monkeypatch):
+    calls = {"n": 0}
+
+    def quota(system, user, timeout_s=12.0):
+        calls["n"] += 1
+        raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+    monkeypatch.setattr(llm_client, "_call_gemini", quota)
+    intake_agent.parse_report(f"ZX429{uuid.uuid4().hex[:8]} send a boat")
+    assert calls["n"] == 1
+    assert llm_client.last_ai.provider == "fallback"
+    assert llm_client.last_ai.fallback_reason == "quota"
+
+    def bad_json(system, user, timeout_s=12.0):
+        calls["n"] += 1
+        return "this is not json"
+
+    monkeypatch.setattr(llm_client, "_call_gemini", bad_json)
+    intake_agent.parse_report(f"ZXBAD{uuid.uuid4().hex[:8]} five people need a boat")
+    assert calls["n"] == 3
+    assert llm_client.last_ai.provider == "fallback"
+    assert llm_client.last_ai.fallback_reason == "invalid_json"
+
+
+def test_replay_cache_does_not_call_gemini(live_gemini, monkeypatch):
+    calls = {"n": 0}
+
+    def fake_call(system, user, timeout_s=12.0):
+        calls["n"] += 1
+        return _intake_json("food", "recorded-once")
+
+    monkeypatch.setattr(llm_client, "_call_gemini", fake_call)
+    text = f"ZXCACHE{uuid.uuid4().hex[:8]} ration please"
+    intake_agent.parse_report(text, language_hint="en")
+    assert calls["n"] == 1
+    monkeypatch.setattr(settings, "AI_MODE", "replay")
+    intake_agent.parse_report(text, language_hint="en")
+    assert calls["n"] == 1
+    assert llm_client.last_ai.provider == "cache"
+    assert llm_client.last_ai.cached is True
+    assert llm_client.last_ai.badge() == "recorded"
+
+
+def test_live_gemini_smoke():
+    import os
+
+    key = (os.environ.get("GEMINI_API_KEY") or "").strip()
+    if not key or key in ("replace-me", "synthetic-demo-gemini-key"):
+        pytest.skip("Set GEMINI_API_KEY to run the live smoke test")
+    from app.llm.client import LLMClient
+
+    live = LLMClient()
+    text = live.generate_content(
+        system_instruction="Reply with the single word pong.",
+        user_prompt="ping",
+    )
+    assert text.strip()
+    assert live.last_ai.provider == "gemini"

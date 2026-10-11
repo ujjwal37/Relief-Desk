@@ -354,6 +354,15 @@ describe('CoordinatorCommandComponent', () => {
     const offline = fixture.nativeElement.textContent as string;
     expect(offline).toContain('Offline fallback');
     expect(offline).not.toContain('Gemini');
+    rows[0] = {
+      ...rows[0],
+      ai_source: 'recorded',
+      ai: { provider: 'cache', model: 'gemini-3.8-flash', latency_ms: 4, tokens: 12, cached: true, fallback_reason: null },
+    };
+    component.requests.set(rows);
+    component.selectRequest('INC-001');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent as string).toContain('Recorded Gemini run');
   });
 
   it('says there is no nearby team instead of an hours-long ETA', () => {

@@ -4,6 +4,24 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
+class AiCall(BaseModel):
+    """One model attempt. provider is gemini, cache, or fallback."""
+
+    provider: str = "fallback"
+    model: Optional[str] = None
+    latency_ms: int = 0
+    tokens: Optional[int] = None
+    cached: bool = False
+    fallback_reason: Optional[str] = None
+
+    def badge(self) -> str:
+        if self.provider == "cache" or self.cached:
+            return "recorded"
+        if self.provider == "gemini":
+            return "gemini"
+        return "offline"
+
+
 class IncidentType(str, Enum):
     RESCUE = "rescue"
     FOOD = "food"

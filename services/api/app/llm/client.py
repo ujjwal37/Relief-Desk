@@ -1,11 +1,12 @@
 import hashlib
 import json
 import logging
-import os
 import re
+import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 from app.config import settings
+from app.models.schemas import AiCall
 
 logger = logging.getLogger("relief_desk.llm")
 
@@ -13,23 +14,46 @@ CACHE_DIR = Path(__file__).resolve().parents[4] / "data" / "cache" / "llm"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
+_PLACEHOLDER_KEYS = {"", "replace-me", "synthetic-demo-gemini-key"}
+
+
+def _is_quota(exc: BaseException) -> bool:
+    status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
+    if status == 429:
+        return True
+    text = str(exc).lower()
+    return "429" in text or "resource_exhausted" in text or "quota" in text
+
+
 class LLMClient:
     def __init__(self):
         self.call_count = 0
         self.daily_cap = settings.GEMINI_DAILY_CALL_CAP
         self.last_source = "offline_fallback"
+        self.last_ai = AiCall(provider="fallback", fallback_reason="not_called")
+        self._last_tokens: Optional[int] = None
         self._memory_cache: Dict[str, str] = {}
         self._memory_source: Dict[str, str] = {}
+        self._memory_meta: Dict[str, Dict[str, Any]] = {}
 
     def _hash_key(self, prompt: str) -> str:
         return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
     def gemini_live(self) -> bool:
-        """True only when this process should call Gemini. Demo mode stays on recorded replies."""
-        key = (settings.GEMINI_API_KEY or "").strip()
-        if settings.DEMO_MODE or not settings.GEMINI_ENABLED:
+        """True when a real key is set. DEMO_MODE does not block that call."""
+        if (settings.AI_MODE or "auto").lower() == "fallback" or not settings.GEMINI_ENABLED:
             return False
-        return bool(key) and key not in ("replace-me", "synthetic-demo-gemini-key")
+        key = (settings.GEMINI_API_KEY or "").strip()
+        return key not in _PLACEHOLDER_KEYS
+
+    def _remember(self, usage: AiCall) -> None:
+        self.last_ai = usage
+        if usage.provider == "gemini":
+            self.last_source = "gemini"
+        elif usage.provider == "cache":
+            self.last_source = "cache"
+        else:
+            self.last_source = "offline_fallback"
 
     def get_cached(self, key: str) -> Optional[str]:
         if key in self._memory_cache:
@@ -41,20 +65,41 @@ class LLMClient:
                     data = json.load(f)
                     val = data.get("response")
                     self._memory_cache[key] = val
-                    self._memory_source[key] = data.get("source") or "offline_fallback"
+                    source = data.get("source") or data.get("provider") or "offline_fallback"
+                    self._memory_source[key] = source
+                    self._memory_meta[key] = {
+                        "model": data.get("model"),
+                        "tokens": data.get("tokens"),
+                        "provider": data.get("provider") or ("gemini" if source == "gemini" else "cache"),
+                    }
                     return val
             except Exception as e:
                 logger.warning("Error reading cache file %s: %s", cache_file, e)
         return None
 
-    def set_cached(self, key: str, response: str, source: str = "offline_fallback") -> None:
+    def set_cached(
+        self,
+        key: str,
+        response: str,
+        source: str = "offline_fallback",
+        model: Optional[str] = None,
+        tokens: Optional[int] = None,
+    ) -> None:
         self._memory_cache[key] = response
         self._memory_source[key] = source
+        self._memory_meta[key] = {"model": model, "tokens": tokens, "provider": source}
         cache_file = CACHE_DIR / f"{key}.json"
         try:
             with open(cache_file, "w", encoding="utf-8") as f:
                 json.dump(
-                    {"key": key, "response": response, "source": source},
+                    {
+                        "key": key,
+                        "response": response,
+                        "source": source,
+                        "provider": source,
+                        "model": model,
+                        "tokens": tokens,
+                    },
                     f,
                     ensure_ascii=False,
                     indent=2,
@@ -62,82 +107,119 @@ class LLMClient:
         except Exception as e:
             logger.warning("Error writing cache file %s: %s", cache_file, e)
 
+    def _fallback(self, user_prompt: str, reason: str, started: float) -> str:
+        response = self._deterministic_fallback(user_prompt)
+        self._remember(
+            AiCall(
+                provider="fallback",
+                model=None,
+                latency_ms=int((time.perf_counter() - started) * 1000),
+                tokens=None,
+                cached=False,
+                fallback_reason=reason,
+            )
+        )
+        return response
+
+    def _from_cache(self, cache_key: str, cached: str, started: float) -> str:
+        meta = self._memory_meta.get(cache_key, {})
+        self._remember(
+            AiCall(
+                provider="cache",
+                model=meta.get("model") or settings.GEMINI_MODEL,
+                latency_ms=int((time.perf_counter() - started) * 1000),
+                tokens=meta.get("tokens"),
+                cached=True,
+                fallback_reason=None,
+            )
+        )
+        return cached
+
     def generate_content(
         self,
         system_instruction: str,
         user_prompt: str,
         validator: Optional[Callable[[str], Any]] = None,
-        max_retries: int = 2,
+        max_retries: int = 1,
     ) -> str:
-        """Generates content using Gemini or cached/offline mode with <= 2 retries."""
+        """Call Gemini, a recorded cache entry, or the deterministic fallback.
+
+        max_retries is the number of repair attempts after invalid JSON. The
+        default is one repair, then fallback.
+        """
+        started = time.perf_counter()
         full_prompt = f"SYSTEM:\n{system_instruction}\n\nUSER:\n{user_prompt}"
         cache_key = self._hash_key(full_prompt)
+        mode = (settings.AI_MODE or "auto").lower()
 
-        # 1. Check cache first
         cached = self.get_cached(cache_key)
+        cache_ok = False
         if cached:
-            logger.info("Cache hit for prompt hash %s", cache_key[:8])
             if validator:
                 try:
                     validator(cached)
-                    self.last_source = self._memory_source.get(cache_key, "offline_fallback")
-                    return cached
+                    cache_ok = True
                 except Exception:
-                    logger.warning("Cached entry invalid according to validator, refreshing...")
+                    logger.warning("Cached entry failed validation, not replaying it.")
             else:
-                self.last_source = self._memory_source.get(cache_key, "offline_fallback")
-                return cached
+                cache_ok = True
+        recorded = self._memory_source.get(cache_key) in ("gemini", "cache")
+        if cache_ok and cached is not None and mode == "replay" and recorded:
+            logger.info("Replay cache hit for prompt hash %s", cache_key[:8])
+            return self._from_cache(cache_key, cached, started)
+        if cache_ok and cached is not None and mode != "live" and not self.gemini_live():
+            return self._from_cache(cache_key, cached, started)
 
-        # 2. Recorded demo, kill switch, or no key: never call Gemini.
         if not self.gemini_live():
-            logger.info("Using recorded or deterministic fallback (demo mode, kill switch, or no key).")
-            response = self._deterministic_fallback(user_prompt)
-            self.last_source = "offline_fallback"
-            self.set_cached(cache_key, response, source="offline_fallback")
-            return response
+            reason = "disabled" if not settings.GEMINI_ENABLED or mode == "fallback" else "no_api_key"
+            logger.info("Deterministic fallback (%s).", reason)
+            return self._fallback(user_prompt, reason, started)
 
         if self.call_count >= self.daily_cap:
-            logger.warning("Gemini daily call cap reached (%d). Falling back to deterministic mode.", self.daily_cap)
-            response = self._deterministic_fallback(user_prompt)
-            self.last_source = "offline_fallback"
-            self.set_cached(cache_key, response, source="offline_fallback")
-            return response
+            logger.warning("Gemini daily call cap reached (%d).", self.daily_cap)
+            return self._fallback(user_prompt, "daily_cap", started)
 
+        current_prompt = user_prompt
+        repairs_left = max_retries
         try:
-            current_prompt = user_prompt
-            attempts = 0
-            while attempts <= max_retries:
+            while True:
                 self.call_count += 1
-                attempts += 1
                 text = self._call_gemini(system_instruction, current_prompt)
                 if validator:
                     try:
                         validator(text)
-                        self.last_source = "gemini"
-                        self.set_cached(cache_key, text, source="gemini")
-                        return text
                     except Exception as val_err:
-                        logger.warning("Validation attempt %d failed: %s", attempts, val_err)
+                        logger.warning("Validation failed (%s). Repairs left: %d", val_err, repairs_left)
+                        if repairs_left <= 0:
+                            return self._fallback(user_prompt, "invalid_json", started)
+                        repairs_left -= 1
                         current_prompt = (
                             f"{user_prompt}\n\nPREVIOUS OUTPUT WAS INVALID JSON OR FAILED VALIDATION:\n"
-                            f"{str(val_err)}\nEnsure output strictly adheres to the requested JSON schema."
+                            f"{val_err}\nReturn one JSON object only."
                         )
-                else:
-                    self.last_source = "gemini"
-                    self.set_cached(cache_key, text, source="gemini")
-                    return text
-        except Exception as e:
-            logger.error("Live Gemini call failed (%s). Falling back to deterministic response.", e)
-
-        response = self._deterministic_fallback(user_prompt)
-        self.last_source = "offline_fallback"
-        self.set_cached(cache_key, response, source="offline_fallback")
-        return response
+                        continue
+                usage = AiCall(
+                    provider="gemini",
+                    model=settings.GEMINI_MODEL,
+                    latency_ms=int((time.perf_counter() - started) * 1000),
+                    tokens=self._last_tokens,
+                    cached=False,
+                    fallback_reason=None,
+                )
+                self._remember(usage)
+                self.set_cached(cache_key, text, source="gemini", model=usage.model, tokens=usage.tokens)
+                return text
+        except Exception as exc:
+            reason = "quota" if _is_quota(exc) else ("timeout" if isinstance(exc, TimeoutError) else "error")
+            logger.error("Live Gemini call failed (%s). Falling back.", exc)
+            return self._fallback(user_prompt, reason, started)
 
     def _call_gemini(self, system_instruction: str, user_prompt: str, timeout_s: float = 12.0) -> str:
         """One live generate call. Raises on timeout, missing SDK, or an empty reply."""
         from concurrent.futures import ThreadPoolExecutor
         from concurrent.futures import TimeoutError as FuturesTimeout
+
+        self._last_tokens = None
 
         def _run() -> str:
             import google.genai as genai  # type: ignore
@@ -148,6 +230,9 @@ class LLMClient:
                 contents=user_prompt,
                 config={"system_instruction": system_instruction, "temperature": 0.1},
             )
+            usage = getattr(response_obj, "usage_metadata", None)
+            total = getattr(usage, "total_token_count", None) if usage is not None else None
+            self._last_tokens = int(total) if isinstance(total, int) else None
             return response_obj.text or ""
 
         with ThreadPoolExecutor(max_workers=1) as pool:

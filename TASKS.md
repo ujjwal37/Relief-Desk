@@ -147,6 +147,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | RT-22 | Live path calls Gemini when a key is set | C | DONE | RT-21 | Demo mode stays on recorded replies; the case AI reading shows Gemini or Offline fallback |
 | RT-23 | Benchmark type and ward from the train split | C | DONE | RT-22 | Ward uses the gazetteer on the full report; type follows need-words. Test type 67.3%, ward 100% |
 | RT-24 | A shared situation word does not merge a new case | C | DONE | RT-23 | "stranded" alone does not fold a counted report into a seed |
+| GM-01 | Gemini, cache, or fallback on every report | C | DONE | RT-24 | A real key calls Gemini. No key stores provider=fallback. Cards show Gemini, Recorded Gemini run, or Offline fallback |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

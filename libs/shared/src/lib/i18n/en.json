@@ -302,6 +302,7 @@
     "aiReading": "AI reading",
     "aiGemini": "Gemini",
     "aiOffline": "Offline fallback",
+    "aiRecorded": "Recorded Gemini run",
     "updateLocation": "Update location",
     "lat": "Latitude",
     "lng": "Longitude",

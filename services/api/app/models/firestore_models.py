@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 from app.models.schemas import (
+    AiCall,
     IncidentType,
     HazardType,
     UrgencyHint,
@@ -70,6 +71,7 @@ class StoredRequest(BaseModel):
     summary: Optional[str] = None
     ai_translation: Optional[str] = None
     ai_source: str = "offline_fallback"
+    ai: Optional[AiCall] = None
     translations: Dict[str, str] = Field(default_factory=dict)
     translation_confidence: float = 1.0
     merged_count: int = 1

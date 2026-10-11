@@ -7,11 +7,21 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api"
     LOG_LEVEL: str = "INFO"
 
-    # Gemini & ADK
+    # Gemini & ADK. Model ids from https://ai.google.dev/gemini-api/docs/models
+    # (page updated 2026-10-09). New projects use gemini-3.8-flash.
+    # Embeddings: gemini-embedding-001, task SEMANTIC_SIMILARITY, 768 dimensions
+    # (https://ai.google.dev/gemini-api/docs/embeddings).
     GEMINI_API_KEY: str = "replace-me"
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
+    GEMINI_EMBED_MODEL: str = "gemini-embedding-001"
+    GEMINI_EMBED_DIM: int = 768
+    GEMINI_EMBED_TASK: str = "SEMANTIC_SIMILARITY"
     GEMINI_ENABLED: bool = True
     GEMINI_DAILY_CALL_CAP: int = 2000
+    GEMINI_TIMEOUT_S: float = 12.0
+    # auto: call Gemini when a real key is set. replay: serve data/ai_cache.
+    # fallback: never call the network. DEMO_MODE does not skip a real key.
+    AI_MODE: str = "auto"
     DEMO_MODE: bool = True
 
     # Google Cloud

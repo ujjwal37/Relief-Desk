@@ -270,6 +270,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   etaMinutes(km: number): number {
     return Math.max(1, Math.round((km / 20) * 60));
   }
+  aiKind(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' {
+    if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'recorded';
+    if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') return 'gemini';
+    return 'fallback';
+  }
   etaText(prop: MatchProposal): string {
     this.langService.currentLang();
     const km = prop.breakdown?.distance_km ?? 0;

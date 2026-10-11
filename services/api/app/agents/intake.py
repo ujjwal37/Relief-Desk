@@ -89,7 +89,7 @@ class IntakeAgent:
                 system_instruction=SYSTEM_INTAKE_PROMPT,
                 user_prompt=user_prompt,
                 validator=validate_json_schema,
-                max_retries=2
+                max_retries=1
             )
             extracted = validate_json_schema(raw_response)
         except Exception as e:
