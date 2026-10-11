@@ -387,3 +387,12 @@
 - Notes / risks / not done: Numeric cells use one decimal place, matching the current results file.
 - Next (suggested task id): T-045
 
+### 2026-10-11 17:29 IST — T-045 — Cursor
+- What changed: Medicine questions and "is it safe to swim" (plus drink-the-water and injection prompts) return only reviewed safety lines from `data/safety_lines.json`. The reply is checked to contain nothing outside that catalog. Landing and the public layout both show the 112 banner, so report, status, and nearby inherit it.
+- Files: services/api/app/agents/chat_intake.py, services/api/tests/test_safety_lines.py, apps/web/src/app/public-banner.spec.ts, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_safety_lines.py services/api/tests/test_chat_intake.py` -> 6 passed.
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include=**/public-banner.spec.ts` -> 2 passed.
+- Notes / risks / not done: Swim questions get the higher-ground line plus call 112. They do not get a yes or no about swimming.
+- Next (suggested task id): T-041
+

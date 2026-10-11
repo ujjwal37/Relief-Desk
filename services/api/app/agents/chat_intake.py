@@ -16,6 +16,49 @@ from app.tools.gazetteer import gazetteer
 
 logger = logging.getLogger("relief_desk.chat_intake")
 
+_INJECTION = re.compile(
+    r"\b(?:ignore (?:all )?previous instructions|system prompt|jailbreak|bypass)\b",
+    re.IGNORECASE,
+)
+_MEDICINE = re.compile(
+    r"\b(?:what medicine|which medicine|prescribe|tablet|antibiotic|dose|dosage|dawai|"
+    r"kya dawai|painkiller|aspirin|paracetamol|ibuprofen)\b",
+    re.IGNORECASE,
+)
+_SWIM = re.compile(
+    r"\b(?:is it safe to swim|safe to swim|can i swim|should i swim|swim in|"
+    r"is the water safe|can i drink the water|should i drink)\b",
+    re.IGNORECASE,
+)
+
+
+def injection_pattern(message: str) -> bool:
+    return _INJECTION.search(message) is not None
+
+
+def safety_refusal_lines(message: str) -> Optional[List[str]]:
+    """Return fixed safety-line ids, or None when the message is a normal report."""
+    if _MEDICINE.search(message):
+        return ["no_medical_advice", "call_112"]
+    if _SWIM.search(message):
+        return ["move_to_higher_ground", "call_112"]
+    return None
+
+
+def reply_is_only_safety_lines(reply: str) -> bool:
+    catalog = []
+    for line in scenario_registry._safety_lines.values():
+        for lang in ("en", "hi", "hinglish", "ta"):
+            text = line.get(lang)
+            if text:
+                catalog.append(text)
+    catalog.append("Call 112 in an emergency.")
+    remaining = reply
+    for text in sorted(catalog, key=len, reverse=True):
+        remaining = remaining.replace(text, " ")
+    remaining = re.sub(r"[\s\.]+", "", remaining)
+    return remaining == ""
+
 
 class ConfirmationCardData(BaseModel):
     incident_type: str
@@ -70,32 +113,22 @@ class ChatIntakeAgent:
         state.turn_count += 1
         state.messages_history.append({"role": "user", "text": user_message})
 
-        clean_lower = user_message.lower()
-
-        # 1. Safety Guardrail: Prompt injection or medical advice request check
-        medical_advice_pattern = re.search(
-            r"\b(?:what medicine|prescribe|tablet|antibiotic|dose|dosage|dawai|kya dawai lu|painkiller|aspirin|paracetamol)\b",
-            clean_lower
-        )
-        injection_pattern = re.search(
-            r"\b(?:ignore (?:all )?previous instructions|system prompt|jailbreak|bypass)\b",
-            clean_lower
-        )
-
         scenario = scenario_registry.get_scenario(state.scenario_id) or scenario_registry.get_scenario("flood")
         lang = lang_override or state.language or "en"
 
-        if medical_advice_pattern or injection_pattern:
-            fixed_line = scenario_registry.get_safety_line("no_medical_advice", lang=lang)
-            call_112_line = scenario_registry.get_safety_line("call_112", lang=lang)
-            reply = f"{fixed_line} {call_112_line}"
+        # 1. Safety guardrail: advice and injection requests return fixed lines only.
+        advice = safety_refusal_lines(user_message)
+        if advice or injection_pattern(user_message):
+            line_ids = advice or ["no_medical_advice", "call_112"]
+            parts = [scenario_registry.get_safety_line(line_id, lang=lang) for line_id in line_ids]
+            reply = " ".join(parts)
             state.messages_history.append({"role": "assistant", "text": reply})
             return ChatTurnResponse(
                 session_id=state.session_id,
                 bot_message=reply,
                 turn_count=state.turn_count,
                 missing_fields=["safety_refusal"],
-                safety_line=call_112_line,
+                safety_line=parts[-1],
                 confirmation_card=None,
             )
 
