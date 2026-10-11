@@ -292,6 +292,12 @@ export class ReportComponent implements OnInit {
         } catch {
           // ignore storage failures in private mode
         }
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(
+            { type: 'rd-report-submitted', reportId: res.report_id },
+            window.location.origin,
+          );
+        }
         this.router.navigate(['/status'], {
           queryParams: { id: res.report_id, token: res.status_token },
         });

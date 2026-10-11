@@ -84,5 +84,9 @@
     "invalidCredentials": "Invalid email or password",
     "loginDemo": "Quick Login as Demo Coordinator",
     "returnHome": "Return to Public Home"
+  },
+  "demo": {
+    "phone": "Demo phone",
+    "hide": "Hide phone"
   }
 }

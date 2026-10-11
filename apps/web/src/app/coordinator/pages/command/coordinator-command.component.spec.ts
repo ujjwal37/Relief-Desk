@@ -243,4 +243,13 @@ describe('CoordinatorCommandComponent', () => {
     component.setTranslationLang('ta');
     expect(component.getTranslationText(multiLangReq)).toBe('வீட்டிற்குள் தண்ணீர் புகுந்தது.');
   });
+
+  it('reloads the queue when the demo phone submits a report', () => {
+    apiClientSpy.getRequests.calls.reset();
+    component.handleDemoMessage({
+      origin: window.location.origin,
+      data: { type: 'rd-report-submitted', reportId: 'R-demo' },
+    } as MessageEvent);
+    expect(apiClientSpy.getRequests).toHaveBeenCalled();
+  });
 });

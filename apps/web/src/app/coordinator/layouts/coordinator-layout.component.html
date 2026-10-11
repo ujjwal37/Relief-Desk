@@ -1,24 +1,35 @@
-<div class="coordinator-shell">
-  <header class="top-nav">
-    <div class="left-cluster">
-      <a routerLink="/" class="brand-badge">
-        <span class="shield">🛡️</span>
-        <span class="title">{{ 'landing.title' | rdTranslate }} - {{ 'nav.coordinator' | rdTranslate }}</span>
-      </a>
-      <app-scenario-switcher></app-scenario-switcher>
-    </div>
+<div class="coordinator-shell" [class.with-phone]="showPhone()">
+  <div class="coord-column">
+    <header class="top-nav">
+      <div class="left-cluster">
+        <a routerLink="/" class="brand-badge">
+          <span class="shield">🛡️</span>
+          <span class="title">{{ 'landing.title' | rdTranslate }} - {{ 'nav.coordinator' | rdTranslate }}</span>
+        </a>
+        <app-scenario-switcher></app-scenario-switcher>
+      </div>
 
-    <div class="right-cluster">
-      <rd-language-switcher></rd-language-switcher>
-      <a routerLink="/coordinator/command" class="nav-btn">{{ 'queue.title' | rdTranslate }}</a>
-      <a routerLink="/coordinator/alerts" class="nav-btn">{{ 'alerts.title' | rdTranslate }}</a>
-      <a routerLink="/coordinator/benchmark" class="nav-btn">{{ 'benchmark.nav' | rdTranslate }}</a>
-      <span class="demo-user">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</span>
-      <button type="button" class="nav-btn" (click)="logout()">{{ 'nav.logout' | rdTranslate }}</button>
-    </div>
-  </header>
+      <div class="right-cluster">
+        <rd-language-switcher></rd-language-switcher>
+        <button type="button" class="nav-btn demo-toggle" (click)="toggleDemo()">
+          {{ (showPhone() ? 'demo.hide' : 'demo.phone') | rdTranslate }}
+        </button>
+        <a routerLink="/coordinator/command" class="nav-btn">{{ 'queue.title' | rdTranslate }}</a>
+        <a routerLink="/coordinator/alerts" class="nav-btn">{{ 'alerts.title' | rdTranslate }}</a>
+        <a routerLink="/coordinator/benchmark" class="nav-btn">{{ 'benchmark.nav' | rdTranslate }}</a>
+        <span class="demo-user">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</span>
+        <button type="button" class="nav-btn" (click)="logout()">{{ 'nav.logout' | rdTranslate }}</button>
+      </div>
+    </header>
 
-  <main class="dashboard-body">
-    <router-outlet></router-outlet>
-  </main>
+    <main class="dashboard-body">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  @if (showPhone()) {
+    <aside class="demo-phone" aria-label="Public report">
+      <iframe title="Public report" src="/report"></iframe>
+    </aside>
+  }
 </div>

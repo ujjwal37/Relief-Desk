@@ -414,3 +414,11 @@
 - Notes / risks / not done: Live Google tiles were not opened. That needs a referrer-restricted browser key in `GOOGLE_MAPS_API_KEY` from Ujjwal. Until then every screen uses the SVG. T-025 stays DONE.
 - Next (suggested task id): T-054
 
+### 2026-10-11 17:41 IST — T-054 — Cursor
+- What changed: `?demo=1` or the coordinator top-bar toggle shows the public report inside a 390×844 phone frame beside the coordinator shell. The frame is not rendered when the viewport is under 600px. A report submitted in that frame posts `rd-report-submitted` to the parent, and the command queue reloads.
+- Files: apps/web/src/app/coordinator/layouts/coordinator-layout.component.ts, apps/web/src/app/coordinator/layouts/coordinator-layout.component.html, apps/web/src/app/coordinator/layouts/coordinator-layout.component.scss, apps/web/src/app/coordinator/layouts/coordinator-layout.component.spec.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts, apps/web/src/app/public/pages/report/report.component.ts, libs/shared/src/lib/i18n/en.json, libs/shared/src/lib/i18n/hi.json, libs/shared/src/lib/i18n/hinglish.json, libs/shared/src/lib/i18n/ta.json, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include=**/coordinator-layout.component.spec.ts --include=**/coordinator-command.component.spec.ts` -> 13 passed. Wide + `demo=1` renders the iframe at `/report`. Narrow and demo-off render no frame. A `rd-report-submitted` message calls `getRequests` again.
+- Notes / risks / not done: The frame is an iframe, so the public page does not import coordinator code. Live Google tiles are still the SVG until a maps key is set.
+- Next (suggested task id): bench
+

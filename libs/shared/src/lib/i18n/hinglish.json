@@ -84,5 +84,9 @@
     "invalidCredentials": "Galat email ya password",
     "loginDemo": "Demo Coordinator Se Quick Login",
     "returnHome": "Public Home Par Wapas Jayein"
+  },
+  "demo": {
+    "phone": "Demo phone",
+    "hide": "Phone chhupayein"
   }
 }

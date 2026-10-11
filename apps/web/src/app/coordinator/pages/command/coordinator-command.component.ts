@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   OnInit,
   computed,
   inject,
@@ -26,7 +27,7 @@ import {
   styleUrl: './coordinator-command.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CoordinatorCommandComponent implements OnInit {
+export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private readonly apiClient = inject(ApiClientService);
   private readonly scenarioService = inject(ScenarioService);
 
@@ -123,7 +124,21 @@ export class CoordinatorCommandComponent implements OnInit {
     this.loadRequests();
     this.loadResources();
     this.loadWeights();
+    window.addEventListener('message', this.handleDemoMessage);
   }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('message', this.handleDemoMessage);
+  }
+
+  handleDemoMessage = (event: MessageEvent): void => {
+    if (event.origin !== window.location.origin) {
+      return;
+    }
+    if (event.data?.type === 'rd-report-submitted') {
+      this.loadRequests();
+    }
+  };
 
   loadRequests(): void {
     this.apiClient.getRequests('urgency', this.activeScenario()).subscribe({
