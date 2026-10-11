@@ -102,6 +102,9 @@ class ExtractedRequest(BaseModel):
     evidence_spans: Dict[str, str] = Field(default_factory=dict)
     notes: str = Field(default="")
     needs_human_review: bool = False
+    ward_id: Optional[str] = None
+    hoax_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    original_text: str = ""
 
     def validate_spans_against_raw(self, raw_text: str) -> None:
         """Validates evidence_spans against raw_text substrings.

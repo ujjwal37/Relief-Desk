@@ -3,7 +3,9 @@ import logging
 from typing import Optional
 from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.llm.client import llm_client
+from app.tools.gazetteer import gazetteer
 from app.tools.nlu_rules import extract_place, hazard_name, infer_incident_type, people_count, vulnerable_flags
+from app.tools.trust import hoax_score_for
 
 logger = logging.getLogger("relief_desk.intake_agent")
 
@@ -124,6 +126,11 @@ def _repair_with_rules(extracted: ExtractedRequest, raw_text: str) -> ExtractedR
     hazard = hazard_name(raw_text)
     if hazard and extracted.hazard.value in ("none", "unknown"):
         extracted.hazard = HazardType(hazard)
+    extracted.original_text = raw_text
+    extracted.hoax_score = max(extracted.hoax_score, hoax_score_for(raw_text))
+    if extracted.hoax_score >= 0.5:
+        extracted.needs_human_review = True
+    extracted.ward_id = gazetteer.resolve_ward(extracted.place_text, raw_text)
     return extracted
 
 

@@ -160,6 +160,6 @@ def hazard_name(text: str) -> Optional[str]:
             return "water_rising"
         if "paani" in lower or "pani" in lower or "पानी" in text:
             return "water_rising"
-    if any(w in lower for w in ("stranded", "trapped", "फंसे", "फंस")):
+    if any(w in lower for w in ("stranded", "trapped", "फंसे", "फंस", "chhat", "chat par", "boat")):
         return "stranded"
     return None

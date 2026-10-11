@@ -868,3 +868,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 147 passed, 1 skipped (live smoke, no GEMINI_API_KEY). `node scripts/check-i18n.mjs` — 523 keys. `npx ng build web` succeeded. Command spec 20 passed. Benchmark on the held-out split was not re-run; last measured type 67.3%, ward 100.0%.
 - Notes / risks / not done: CI does not call Gemini. Embeddings and the ADK pipeline are not in this step.
 - Next (suggested task id): GM-02
+
+### 2026-10-12 06:25 IST — GM-02 — Cursor
+- What changed: Intake now fills ward_id from the gazetteer, hoax_score from known spam phrases, and original_text with the report as written. A hoax score of 0.5 or more marks the extraction for human review. The Hinglish boat sample is rescue, ward 2, four people, hazard stranded. The Tamil sample keeps the sentence and the count 5 பேர். The spam line scores at least 0.9 and the open card stays under 75.
+- Files: services/api/app/agents/intake.py, services/api/app/models/schemas.py, services/api/app/tools/nlu_rules.py, services/api/app/tools/trust.py, services/api/tests/test_intake_structured.py, TASKS.md
+- How verified: `pytest tests` from services/api — 149 passed, 1 skipped. `node scripts/check-i18n.mjs` — 523 keys. `npx ng build web` succeeded. Benchmark on the held-out split was not re-run; last measured type 67.3%, ward 100.0%.
+- Notes / risks / not done: Tamil place names are not in the gazetteer aliases, so that sample does not resolve a ward. A second copy of the same spam text can fold into the first card; the open card still stays out of Needs help.
+- Next (suggested task id): GM-03

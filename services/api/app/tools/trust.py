@@ -42,6 +42,27 @@ def evaluate_stale_status(
     return False
 
 
+VIRAL_HOAX_PHRASES = (
+    "forward this to 10 groups",
+    "nasa announced",
+    "free helicopter rescue call this number",
+    "100% verified news share fast",
+    "free money",
+    "bit.ly",
+    "win iphone",
+    "send otp",
+)
+
+
+def hoax_score_for(text: str) -> float:
+    """0 when the text has no known spam phrase, else at least 0.9."""
+    clean = " ".join((text or "").lower().split())
+    hits = sum(1 for phrase in VIRAL_HOAX_PHRASES if phrase in clean)
+    if hits <= 0:
+        return 0.0
+    return min(1.0, 0.7 + 0.1 * hits)
+
+
 def detect_hoax_or_flood(
     existing_reports: List[StoredReport],
     new_raw_text: str,
@@ -65,17 +86,7 @@ def detect_hoax_or_flood(
         logger.warning("Detected %d duplicate copies of message. Flagged hoax_or_flood.", match_count)
 
     # Check for known viral hoax keywords
-    viral_hoax_phrases = [
-        "forward this to 10 groups",
-        "nasa announced",
-        "free helicopter rescue call this number",
-        "100% verified news share fast",
-        "free money",
-        "bit.ly",
-        "win iphone",
-        "send otp",
-    ]
-    if any(phrase in clean_new for phrase in viral_hoax_phrases):
+    if hoax_score_for(new_raw_text) >= 0.5:
         flags.append("hoax")
 
     return flags
