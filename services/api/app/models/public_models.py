@@ -40,6 +40,7 @@ class ReportStatusResponse(BaseModel):
     """Status tracking for reporting public user with zero PII."""
     report_id: str
     request_id: str
+    public_code: Optional[str] = None
     status: str
     hero_title: str
     hero_subtitle: str

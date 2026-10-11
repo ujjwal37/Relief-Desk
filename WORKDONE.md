@@ -553,3 +553,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: pytest tests/test_match_types.py tests/test_resources_matching.py tests/test_matches_api.py 10 passed. check-i18n 349 keys. Benchmark harness does not call the matcher, so those numbers are unchanged.
 - Notes / risks / not done: The full "estimated wait" and resource-gap alert copy lands with the teams and alerts items.
 - Next (suggested task id): FP-06
+
+### 2026-10-11 21:20 IST — FP-06 — Cursor
+- What changed: A new report shows Received as done and Matched, On the way, and Fulfilled as not started. ETA appears only after a coordinator assigns a team. Timeline titles are i18n keys. Times are ISO from the API and formatted in the device time zone. The public id is RD-#### while the internal id and token stay.
+- Files: services/api/app/api/public.py, services/api/app/models/public_models.py, services/api/tests/test_public_api.py, apps/web status page, i18n, TASKS.md
+- How verified: pytest tests/test_public_api.py 6 passed. check-i18n 362 keys.
+- Notes / risks / not done: The demo id R-0412 still shows a sample on-the-way timeline. Completed status is wired when FP-08 marks a case completed.
+- Next (suggested task id): FP-07

@@ -270,6 +270,7 @@ export interface AnomalyAlert {
 export interface ReportStatusResponse {
   report_id: string;
   request_id: string;
+  public_code?: string | null;
   status: string;
   hero_title: string;
   hero_subtitle: string;

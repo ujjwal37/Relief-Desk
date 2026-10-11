@@ -32,7 +32,7 @@
 
     <section class="idcard" aria-label="{{ 'status.requestId' | rdTranslate }}">
       <p class="cap">{{ 'status.requestId' | rdTranslate }}</p>
-      <p class="rid">{{ data.report_id }}</p>
+      <p class="rid">{{ data.public_code || data.report_id }}</p>
       <div class="idbtns">
         <button type="button" (click)="copyId(data.report_id)">{{ copied() === 'id' ? ('status.copied' | rdTranslate) : ('status.copy' | rdTranslate) }}</button>
         <button type="button" (click)="share(data.report_id)">{{ copied() === 'link' ? ('status.copied' | rdTranslate) : ('status.share' | rdTranslate) }}</button>
@@ -41,9 +41,9 @@
 
     <section class="hero" aria-live="polite">
       <p class="eta-cap">{{ 'status.eta' | rdTranslate }}</p>
-      <p class="eta">{{ data.eta_display }}</p>
-      <p class="hero-title">{{ data.hero_title }}</p>
-      <p class="hero-sub">{{ data.hero_subtitle }}</p>
+      <p class="eta">{{ data.eta_minutes != null ? data.eta_display : ('status.etaLater' | rdTranslate) }}</p>
+      <p class="hero-title">{{ data.hero_title | rdTranslate }}</p>
+      <p class="hero-sub">{{ data.public_code || data.hero_subtitle }}</p>
     </section>
 
     <ol class="steps" [attr.aria-label]="'ui.progress' | rdTranslate">
@@ -53,7 +53,7 @@
             @if (s.state === 'done') { <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> }
             @else if (s.state === 'current') { <i></i> } @else { {{ s.step }} }
           </span>
-          <span class="txt"><b>{{ s.title }}</b>@if (s.timestamp) { <em>{{ s.timestamp }}</em> }<small>{{ s.description }}</small></span>
+          <span class="txt"><b>{{ s.title | rdTranslate }}</b>@if (s.timestamp) { <em [attr.title]="s.timestamp">{{ localTime(s.timestamp) }}</em> }<small>{{ s.description | rdTranslate }}</small></span>
         </li>
       }
     </ol>
@@ -65,7 +65,7 @@
 
     <details class="card details">
       <summary>{{ 'status.details' | rdTranslate }}</summary>
-      <p><span>{{ 'status.dispatch' | rdTranslate }}</span> <b>{{ data.delivery_status }}</b></p>
+      <p><span>{{ 'status.dispatch' | rdTranslate }}</span> <b>{{ data.delivery_status | rdTranslate }}</b></p>
       <p><button type="button" class="copy" (click)="copyLink(data.report_id)">{{ copied() === 'link' ? ('status.copied' | rdTranslate) : ('status.copyLink' | rdTranslate) }}</button></p>
     </details>
 

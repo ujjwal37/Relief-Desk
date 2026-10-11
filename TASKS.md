@@ -107,7 +107,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | FP-03 | Hinglish/Hindi intake place, ward, vulnerable, raw text | C | DONE | FP-01 | Pytest for the three TEST_REPORT examples |
 | FP-04 | Triage bands: critical cases are Needs help now | C | DONE | – | At least 3 seeds in Needs help now; chip and banner counts match |
 | FP-05 | Rescue matches boat/rescue, not shelter, unless labelled fallback | C | DONE | – | Pytest; benchmark not worse |
-| FP-06 | Honest status timeline, local time, short ID | C | TODO | FP-08 | Timeline matches real status |
+| FP-06 | Honest status timeline, local time, short ID | C | DONE | – | Timeline matches real status |
 | FP-07 | Chat fully localized | C | TODO | – | No raw keys in chips, prompts, or review |
 | FP-08 | Dispatched and Completed lifecycle | C | TODO | FP-05 | Approve leaves the active queue; complete frees capacity |
 | FP-09 | Teams view | C | TODO | FP-08 | All resources listed; typed map pins |

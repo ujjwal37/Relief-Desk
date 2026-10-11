@@ -135,7 +135,11 @@ def test_submitted_report_status_lifecycle():
     assert status_data["report_id"] == report_id
     assert status_data["status"] == "new"
     assert status_data["timeline"][0]["state"] == "done"
-    assert status_data["timeline"][1]["state"] == "current"  # Matching in progress
+    assert status_data["timeline"][1]["state"] == "pending"
+    assert status_data["timeline"][2]["state"] == "pending"
+    assert status_data["eta_minutes"] is None
+    assert status_data["public_code"].startswith("RD-")
+    assert "प्राप्त" not in status_res.text
     assert "112" in status_data["emergency_phone"]
 
     # Verify no PII in status output

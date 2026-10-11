@@ -115,6 +115,13 @@ export class StatusComponent implements OnInit {
     setTimeout(() => this.copied.set(''), 1600);
   }
 
+  localTime(value: string | null | undefined): string {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
   copyId(id: string): void {
     navigator.clipboard?.writeText(id).then(() => this.flash('id'));
   }

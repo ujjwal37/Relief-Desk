@@ -1,3 +1,4 @@
+import hashlib
 import re
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -15,6 +16,12 @@ from app.tools.storage import storage_service
 from app.tools.geo import grid_cell_id
 
 router = APIRouter(prefix="/api", tags=["Public Routes"])
+
+
+def public_code_for(report_id: str) -> str:
+    """Stable short id such as RD-1042. The internal id and token stay unchanged."""
+    digest = int(hashlib.sha256(report_id.encode("utf-8")).hexdigest()[:6], 16)
+    return f"RD-{1000 + (digest % 9000)}"
 
 # Canonical synthetic area cells for Riverbend crisis map
 CANONICAL_CELLS = [
@@ -211,7 +218,7 @@ def get_report_status(
                     StatusTimelineStep(
                         step=1,
                         name="received",
-                        title="Received / प्राप्त",
+                        title="status.received",
                         state="done",
                         timestamp="11:42",
                         description="Request R-0412 saved in system",
@@ -219,7 +226,7 @@ def get_report_status(
                     StatusTimelineStep(
                         step=2,
                         name="matched",
-                        title="Matched / मिलान हुआ",
+                        title="status.matched",
                         state="done",
                         timestamp="11:44",
                         description="Volunteer boat team assigned",
@@ -227,7 +234,7 @@ def get_report_status(
                     StatusTimelineStep(
                         step=3,
                         name="on_the_way",
-                        title="On the way / सहायता रवाना",
+                        title="status.onway",
                         state="current",
                         timestamp="11:48",
                         description="Boat B-03 · from Ward 6 jetty",
@@ -235,7 +242,7 @@ def get_report_status(
                     StatusTimelineStep(
                         step=4,
                         name="fulfilled",
-                        title="Fulfilled / सहायता पहुँची",
+                        title="status.fulfilled",
                         state="pending",
                         timestamp=None,
                         description="You can confirm when help arrives",
@@ -260,81 +267,68 @@ def get_report_status(
         req = storage_service.get_request(report.request_id)
 
     req_status = req.status if req else RequestStatus.NEW
-
-    # Determine timeline states based on actual request lifecycle
-    step1_state = "done"
-    step2_state = "pending"
-    step3_state = "pending"
-    step4_state = "pending"
-    hero_title = "Sent. Help is being arranged."
-    delivery_status = "In progress"
-    eta_display = "~20 min"
-
-    if req_status in (RequestStatus.NEW, RequestStatus.NEEDS_RECHECK):
-        step2_state = "current"
-    elif req_status == RequestStatus.MATCHED:
-        step2_state = "done"
-        step3_state = "current"
-        eta_display = "~15 min"
-    elif req_status in (RequestStatus.APPROVED, RequestStatus.IN_PROGRESS):
-        step2_state = "done"
-        step3_state = "current"
-        hero_title = "Dispatch approved. Responders on the way."
-        eta_display = "~12 min"
-    elif req_status in (RequestStatus.RESOLVED, RequestStatus.CLOSED):
-        step2_state = "done"
-        step3_state = "done"
-        step4_state = "done"
-        hero_title = "Assistance delivered."
-        delivery_status = "Delivered"
-        eta_display = "Completed"
-
-    display_time = report.created_at[11:16] if len(report.created_at) >= 16 else "Just now"
+    code = public_code_for(report.id)
+    approved = req_status in (
+        RequestStatus.APPROVED,
+        RequestStatus.IN_PROGRESS,
+        RequestStatus.RESOLVED,
+        RequestStatus.CLOSED,
+    )
+    # dispatched/completed are added later; treat the string values the same way.
+    approved = approved or req_status.value in ("dispatched", "completed")
+    fulfilled = req_status in (RequestStatus.RESOLVED, RequestStatus.CLOSED) or req_status.value == "completed"
+    matched_state = "done" if approved else "pending"
+    on_way_state = "done" if fulfilled else ("current" if approved else "pending")
+    fulfilled_state = "done" if fulfilled else "pending"
+    assigned_at = req.updated_at if req and approved else None
+    eta_minutes = 12 if approved and not fulfilled else None
+    hero_title = "status.heroDone" if fulfilled else ("status.heroOnWay" if approved else "status.heroReceived")
 
     timeline = [
         StatusTimelineStep(
             step=1,
             name="received",
-            title="Received / प्राप्त",
-            state=step1_state,
-            timestamp=display_time,
-            description=f"Report {report.id[:8]} logged securely",
+            title="status.received",
+            state="done",
+            timestamp=report.created_at,
+            description="status.stepReceived",
         ),
         StatusTimelineStep(
             step=2,
             name="matched",
-            title="Matched / मिलान हुआ",
-            state=step2_state,
-            timestamp=None if step2_state == "pending" else display_time,
-            description="Coordinator matching with available relief teams",
+            title="status.matched",
+            state=matched_state,
+            timestamp=assigned_at if matched_state == "done" else None,
+            description="status.stepMatchedDone" if matched_state == "done" else "status.stepMatchedWait",
         ),
         StatusTimelineStep(
             step=3,
             name="on_the_way",
-            title="On the way / सहायता रवाना",
-            state=step3_state,
-            timestamp=None if step3_state == "pending" else display_time,
-            description="Assigned team dispatched to your area cell",
+            title="status.onway",
+            state=on_way_state,
+            timestamp=assigned_at if on_way_state != "pending" else None,
+            description="status.stepOnWay",
         ),
         StatusTimelineStep(
             step=4,
             name="fulfilled",
-            title="Fulfilled / सहायता पहुँची",
-            state=step4_state,
-            timestamp=None,
-            description="Confirmation requested upon rescue completion",
+            title="status.fulfilled",
+            state=fulfilled_state,
+            timestamp=req.updated_at if req and fulfilled else None,
+            description="status.stepFulfilled",
         ),
     ]
 
     return ReportStatusResponse(
         report_id=report.id,
         request_id=req.id if req else report.id,
+        public_code=code,
         status=req_status.value,
         hero_title=hero_title,
-        hero_subtitle=f"Report {report.id[:8]} · {display_time} · you can close the app",
-        eta_minutes=15,
-        eta_display=eta_display,
-        delivery_status=delivery_status,
+        hero_subtitle=code,
+        eta_minutes=eta_minutes,
+        eta_display="~12 min" if eta_minutes else "",
+        delivery_status="status.delivered" if fulfilled else ("status.onway" if approved else "status.waiting"),
         timeline=timeline,
         while_you_wait_tips=[
             "Move to the highest safe place.",
