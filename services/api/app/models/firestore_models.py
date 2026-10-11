@@ -143,6 +143,8 @@ class StoredResource(BaseModel):
     lng: float
     capacity_total: int
     capacity_remaining: int
+    hold_request_id: Optional[str] = None
+    hold_amount: int = 0
     status: ResourceStatus = ResourceStatus.AVAILABLE
     location_updated_at: Optional[str] = None
     assigned_request_id: Optional[str] = None

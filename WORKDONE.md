@@ -903,3 +903,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 161 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Command spec 20 passed. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%.
 - Notes / risks / not done: Token counts stay empty until a live Gemini call is measured. The trace is written by the tool runner, not by an ADK event log.
 - Next (suggested task id): GM-07
+
+### 2026-10-12 07:15 IST — GM-07 — Cursor
+- What changed: DispatcherAssist is an LlmAgent whose tools are list_open_cases, find_teams, check_capacity, propose_assignment, reserve_hold, and commit_dispatch. commit_dispatch is a FunctionTool with require_confirmation. A proposal holds seats and leaves the case status new. Calling commit without confirmation does not dispatch. Reject releases the hold and writes capacity_released plus match_rejected. Two concurrent proposals for the only boat produce one hold and a shortage explanation for the other.
+- Files: services/api/app/agents/dispatcher.py, services/api/app/tools/storage.py, services/api/app/models/firestore_models.py, services/api/tests/test_dispatcher_assist.py, TASKS.md
+- How verified: `pytest tests` — 164 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%.
+- Notes / risks / not done: The Approve and Reject buttons already on the case call the existing match endpoints. The hold is released on reject. A live model is not required for the tool tests.
+- Next (suggested task id): GM-08

@@ -33,6 +33,7 @@ class StorageService:
         self._audit_log: List[AuditEntry] = []  # Strictly append-only
         self._idempotent: Dict[str, Dict[str, Any]] = {}
         self._submit_lock = threading.Lock()
+        self._hold_lock = threading.Lock()
         self._firestore_client = None
         self._init_firestore()
 
@@ -346,6 +347,56 @@ class StorageService:
         )
         return res, is_overcommit
 
+    def reserve_hold(self, request_id: str, resource_id: str, amount: int, actor: str = "dispatcher") -> dict:
+        """Claim seats without dispatching. A second claim on the same team fails."""
+        with self._hold_lock:
+            res = self._resources.get(resource_id)
+            if not res:
+                raise ValueError(f"Resource {resource_id} not found")
+            if res.hold_request_id == request_id:
+                return {"held": True, "resource_id": resource_id, "amount": res.hold_amount, "dispatched": False}
+            if res.hold_request_id or amount > res.capacity_remaining:
+                free = 0 if res.hold_request_id else res.capacity_remaining
+                raise ValueError(f"shortage: {amount} seats requested and {free} are free on {res.name}")
+            before = res.model_dump()
+            res.capacity_remaining -= amount
+            res.hold_request_id = request_id
+            res.hold_amount = amount
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+            self.record_audit(
+                actor=actor,
+                action="capacity_reserved",
+                target=resource_id,
+                before=before,
+                after={**res.model_dump(), "hold": True, "reserved_amount": amount},
+            )
+            return {"held": True, "resource_id": resource_id, "amount": amount, "dispatched": False}
+
+    def release_hold(self, resource_id: str, actor: str = "coordinator") -> Optional[StoredResource]:
+        """Give a rejected proposal's seats back. Does nothing when there is no hold."""
+        with self._hold_lock:
+            res = self._resources.get(resource_id)
+            if not res or not res.hold_request_id:
+                return res
+            before = res.model_dump()
+            amount = res.hold_amount or 0
+            res.capacity_remaining = min(res.capacity_total, res.capacity_remaining + amount)
+            res.hold_request_id = None
+            res.hold_amount = 0
+            if res.capacity_remaining > 0 and res.status == ResourceStatus.DEPLETED:
+                res.status = ResourceStatus.AVAILABLE
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+            self.record_audit(
+                actor=actor,
+                action="capacity_released",
+                target=resource_id,
+                before=before,
+                after={**res.model_dump(), "released_amount": amount},
+            )
+            return res
+
     def release_capacity(
         self, resource_id: str, amount: int, actor: str = "coordinator"
     ) -> StoredResource:
@@ -565,13 +616,29 @@ class StorageService:
         req = self._requests.get(match.request_id)
         people_needed = req.people_count if (req and req.people_count) else 1
 
-        # Decrement capacity
-        _, is_overcommit = self.reserve_capacity(
-            resource_id=match.resource_id,
-            amount=people_needed,
-            allow_overcommit=allow_overcommit,
-            actor=approved_by,
-        )
+        # A hold already took the seats. Approving dispatches; it does not take them twice.
+        assigned_now = self._resources.get(match.resource_id)
+        already_held = bool(assigned_now and assigned_now.hold_request_id == (req.id if req else None))
+        if already_held:
+            before_res = assigned_now.model_dump()
+            assigned_now.hold_request_id = None
+            assigned_now.hold_amount = 0
+            assigned_now.status = ResourceStatus.DISPATCHED
+            self.record_audit(
+                actor=approved_by,
+                action="capacity_reserved",
+                target=assigned_now.id,
+                before=before_res,
+                after={**assigned_now.model_dump(), "confirmed": True},
+            )
+            is_overcommit = False
+        else:
+            _, is_overcommit = self.reserve_capacity(
+                resource_id=match.resource_id,
+                amount=people_needed,
+                allow_overcommit=allow_overcommit,
+                actor=approved_by,
+            )
         assigned = self._resources.get(match.resource_id)
         if assigned and req:
             assigned.assigned_request_id = req.id
@@ -685,6 +752,7 @@ class StorageService:
         if not match:
             raise ValueError(f"Match {match_id} not found")
 
+        self.release_hold(match.resource_id, actor=actor)
         before = match.model_dump()
         match.state = MatchState.REJECTED
         match.rejected_reason = reason
