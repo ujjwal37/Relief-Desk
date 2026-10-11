@@ -276,7 +276,12 @@
     "dispatch": "Dispatch status",
     "tips": "While you wait",
     "loading": "Loading your request…",
-    "error": "We could not load this request. Check the ID and try again."
+    "error": "We could not load this request. Check the ID and try again.",
+    "new": "Request sent",
+    "saved": "Saved on this phone so you can come back to it.",
+    "share": "Share link",
+    "copied": "Copied",
+    "copyLink": "Copy link"
   },
   "nearby": {
     "title2": "Nearby alerts",
@@ -297,5 +302,29 @@
     "base": "Baseline",
     "failures": "Where it still gets things wrong",
     "retry": "Try again"
+  },
+  "home": {
+    "title": "How can we help?",
+    "sub": "Report an emergency, or check on a request you already sent.",
+    "report": "Report an emergency",
+    "my": "My requests",
+    "none": "No requests on this phone yet. When you report, it appears here so you can track it.",
+    "view": "View",
+    "find": "Find my request",
+    "findSub": "Using a new phone? Enter your request ID.",
+    "nearby": "See nearby alerts",
+    "coordinator": "Coordinator sign in",
+    "updating": "Updating…",
+    "cantRefresh": "Could not refresh. Tap View to retry.",
+    "remove": "Remove from this phone"
+  },
+  "find": {
+    "title": "Find my request",
+    "idLabel": "Request ID or link",
+    "idHint": "Paste the link you were sent, or type the ID (like R-0412).",
+    "tokenLabel": "Access code (from your link or SMS)",
+    "go": "Find request",
+    "paste": "Paste",
+    "invalid": "Enter a request ID or paste your link."
   }
 }

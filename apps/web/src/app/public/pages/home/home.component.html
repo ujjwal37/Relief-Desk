@@ -1,0 +1,36 @@
+<div class="home">
+  <h1>{{ 'home.title' | rdTranslate }}</h1>
+  <p class="sub">{{ 'home.sub' | rdTranslate }}</p>
+
+  <a routerLink="/report" class="report-btn">
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    {{ 'home.report' | rdTranslate }}
+  </a>
+
+  <section class="card" aria-labelledby="my-h">
+    <h2 id="my-h">{{ 'home.my' | rdTranslate }}</h2>
+    @for (r of rows(); track r.req.id) {
+      <div class="req">
+        <div class="req-main">
+          <p class="head">
+            @if (r.state === 'loading') { {{ 'home.updating' | rdTranslate }} }
+            @else if (r.state === 'ok') { {{ r.headline }} }
+            @else { {{ 'home.cantRefresh' | rdTranslate }} }
+          </p>
+          <p class="meta">{{ 'status.requestId' | rdTranslate }} <b>{{ r.req.id }}</b>@if (r.eta) { · {{ r.eta }} }</p>
+        </div>
+        <a class="view" routerLink="/status" [queryParams]="{ id: r.req.id, token: r.req.token }">{{ 'home.view' | rdTranslate }}</a>
+        <button type="button" class="rm" (click)="remove(r.req.id)" [attr.aria-label]="'home.remove' | rdTranslate">✕</button>
+      </div>
+    } @empty {
+      <p class="empty">{{ 'home.none' | rdTranslate }}</p>
+    }
+    <a class="find" routerLink="/status" [queryParams]="{ find: 1 }">
+      <span><b>{{ 'home.find' | rdTranslate }}</b><small>{{ 'home.findSub' | rdTranslate }}</small></span>
+      <span aria-hidden="true">→</span>
+    </a>
+  </section>
+
+  <a routerLink="/nearby" class="row-link">{{ 'home.nearby' | rdTranslate }} <span aria-hidden="true">→</span></a>
+  <a routerLink="/coordinator/login" class="coord">{{ 'home.coordinator' | rdTranslate }}</a>
+</div>

@@ -7,6 +7,11 @@ export const PUBLIC_ROUTES: Routes = [
     component: PublicLayoutComponent,
     children: [
       {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent),
+      },
+      {
         path: 'report',
         loadComponent: () => import('./pages/report/report.component').then(m => m.ReportComponent),
       },

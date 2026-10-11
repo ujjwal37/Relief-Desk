@@ -18,6 +18,7 @@ import {
   canonicalRequestJson,
 } from '@rd/shared';
 
+import { MyRequestsService } from '../../../core/services/my-requests.service';
 import { OfflineSyncService } from '../../../core/services/offline-sync.service';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { ConfirmationCardComponent } from '../../components/confirmation-card/confirmation-card.component';
@@ -52,6 +53,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly langService = inject(LanguageService);
   readonly scenarioState = inject(ScenarioService);
   readonly offlineSync = inject(OfflineSyncService);
+  private readonly myRequests = inject(MyRequestsService);
 
   readonly sessionId = signal<string>(`sess_${Math.random().toString(36).substring(2, 9)}`);
   readonly mode = signal<'chat' | 'form'>('chat');
@@ -399,12 +401,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (res: ReportSubmitResponse) => {
         this.isLoading.set(false);
         this.submittedResult.set(res);
-        try {
-          localStorage.setItem('rd_last_report_id', res.report_id);
-          localStorage.setItem('rd_last_status_token', res.status_token);
-        } catch {
-          // ignore storage failures in private mode
-        }
+        this.myRequests.add(res.report_id, res.status_token);
         if (window.parent && window.parent !== window) {
           window.parent.postMessage(
             { type: 'rd-report-submitted', reportId: res.report_id },
@@ -412,7 +409,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
           );
         }
         this.router.navigate(['/status'], {
-          queryParams: { id: res.report_id, token: res.status_token },
+          queryParams: { id: res.report_id, token: res.status_token, new: 1 },
         });
       },
       error: () => {

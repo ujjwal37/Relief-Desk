@@ -2,8 +2,7 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
-    path: '',
-    pathMatch: 'full',
+    path: 'welcome',
     loadComponent: () => import('./landing/landing.component').then(m => m.LandingComponent),
   },
   {

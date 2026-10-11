@@ -276,7 +276,12 @@
     "dispatch": "Dispatch status",
     "tips": "Madad milne tak",
     "loading": "Aapka request load ho raha hai…",
-    "error": "Yeh request load nahi hua. ID check karke phir koshish karein."
+    "error": "Yeh request load nahi hua. ID check karke phir koshish karein.",
+    "new": "Request bhej diya gaya",
+    "saved": "Is phone mein save hua taaki aap wapas aa sakein.",
+    "share": "Link share karein",
+    "copied": "Copy ho gaya",
+    "copyLink": "Link copy karein"
   },
   "nearby": {
     "title2": "Aas-paas ke alerts",
@@ -297,5 +302,29 @@
     "base": "Baseline",
     "failures": "Jahan yeh ab bhi galat hai",
     "retry": "Phir koshish karein"
+  },
+  "home": {
+    "title": "Hum kaise madad karein?",
+    "sub": "Emergency report karein, ya bheje gaye request ki status dekhein.",
+    "report": "Emergency report karein",
+    "my": "Mere requests",
+    "none": "Is phone par abhi koi request nahi. Report karne par yahan dikhega taaki aap track kar sakein.",
+    "view": "Dekhein",
+    "find": "Mera request dhundhein",
+    "findSub": "Naya phone hai? Apna request ID daalein.",
+    "nearby": "Aas-paas ke alerts dekhein",
+    "coordinator": "Coordinator sign in",
+    "updating": "Update ho raha hai…",
+    "cantRefresh": "Refresh nahi ho saka. Phir koshish ke liye Dekhein dabayein.",
+    "remove": "Is phone se hatayein"
+  },
+  "find": {
+    "title": "Mera request dhundhein",
+    "idLabel": "Request ID ya link",
+    "idHint": "Bheja gaya link paste karein, ya ID likhein (jaise R-0412).",
+    "tokenLabel": "Access code (link ya SMS se)",
+    "go": "Request dhundhein",
+    "paste": "Paste",
+    "invalid": "Request ID daalein ya link paste karein."
   }
 }
