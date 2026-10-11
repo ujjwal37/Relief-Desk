@@ -714,3 +714,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_match_eta.py tests/test_match_types.py` — 5 passed.
 - Notes / risks / not done: Cases with no team inside 40 km still show a long ETA. That is the travel time, not a shortened guess.
 - Next (suggested task id): RT-07
+
+### 2026-10-12 02:45 IST — RT-07 — Cursor
+- What changed: The Teams free tile counts every seeded team. A busy food team and a medical team with no seats still add to the total, and only available teams with seats count as free.
+- Files: coordinator-command.component.ts, coordinator-command.component.spec.ts, TASKS.md
+- How verified: `npx ng test web --watch=false --browsers=ChromeHeadless --include='**/coordinator-command.component.spec.ts'` — 15 passed.
+- Notes / risks / not done: The label stays "Teams free". The number is now all kinds, so a shelter that is free is included.
+- Next (suggested task id): RT-08

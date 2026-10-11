@@ -214,6 +214,16 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.counts().critical).toBe(1);
   });
 
+  it('counts every team in the free tile, including shelter and food', () => {
+    component.resources.set([
+      { ...mockResources[0], id: 'boat', kind: 'boat', status: 'available', capacity_remaining: 6 },
+      { ...mockResources[0], id: 'shelter', kind: 'shelter', status: 'available', capacity_remaining: 40 },
+      { ...mockResources[0], id: 'food', kind: 'food', status: 'busy', capacity_remaining: 10 },
+      { ...mockResources[0], id: 'med', kind: 'medical', status: 'available', capacity_remaining: 0 },
+    ]);
+    expect(component.teamsFree()).toEqual({ free: 2, total: 4 });
+  });
+
   it('keeps type, area and time filters and can clear them', () => {
     component.setFilterType('medical');
     component.setArea('ward_4');

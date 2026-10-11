@@ -168,9 +168,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }));
   readonly criticalCount = computed<number>(() => this.counts().critical);
   readonly teamsFree = computed(() => {
-    const teams = this.resources().filter((r) => r.kind === 'boat' || r.kind === 'medical');
-    const pool = teams.length ? teams : this.resources();
-    return { free: pool.filter((r) => r.status === 'available' && r.capacity_remaining > 0).length, total: pool.length };
+    const teams = this.resources();
+    return {
+      free: teams.filter((r) => r.status === 'available' && r.capacity_remaining > 0).length,
+      total: teams.length,
+    };
   });
   readonly quietCount = computed(() => this.ui.alerts().filter((a) => a.kind === 'silent_zone').length);
   readonly briefing = computed(() => {
