@@ -1,7 +1,7 @@
 {
   "safety": {
     "banner": "Prototype. Not an emergency service. In an emergency call 112.",
-    "call112": "Call 112",
+    "call112": "Call",
     "offlineNotice": "You are offline. Reports will sync automatically when reconnected.",
     "quiet": "In immediate danger, call 112. Prototype, not an emergency service."
   },

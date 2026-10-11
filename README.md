@@ -57,16 +57,23 @@ These numbers are from synthetic data and do not claim real-world accuracy. `<fi
 - Per-user rate limits and spend caps protect the public endpoint.
 
 ## Run locally
-```
+```bash
 cp .env.example .env     # add your own settings; never commit secrets
-# backend
-cd backend && pip install -e . && uvicorn app.main:app --reload
-# web
-cd web && npm install && npm run dev
-# seed synthetic data
+
+# API, from services/api
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# PWA, from the repo root. The workspace has more than one project, so name it:
+npx ng serve web --port 4200
+npx ng build web
+
+# synthetic coordinator account
 python scripts/seed.py
+
+# put the running API back to the synthetic Kerala demo (seeds load again)
+python scripts/reset_demo
 ```
-`<verify commands once code exists>`
+`ng build` without `web` fails because the Angular workspace has two projects. Use `npx ng build web`.
 
 ## Deploy
 See `deploy/cloudrun.md` (Cloud Run + Firebase Hosting/Auth + Firestore).

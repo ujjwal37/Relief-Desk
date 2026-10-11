@@ -790,6 +790,29 @@ class StorageService:
         logger.info("Loaded %d synthetic seed incidents into storage.", count)
         return count
 
+    def reset_demo(self) -> Dict[str, Any]:
+        """Clear in-memory cases and reload the synthetic Kerala pack. The audit log stays append-only."""
+        self._reports.clear()
+        self._requests.clear()
+        self._clusters.clear()
+        self._resources.clear()
+        self._matches.clear()
+        self._idempotent.clear()
+        resources = self.load_seed_resources()
+        incidents = self.load_seed_incidents()
+        packs = self.load_scenario_pack_seeds()
+        demo = None
+        if settings.DEMO_MODE:
+            from app.tools.demo_seed import load_demo_pack
+            demo = load_demo_pack(self)
+        self.record_audit(
+            actor="reset_demo",
+            action="demo_reset",
+            target="storage",
+            after={"resources": resources, "incidents": incidents, "scenario_packs": packs},
+        )
+        return {"resources": resources, "incidents": incidents, "scenario_packs": packs, "demo": demo}
+
     def load_scenario_pack_seeds(self) -> int:
         """Load data/synthetic/<scenario-id>/seeds.yaml for every pack. No per-scenario branch."""
         import os

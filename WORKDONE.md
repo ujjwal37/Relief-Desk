@@ -651,3 +651,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs` — 511 keys, template lint PASS. English alert reasons still contain "14 reports in 20 min" and "0 reports in 3 h" so the existing alerts spec keeps its wording.
 - Notes / risks / not done: A reason the app does not recognise stays in the stored English sentence. Stored translations are still en/hi/ta unless a hinglish field is present.
 - Next (suggested task id): FP-19
+
+### 2026-10-12 00:25 IST — FP-19 — Cursor
+- What changed: The Call button shows the translated words and the digits 112 beside them. The flood Hinglish prompt says "chhat" (roof). Global styles load the theme with Sass @use. `scripts/reset_demo` asks a running API to drop in-memory cases and load the synthetic Kerala pack again. README says to build with `npx ng build web`.
+- Files: call pill, i18n, flood.yaml, styles.scss, services/api demo reset route and storage.reset_demo, scripts/reset_demo, tests/test_reset_demo.py, README.md, TASKS.md
+- How verified: `pytest tests/test_reset_demo.py` — 2 passed. `node scripts/check-i18n.mjs` — 511 keys, template lint PASS.
+- Notes / risks / not done: Reset is demo mode only and needs the API process to be running. The audit log is not wiped.
+- Next (suggested task id): ng build web and Angular unit tests

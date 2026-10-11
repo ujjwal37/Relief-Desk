@@ -1,7 +1,7 @@
 {
   "safety": {
     "banner": "Prototype. Emergency service nahi hai. Emergency me turant 112 par call karein.",
-    "call112": "112 Call Karein",
+    "call112": "Call karein",
     "offlineNotice": "Aap offline hain. Reconnect hone par report automatically sync ho jayegi.",
     "quiet": "Turant khatre mein ho to 112 par call karein. Yeh prototype hai, emergency service nahi."
   },

@@ -121,7 +121,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | FP-16 | Accuracy report naming | C | DONE | – | Plain metric names vs first-come-first-served |
 | FP-17 | Mobile coordinator layout | C | DONE | FP-08 | No horizontal overflow at 390; case detail sheet |
 | FP-18 | i18n of case content | C | DONE | FP-13 | Translations field shown for the selected language |
-| FP-19 | Small fixes: 112 text, chhat, sass @use, reset demo | C | TODO | – | Documented build and reset |
+| FP-19 | Small fixes: 112 text, chhat, sass @use, reset demo | C | DONE | – | Documented build and reset |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

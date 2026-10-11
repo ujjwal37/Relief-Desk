@@ -47,7 +47,7 @@ follow_up_questions:
   hazard:
     en: Is the water level rising, and are you stranded on a roof or upper floor?
     hi: क्या पानी का स्तर बढ़ रहा है, और क्या आप छत या ऊपरी मंजिल पर फंसे हैं?
-    hinglish: Kya paani ka level badh raha hai aur aap chat ya upari floor par hain?
+    hinglish: Kya paani ka level badh raha hai aur aap chhat ya upari floor par hain?
     ta: நீர் மட்டம் உயர்கிறதா, நீங்கள் மேல் தளத்தில் சிக்கியுள்ளீர்களா?
 urgency_rules:
   base_weight: 10
