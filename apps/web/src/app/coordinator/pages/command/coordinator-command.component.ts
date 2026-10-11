@@ -69,6 +69,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly filterType = signal<string>('all');
   readonly searchQuery = this.ui.searchQuery;
   readonly bandFilter = signal<'all' | 'now' | 'soon' | 'review'>('all');
+  readonly freshIds = signal<Set<string>>(new Set());
+  private queueWatermark = '';
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
   readonly briefingOpen = signal(true);
   readonly openSection = signal<'why' | 'reports' | null>(null);
   readonly showOriginal = signal(false);
@@ -210,11 +213,39 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.loadRequests();
     this.loadResources();
     this.loadWeights();
+    this.startQueuePoll();
     window.addEventListener('message', this.handleDemoMessage);
+    document.addEventListener('visibilitychange', this.onQueueVisibility);
   }
 
   ngOnDestroy(): void {
+    this.stopQueuePoll();
     window.removeEventListener('message', this.handleDemoMessage);
+    document.removeEventListener('visibilitychange', this.onQueueVisibility);
+  }
+
+  private onQueueVisibility = (): void => {
+    if (document.hidden) {
+      this.stopQueuePoll();
+      return;
+    }
+    this.loadRequests(true);
+    this.startQueuePoll();
+  };
+
+  private startQueuePoll(): void {
+    this.stopQueuePoll();
+    this.pollTimer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      this.loadRequests(true);
+    }, 4000);
+  }
+
+  private stopQueuePoll(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
   }
 
   handleDemoMessage = (event: MessageEvent): void => {
@@ -226,23 +257,45 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }
   };
 
-  loadRequests(): void {
-    this.apiClient.getRequests('urgency', this.activeScenario()).subscribe({
-      next: (reqs) => {
-        this.requests.set(reqs);
-        this.ui.lastRefresh.set(Date.now());
-        if (!this.initialSelectDone && reqs.length > 0) {
-          this.initialSelectDone = true;
-          this.selectedRequestId.set(reqs[0].id);
-        }
-        if (reqs.length > 0 && !this.selectedRequestId()) {
-          this.selectRequest(reqs[0].id);
-        } else if (this.selectedRequestId()) {
-          this.loadMatches(this.selectedRequestId());
-        }
-      },
+  loadRequests(incremental = false): void {
+    const since = incremental ? this.queueWatermark : undefined;
+    this.apiClient.getRequests('urgency', this.activeScenario(), since || undefined).subscribe({
+      next: (reqs) => this.applyQueue(reqs, incremental),
       error: (err) => console.error('Failed to load requests:', err),
     });
+  }
+
+  /** Merge a poll into the open queue. Keeps the selected case and flags brand-new rows. */
+  applyQueue(incoming: StoredRequest[], incremental: boolean): void {
+    const previous = new Set(this.requests().map((row) => row.id));
+    let next = incoming;
+    const fresh = new Set(this.freshIds());
+    if (incremental && previous.size) {
+      const byId = new Map(this.requests().map((row) => [row.id, row]));
+      for (const row of incoming) {
+        if (!byId.has(row.id)) fresh.add(row.id);
+        byId.set(row.id, row);
+      }
+      next = [...byId.values()].sort((a, b) => (b.urgency_score || 0) - (a.urgency_score || 0));
+    }
+    for (const row of next) {
+      if (row.updated_at && row.updated_at > this.queueWatermark) this.queueWatermark = row.updated_at;
+    }
+    const keep = this.selectedRequestId();
+    this.requests.set(next);
+    this.freshIds.set(fresh);
+    this.ui.lastRefresh.set(Date.now());
+    if (!this.initialSelectDone && next.length > 0) {
+      this.initialSelectDone = true;
+      this.selectedRequestId.set(next[0].id);
+      this.loadMatches(next[0].id);
+      return;
+    }
+    if (keep && next.some((row) => row.id === keep)) {
+      if (!incremental) this.loadMatches(keep);
+      return;
+    }
+    if (next.length > 0 && !keep) this.selectRequest(next[0].id);
   }
 
   loadMatches(requestId: string): void {

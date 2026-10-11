@@ -103,7 +103,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | ID | Task | Owner | Status | Depends | Acceptance criteria |
 |---|---|---|---|---|---|
 | FP-01 | Offline report queue stores, retries, and dedupes | C | DONE | T-028 | Phone queue survives offline send; retry uses one idempotency key; server returns the same request |
-| FP-02 | Live coordinator queue | C | TODO | FP-01 | New public report appears within 5 s without reload |
+| FP-02 | Live coordinator queue | C | DONE | FP-01 | New public report appears within 5 s without reload |
 | FP-03 | Hinglish/Hindi intake place, ward, vulnerable, raw text | C | TODO | FP-01 | Pytest for the three TEST_REPORT examples |
 | FP-04 | Triage bands: critical cases are Needs help now | C | TODO | – | At least 3 seeds in Needs help now; chip and banner counts match |
 | FP-05 | Rescue matches boat/rescue, not shelter, unless labelled fallback | C | TODO | – | Pytest; benchmark not worse |

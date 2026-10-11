@@ -525,3 +525,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `python -m pytest services/api/tests` 99 passed. `node scripts/check-i18n.mjs` 343 keys. `ng test web --include=**/offline-sync.service.spec.ts` 4 passed.
 - Notes / risks / not done: Playwright click-through of the offline path is in the final e2e pass. A parallel duplicate that starts before the first save finishes waits, then replays.
 - Next (suggested task id): FP-02
+
+### 2026-10-11 21:00 IST — FP-02 — Cursor
+- What changed: The coordinator queue polls `/api/requests` every 4 seconds with `updated_since`, pauses while the tab is hidden, keeps the selected case, and badges new rows "New · just now". Counts and the map follow the same list.
+- Files: services/api/app/api/clusters.py, services/api/tests/test_live_queue.py, libs/shared/src/lib/services/api-client.service.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.html, apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss, apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts, libs/shared/src/lib/i18n/*.json, TASKS.md
+- How verified: `pytest tests/test_live_queue.py` passed. Command component spec 11 passed. `node scripts/check-i18n.mjs` 344 keys.
+- Notes / risks / not done: Playwright assertion that a POST shows up within 5 s is in the final e2e pass.
+- Next (suggested task id): FP-03

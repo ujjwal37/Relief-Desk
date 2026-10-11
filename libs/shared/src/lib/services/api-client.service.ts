@@ -105,9 +105,10 @@ export class ApiClientService {
     return this.http.get<{ enabled: boolean; apiKey: string | null }>('/api/config/maps');
   }
 
-  getRequests(sort = 'urgency', packId?: string): Observable<StoredRequest[]> {
+  getRequests(sort = 'urgency', packId?: string, updatedSince?: string): Observable<StoredRequest[]> {
     const pack = packId ? `&pack_id=${encodeURIComponent(packId)}` : '';
-    return this.http.get<StoredRequest[]>(`/api/requests?sort=${sort}${pack}`, this.getAuthHeaders());
+    const since = updatedSince ? `&updated_since=${encodeURIComponent(updatedSince)}` : '';
+    return this.http.get<StoredRequest[]>(`/api/requests?sort=${sort}${pack}${since}`, this.getAuthHeaders());
   }
 
   getRequest(id: string): Observable<StoredRequest> {

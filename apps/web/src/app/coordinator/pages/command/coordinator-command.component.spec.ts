@@ -244,6 +244,21 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.getTranslationText(multiLangReq)).toBe('வீட்டிற்குள் தண்ணீர் புகுந்தது.');
   });
 
+  it('merges a new report into the open queue and keeps the selected case', () => {
+    expect(component.selectedRequestId()).toBe('INC-001');
+    const live = {
+      ...mockRequests[0],
+      id: 'INC-LIVE',
+      urgency_score: 96,
+      place_text: 'Just reported',
+      updated_at: '2026-10-11T15:00:00+00:00',
+    };
+    component.applyQueue([live], true);
+    expect(component.requests().some((row) => row.id === 'INC-LIVE')).toBeTrue();
+    expect(component.freshIds().has('INC-LIVE')).toBeTrue();
+    expect(component.selectedRequestId()).toBe('INC-001');
+  });
+
   it('reloads the queue when the demo phone submits a report', () => {
     apiClientSpy.getRequests.calls.reset();
     component.handleDemoMessage({

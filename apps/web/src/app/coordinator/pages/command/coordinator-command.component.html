@@ -41,6 +41,7 @@
               <span class="tag">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
               @if (isReview(req)) { <span class="tag warn">{{ 'coord.review' | rdTranslate }}</span> }
               @if (req.status === 'approved') { <span class="tag ok">✓</span> }
+              @if (freshIds().has(req.id)) { <span class="tag new">{{ 'coord.newJustNow' | rdTranslate }}</span> }
             </span>
           </button>
         } @empty {

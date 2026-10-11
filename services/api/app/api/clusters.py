@@ -120,6 +120,7 @@ def get_cluster_evidence(
 def list_requests(
     sort: str = "urgency",
     pack_id: Optional[str] = None,
+    updated_since: Optional[str] = None,
     coordinator: CoordinatorUser = Depends(get_current_coordinator),
 ):
     reqs = storage_service.list_requests()
@@ -128,6 +129,10 @@ def list_requests(
     elif not reqs:
         storage_service.load_seed_incidents()
         reqs = storage_service.list_requests()
+
+    if updated_since:
+        # Inclusive bound so a row saved on the watermark is not skipped.
+        reqs = [req for req in reqs if (req.updated_at or "") >= updated_since]
 
     if sort == "urgency":
         reqs = sorted(reqs, key=lambda r: r.urgency_score, reverse=True)

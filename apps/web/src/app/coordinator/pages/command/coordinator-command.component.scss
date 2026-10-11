@@ -21,6 +21,7 @@ button { font-family:var(--rd-font-family); }
 .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
 .tag { font-size:13px; font-weight:600; color:var(--text-2); background:var(--surface-2); border-radius:6px; padding:1px 7px; }
 .tag.warn { background:var(--sev-high-t); color:var(--sev-high); } .tag.ok { background:var(--brand-tint); color:var(--brand); }
+.tag.new { background:var(--brand-tint); color:var(--brand); }
 .empty { color:var(--text-2); text-align:center; padding:24px 12px; margin:0; } .pad { padding:24px; }
 
 .centre { min-width:0; min-height:0; display:flex; flex-direction:column; gap:12px; }
