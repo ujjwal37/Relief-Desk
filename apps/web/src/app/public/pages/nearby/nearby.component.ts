@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { ApiClientService, PublicCell, PublicAlert } from '@rd/shared';
+import { ApiClientService, PublicCell, PublicAlert, RdTranslatePipe } from '@rd/shared';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 
 @Component({
   selector: 'app-nearby',
   standalone: true,
-  imports: [CommonModule, RouterModule, MapProviderComponent],
+  imports: [CommonModule, RouterModule, MapProviderComponent, RdTranslatePipe],
   templateUrl: './nearby.component.html',
   styleUrls: ['./nearby.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
