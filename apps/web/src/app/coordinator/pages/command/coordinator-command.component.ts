@@ -81,6 +81,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private queueWatermark = '';
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   readonly briefingOpen = signal(true);
+  readonly narrow = signal(false);
+  readonly mobilePane = signal<'cases' | 'map'>('cases');
+  readonly sheetOpen = signal(false);
+  private media: MediaQueryList | null = null;
   readonly openSection = signal<'why' | 'reports' | null>(null);
   readonly showOriginal = signal(false);
   readonly changeOpen = signal(false);
@@ -298,6 +302,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.loadWeights();
     this.startQueuePoll();
     this.readFilters();
+    this.watchViewport();
     window.addEventListener('message', this.handleDemoMessage);
     document.addEventListener('visibilitychange', this.onQueueVisibility);
   }
@@ -305,8 +310,29 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.filterSub?.unsubscribe();
     this.stopQueuePoll();
+    this.media?.removeEventListener('change', this.onMedia);
     window.removeEventListener('message', this.handleDemoMessage);
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
+  }
+
+  private watchViewport(): void {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    this.media = window.matchMedia('(max-width: 900px)');
+    this.narrow.set(this.media.matches);
+    this.media.addEventListener('change', this.onMedia);
+  }
+
+  private onMedia = (event: MediaQueryListEvent): void => {
+    this.narrow.set(event.matches);
+    if (!event.matches) this.sheetOpen.set(false);
+  };
+
+  setPane(pane: 'cases' | 'map'): void {
+    this.mobilePane.set(pane);
+  }
+
+  closeSheet(): void {
+    this.sheetOpen.set(false);
   }
 
   private onQueueVisibility = (): void => {
@@ -410,12 +436,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   }
 
-  selectRequest(id: string): void {
+  selectRequest(id: string, openSheet = false): void {
     this.selectedRequestId.set(id);
     this.matchIdx.set(0);
     this.openSection.set(this.ui.demoWhy ? 'why' : null);
     this.showOriginal.set(false);
     this.loadMatches(id);
+    if (openSheet && this.narrow()) this.sheetOpen.set(true);
   }
 
   setFilterType(type: string): void {

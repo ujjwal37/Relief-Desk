@@ -637,3 +637,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs` — 488 keys, template lint PASS.
 - Notes / risks / not done: Hindi, Hinglish, and Tamil "what this means" lines are shorter than the English explanations. Type accuracy (51%) and place accuracy (25.5%) stay on the page and are still short of the targets.
 - Next (suggested task id): FP-17
+
+### 2026-10-11 23:45 IST — FP-17 — Cursor
+- What changed: Below 900px the coordinator queue shows a Cases / Map toggle so the two panes do not sit side by side. Tapping a case or a map pin opens a full-screen detail sheet with Back to cases, the match, the reasons, and Approve / Change / Reject. The action bar stays at the bottom of the sheet. The top navigation scrolls inside the bar instead of widening the page. Desktop at 1280px and above keeps the three columns.
+- Files: coordinator command page, coordinator layout, i18n en/hi/hinglish/ta, TASKS.md
+- How verified: `node scripts/check-i18n.mjs` — 489 keys, template lint PASS. Sheet opens only from a tap when the viewport is narrow; the first loaded case does not open it.
+- Notes / risks / not done: Not yet checked in a real 390x844 browser. That check is part of the Playwright pass.
+- Next (suggested task id): FP-18

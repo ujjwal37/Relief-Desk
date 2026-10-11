@@ -355,7 +355,8 @@
     "dismissTour": "Skip tour",
     "reportDetails": "Report details",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
-    "estimatedWait": "Estimated wait {n} min until {team} finishes"
+    "estimatedWait": "Estimated wait {n} min until {team} finishes",
+    "backToList": "Back to cases"
   },
   "tour": {
     "next": "Next",

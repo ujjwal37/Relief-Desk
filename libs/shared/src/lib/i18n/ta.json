@@ -355,7 +355,8 @@
     "dismissTour": "தவிர்",
     "reportDetails": "அறிக்கை விவரங்கள்",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
-    "estimatedWait": "அருகிலுள்ள அணி முடிய {n} நிமிடம் காத்திருப்பு ({team})"
+    "estimatedWait": "அருகிலுள்ள அணி முடிய {n} நிமிடம் காத்திருப்பு ({team})",
+    "backToList": "வழக்குகளுக்குத் திரும்பு"
   },
   "tour": {
     "next": "அடுத்து",

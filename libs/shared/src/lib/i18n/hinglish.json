@@ -355,7 +355,8 @@
     "dismissTour": "Tour chhodein",
     "reportDetails": "Report details",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
-    "estimatedWait": "Andaza {n} min, jab tak {team} free na ho"
+    "estimatedWait": "Andaza {n} min, jab tak {team} free na ho",
+    "backToList": "Cases par wapas"
   },
   "tour": {
     "next": "Aage",

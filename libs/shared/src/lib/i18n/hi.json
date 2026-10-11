@@ -355,7 +355,8 @@
     "dismissTour": "टूर छोड़ें",
     "reportDetails": "रिपोर्ट विवरण",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
-    "estimatedWait": "अनुमानित प्रतीक्षा {n} मिनट, जब तक {team} खाली न हो"
+    "estimatedWait": "अनुमानित प्रतीक्षा {n} मिनट, जब तक {team} खाली न हो",
+    "backToList": "मामलों पर वापस"
   },
   "tour": {
     "next": "आगे",

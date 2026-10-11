@@ -14,7 +14,14 @@
     </div>
   }
 
-  <div class="grid" [class.has-brief]="briefingOpen()">
+  @if (narrow()) {
+    <div class="pane-toggle" role="tablist" [attr.aria-label]="'ui.main' | rdTranslate">
+      <button type="button" role="tab" [class.on]="mobilePane() === 'cases'" [attr.aria-selected]="mobilePane() === 'cases'" (click)="setPane('cases')">{{ 'ui.cases' | rdTranslate }}</button>
+      <button type="button" role="tab" [class.on]="mobilePane() === 'map'" [attr.aria-selected]="mobilePane() === 'map'" (click)="setPane('map')">{{ 'ui.map' | rdTranslate }}</button>
+    </div>
+  }
+
+  <div class="grid" [class.has-brief]="briefingOpen()" [class.pane-cases]="narrow() && mobilePane() === 'cases'" [class.pane-map]="narrow() && mobilePane() === 'map'">
     <!-- CASES -->
     <section class="cases" data-tour="cases" aria-labelledby="cases-h">
       <div class="cases-head">
@@ -55,7 +62,7 @@
       </div>
       <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {
-          <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id)">
+          <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
             <span class="row1">
               <app-sev-chip [band]="bandOf(req.urgency_score)" />
               <span class="prio">{{ 'coord.priority' | rdTranslate }} <b>{{ Math.round(req.urgency_score) }}</b></span>
@@ -88,7 +95,7 @@
       </div>
 
       <div class="map-card">
-        <rd-map-provider [pins]="mapPins()" (pinSelect)="selectRequest($event)">
+        <rd-map-provider [pins]="mapPins()" (pinSelect)="selectRequest($event, true)">
           <svg viewBox="0 0 600 480" class="svgmap" preserveAspectRatio="xMidYMid slice" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
             <rect width="600" height="480" fill="var(--map-bg)"/>
             <path d="M-20 400 C 110 300 200 460 320 360 S 500 180 640 220" fill="none" stroke="var(--map-water)" stroke-width="46" stroke-linecap="round"/>
@@ -106,7 +113,7 @@
             }
             @for (p of svgPins(); track p.id) {
               @if (p.kind === 'req') {
-                <g class="pin" (click)="selectRequest(p.id)" tabindex="0" (keydown.enter)="selectRequest(p.id)" role="button" [attr.aria-label]="'Case ' + p.n">
+                <g class="pin" (click)="selectRequest(p.id, true)" tabindex="0" (keydown.enter)="selectRequest(p.id, true)" role="button" [attr.aria-label]="'Case ' + p.n">
                   <circle [attr.cx]="p.x" [attr.cy]="p.y" r="14" [attr.fill]="'var(--sev-' + (p.band === 'critical' ? 'crit' : p.band === 'high' ? 'high' : p.band === 'medium' ? 'med' : 'low') + ')'" stroke="#fff" stroke-width="2.5"/>
                   <text [attr.x]="p.x" [attr.y]="p.y" dy=".35em" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">{{ p.n }}</text>
                 </g>
@@ -128,9 +135,12 @@
     </section>
 
     <!-- DETAIL -->
-    <aside class="detail" [attr.aria-label]="'ui.selCase' | rdTranslate">
+    <aside class="detail" [class.sheet]="narrow() && sheetOpen()" [attr.aria-label]="'ui.selCase' | rdTranslate">
       @if (selectedRequest(); as req) {
         <div class="detail-scroll">
+          @if (narrow() && sheetOpen()) {
+            <button type="button" class="sheet-back" (click)="closeSheet()">{{ 'coord.backToList' | rdTranslate }}</button>
+          }
           <div class="d-head">
             <app-sev-chip [band]="bandOf(req.urgency_score)" />
             <span class="id" [attr.title]="fullStamp(req.updated_at) || fullStamp(req.created_at)">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
