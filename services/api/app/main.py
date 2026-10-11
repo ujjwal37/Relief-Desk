@@ -9,6 +9,7 @@ from app.api.config_router import router as config_router
 from app.api.clusters import router as clusters_router
 from app.api.reports import router as reports_router
 from app.api.auth import router as auth_router
+from app.api.matches import router as matches_router
 
 logging.basicConfig(
     level=settings.LOG_LEVEL,
@@ -46,6 +47,7 @@ app.include_router(config_router)
 app.include_router(clusters_router)
 app.include_router(reports_router)
 app.include_router(auth_router)
+app.include_router(matches_router)
 
 @app.get("/")
 def root():

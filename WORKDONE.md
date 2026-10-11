@@ -220,3 +220,12 @@
 - Notes / risks / not done: Matching and capacity transaction primitives verified. Ready for Matching agent orchestration (T-021).
 - Next (suggested task id): T-021
 
+### 2026-10-11 15:54 IST — T-021 — Antigravity
+- What changed: Implemented MatchingAgent in services/api/app/agents/matching.py (orchestration only, deterministic matching engine); mounted coordinator-authenticated endpoints in services/api/app/api/matches.py (GET /api/requests/{id}/matches with distance/capacity/urgency/vulnerability breakdown, POST /api/matches/{id}/approve executing capacity transactions, POST /api/matches/{id}/reject recording reasons, and GET /api/resources listing seeded capacity bars); mounted router in app/main.py.
+- Files: services/api/app/agents/matching.py, services/api/app/api/matches.py, services/api/app/main.py, services/api/tests/test_matches_api.py, TASKS.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_matches_api.py` -> 4 passed in 0.91s (verified 401 without coordinator auth, verified GET /api/requests/{id}/matches returns >= 2 proposals with parts strictly summing to total score, verified approve decrements capacity, and verified reject records reason).
+  - `python -m pytest services/api/tests` -> 64 passed in 2.39s.
+- Notes / risks / not done: Matching agent operational. Ready for Explainer agent (T-022).
+- Next (suggested task id): T-022
+
