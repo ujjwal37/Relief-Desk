@@ -84,6 +84,7 @@ class StorageService:
         event_id: str = "event_riverbend_flood",
         pack_id: str = "flood",
         flags: Optional[List[str]] = None,
+        status_token: Optional[str] = None,
     ) -> StoredReport:
         """Stores incoming report raw immediately so nothing is ever lost."""
         report_id = f"rep_{uuid.uuid4().hex[:10]}"
@@ -97,6 +98,7 @@ class StorageService:
             source_id=source_id,
             trust_level=trust_level,
             flags=flags or [],
+            status_token=status_token,
         )
         self._reports[report_id] = report
         self.record_audit(
@@ -109,6 +111,12 @@ class StorageService:
 
     def get_report(self, report_id: str) -> Optional[StoredReport]:
         return self._reports.get(report_id)
+
+    def get_report_by_status_token(self, token: str) -> Optional[StoredReport]:
+        for rep in self._reports.values():
+            if rep.status_token == token:
+                return rep
+        return None
 
     def list_reports(self) -> List[StoredReport]:
         return list(self._reports.values())

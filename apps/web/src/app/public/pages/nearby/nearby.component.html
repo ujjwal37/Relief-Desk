@@ -1,0 +1,223 @@
+<div class="app-container">
+  <!-- Top Bar -->
+  <div class="nearby-top-bar">
+    <div class="top-row">
+      <h1 class="page-title">Nearby / आस-पास</h1>
+      <span class="chip-filter">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/>
+          <circle cx="12" cy="10" r="2.5"/>
+        </svg>
+        Within 3 km
+      </span>
+      <span class="chip-badge chip-amber">Synthetic demo data</span>
+    </div>
+  </div>
+
+  <!-- Scrollable Screen Content -->
+  <div class="screen-scroll">
+    <!-- Map Card -->
+    <div class="map-card">
+      <svg class="tactical-svg" viewBox="0 0 358 250" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="waterGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1e4fbf" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#0ea5b7" stop-opacity="0.35"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Base Background -->
+        <rect width="358" height="250" fill="#0c1426"/>
+
+        <!-- Street Network Grids -->
+        <g stroke="#1a2542" stroke-width="9" fill="none" stroke-linecap="round">
+          <path d="M0 50.0 L358 87.5M0 175.0 L358 137.5M89.5 0 L143.2 250M250.6 0 L214.8 250"/>
+        </g>
+        <g stroke="#162038" stroke-width="3" fill="none">
+          <path d="M0 112.5 L358 225.0M35.8 0 L17.9 250M322.2 0 L340.1 250M0 12.5 L358 30.0"/>
+        </g>
+
+        <!-- Riverbend River Channel Flow -->
+        <path
+          d="M17.9 125.0 C89.5 50.0 179.0 200.0 250.6 112.5 S340.1 62.5 358 50.0 L358 125.0 C304.3 175.0 214.8 262.5 143.2 237.5 S35.8 225.0 17.9 125.0z"
+          fill="url(#waterGrad)"
+          stroke="#60a5fa"
+          stroke-width="1.5"
+          stroke-dasharray="6 4"
+          opacity="0.9"
+        />
+
+        <!-- Park / Safe Ground Zones -->
+        <rect x="35.8" y="25.0" width="43" height="45" rx="6" fill="#12301f" opacity="0.7"/>
+        <rect x="286.4" y="170.0" width="50" height="50" rx="6" fill="#12301f" opacity="0.7"/>
+
+        <!-- Area Cells Heat Zones (Coarse Aggregations) -->
+        <!-- Ward 7: Critical Flood Heat Circle -->
+        <g class="cell-group" (click)="cells().length > 0 && selectCell(cells()[0])">
+          <circle cx="107.4" cy="85.0" r="44" fill="rgba(255,77,106,.22)" stroke="rgba(255,77,106,.8)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <circle cx="107.4" cy="85.0" r="5" fill="#ff4d6a"/>
+        </g>
+
+        <!-- Ward 4: High Waterlogging Heat Circle -->
+        <g class="cell-group" (click)="cells().length > 1 && selectCell(cells()[1])">
+          <circle cx="229.1" cy="145.0" r="36" fill="rgba(251,191,36,.22)" stroke="rgba(251,191,36,.8)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <circle cx="229.1" cy="145.0" r="5" fill="#fbbf24"/>
+        </g>
+
+        <!-- Ward 9: Dog Attack / Warning Zone -->
+        <g class="cell-group" (click)="cells().length > 2 && selectCell(cells()[2])">
+          <circle cx="70.0" cy="190.0" r="32" fill="rgba(251,191,36,.22)" stroke="rgba(251,191,36,.8)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <circle cx="70.0" cy="190.0" r="5" fill="#fbbf24"/>
+        </g>
+
+        <!-- Ward 2: Medium Support Heat Circle -->
+        <g class="cell-group" (click)="cells().length > 3 && selectCell(cells()[3])">
+          <circle cx="279.2" cy="65.0" r="31" fill="rgba(96,165,250,.22)" stroke="rgba(96,165,250,.8)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <circle cx="279.2" cy="65.0" r="5" fill="#60a5fa"/>
+        </g>
+
+        <!-- User Pin (Approximate Location Centroid) -->
+        <g transform="translate(179.0, 125.0)">
+          <circle r="14" fill="rgba(45,212,191,.25)"/>
+          <circle r="6" fill="#2dd4bf" stroke="#fff" stroke-width="2.5"/>
+        </g>
+      </svg>
+
+      <!-- Overlay Badges -->
+      <span class="map-overlay-chip privacy-chip">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/>
+          <circle cx="12" cy="10" r="2.5"/>
+        </svg>
+        Area-level only. No exact addresses
+      </span>
+
+      <div class="map-overlay-legend">
+        <span class="legend-pill"><i class="dot dot-red"></i>Flood</span>
+        <span class="legend-pill"><i class="dot dot-amb"></i>Animal</span>
+        <span class="legend-pill"><i class="dot dot-blue"></i>Needs help</span>
+      </div>
+
+      <div class="map-provider-tag">Google Maps (styled)</div>
+    </div>
+
+    <!-- Selected Cell Summary Strip -->
+    <div class="cell-detail-card" *ngIf="selectedCell() as c">
+      <div class="cell-header">
+        <div class="cell-title">
+          <b>📍 {{ c.ward }}</b>
+          <span class="severity-tag" [class]="'tag-' + c.severity_band">{{ c.severity_band }}</span>
+        </div>
+        <div class="cell-time">{{ c.time_bucket }}</div>
+      </div>
+      <div class="cell-counts">
+        <span class="count-badge" *ngFor="let item of c.incident_counts | keyvalue">
+          {{ item.key }}: {{ item.value }}
+        </span>
+        <span class="total-badge">{{ c.total_reports }} active reports</span>
+      </div>
+      <div class="cell-hazard" *ngIf="c.active_hazard">
+        ⚠️ {{ c.active_hazard }}
+      </div>
+    </div>
+
+    <!-- "Be Aware" Alerts Section -->
+    <div class="section-title">Be Aware / सतर्क रहें</div>
+
+    <!-- Alert Cards -->
+    <div class="alert-card alert-warning">
+      <div class="alert-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 9l3-5 3 3h4l3-3 3 5-2 3v6a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-6zM9 12h.01M15 12h.01M10 16h4"/>
+        </svg>
+      </div>
+      <div class="alert-content">
+        <div class="alert-row">
+          <b class="alert-title">Dog attack alert · Ward 9, Mill Colony</b>
+          <span class="alert-time">25 min ago</span>
+        </div>
+        <div class="alert-desc">
+          3 reports in 2 h. Avoid walking alone near the colony lanes after dark.
+        </div>
+      </div>
+    </div>
+
+    <div class="alert-card alert-critical">
+      <div class="alert-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 8c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0M2 14c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0"/>
+        </svg>
+      </div>
+      <div class="alert-content">
+        <div class="alert-row">
+          <b class="alert-title">Flooded lanes · Ward 7 and Ward 4</b>
+          <span class="alert-time">1 h ago</span>
+        </div>
+        <div class="alert-desc">
+          Canal Road closed. Use Temple Road to reach the shelter.
+        </div>
+      </div>
+    </div>
+
+    <!-- Community Mutual Aid Action Card -->
+    <div class="offer-help-card">
+      <div class="offer-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11z"/>
+        </svg>
+      </div>
+      <div class="offer-text">
+        <b class="offer-title">12 households near you need food</b>
+        <div class="offer-sub">You can help. Coordinators confirm first</div>
+      </div>
+      <button class="offer-btn" (click)="navigateTo('/report')">Offer help</button>
+    </div>
+
+    <!-- Call 112 Action -->
+    <a href="tel:112" class="emergency-call-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>
+      </svg>
+      Call 112 Emergency now
+    </a>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <button class="nav-item" (click)="navigateTo('/')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11l9-8 9 8M5 10v10h14V10"/>
+      </svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-item active" (click)="navigateTo('/nearby')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/>
+        <circle cx="12" cy="10" r="2.5"/>
+      </svg>
+      <span>Nearby</span>
+    </button>
+    <div class="nav-fab-wrap">
+      <button class="nav-fab" (click)="navigateTo('/report')" aria-label="Report">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+      </button>
+      <span class="fab-label">Report</span>
+    </div>
+    <button class="nav-item" (click)="navigateTo('/report')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/>
+      </svg>
+      <span>Help</span>
+    </button>
+    <button class="nav-item" (click)="navigateTo('/status')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 6h16M4 12h10M4 18h6"/>
+        <circle cx="18" cy="16" r="3"/>
+      </svg>
+      <span>Status</span>
+    </button>
+  </nav>
+</div>

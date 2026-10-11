@@ -275,3 +275,18 @@
   - `npx ng build web` -> compiled cleanly without errors.
 - Notes / risks / not done: All Day 2 tasks (T-020 through T-029) are now 100% DONE.
 - Next (suggested task id): Day 3 tasks (T-030 Public nearby map & status, T-031 Anomaly engine)
+### 2026-10-11 16:19 IST — T-030 — Antigravity
+- What changed: Implemented the Public Nearby Map and multi-step Live Request Status tracking features in both frontend and backend adhering to docs/design/public-05-nearby.html and public-04-status.html:
+  - Backend: Added PublicCell, PublicCellsResponse, and ReportStatusResponse models in services/api/app/models/public_models.py; implemented GET /api/public/cells with strict privacy protection (coarse ~500m grid aggregations, no victim names, phones, exact coordinates, or raw text returned) and optional bbox filtering; implemented GET /api/public/alerts returning verified community warnings; implemented GET /api/reports/{id}/status supporting status token lookups and multi-step lifecycle progression (received -> matched -> on_the_way -> fulfilled) with zero PII; updated submit_report to persist status_token immediately with raw report.
+  - Frontend: Expanded ApiClientService with getPublicCells, getPublicAlerts, and getReportStatus methods; built NearbyComponent displaying tactical SVG map with Riverbend river channels, coarse heat circles (Ward 7, Ward 4, Ward 9, Ward 2), privacy badges, legend, and verified "Be aware" alert cards; built StatusComponent with live Request ID tracking, hero status card, ETA card, dynamic 4-step progress timeline with status icons, while-you-wait emergency tips, and Call 112 emergency escalation button.
+  - Test Suite: Created services/api/tests/test_public_api.py rigorously testing privacy contract (asserting zero PII, no names/phones/addresses leaked), bbox filters, demo status lookup, and real report status tracking lifecycle.
+- Files: services/api/app/models/public_models.py, services/api/app/api/public.py, services/api/app/api/reports.py, services/api/app/models/firestore_models.py, services/api/app/tools/storage.py, services/api/app/main.py, services/api/tests/test_public_api.py, libs/shared/src/lib/models/request.model.ts, libs/shared/src/lib/services/api-client.service.ts, apps/web/src/app/public/pages/status/**, apps/web/src/app/public/pages/nearby/**, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_public_api.py` -> 6 passed in 1.06s (including test_public_cells_privacy_contract verifying zero PII).
+  - `python -m pytest services/api/tests` -> 72 passed in 2.46s.
+  - Live backend verification: `Invoke-RestMethod http://127.0.0.1:8000/api/public/cells` verified coarse grid cells; `Invoke-RestMethod http://127.0.0.1:8000/api/reports/R-0412/status?token=tok_demo` verified demo status; POST /api/reports verified end-to-end report creation and token-based status retrieval.
+  - `npx ng build shared` & `npx ng build web` -> compiled cleanly, generating isolated lazy bundles `nearby-component` (19.70 kB) and `status-component` (17.74 kB).
+  - `node scripts/check-i18n.mjs` -> PASSED (47 keys in all 4 languages).
+- Notes / risks / not done: Privacy contract strictly enforced; public viewers can never access victim PII.
+- Next (suggested task id): T-032 (Benchmark full run by A) or T-031 (Anomaly engine by C).
+

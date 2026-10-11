@@ -11,6 +11,10 @@ import {
   StoredRequest,
   StoredResource,
   MatchProposal,
+  PublicCell,
+  PublicCellsResponse,
+  PublicAlert,
+  ReportStatusResponse,
 } from '../models/request.model';
 import { AuthService } from './auth.service';
 
@@ -127,5 +131,21 @@ export class ApiClientService {
   getResources(kind?: string): Observable<StoredResource[]> {
     const url = kind ? `/api/resources?kind=${kind}` : '/api/resources';
     return this.http.get<StoredResource[]>(url, this.getAuthHeaders());
+  }
+
+  getPublicCells(bbox?: string): Observable<PublicCellsResponse> {
+    const url = bbox ? `/api/public/cells?bbox=${bbox}` : '/api/public/cells';
+    return this.http.get<PublicCellsResponse>(url);
+  }
+
+  getPublicAlerts(): Observable<PublicAlert[]> {
+    return this.http.get<PublicAlert[]>('/api/public/alerts');
+  }
+
+  getReportStatus(reportId: string, token?: string): Observable<ReportStatusResponse> {
+    const url = token
+      ? `/api/reports/${reportId}/status?token=${token}`
+      : `/api/reports/${reportId}/status`;
+    return this.http.get<ReportStatusResponse>(url);
   }
 }

@@ -197,3 +197,59 @@ export interface StoredCluster {
   undone: boolean;
   created_at?: string;
 }
+
+export interface PublicCell {
+  cell_id: string;
+  ward: string;
+  center_lat: number;
+  center_lng: number;
+  incident_counts: { [type: string]: number };
+  total_reports: number;
+  severity_band: 'critical' | 'high' | 'medium' | 'low';
+  time_bucket: string;
+  active_hazard?: string | null;
+  alerts: string[];
+  last_updated: string;
+}
+
+export interface PublicCellsResponse {
+  cells: PublicCell[];
+  total_active_cells: number;
+  disclaimer: string;
+  synthetic: boolean;
+}
+
+export interface PublicAlert {
+  id: string;
+  title: string;
+  ward: string;
+  time_ago: string;
+  severity: 'critical' | 'warning' | 'info';
+  description: string;
+  icon: string;
+}
+
+export interface StatusTimelineStep {
+  step: number;
+  name: 'received' | 'matched' | 'on_the_way' | 'fulfilled';
+  title: string;
+  state: 'done' | 'current' | 'pending';
+  timestamp?: string | null;
+  description: string;
+}
+
+export interface ReportStatusResponse {
+  report_id: string;
+  request_id: string;
+  status: string;
+  hero_title: string;
+  hero_subtitle: string;
+  eta_minutes?: number | null;
+  eta_display: string;
+  delivery_status: string;
+  timeline: StatusTimelineStep[];
+  while_you_wait_tips: string[];
+  emergency_phone: string;
+  synthetic: boolean;
+}
+

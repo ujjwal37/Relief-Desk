@@ -35,6 +35,7 @@ class StoredReport(BaseModel):
     source_id: str = "anon"
     trust_level: str = "anonymous"  # "official" | "verified_volunteer" | "registered" | "anonymous"
     request_id: Optional[str] = None
+    status_token: Optional[str] = None
     flags: List[str] = Field(default_factory=list)
     synthetic: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

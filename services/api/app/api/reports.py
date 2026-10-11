@@ -58,7 +58,8 @@ def submit_report(payload: ReportSubmitRequest):
     is_limited, _ = rate_limiter.check_and_record(payload.source_id)
     flags = ["rate_limited"] if is_limited else []
 
-    # 2. Store raw report immediately
+    # 2. Store raw report immediately with generated status token
+    status_token = f"tok_{uuid.uuid4().hex[:12]}"
     raw_report = storage_service.save_report_raw(
         raw_text=payload.text,
         channel=payload.channel,
@@ -66,7 +67,8 @@ def submit_report(payload: ReportSubmitRequest):
         source_id=payload.source_id,
         trust_level="anonymous",
         pack_id=payload.scenario_id,
-        flags=flags
+        flags=flags,
+        status_token=status_token,
     )
 
     # 3. Extract structured request
@@ -118,8 +120,6 @@ def submit_report(payload: ReportSubmitRequest):
             evidence=decision.evidence,
             merged_by="auto_suggest"
         )
-
-    status_token = f"tok_{uuid.uuid4().hex[:12]}"
 
     return ReportSubmitResponse(
         report_id=raw_report.id,

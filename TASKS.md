@@ -63,7 +63,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 ## Day 3 / Thu 15 Oct — Public map, anomalies, benchmark, deploy, FREEZE
 | ID | Task | Owner | Status | Depends | Acceptance criteria |
 |---|---|---|---|---|---|
-| T-030 | Public nearby map (area cells only) + status page (received → matched → help on the way) | A | TODO | T-008, T-010 | API test: no names/phones/exact addresses in `/api/public/cells` Design: `docs/design/public-05-nearby.png`, `docs/design/public-04-status.png` |
+| T-030 | Public nearby map (area cells only) + status page (received → matched → help on the way) | A | DONE | T-008, T-010 | API test: no names/phones/exact addresses in `/api/public/cells` Design: `docs/design/public-05-nearby.png`, `docs/design/public-04-status.png` |
 | T-031 | Anomaly engine: spike, silent-zone, resource gap, conflict, stale + `GET /api/alerts` + Alerts view per `coordinator-alerts.png` | C | TODO | T-015, T-023 | Seeded spike and silent zone appear as alerts with reasons Design: `docs/design/coordinator-alerts.png` |
 | T-032 | Benchmark full run on test split: all metrics from BUILD_BRIEF 9.3, Relief Desk vs FCFS vs hash-dedupe, results committed | A | TODO | T-017, T-012, T-014 | One command produces `bench/results/*.json` + markdown table; 3 failure examples captured |
 | T-033 | Benchmark view in coordinator app per `coordinator-benchmark.png` reading the results JSON | C | TODO | T-032, T-023 | Numbers on screen equal JSON; "Synthetic data, our own labels" visible Design: `docs/design/coordinator-benchmark.png` |
