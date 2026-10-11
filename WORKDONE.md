@@ -440,3 +440,71 @@
 - Notes / risks / not done: Hinglish uses Latin letters, so it follows the English layout. Voice is still the synthetic transcript catalog.
 - Next (suggested task id): checks
 
+### 2026-10-11 18:06 IST — local-complete — Cursor
+- What changed: Full local check. No product code changed in this step.
+- Files: WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests` -> 98 passed.
+  - `npx ng build shared` -> built `dist/shared`.
+  - `npx ng build web` -> built `dist/web`. Public and coordinator stay in separate lazy chunks.
+  - `node scripts/check-i18n.mjs` -> PASSED, 70 keys in en/hi/hinglish/ta.
+  - `npx ng test web --watch=false --browsers=ChromeHeadless` -> 40 passed. Karma logs `404: /report` while the demo-frame spec loads an iframe; the test still passes.
+- Notes / risks / not done: See the summary below.
+- Next (suggested task id): T-036
+
+### 2026-10-11 18:06 IST — summary — Cursor
+
+**Done locally**
+- Shared confirmation card (T-039) and chat/form toggle with identical Request JSON (T-038). T-029 fast path still holds: landing "I Need Help" to `/report`, crisis chip, Send now. No login.
+- Flood demo seed and `python scripts/demo_run.py` under 2:45 with Gemini off (T-040).
+- Anomaly engine, `GET /api/alerts`, alerts view (T-031).
+- Benchmark view reading `bench/results/latest.json` (T-033).
+- Safety-line red team and 112 banner on public screens (T-045).
+- Dog-attack pack as config plus seeds, switcher driven by `GET /api/scenarios` (T-041).
+- MapProvider: Google Maps JS when `GOOGLE_MAPS_API_KEY` is a real env value, SVG otherwise (T-025).
+- `?demo=1` phone frame, report in the frame reloads the coordinator queue (T-054).
+- Bench on the test split after train-side tuning: duplicate precision 71.4% -> 92.9%, duplicate recall 11.1% -> 57.8%, false-merge 0.0% -> 0.0%, critical mean rank 10.5 -> 9.3.
+- Hindi/Tamil/Hinglish tap targets and overflow (T-043).
+
+**Flaky**
+- Hindi voice transcript in the demo script still asks for a landmark before the confirmation card. The Hinglish hero confirms in one turn. Unit tests were 40/40 on this run.
+
+**Simulated**
+- Voice: synthetic transcript catalog, not live speech recognition.
+- Coordinator auth: demo bearer token `demo-coordinator-token` (and the demo login). Firebase Auth is not wired to a real project here.
+- Geolocation falls back to the Riverbend centroid 26.852, 80.925.
+- Gemini: `DEMO_MODE` / `GEMINI_ENABLED=false` uses the disk cache. `scripts/demo_run.py` does not call live Gemini.
+- Google Maps tiles: no key is committed. Without `GOOGLE_MAPS_API_KEY` the SVG map is the map.
+
+**Run locally**
+```
+cd services/api
+uvicorn app.main:app --reload --port 8000
+```
+```
+npx ng serve web --port 4200
+```
+```
+python -m pytest services/api/tests
+npx ng build shared
+npx ng build web
+node scripts/check-i18n.mjs
+npx ng test web --watch=false --browsers=ChromeHeadless
+python scripts/demo_run.py
+```
+Demo coordinator: `demo-coordinator@reliefdesk.internal` / `RiverbendRelief2026!`. Side-by-side phone: `http://127.0.0.1:4200/coordinator/command?demo=1`.
+
+**Still open (deployment and submission only)**
+- T-036 Deploy v1
+- T-048 Hosted URL
+- T-049 QR code
+- T-042 Stability checklist
+- T-037 Feature freeze / tag `rc1`
+- T-044 Video
+- T-050 Deck
+- T-051 README
+- T-052 Repo hygiene and tag
+- T-053 Submit
+
+Stretch S-001, S-002, and S-003 are still TODO in TASKS.md and were not part of this local pass.
+
