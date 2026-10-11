@@ -24,6 +24,7 @@ function cloneCard(card: ConfirmationCardData): ConfirmationCardData {
 export class ConfirmationCardComponent {
   @Input() busy = false;
   @Input() showActions = true;
+  @Input() smsHref = '';
   @Output() send = new EventEmitter<ConfirmationCardData>();
   @Output() cardChange = new EventEmitter<ConfirmationCardData>();
 

@@ -1,85 +1,55 @@
 <section class="rd-confirm" *ngIf="draft() as card" role="region" aria-labelledby="confirm-title">
-  <p id="confirm-title" class="screen-title">{{ 'confirm.title' | rdTranslate }}</p>
+  <p class="screen-title">{{ 'confirm.review' | rdTranslate }}</p>
   <header class="rd-confirm-head">
-    <span class="understood-chip">{{ 'confirm.understood' | rdTranslate }}</span>
+    <span class="understood-chip" id="confirm-title">{{ 'confirm.understood' | rdTranslate }}</span>
     <span class="ai-label">{{ 'confirm.aiSummary' | rdTranslate }}</span>
   </header>
 
+  <h3 class="lead" id="confirm-lead">{{ 'confirm.title' | rdTranslate }}</h3>
   <h2 class="summary">{{ card.summary }}</h2>
   <p class="nothing-sent">{{ 'confirm.nothingSent' | rdTranslate }}</p>
 
-  <div class="kv">
-    <span class="k">{{ 'confirm.type' | rdTranslate }}</span>
-    <span class="v" *ngIf="editing() !== 'type'">
-      <span class="type-chip">{{ card.incident_type }}</span>
-    </span>
-    <select
-      *ngIf="editing() === 'type'"
-      class="edit-control"
-      [ngModel]="card.incident_type"
-      (ngModelChange)="setType($event)"
-      [attr.aria-label]="'confirm.type' | rdTranslate"
-    >
-      <option *ngFor="let t of incidentTypes" [value]="t">{{ t }}</option>
-    </select>
-    <button type="button" class="edit-btn" (click)="startEdit('type')">
-      {{ editing() === 'type' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}
-    </button>
-  </div>
+  <div class="rows">
+    <div class="kv">
+      <span class="k">{{ 'confirm.type' | rdTranslate }}</span>
+      <span class="v" *ngIf="editing() !== 'type'"><span class="type-chip">{{ card.incident_type }}</span></span>
+      <select *ngIf="editing() === 'type'" class="edit-control" [ngModel]="card.incident_type" (ngModelChange)="setType($event)" [attr.aria-label]="'confirm.type' | rdTranslate">
+        <option *ngFor="let t of incidentTypes" [value]="t">{{ t }}</option>
+      </select>
+      <button type="button" class="edit-btn" (click)="startEdit('type')">{{ editing() === 'type' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}</button>
+    </div>
 
-  <div class="kv">
-    <span class="k">{{ 'confirm.location' | rdTranslate }}</span>
-    <span class="v" *ngIf="editing() !== 'location'">{{ card.place_text || '—' }}</span>
-    <input
-      *ngIf="editing() === 'location'"
-      class="edit-control"
-      type="text"
-      [ngModel]="card.place_text"
-      (ngModelChange)="setPlace($event)"
-      [attr.aria-label]="'confirm.location' | rdTranslate"
-    />
-    <button type="button" class="edit-btn" (click)="startEdit('location')">
-      {{ editing() === 'location' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}
-    </button>
-  </div>
+    <div class="kv">
+      <span class="k">{{ 'confirm.location' | rdTranslate }}</span>
+      <span class="v" *ngIf="editing() !== 'location'">{{ card.place_text || '—' }}</span>
+      <input *ngIf="editing() === 'location'" class="edit-control" type="text" [ngModel]="card.place_text" (ngModelChange)="setPlace($event)" [attr.aria-label]="'confirm.location' | rdTranslate" />
+      <button type="button" class="edit-btn" (click)="startEdit('location')">{{ editing() === 'location' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}</button>
+    </div>
 
-  <div class="kv">
-    <span class="k">{{ 'confirm.people' | rdTranslate }}</span>
-    <span class="v" *ngIf="editing() !== 'people'">{{ card.people_count ?? 0 }}</span>
-    <input
-      *ngIf="editing() === 'people'"
-      class="edit-control people-input"
-      type="number"
-      min="0"
-      max="99"
-      [ngModel]="card.people_count"
-      (ngModelChange)="setPeople($event)"
-      [attr.aria-label]="'confirm.people' | rdTranslate"
-    />
-    <button type="button" class="edit-btn" (click)="startEdit('people')">
-      {{ editing() === 'people' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}
-    </button>
-  </div>
+    <div class="kv">
+      <span class="k">{{ 'confirm.people' | rdTranslate }}</span>
+      <span class="v" *ngIf="editing() !== 'people'">{{ card.people_count ?? 0 }}</span>
+      <input *ngIf="editing() === 'people'" class="edit-control people-input" type="number" min="0" max="99" [ngModel]="card.people_count" (ngModelChange)="setPeople($event)" [attr.aria-label]="'confirm.people' | rdTranslate" />
+      <button type="button" class="edit-btn" (click)="startEdit('people')">{{ editing() === 'people' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}</button>
+    </div>
 
-  <fieldset class="vulnerable">
-    <legend>{{ 'confirm.vulnerable' | rdTranslate }}</legend>
-    <label *ngFor="let key of vulnerableKeys" class="check">
-      <input type="checkbox" [checked]="isVulnerable(key)" (change)="toggleVulnerable(key)" />
-      <span>{{ vulnerableLabel(key) | rdTranslate }}</span>
-    </label>
-  </fieldset>
+    <fieldset class="vulnerable">
+      <legend>{{ 'confirm.vulnerable' | rdTranslate }}</legend>
+      <label *ngFor="let key of vulnerableKeys" class="check" [class.on]="isVulnerable(key)">
+        <input type="checkbox" [checked]="isVulnerable(key)" (change)="toggleVulnerable(key)" />
+        <span>{{ vulnerableLabel(key) | rdTranslate }}</span>
+      </label>
+    </fieldset>
 
-  <div class="kv">
-    <span class="k">{{ 'confirm.hazard' | rdTranslate }}</span>
-    <span class="v hazard">{{ card.hazard }}</span>
-  </div>
+    <div class="kv" *ngIf="card.hazard && card.hazard !== 'unknown'">
+      <span class="k">{{ 'confirm.hazard' | rdTranslate }}</span>
+      <span class="v hazard">{{ card.hazard }}</span>
+    </div>
 
-  <div class="kv">
-    <span class="k">{{ 'confirm.urgency' | rdTranslate }}</span>
-    <span class="v">
-      <span class="urgency-chip">{{ 'queue.high' | rdTranslate }}</span>
-      <span class="note">{{ 'confirm.urgencyNote' | rdTranslate }}</span>
-    </span>
+    <div class="kv">
+      <span class="k">{{ 'confirm.urgency' | rdTranslate }}</span>
+      <span class="v"><span class="note">{{ 'confirm.urgencyNote' | rdTranslate }}</span></span>
+    </div>
   </div>
 
   <p class="safety" *ngIf="card.safety_line">{{ card.safety_line }}</p>
@@ -89,24 +59,18 @@
       <strong>{{ 'confirm.anonymous' | rdTranslate }}</strong>
       <div class="note">{{ 'confirm.anonymousHint' | rdTranslate }}</div>
     </div>
-    <button
-      type="button"
-      class="anon-toggle"
-      [class.on]="anonymous()"
-      (click)="anonymous.set(!anonymous())"
-      [attr.aria-pressed]="anonymous()"
-    >
+    <button type="button" class="anon-toggle" [class.on]="anonymous()" (click)="anonymous.set(!anonymous())" [attr.aria-pressed]="anonymous()" [attr.aria-label]="'confirm.anonymous' | rdTranslate">
       <span class="knob"></span>
     </button>
   </div>
 
-  <button
-    *ngIf="showActions"
-    type="button"
-    class="send-now"
-    [disabled]="busy"
-    (click)="onSend()"
-  >
-    {{ busy ? ('report.submitting' | rdTranslate) : ('confirm.sendNow' | rdTranslate) }}
-  </button>
+  <div class="sticky-bar" *ngIf="showActions">
+    <button type="button" class="send-now" [disabled]="busy" (click)="onSend()">
+      {{ busy ? ('report.submitting' | rdTranslate) : ('confirm.sendNow' | rdTranslate) }}
+    </button>
+    <div class="alt">
+      <a class="alt-btn" [href]="smsHref || 'sms:112'">{{ 'report.sendSms' | rdTranslate }}</a>
+      <a class="alt-btn call" href="tel:112">{{ 'confirm.callOutline' | rdTranslate }}</a>
+    </div>
+  </div>
 </section>
