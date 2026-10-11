@@ -10,7 +10,7 @@
   @if (actionToast()) {
     <div class="toast" role="status" [class.warn]="actionToast()?.type === 'warning'">
       <span>{{ actionToast()?.text }}</span>
-      <button type="button" (click)="clearToast()" aria-label="Close">✕</button>
+      <button type="button" (click)="clearToast()" [attr.aria-label]="'ui.close' | rdTranslate">✕</button>
     </div>
   }
 
@@ -27,7 +27,7 @@
         <button type="button" [class.on]="bandFilter() === 'soon'" (click)="setBandFilter('soon')">{{ 'coord.filterSoon' | rdTranslate }} {{ counts().high }}</button>
         <button type="button" [class.on]="bandFilter() === 'review'" (click)="setBandFilter('review')">{{ 'coord.filterReview' | rdTranslate }} {{ counts().review }}</button>
       </div>
-      <div class="list" role="listbox" aria-label="Cases">
+      <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {
           <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id)">
             <span class="row1">
@@ -60,7 +60,7 @@
 
       <div class="map-card">
         <rd-map-provider [pins]="mapPins()" (pinSelect)="selectRequest($event)">
-          <svg viewBox="0 0 600 480" class="svgmap" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map">
+          <svg viewBox="0 0 600 480" class="svgmap" preserveAspectRatio="xMidYMid slice" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
             <rect width="600" height="480" fill="var(--map-bg)"/>
             <path d="M-20 400 C 110 300 200 460 320 360 S 500 180 640 220" fill="none" stroke="var(--map-water)" stroke-width="46" stroke-linecap="round"/>
             <path d="M70 300 C 130 220 230 240 290 280 S 400 180 470 160 L 540 190 C 510 310 430 410 320 450 S 140 470 80 420 Z" fill="var(--map-flood)" stroke="var(--map-flood-line)" stroke-width="1.5" stroke-dasharray="6 5"/>
@@ -82,7 +82,7 @@
             }
           </svg>
         </rd-map-provider>
-        <div class="legend" aria-label="Map key">
+        <div class="legend" [attr.aria-label]="'ui.mapKey' | rdTranslate">
           <b>{{ 'coord.mapKey' | rdTranslate }}</b>
           <span><i class="d crit"></i>{{ 'coord.band.critical' | rdTranslate }}</span>
           <span><i class="d high"></i>{{ 'coord.band.high' | rdTranslate }}</span>
@@ -93,7 +93,7 @@
     </section>
 
     <!-- DETAIL -->
-    <aside class="detail" aria-label="Selected case">
+    <aside class="detail" [attr.aria-label]="'ui.selCase' | rdTranslate">
       @if (selectedRequest(); as req) {
         <div class="detail-scroll">
           <div class="d-head">
@@ -128,10 +128,10 @@
               <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'why'" (click)="toggleSection('why')"><span>{{ 'coord.why' | rdTranslate }}</span><span class="chev">{{ openSection() === 'why' ? '⌃' : '⌄' }}</span></button>
               @if (openSection() === 'why') {
                 <div class="acc-b">
-                  <div class="bd"><span>Distance</span><div class="bar"><b [style.width.%]="(prop.breakdown.distance_score / 30) * 100"></b></div><em>{{ prop.breakdown.distance_score.toFixed(1) }}/30</em></div>
-                  <div class="bd"><span>Capacity</span><div class="bar"><b [style.width.%]="(prop.breakdown.capacity_fit_score / 25) * 100"></b></div><em>{{ prop.breakdown.capacity_fit_score.toFixed(1) }}/25</em></div>
-                  <div class="bd"><span>Urgency</span><div class="bar"><b [style.width.%]="(prop.breakdown.urgency_score / 25) * 100"></b></div><em>{{ prop.breakdown.urgency_score.toFixed(1) }}/25</em></div>
-                  <div class="bd"><span>Vulnerability</span><div class="bar"><b [style.width.%]="(prop.breakdown.vulnerability_fit_score / 20) * 100"></b></div><em>{{ prop.breakdown.vulnerability_fit_score.toFixed(1) }}/20</em></div>
+                  <div class="bd"><span>{{ 'ui.distance' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.distance_score / 30) * 100"></b></div><em>{{ prop.breakdown.distance_score.toFixed(1) }}/30</em></div>
+                  <div class="bd"><span>{{ 'ui.capacity' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.capacity_fit_score / 25) * 100"></b></div><em>{{ prop.breakdown.capacity_fit_score.toFixed(1) }}/25</em></div>
+                  <div class="bd"><span>{{ 'ui.urgency' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.urgency_score / 25) * 100"></b></div><em>{{ prop.breakdown.urgency_score.toFixed(1) }}/25</em></div>
+                  <div class="bd"><span>{{ 'ui.vuln' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.vulnerability_fit_score / 20) * 100"></b></div><em>{{ prop.breakdown.vulnerability_fit_score.toFixed(1) }}/20</em></div>
                   @if (prop.explanation) { <p class="expl">{{ prop.explanation }}</p> }
                 </div>
               }
@@ -146,11 +146,11 @@
               <div class="acc-b">
                 <p class="expl">“{{ req.raw_text || req.place_text }}”</p>
                 <div class="conf">
-                  <span>Type {{ Math.round((req.confidence?.type || 0.96) * 100) }}%</span>
-                  <span>Place {{ Math.round((req.confidence?.place || 0.88) * 100) }}%</span>
-                  <span>People {{ Math.round((req.confidence?.people || 0.82) * 100) }}%</span>
+                  <span>{{ 'ui.type' | rdTranslate }} {{ Math.round((req.confidence?.type || 0.96) * 100) }}%</span>
+                  <span>{{ 'ui.place' | rdTranslate }} {{ Math.round((req.confidence?.place || 0.88) * 100) }}%</span>
+                  <span>{{ 'ui.peopleW' | rdTranslate }} {{ Math.round((req.confidence?.people || 0.82) * 100) }}%</span>
                 </div>
-                @if (req.cluster_id) { <button type="button" class="link" (click)="splitCluster(req.id)">Undo merge</button> }
+                @if (req.cluster_id) { <button type="button" class="link" (click)="splitCluster(req.id)">{{ 'ui.undoMerge' | rdTranslate }}</button> }
               </div>
             }
           </div>
@@ -186,17 +186,17 @@
     <div class="drawer-backdrop" (click)="closeWeights()"></div>
     <aside class="weights-drawer card">
       <div class="drawer-header">
-        <h3>Urgency Weights Tuning</h3>
+        <h3>{{ 'ui.wTitle' | rdTranslate }}</h3>
         <button type="button" class="drawer-close" (click)="closeWeights()">✕</button>
       </div>
 
       <p class="drawer-desc">
-        Adjust deterministic scoring weights below. Tweak sliders to re-rank the live incident queue within 1 second.
+        {{ 'ui.wDesc' | rdTranslate }}
       </p>
 
       <div class="slider-group">
         <div class="slider-label-row">
-          <span>Vulnerability Weight (w_vuln)</span>
+          <span>{{ 'ui.wVuln' | rdTranslate }}</span>
           <span class="mono">{{ currentWeights().w_vulnerability }}</span>
         </div>
         <input
@@ -210,7 +210,7 @@
 
       <div class="slider-group">
         <div class="slider-label-row">
-          <span>People Count Weight (w_people)</span>
+          <span>{{ 'ui.wPeople' | rdTranslate }}</span>
           <span class="mono">{{ currentWeights().w_people }}</span>
         </div>
         <input
@@ -224,7 +224,7 @@
 
       <div class="slider-group">
         <div class="slider-label-row">
-          <span>Hazard Severity Weight (w_hazard)</span>
+          <span>{{ 'ui.wHazard' | rdTranslate }}</span>
           <span class="mono">{{ currentWeights().w_hazard }}</span>
         </div>
         <input
@@ -238,7 +238,7 @@
 
       <div class="slider-group">
         <div class="slider-label-row">
-          <span>Wait Time Weight (w_wait_time)</span>
+          <span>{{ 'ui.wWait' | rdTranslate }}</span>
           <span class="mono">{{ currentWeights().w_wait_time }}</span>
         </div>
         <input
@@ -252,7 +252,7 @@
 
       <div class="slider-group">
         <div class="slider-label-row">
-          <span>Confidence Discount Factor</span>
+          <span>{{ 'ui.wConf' | rdTranslate }}</span>
           <span class="mono">{{ currentWeights().confidence_discount_factor }}</span>
         </div>
         <input
@@ -267,10 +267,10 @@
 
       <div class="drawer-actions">
         <button type="button" class="btn-reset" (click)="resetWeightsToDefaults()">
-          Reset to Defaults
+          {{ 'ui.reset' | rdTranslate }}
         </button>
         <button type="button" class="btn-save" (click)="closeWeights()">
-          Close
+          {{ 'ui.close' | rdTranslate }}
         </button>
       </div>
     </aside>
@@ -282,16 +282,15 @@
       <div class="modal-dialog card">
         <div class="modal-header">
           <span class="warning-icon">⚠️</span>
-          <h4>Capacity Warning: Overcommit Required</h4>
+          <h4>{{ 'ui.ocTitle' | rdTranslate }}</h4>
         </div>
         <p class="modal-body">
-          The requested dispatch requires more capacity than remaining on this resource.
-          To dispatch anyway, coordinator authorization is required. This action will be logged in the immutable audit trail.
+          {{ 'ui.ocBody' | rdTranslate }}
         </p>
         <div class="modal-actions">
-          <button type="button" class="btn-cancel" (click)="cancelOvercommit()">Cancel</button>
+          <button type="button" class="btn-cancel" (click)="cancelOvercommit()">{{ 'ui.cancel' | rdTranslate }}</button>
           <button type="button" class="btn-confirm-overcommit" (click)="confirmOvercommit()">
-            Authorize Overcommit
+            {{ 'ui.ocGo' | rdTranslate }}
           </button>
         </div>
       </div>
@@ -303,21 +302,21 @@
     <div class="modal-backdrop">
       <div class="modal-dialog card">
         <div class="modal-header">
-          <h4>Reject Proposal</h4>
+          <h4>{{ 'ui.rjTitle' | rdTranslate }}</h4>
         </div>
         <p class="modal-body">
-          Enter a reason for rejecting this proposal (e.g. Route submerged, boat deployed elsewhere):
+          {{ 'ui.rjBody' | rdTranslate }}
         </p>
         <input
           type="text"
           class="reject-input"
           [(ngModel)]="rejectReasonText"
-          placeholder="Reason for rejection..."
+          [placeholder]="'ui.rjPh' | rdTranslate"
         />
         <div class="modal-actions">
-          <button type="button" class="btn-cancel" (click)="closeRejectModal()">Cancel</button>
+          <button type="button" class="btn-cancel" (click)="closeRejectModal()">{{ 'ui.cancel' | rdTranslate }}</button>
           <button type="button" class="btn-confirm-reject" (click)="confirmReject()">
-            Confirm Rejection
+            {{ 'ui.rjGo' | rdTranslate }}
           </button>
         </div>
       </div>

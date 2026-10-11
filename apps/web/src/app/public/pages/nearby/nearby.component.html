@@ -6,7 +6,7 @@
 
   <div class="map-card">
     <rd-map-provider [pins]="mapPins()" (pinSelect)="onMapPin($event)">
-      <svg class="tactical-svg" viewBox="0 0 358 250" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map">
+      <svg class="tactical-svg" viewBox="0 0 358 250" preserveAspectRatio="xMidYMid slice" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
         <rect width="358" height="250" fill="var(--map-bg)"/>
         <path d="M17.9 125.0 C89.5 50.0 179.0 200.0 250.6 112.5 S340.1 62.5 358 50.0 L358 125.0 C304.3 175.0 214.8 262.5 143.2 237.5 S35.8 225.0 17.9 125.0z" fill="var(--map-water)" stroke="var(--map-flood-line)" stroke-width="1.2" stroke-dasharray="6 4"/>
         @for (c of cells(); track c.cell_id; let i = $index) {
@@ -23,7 +23,7 @@
     <p class="privacy">{{ 'nearby.areaOnly' | rdTranslate }}</p>
   </div>
 
-  <div class="legend" aria-label="Map key">
+  <div class="legend" [attr.aria-label]="'ui.mapKey' | rdTranslate">
     <b>{{ 'nearby.legend' | rdTranslate }}</b>
     <span><i class="d c"></i>{{ 'nearby.flood' | rdTranslate }}</span>
     <span><i class="d h"></i>{{ 'nearby.animal' | rdTranslate }}</span>

@@ -126,14 +126,29 @@
     "reject": "Reject"
   },
   "alerts": {
-    "title": "Anomaly aur silent-zone alerts",
-    "subtitle": "Sirf flag. Kuch delete nahi hota. Coordinator decide karega.",
+    "title": "Alerts",
+    "subtitle": "Sirf flags. Kuch delete nahi hota. Faisla aapka.",
     "acknowledge": "Acknowledge",
     "viewMap": "Map par dekhein",
     "empty": "Abhi koi alert nahi.",
     "silent": "Shaant zone",
     "spike": "Reports mein uchhal",
-    "ackDone": "Acknowledge ho gaya"
+    "ackDone": "Acknowledge ho gaya",
+    "k": {
+      "spike": "Reports ki baadh",
+      "silent_zone": "Chup ilaaka",
+      "resource_gap": "Sansaadhan ki kami",
+      "conflict": "Takraav",
+      "stale": "Purani requests"
+    },
+    "key": "Sanket",
+    "noPin": "Kisi ek jagah se juda nahi",
+    "mapAria": "Riverbend ke wards ka naksha, alert pins ke saath",
+    "river": "Nadi",
+    "noReports": "Koi report nahi, pichhle",
+    "reports": "reports",
+    "free": "Khaali",
+    "busy": "Vyast"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -316,7 +331,9 @@
     "coordinator": "Coordinator sign in",
     "updating": "Update ho raha hai…",
     "cantRefresh": "Refresh nahi ho saka. Phir koshish ke liye Dekhein dabayein.",
-    "remove": "Is phone se hatayein"
+    "remove": "Is phone se hatayein",
+    "coordinatorBtn": "Main coordinator hoon",
+    "judge": "Judge ya reviewer? Demo coordinator kholein"
   },
   "find": {
     "title": "Mera request dhundhein",
@@ -326,5 +343,44 @@
     "go": "Request dhundhein",
     "paste": "Paste",
     "invalid": "Request ID daalein ya link paste karein."
+  },
+  "ui": {
+    "coordBtn": "Main coordinator hoon",
+    "judge": "Judge ya reviewer? Demo coordinator kholein",
+    "coordNav": "Coordinator",
+    "publicReport": "Public report",
+    "main": "Main",
+    "map": "Naksha",
+    "mapKey": "Naksha ke sanket",
+    "progress": "Pragati",
+    "scenarioPack": "Scenario pack",
+    "langSel": "Bhasha chunein",
+    "close": "Band karein",
+    "cases": "Cases",
+    "selCase": "Chuna hua case",
+    "distance": "Doori",
+    "capacity": "Kshamta",
+    "urgency": "Turant zarurat",
+    "vuln": "Jokhim wale log",
+    "type": "Prakaar",
+    "place": "Jagah",
+    "peopleW": "Log",
+    "undoMerge": "Merge undo karein",
+    "wTitle": "Priority weights",
+    "wDesc": "Slider hilayein, live cases ki list 1 second mein dobara lagegi.",
+    "wVuln": "Jokhim wale log",
+    "wPeople": "Logon ki sankhya",
+    "wHazard": "Khatre ki gambhirta",
+    "wWait": "Intezaar ka samay",
+    "wConf": "Unclear reports par discount",
+    "reset": "Default par wapas",
+    "ocTitle": "Capacity kaafi nahi",
+    "ocBody": "Is team mein request se kam seats khaali hain. Aap phir bhi bhej sakte hain. Yeh faisla audit log mein darj hoga.",
+    "cancel": "Cancel",
+    "ocGo": "Phir bhi bhejein",
+    "rjTitle": "Yeh match reject karein",
+    "rjBody": "Kyun? Jaise: raasta doob gaya, boat kahin aur bheji.",
+    "rjPh": "Reject karne ka kaaran",
+    "rjGo": "Reject karein"
   }
 }

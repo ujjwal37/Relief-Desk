@@ -6,7 +6,7 @@
         <span class="name">Relief Desk</span>
       </a>
 
-      <nav class="tabs" aria-label="Coordinator">
+      <nav class="tabs" [attr.aria-label]="'ui.coordNav' | rdTranslate">
         <a routerLink="/coordinator/command" routerLinkActive="on">{{ 'coord.cases' | rdTranslate }}</a>
         <a routerLink="/coordinator/alerts" routerLinkActive="on">{{ 'coord.alerts' | rdTranslate }}
           @if (ui.alerts().length) { <span class="count" aria-label="{{ ui.alerts().length }}">{{ ui.alerts().length }}</span> }
@@ -62,8 +62,8 @@
   </div>
 
   @if (showPhone()) {
-    <aside class="demo-phone" aria-label="Public report">
-      <iframe title="Public report" src="/report"></iframe>
+    <aside class="demo-phone" [attr.aria-label]="'ui.publicReport' | rdTranslate">
+      <iframe [attr.title]="'ui.publicReport' | rdTranslate" src="/report"></iframe>
     </aside>
   }
   <app-tour />

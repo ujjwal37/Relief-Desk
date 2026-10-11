@@ -1,3 +1,4 @@
+import { RdTranslatePipe } from '../services/language.service';
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LanguageService, SUPPORTED_LANGUAGES, SupportedLang } from '../services/language.service';
@@ -5,9 +6,9 @@ import { LanguageService, SUPPORTED_LANGUAGES, SupportedLang } from '../services
 @Component({
   selector: 'rd-language-switcher',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RdTranslatePipe],
   template: `
-    <div class="rd-lang-switcher" role="group" aria-label="Language selection">
+    <div class="rd-lang-switcher" role="group" [attr.aria-label]="'ui.langSel' | rdTranslate">
       <button
         *ngFor="let opt of languages"
         type="button"

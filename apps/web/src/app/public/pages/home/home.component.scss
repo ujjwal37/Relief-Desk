@@ -12,3 +12,8 @@ h1 { margin:8px 0 0; font-size:32px; line-height:1.1; font-weight:800; letter-sp
 .find { margin-top:10px; min-height:64px; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 14px; border-radius:14px; background:var(--surface-2); color:var(--text); text-decoration:none; span:first-child { display:flex; flex-direction:column; } b { font-size:17px; } small { font-size:14px; color:var(--text-2); } }
 .row-link { min-height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; border-radius:16px; border:1px solid var(--border); background:var(--surface); color:var(--text); font:700 17px var(--rd-font-family); text-decoration:none; }
 .coord { align-self:center; min-height:44px; display:grid; place-items:center; color:var(--text-2); font-size:15px; text-decoration:underline; }
+.coord-btn { align-self:stretch; min-height:52px; display:grid; place-items:center; border-radius:16px; border:2px solid var(--brand); color:var(--brand); background:transparent; font:700 17px var(--rd-font-family); text-decoration:none; }
+.judge { align-self:center; min-height:44px; background:none; border:0; color:var(--text-2); font:600 15px var(--rd-font-family); text-decoration:underline; cursor:pointer; padding:0 12px; }
+
+.report-btn { padding:12px 16px; text-align:center; line-height:1.2; font-size:19px; }
+

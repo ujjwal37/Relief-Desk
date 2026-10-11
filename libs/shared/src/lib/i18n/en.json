@@ -126,14 +126,29 @@
     "reject": "Reject"
   },
   "alerts": {
-    "title": "Anomaly & silent-zone alerts",
-    "subtitle": "Flags only. Nothing is deleted. Coordinator decides.",
+    "title": "Alerts",
+    "subtitle": "Flags only. Nothing is deleted. You decide.",
     "acknowledge": "Acknowledge",
     "viewMap": "View on map",
     "empty": "No alerts right now.",
     "silent": "Silent zone",
     "spike": "Report spike",
-    "ackDone": "Acknowledged"
+    "ackDone": "Acknowledged",
+    "k": {
+      "spike": "Report spike",
+      "silent_zone": "Silent zone",
+      "resource_gap": "Resource gap",
+      "conflict": "Conflict",
+      "stale": "Stale requests"
+    },
+    "key": "Key",
+    "noPin": "Not tied to one place",
+    "mapAria": "Map of Riverbend wards with alert pins",
+    "river": "River",
+    "noReports": "No reports in",
+    "reports": "reports",
+    "free": "Free",
+    "busy": "Busy"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -316,7 +331,9 @@
     "coordinator": "Coordinator sign in",
     "updating": "Updating…",
     "cantRefresh": "Could not refresh. Tap View to retry.",
-    "remove": "Remove from this phone"
+    "remove": "Remove from this phone",
+    "coordinatorBtn": "I'm a coordinator",
+    "judge": "Judge or reviewer? Open the demo coordinator"
   },
   "find": {
     "title": "Find my request",
@@ -326,5 +343,44 @@
     "go": "Find request",
     "paste": "Paste",
     "invalid": "Enter a request ID or paste your link."
+  },
+  "ui": {
+    "coordBtn": "I'm a coordinator",
+    "judge": "Judge or reviewer? Open the demo coordinator",
+    "coordNav": "Coordinator",
+    "publicReport": "Public report",
+    "main": "Main",
+    "map": "Map",
+    "mapKey": "Map key",
+    "progress": "Progress",
+    "scenarioPack": "Scenario pack",
+    "langSel": "Language selection",
+    "close": "Close",
+    "cases": "Cases",
+    "selCase": "Selected case",
+    "distance": "Distance",
+    "capacity": "Capacity",
+    "urgency": "Urgency",
+    "vuln": "Vulnerability",
+    "type": "Type",
+    "place": "Place",
+    "peopleW": "People",
+    "undoMerge": "Undo merge",
+    "wTitle": "Priority weights",
+    "wDesc": "Move a slider to re-rank the live case list within 1 second.",
+    "wVuln": "Vulnerable people",
+    "wPeople": "Number of people",
+    "wHazard": "Hazard severity",
+    "wWait": "Waiting time",
+    "wConf": "Discount for unclear reports",
+    "reset": "Reset to defaults",
+    "ocTitle": "Not enough capacity",
+    "ocBody": "This team has fewer seats free than the request needs. You can send it anyway. The choice is logged in the audit trail.",
+    "cancel": "Cancel",
+    "ocGo": "Send anyway",
+    "rjTitle": "Reject this match",
+    "rjBody": "Why? For example: route under water, boat sent elsewhere.",
+    "rjPh": "Reason for rejecting",
+    "rjGo": "Reject"
   }
 }

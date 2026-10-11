@@ -46,7 +46,7 @@
       <p class="hero-sub">{{ data.hero_subtitle }}</p>
     </section>
 
-    <ol class="steps" aria-label="Progress">
+    <ol class="steps" [attr.aria-label]="'ui.progress' | rdTranslate">
       @for (s of data.timeline; track s.step) {
         <li [class.done]="s.state === 'done'" [class.now]="s.state === 'current'">
           <span class="dot" aria-hidden="true">

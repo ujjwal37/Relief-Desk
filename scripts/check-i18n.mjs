@@ -1,4 +1,4 @@
-import fs from 'fs';
+﻿import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -61,5 +61,8 @@ if (hasError) {
   process.exit(1);
 } else {
   console.log('\nCI check-i18n PASSED: All languages have complete key parity!');
-  process.exit(0);
+  const { spawnSync } = await import('child_process');
+  const lint = spawnSync(process.execPath, [path.join(__dirname, 'lint-templates-i18n.mjs')], { stdio: 'inherit' });
+  process.exit(lint.status ?? 1);
 }
+

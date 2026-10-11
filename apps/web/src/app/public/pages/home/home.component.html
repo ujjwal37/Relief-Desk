@@ -1,4 +1,4 @@
-<div class="home">
+﻿<div class="home">
   <h1>{{ 'home.title' | rdTranslate }}</h1>
   <p class="sub">{{ 'home.sub' | rdTranslate }}</p>
 
@@ -32,5 +32,9 @@
   </section>
 
   <a routerLink="/nearby" class="row-link">{{ 'home.nearby' | rdTranslate }} <span aria-hidden="true">→</span></a>
-  <a routerLink="/coordinator/login" class="coord">{{ 'home.coordinator' | rdTranslate }}</a>
+  <a routerLink="/coordinator/login" class="coord-btn">{{ 'home.coordinatorBtn' | rdTranslate }}</a>
+  @if (demoMode()) {
+    <button type="button" class="judge" (click)="enterDemo()">{{ 'home.judge' | rdTranslate }}</button>
+  }
 </div>
+

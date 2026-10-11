@@ -1,3 +1,4 @@
+import { RdTranslatePipe } from '@rd/shared';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ScenarioService } from '../services/scenario.service';
@@ -5,9 +6,9 @@ import { ScenarioService } from '../services/scenario.service';
 @Component({
   selector: 'app-scenario-switcher',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RdTranslatePipe],
   template: `
-    <div class="scenario-switch" role="group" aria-label="Scenario pack">
+    <div class="scenario-switch" role="group" [attr.aria-label]="'ui.scenarioPack' | rdTranslate">
       <button
         type="button"
         *ngFor="let pack of scenarios.scenarios()"
