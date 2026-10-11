@@ -142,6 +142,10 @@ export class CoordinatorAlertsComponent implements OnInit {
 
   titleOf(alert: AnomalyAlert): string {
     this.lang.currentLang();
+    if ((alert.reason || '').startsWith('Sample.') || (alert.title || '').startsWith('Sample')) {
+      const sample = this.lang.translate('alerts.sampleGap');
+      return sample === 'alerts.sampleGap' ? alert.title : sample;
+    }
     const key = `alerts.k.${alert.kind}`;
     const text = this.lang.translate(key);
     return text === key ? alert.title : text;
@@ -150,7 +154,7 @@ export class CoordinatorAlertsComponent implements OnInit {
   /** Localise a known English reason. Unknown wording stays as stored. */
   reasonOf(alert: AnomalyAlert): string {
     this.lang.currentLang();
-    const reason = alert.reason || '';
+    const reason = (alert.reason || '').replace(/^Sample\.\s*/, '');
     const fill = (key: string, parts: Record<string, string>): string => {
       const template = this.lang.translate(key);
       if (template === key) return reason;

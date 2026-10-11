@@ -180,6 +180,7 @@
     "reasonSilent": "{place}: 0 reports in {window}, neighbours rising. Possible outage.",
     "reasonGapNone": "No {kind} team free. {n} cases are still waiting.",
     "reasonGapDemand": "{kind} demand {demand}, only {free} free",
+    "sampleGap": "Sample: Resource gap",
     "reasonConflict": "\"{left}\" vs \"{right}\" in {place}",
     "reasonStale": "{n} requests unconfirmed for {mins} min → needs recheck"
   },

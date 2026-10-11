@@ -134,6 +134,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | RT-09 | Seed hi and ta name the same place as English | C | DONE | RT-08 | INC-008 Hindi says St. Jude, not the school; no language names a different landmark |
 | RT-10 | Mobile coordinator banner, tabs and alerts map | C | DONE | RT-09 | Banner wraps, Accuracy report tab wraps, spike mark is a small circle |
 | RT-11 | Hinglish review does not say Send now | C | DONE | RT-10 | The review line uses Abhi bhejein, the same words as the button |
+| RT-12 | One resource-gap alert, seeded one marked sample | C | DONE | RT-11 | The fictional medical gap is labelled Sample; a live gap replaces it |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

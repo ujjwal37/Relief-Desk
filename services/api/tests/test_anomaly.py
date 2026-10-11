@@ -1,13 +1,16 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.models.firestore_models import ResourceKind, ResourceStatus
 from app.tools.anomaly import (
+    collect_alerts,
     conflict_alerts,
     resource_gap_alerts,
     silent_zone_alerts,
     spike_alerts,
     stale_alerts,
 )
+from app.tools.storage import storage_service
 
 client = TestClient(app)
 AUTH = {"Authorization": "Bearer demo-coordinator-token"}
@@ -59,4 +62,20 @@ def test_get_alerts_requires_coordinator_and_includes_seeded_spike_and_silent_zo
     silent = next(item for item in body if item["kind"] == "silent_zone")
     assert "14 reports" in spike["reason"]
     assert "0 reports" in silent["reason"]
+    gaps = [item for item in body if item["kind"] == "resource_gap"]
+    assert len(gaps) == 1
+    assert gaps[0]["reason"].startswith("Sample.")
     assert all(item["acknowledged"] is False or item["acknowledged"] is True for item in body)
+
+
+def test_live_resource_gap_replaces_the_seeded_sample():
+    storage_service.load_seed_resources()
+    try:
+        for team in storage_service.list_resources(kind=ResourceKind.MEDICAL):
+            team.status = ResourceStatus.BUSY
+        gaps = [item for item in collect_alerts(storage_service) if item.kind == "resource_gap" and "medical" in item.id]
+        assert len(gaps) == 1
+        assert gaps[0].id == "gap-none-medical"
+        assert not gaps[0].reason.startswith("Sample.")
+    finally:
+        storage_service.load_seed_resources()

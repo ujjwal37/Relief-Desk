@@ -749,3 +749,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --include='**/confirmation-card.component.spec.ts'` — 4 passed.
 - Notes / risks / not done: English still says Send now, which is the English label.
 - Next (suggested task id): RT-12
+
+### 2026-10-12 03:35 IST — RT-12 — Cursor
+- What changed: The seeded medical resource gap is labelled Sample. If a live gap exists for the same kind, the sample is left out so the list does not show two Resource gap cards for one shortage.
+- Files: services/api/app/tools/anomaly.py, services/api/tests/test_anomaly.py, alerts component titleOf, i18n en/hi/hinglish/ta, TASKS.md
+- How verified: `pytest tests/test_anomaly.py tests/test_team_confirm.py` — 8 passed. Alerts spec 3 passed.
+- Notes / risks / not done: The map key still uses the plain words Resource gap for the symbol. The card title says Sample.
+- Next (suggested task id): RT-13

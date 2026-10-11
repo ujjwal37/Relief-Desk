@@ -208,13 +208,27 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
     return alerts
 
 
+def _gap_kind(alert_id: str) -> str:
+    return alert_id.removeprefix("gap-none-").removeprefix("gap-")
+
+
 def collect_alerts(storage=None) -> List[AnomalyAlert]:
+    live = live_alerts_from_storage(storage) if storage is not None else []
+    live_gap_kinds = {
+        _gap_kind(alert.id) for alert in live if alert.kind == "resource_gap"
+    }
     merged: Dict[str, AnomalyAlert] = {}
     for alert in alerts_from_signals(load_seed_signals()):
+        if alert.kind == "resource_gap":
+            if _gap_kind(alert.id) in live_gap_kinds:
+                continue
+            alert = alert.model_copy(update={
+                "title": "Sample resource gap",
+                "reason": f"Sample. {alert.reason}",
+            })
         merged[alert.id] = alert
-    if storage is not None:
-        for alert in live_alerts_from_storage(storage):
-            merged.setdefault(alert.id, alert)
+    for alert in live:
+        merged.setdefault(alert.id, alert)
     result = []
     for alert in merged.values():
         alert.acknowledged = alert.id in ACKNOWLEDGED

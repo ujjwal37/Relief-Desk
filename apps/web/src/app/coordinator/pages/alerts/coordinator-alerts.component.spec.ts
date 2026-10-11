@@ -70,6 +70,19 @@ describe('CoordinatorAlertsComponent', () => {
     expect(fixture.nativeElement.querySelector('polygon.ward.spike')).toBeNull();
   });
 
+  it('labels a seeded resource gap as a sample', () => {
+    const title = fixture.componentInstance.titleOf({
+      id: 'gap-medical',
+      kind: 'resource_gap',
+      title: 'Sample resource gap',
+      reason: 'Sample. Medical demand 6, only 2 free',
+      severity: 'high',
+      age_label: '17 min ago',
+      acknowledged: false,
+    });
+    expect(title).toBe('Sample: Resource gap');
+  });
+
   it('shows the seeded spike and silent zone with their reasons', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Report spike');

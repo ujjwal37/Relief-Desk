@@ -180,6 +180,7 @@
     "reasonSilent": "{place}: {window} mein 0 reports, aas-paas badh rahi hain. Shayad network band hai.",
     "reasonGapNone": "Koi {kind} team free nahi. {n} cases abhi bhi intezaar mein hain.",
     "reasonGapDemand": "{kind} maang {demand}, sirf {free} free",
+    "sampleGap": "Namuna: Sansaadhan ki kami",
     "reasonConflict": "{place} mein \"{left}\" aur \"{right}\" alag baat",
     "reasonStale": "{n} requests {mins} min se bina confirm ke hain, phir jaanchein"
   },

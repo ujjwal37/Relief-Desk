@@ -180,6 +180,7 @@
     "reasonSilent": "{place}: {window} में 0 रिपोर्ट, आस-पास बढ़ रही हैं। शायद संपर्क टूट गया है।",
     "reasonGapNone": "कोई {kind} टीम खाली नहीं। {n} मामले अभी भी इंतज़ार में हैं।",
     "reasonGapDemand": "{kind} माँग {demand}, सिर्फ़ {free} खाली",
+    "sampleGap": "नमूना: संसाधन की कमी",
     "reasonConflict": "{place} में \"{left}\" और \"{right}\" अलग बात बताते हैं",
     "reasonStale": "{n} अनुरोध {mins} मिनट से बिना पुष्टि के हैं → फिर जाँचें"
   },
