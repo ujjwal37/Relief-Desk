@@ -151,3 +151,33 @@ def test_submitted_report_status_lifecycle():
 def test_report_status_not_found():
     response = client.get("/api/reports/nonexistent_99999/status?token=bad_token")
     assert response.status_code == 404
+
+
+def test_status_requires_the_matching_token():
+    submit_res = client.post(
+        "/api/reports",
+        json={
+            "text": "4 people need a boat at Champakulam School. Synthetic.",
+            "channel": "text",
+            "lang": "en",
+            "idempotency_key": "idem_status_token_gate",
+            "location_pin": {"lat": 9.416, "lng": 76.411},
+        },
+    )
+    assert submit_res.status_code == 200
+    report_id = submit_res.json()["report_id"]
+    token = submit_res.json()["status_token"]
+
+    missing = client.get(f"/api/reports/{report_id}/status")
+    assert missing.status_code == 401
+    wrong = client.get(f"/api/reports/{report_id}/status?token=demo-backdoor")
+    assert wrong.status_code == 401
+    ok = client.get(f"/api/reports/{report_id}/status?token={token}")
+    assert ok.status_code == 200
+
+    # A token that merely contains "demo" must not open the canned status.
+    leaked = client.get("/api/reports/not-a-real-report/status?token=this-is-a-demo-token")
+    assert leaked.status_code == 404
+    canned = client.get("/api/reports/demo/status")
+    assert canned.status_code == 200
+    assert canned.json()["report_id"] == "R-0412"

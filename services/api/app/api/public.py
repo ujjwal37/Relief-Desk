@@ -23,6 +23,10 @@ def public_code_for(report_id: str) -> str:
     digest = int(hashlib.sha256(report_id.encode("utf-8")).hexdigest()[:6], 16)
     return f"RD-{1000 + (digest % 9000)}"
 
+
+# Canned status only for these ids. A token that merely contains "demo" is not enough.
+DEMO_STATUS_IDS = frozenset({"R-0412", "demo", "tok_demo"})
+
 # Canonical synthetic area cells. Places are real Kerala panchayats; the reports are not.
 CANONICAL_CELLS = [
     PublicCell(
@@ -197,14 +201,10 @@ def get_report_status(
     token: Optional[str] = Query(None, description="Status access token returned at submission time"),
 ):
     """Returns the multi-step status progress for a reporter without exposing any PII."""
-    # 1. Lookup report by ID or by token
     report: Optional[StoredReport] = storage_service.get_report(report_id)
-    if not report and token:
-        report = storage_service.get_report_by_status_token(token)
 
-    # 2. Demo fallback for synthetic UI demonstration (e.g. 'R-0412', 'demo', or initial loads)
     if not report:
-        if report_id in ("R-0412", "demo", "tok_demo") or (token and "demo" in token.lower()):
+        if report_id in DEMO_STATUS_IDS:
             return ReportStatusResponse(
                 report_id="R-0412",
                 request_id="REQ-0412",
@@ -261,7 +261,13 @@ def get_report_status(
             detail="Report not found. Please verify your report ID and status token.",
         )
 
-    # 3. If real report found, find corresponding request
+    if not token or token != report.status_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Status token does not match this report.",
+        )
+
+    # If real report found, find corresponding request
     req: Optional[StoredRequest] = None
     if report.request_id:
         req = storage_service.get_request(report.request_id)

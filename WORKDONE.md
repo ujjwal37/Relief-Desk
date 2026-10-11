@@ -672,3 +672,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx playwright test` — 2 passed (desktop 1440x900, mobile 390x844). `npx ng build web` succeeded. `node scripts/check-i18n.mjs` — 511 keys, template lint PASS. Pytest was already 116 passed on the previous commit; this change does not touch the API.
 - Notes / risks / not done: Malayalam is not in this pass. The settings sheet is lifted by the public header stacking order; the report page has its own settings button inside a lower layer, and that page was not the one this test opens settings from.
 - Next (suggested task id): none in the first-pass list
+
+### 2026-10-12 01:40 IST — RT-01 — Cursor
+- What changed: GET /api/reports/{id}/status returns 401 unless the query token equals that report's status_token. The canned demo status is only for the ids R-0412, demo, and tok_demo. A token that merely contains the word demo no longer opens it.
+- Files: services/api/app/api/public.py, services/api/tests/test_public_api.py, TASKS.md
+- How verified: `pytest tests/test_public_api.py` — 7 passed.
+- Notes / risks / not done: Reports stored without a status_token cannot be read on this route.
+- Next (suggested task id): RT-02

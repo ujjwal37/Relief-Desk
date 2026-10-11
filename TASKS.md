@@ -123,6 +123,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | FP-18 | i18n of case content | C | DONE | FP-13 | Translations field shown for the selected language |
 | FP-19 | Small fixes: 112 text, chhat, sass @use, reset demo | C | DONE | – | Documented build and reset |
 | FP-E2E | Playwright public and coordinator pass | C | DONE | FP-19 | Desktop 1440x900 and mobile 390x844 both pass: report, offline, status, find, demo login, approve, complete, teams, no boat free, filters, alerts, accuracy, hi/ta, theme |
+| RT-01 | Status lookup requires the matching token | C | DONE | FP-E2E | 401 without the token; demo canned status only for literal demo ids |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
