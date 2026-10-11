@@ -798,3 +798,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_no_mojibake.py` — 2 passed.
 - Notes / risks / not done: The CSS escape consumes the trailing space, so the check sits against the following word.
 - Next (suggested task id): RT-17
+
+### 2026-10-12 04:45 IST — RT-17 — Cursor
+- What changed: POST /api/reports merges a second report that names the same street and the same people count inside the time window. dedupe_decision is duplicate. The open case merged_count becomes 2, so the card reads "2 reports, same incident". The folded copy is left out of the coordinator list. A different people count at that street stays a separate case.
+- Files: services/api/app/agents/dedupe.py, services/api/app/api/reports.py, services/api/app/api/clusters.py, services/api/app/tools/nlu_rules.py, services/api/app/models/firestore_models.py, services/api/tests/test_live_dedupe.py, services/api/tests/test_request_contract.py, StoredRequest.merged_into, TASKS.md
+- How verified: `pytest tests/test_live_dedupe.py tests/test_dedupe.py tests/test_intake_nlu.py tests/test_request_contract.py tests/test_live_queue.py tests/test_idempotency.py tests/test_confirmation.py tests/test_public_api.py` — 21 passed.
+- Notes / risks / not done: Matching uses the street name and the people count. Two different households on the same street with the same count still fold together.
+- Next (suggested task id): RT-18

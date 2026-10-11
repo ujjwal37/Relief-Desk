@@ -123,12 +123,12 @@ def list_requests(
     updated_since: Optional[str] = None,
     coordinator: CoordinatorUser = Depends(get_current_coordinator),
 ):
-    reqs = storage_service.list_requests()
+    reqs = [req for req in storage_service.list_requests() if not req.merged_into]
     if pack_id:
         reqs = [req for req in reqs if (req.pack_id or "flood") == pack_id]
     elif not reqs:
         storage_service.load_seed_incidents()
-        reqs = storage_service.list_requests()
+        reqs = [req for req in storage_service.list_requests() if not req.merged_into]
 
     from app.models.firestore_models import RequestStatus
     from app.tools.scoring import scoring_engine

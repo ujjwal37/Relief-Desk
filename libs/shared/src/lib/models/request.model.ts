@@ -157,6 +157,7 @@ export interface StoredRequest {
   };
   report_ids?: string[];
   cluster_id?: string | null;
+  merged_into?: string | null;
   flags?: string[];
   raw_text?: string | null;
   ai_translation?: string | null;

@@ -78,8 +78,16 @@ def extract_place(text: str) -> Optional[str]:
         if place:
             return place
 
+    street = re.search(
+        r"([A-Za-z0-9][\w]{2,}(?:\s+[A-Za-z][\w]{2,}){0,3}\s+(?:road|rd|lane|street|nagar|church))",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if street:
+        return street.group(1).strip(" ,.")
+
     landmark = re.search(
-        r"(?:near|at|paas|के पास|पास)\s+([A-Za-z0-9\u0900-\u097F][^,.]{2,48})",
+        r"(?:(?:^|(?<=\s))(?:near|at|paas)|के पास|पास)\s+([A-Za-z0-9\u0900-\u097F][^,.]{2,48})",
         text,
         flags=re.IGNORECASE,
     )

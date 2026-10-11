@@ -220,9 +220,22 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     req_obj.urgency_score = urgency_res.score
     req_obj.urgency_reason = urgency_res.reason
 
+    # A second caller about the same place and people folds into the open case.
+    if decision.decision.value == "duplicate" and decision.target_request_id:
+        target = storage_service.get_request(decision.target_request_id)
+        if target is not None:
+            target.merged_count = (target.merged_count or 1) + 1
+            if raw_report.id not in target.report_ids:
+                target.report_ids.append(raw_report.id)
+            storage_service.save_request(target, actor="dedupe_agent")
+            req_obj.merged_into = target.id
+            req_obj.merged_count = target.merged_count
+            raw_report.request_id = target.id
+
     # Save request
     storage_service.save_request(req_obj, actor="intake_pipeline")
-    raw_report.request_id = req_id
+    if raw_report.request_id is None:
+        raw_report.request_id = req_id
 
     # Handle cluster if duplicate
     if decision.decision.value == "duplicate" and decision.target_request_id:

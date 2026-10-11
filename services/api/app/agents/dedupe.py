@@ -180,7 +180,12 @@ class DedupeAgent:
                 evidence=["Describes distinct household or separate rescue operation."],
                 confidence=0.85,
             )
-        if not duplicate_cue and has_people_count:
+        same_people = (
+            new_req.people.count is not None
+            and best_candidate.people_count == new_req.people.count
+        )
+        # A counted report is a new case unless it names the same place and the same people.
+        if not duplicate_cue and has_people_count and not same_people:
             return DedupeDecision(
                 decision=DedupeDecisionType.NEW,
                 target_request_id=None,
@@ -206,6 +211,8 @@ class DedupeAgent:
         "area", "people", "water", "house", "ghar", "log", "hain", "paas",
         "ke", "mein", "par", "need", "help", "flood", "here", "same", "another",
         "report", "roads", "completely",
+        "boat", "send", "roof", "chhat", "madad", "chahiye", "bhejo", "bhej",
+        "fas", "gaye", "please", "rescue", "urgent", "paani", "pani",
     }
     _GENERIC_PLACE = {
         "school", "ghat", "nagar", "colony", "market", "park", "lake", "mandir",
@@ -244,7 +251,8 @@ class DedupeAgent:
         best = None
         best_score = 0
         for candidate in candidates:
-            score = self._landmark_score(raw_text, new_req.place_text or "", candidate.place_text or "")
+            heard = f"{candidate.place_text or ''} {candidate.raw_text or ''}"
+            score = self._landmark_score(raw_text, new_req.place_text or "", heard)
             if score > best_score:
                 best_score = score
                 best = candidate

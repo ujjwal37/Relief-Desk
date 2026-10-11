@@ -64,6 +64,7 @@ class StoredRequest(BaseModel):
     confidence: FieldConfidences = Field(default_factory=FieldConfidences)
     report_ids: List[str] = Field(default_factory=list)
     cluster_id: Optional[str] = None
+    merged_into: Optional[str] = None
     flags: List[str] = Field(default_factory=list)
     raw_text: Optional[str] = None
     summary: Optional[str] = None
