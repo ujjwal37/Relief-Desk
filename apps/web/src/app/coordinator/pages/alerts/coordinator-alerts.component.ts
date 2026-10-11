@@ -18,6 +18,11 @@ export class CoordinatorAlertsComponent implements OnInit {
   readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
+    this.reload();
+  }
+
+  reload(): void {
+    this.error.set(null);
     this.api.getAlerts().subscribe({
       next: (rows) => {
         this.alerts.set(rows);

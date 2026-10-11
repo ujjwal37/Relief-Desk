@@ -1,55 +1,42 @@
 <div class="alerts-page">
-  <section class="alert-list card" aria-labelledby="alerts-heading">
+  <section class="alert-list" aria-labelledby="alerts-heading">
     <h1 id="alerts-heading">{{ 'alerts.title' | rdTranslate }}</h1>
     <p class="sub">{{ 'alerts.subtitle' | rdTranslate }}</p>
-    <p class="error" *ngIf="error()">{{ error() }}</p>
-    <p class="sub" *ngIf="!error() && alerts().length === 0">{{ 'alerts.empty' | rdTranslate }}</p>
+    <div class="error" role="alert" *ngIf="error()">{{ error() }} <button type="button" (click)="reload()">{{ 'bench.retry' | rdTranslate }}</button></div>
+    <p class="empty" *ngIf="!error() && alerts().length === 0">{{ 'alerts.empty' | rdTranslate }}</p>
 
-    <article
-      class="alert-row"
-      *ngFor="let alert of alerts()"
-      [class.selected]="selectedId() === alert.id"
-      [class.critical]="alert.severity === 'critical'"
-      (click)="select(alert)"
-    >
+    <article class="alert-row" *ngFor="let alert of alerts()"
+      [class.selected]="selectedId() === alert.id" [class.critical]="alert.severity === 'critical'" [class.done]="alert.acknowledged"
+      (click)="select(alert)">
       <div class="row-head">
-        <strong>{{ alert.title }}</strong>
+        <span class="kind">{{ alert.kind === 'silent_zone' ? '◌' : '▲' }} {{ alert.kind === 'silent_zone' ? ('alerts.silent' | rdTranslate) : ('alerts.spike' | rdTranslate) }}</span>
         <span class="age">{{ alert.age_label }}</span>
       </div>
+      <h2>{{ alert.title }}</h2>
       <p class="reason">{{ alert.reason }}</p>
       <div class="actions">
-        <button type="button" class="chip" (click)="select(alert); $event.stopPropagation()">
-          {{ 'alerts.viewMap' | rdTranslate }}
+        <button type="button" class="primary" [disabled]="alert.acknowledged" (click)="acknowledge(alert); $event.stopPropagation()">
+          {{ alert.acknowledged ? ('alerts.ackDone' | rdTranslate) : ('alerts.acknowledge' | rdTranslate) }}
         </button>
-        <button
-          type="button"
-          class="chip"
-          [disabled]="alert.acknowledged"
-          (click)="acknowledge(alert); $event.stopPropagation()"
-        >
-          {{ alert.acknowledged ? 'Acknowledged' : ('alerts.acknowledge' | rdTranslate) }}
-        </button>
+        <button type="button" class="secondary" (click)="select(alert); $event.stopPropagation()">{{ 'alerts.viewMap' | rdTranslate }}</button>
       </div>
     </article>
   </section>
 
-  <section class="map-panel card" aria-label="Alert map">
-    <svg viewBox="0 0 520 640" class="city-map" role="img" aria-label="Riverbend wards">
-      <rect width="520" height="640" fill="#0a1120"></rect>
-      <path d="M40 80 C 180 140, 220 260, 160 420 C 120 520, 260 580, 400 520" fill="none" stroke="#1d4ed8" stroke-width="28" opacity="0.55"></path>
-      <g *ngFor="let alert of alerts(); let i = index">
-        <circle
-          [attr.cx]="80 + (i % 4) * 110"
-          [attr.cy]="120 + (i % 5) * 90"
-          r="28"
-          [attr.fill]="alert.kind === 'silent_zone' ? '#fbbf24' : '#fb7185'"
-          [attr.opacity]="selectedId() === alert.id ? 0.85 : 0.35"
-        ></circle>
+  <section class="map-panel" aria-label="Alert map">
+    <svg viewBox="0 0 520 640" class="city-map" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Riverbend wards">
+      <rect width="520" height="640" fill="var(--map-bg)"></rect>
+      <path d="M40 80 C 180 140, 220 260, 160 420 C 120 520, 260 580, 400 520" fill="none" stroke="var(--map-water)" stroke-width="34" stroke-linecap="round"></path>
+      <g *ngFor="let alert of alerts(); let i = index" (click)="select(alert)" class="pin">
+        <circle [attr.cx]="80 + (i % 4) * 110" [attr.cy]="120 + (i % 5) * 90" [attr.r]="selectedId() === alert.id ? 34 : 24"
+          [attr.fill]="alert.kind === 'silent_zone' ? 'var(--sev-high)' : 'var(--sev-crit)'" [attr.fill-opacity]="selectedId() === alert.id ? 0.4 : 0.22"
+          [attr.stroke]="alert.kind === 'silent_zone' ? 'var(--sev-high)' : 'var(--sev-crit)'" stroke-width="2.5"></circle>
+        <circle [attr.cx]="80 + (i % 4) * 110" [attr.cy]="120 + (i % 5) * 90" r="6" [attr.fill]="alert.kind === 'silent_zone' ? 'var(--sev-high)' : 'var(--sev-crit)'"></circle>
       </g>
     </svg>
     <p class="map-caption" *ngIf="selectedId() as id">
       <ng-container *ngFor="let alert of alerts()">
-        <span *ngIf="alert.id === id">{{ alert.title }} — {{ alert.reason }}</span>
+        <span *ngIf="alert.id === id"><b>{{ alert.title }}</b> — {{ alert.reason }}</span>
       </ng-container>
     </p>
   </section>
