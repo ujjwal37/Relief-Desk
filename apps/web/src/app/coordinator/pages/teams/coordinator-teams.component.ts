@@ -33,6 +33,7 @@ export class CoordinatorTeamsComponent implements OnInit {
   readonly typeFilter = signal<string>('all');
   readonly statusFilter = signal<string>('all');
   readonly now = signal(Date.now());
+  readonly notice = signal('');
 
   readonly filtered = computed(() => {
     const type = this.typeFilter();
@@ -88,6 +89,21 @@ export class CoordinatorTeamsComponent implements OnInit {
 
   canDo(team: StoredResource): string {
     return this.lang.translate(`coord.canDo.${team.kind}`).replace('{n}', String(team.capacity_total));
+  }
+
+  saveLocation(team: StoredResource, event: Event): void {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+    const data = new FormData(form);
+    const lat = Number(data.get('lat'));
+    const lng = Number(data.get('lng'));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    this.api.updateResourceLocation(team.id, lat, lng).subscribe({
+      next: (saved) => {
+        this.resources.set(this.resources().map((row) => (row.id === saved.id ? saved : row)));
+        this.notice.set(this.lang.translate('coord.savedLocation'));
+      },
+    });
   }
 
   fill(kind: string): string {

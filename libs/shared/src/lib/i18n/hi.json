@@ -267,6 +267,13 @@
     "updatedHour": "{n} घंटे पहले",
     "staleTeam": "स्थान 20 मिनट से पुराना",
     "assigned": "सौंपा मामला",
+    "simulated": "नकली",
+    "etaMin": "लगभग {n} मिनट",
+    "updateLocation": "स्थान बदलें",
+    "lat": "अक्षांश",
+    "lng": "देशांतर",
+    "saveLocation": "स्थान सहेजें",
+    "savedLocation": "स्थान सहेजा गया।",
     "kind": { "boat": "नाव", "medical": "चिकित्सा", "food": "भोजन", "shelter": "आश्रय" },
     "resStatus": {
       "available": "खाली",

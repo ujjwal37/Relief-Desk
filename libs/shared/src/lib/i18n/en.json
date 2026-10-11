@@ -267,6 +267,13 @@
     "updatedHour": "{n} h ago",
     "staleTeam": "Location older than 20 min",
     "assigned": "Assigned case",
+    "simulated": "Simulated",
+    "etaMin": "about {n} min",
+    "updateLocation": "Update location",
+    "lat": "Latitude",
+    "lng": "Longitude",
+    "saveLocation": "Save location",
+    "savedLocation": "Location saved.",
     "kind": { "boat": "Boat", "medical": "Medical", "food": "Food", "shelter": "Shelter" },
     "resStatus": {
       "available": "Available",

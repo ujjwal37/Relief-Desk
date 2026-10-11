@@ -143,6 +143,10 @@ export class ApiClientService {
     );
   }
 
+  updateResourceLocation(id: string, lat: number, lng: number): Observable<StoredResource> {
+    return this.http.post<StoredResource>(`/api/resources/${id}/location`, { lat, lng }, this.getAuthHeaders());
+  }
+
   getResources(kind?: string): Observable<StoredResource[]> {
     const url = kind ? `/api/resources?kind=${kind}` : '/api/resources';
     return this.http.get<StoredResource[]>(url, this.getAuthHeaders());

@@ -1,5 +1,6 @@
 import logging
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -360,6 +361,67 @@ class StorageService:
         )
         return res
 
+    def update_resource_location(
+        self, resource_id: str, lat: float, lng: float, actor: str = "coordinator"
+    ) -> StoredResource:
+        """Coordinator sets a team's last-known point. Stops a running simulation."""
+        res = self._resources.get(resource_id)
+        if not res:
+            raise ValueError(f"Resource {resource_id} not found")
+        before = res.model_dump()
+        res.lat = lat
+        res.lng = lng
+        res.location_updated_at = datetime.now(timezone.utc).isoformat()
+        res.updated_at = res.location_updated_at
+        res.simulated = False
+        res.sim_step = 0
+        self._resources[resource_id] = res
+        self.record_audit(
+            actor=actor, action="location_update", target=resource_id, before=before, after=res.model_dump()
+        )
+        return res
+
+    def begin_simulation(self, resource_id: str, target_lat: float, target_lng: float, launch: bool = True) -> None:
+        """Move a team in a straight line toward the case. Labelled simulated. Not a live GPS feed."""
+        res = self._resources.get(resource_id)
+        if not res:
+            return
+        res.sim_origin_lat = res.lat
+        res.sim_origin_lng = res.lng
+        res.sim_target_lat = target_lat
+        res.sim_target_lng = target_lng
+        res.sim_step = 0
+        res.simulated = True
+        res.status = ResourceStatus.EN_ROUTE
+        res.location_updated_at = datetime.now(timezone.utc).isoformat()
+        self._resources[resource_id] = res
+
+        def run() -> None:
+            for _ in range(4):
+                time.sleep(3)
+                current = self._resources.get(resource_id)
+                if not current or not current.simulated or current.sim_step >= 4:
+                    return
+                self.step_simulation(resource_id)
+
+        if launch:
+            threading.Thread(target=run, name=f"sim-{resource_id}", daemon=True).start()
+
+    def step_simulation(self, resource_id: str) -> Optional[StoredResource]:
+        res = self._resources.get(resource_id)
+        if not res or not res.simulated or res.sim_origin_lat is None or res.sim_target_lat is None:
+            return res
+        if res.sim_origin_lng is None or res.sim_target_lng is None:
+            return res
+        res.sim_step += 1
+        frac = min(1.0, res.sim_step / 4)
+        res.lat = res.sim_origin_lat + (res.sim_target_lat - res.sim_origin_lat) * frac
+        res.lng = res.sim_origin_lng + (res.sim_target_lng - res.sim_origin_lng) * frac
+        res.location_updated_at = datetime.now(timezone.utc).isoformat()
+        res.status = ResourceStatus.ON_SCENE if frac >= 1 else ResourceStatus.EN_ROUTE
+        self._resources[resource_id] = res
+        return res
+
     def load_seed_resources(self, yaml_path: Optional[str] = None) -> int:
         """Loads seed resources from YAML file into storage."""
         import os
@@ -448,6 +510,8 @@ class StorageService:
             if not assigned.location_updated_at:
                 assigned.location_updated_at = assigned.updated_at
             self._resources[assigned.id] = assigned
+            if req.lat is not None and req.lng is not None:
+                self.begin_simulation(assigned.id, req.lat, req.lng)
 
         before = match.model_dump()
         match.state = MatchState.APPROVED
@@ -514,6 +578,7 @@ class StorageService:
         self.record_audit(actor=actor, action="status_change", target=req.id, before=before, after=req.model_dump())
 
         if resource_id and resource_id in self._resources:
+            self._resources[resource_id].simulated = False
             self.release_capacity(resource_id, amount, actor=actor)
             still_out = any(
                 other.assigned_resource_id == resource_id

@@ -581,3 +581,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: pytest tests/test_resources_matching.py 4 passed. Teams spec and command spec 13 passed. check-i18n 414 keys.
 - Notes / risks / not done: Manual location edit and the simulated move after approve are FP-10. Area names are still the current ward labels until the Kerala pack.
 - Next (suggested task id): FP-10
+
+### 2026-10-11 21:40 IST — FP-10 — Cursor
+- What changed: A coordinator can type a team's latitude and longitude and save it. That stops any running simulation. After approve, the team moves in a straight line toward the case (on the way, then at the scene) and the card says Simulated. The queue reloads team positions with the case poll. Match cards show a straight-line ETA at 20 km/h. Scoring already uses the current coordinates and skips teams that are not available.
+- Files: storage simulation, matches location endpoint, matching ETA fields, teams form, command detail, i18n, TASKS.md
+- How verified: pytest tests/test_resources_matching.py tests/test_matches_api.py tests/test_match_types.py 11 passed. Teams and command specs 14 passed. check-i18n 421 keys.
+- Notes / risks / not done: The move is four steps, three seconds apart, in the API process. It is not a road route. Google distance is not called.
+- Next (suggested task id): FP-11

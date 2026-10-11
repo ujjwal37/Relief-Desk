@@ -267,6 +267,13 @@
     "updatedHour": "{n} மணி முன்",
     "staleTeam": "இடம் 20 நிமிடத்திற்கு மேல் பழையது",
     "assigned": "ஒதுக்கப்பட்ட வழக்கு",
+    "simulated": "பாவனை",
+    "etaMin": "சுமார் {n} நிமிடம்",
+    "updateLocation": "இடத்தை மாற்று",
+    "lat": "அட்சரேகை",
+    "lng": "தீர்க்கரேகை",
+    "saveLocation": "இடத்தை சேமி",
+    "savedLocation": "இடம் சேமிக்கப்பட்டது.",
     "kind": { "boat": "படகு", "medical": "மருத்துவம்", "food": "உணவு", "shelter": "தங்குமிடம்" },
     "resStatus": {
       "available": "காலி",

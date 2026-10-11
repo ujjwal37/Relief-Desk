@@ -19,6 +19,11 @@ class RejectMatchRequest(BaseModel):
     reason: str
 
 
+class ResourceLocationRequest(BaseModel):
+    lat: float
+    lng: float
+
+
 @router.get(
     "/requests/{id}/matches",
     response_model=List[MatchProposal],
@@ -109,6 +114,22 @@ def complete_request(
         return storage_service.complete_request(id, actor=user.email)
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.post(
+    "/resources/{id}/location",
+    response_model=StoredResource,
+    summary="Set a team's last-known location by hand",
+)
+def update_resource_location(
+    id: str,
+    payload: ResourceLocationRequest,
+    user: CoordinatorUser = Depends(get_current_coordinator),
+):
+    try:
+        return storage_service.update_resource_location(id, payload.lat, payload.lng, actor=user.email)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
 
 
 @router.get(

@@ -179,6 +179,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
   readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
 
+  etaMinutes(km: number): number {
+    return Math.max(1, Math.round((km / 20) * 60));
+  }
+  assignedTeam(req: StoredRequest): StoredResource | undefined {
+    return this.resources().find((team) => team.id === req.assigned_resource_id);
+  }
   teamFill(kind: string): string {
     return ({ boat: '#0b6e99', medical: '#b42318', food: '#b54708', shelter: '#067647' } as Record<string, string>)[kind] || '#0b6e99';
   }
@@ -259,6 +265,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.pollTimer = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       this.loadRequests(true);
+      this.loadResources();
     }, 4000);
   }
 

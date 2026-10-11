@@ -182,6 +182,7 @@ export interface StoredResource {
   location_updated_at?: string | null;
   assigned_request_id?: string | null;
   area_name?: string | null;
+  simulated?: boolean;
 }
 
 export interface MatchBreakdown {
@@ -209,6 +210,8 @@ export interface MatchProposal {
   state: 'proposed' | 'approved' | 'rejected';
   is_fallback?: boolean;
   fallback_label?: string | null;
+  simulated?: boolean;
+  eta_minutes?: number | null;
   overcommit_warning: boolean;
 }
 

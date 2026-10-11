@@ -132,6 +132,12 @@ class StoredResource(BaseModel):
     location_updated_at: Optional[str] = None
     assigned_request_id: Optional[str] = None
     area_name: Optional[str] = None
+    simulated: bool = False
+    sim_origin_lat: Optional[float] = None
+    sim_origin_lng: Optional[float] = None
+    sim_target_lat: Optional[float] = None
+    sim_target_lng: Optional[float] = None
+    sim_step: int = 0
     synthetic: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

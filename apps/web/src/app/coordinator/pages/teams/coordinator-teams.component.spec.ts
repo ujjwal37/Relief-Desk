@@ -12,8 +12,9 @@ describe('CoordinatorTeamsComponent', () => {
   ];
 
   beforeEach(async () => {
-    const api = jasmine.createSpyObj('ApiClientService', ['getResources']);
+    const api = jasmine.createSpyObj('ApiClientService', ['getResources', 'updateResourceLocation']);
     api.getResources.and.returnValue(of(rows));
+    api.updateResourceLocation.and.returnValue(of({ ...rows[0], lat: 9.5, lng: 76.3, simulated: false }));
     await TestBed.configureTestingModule({
       imports: [CoordinatorTeamsComponent],
       providers: [{ provide: ApiClientService, useValue: api }],
@@ -32,5 +33,17 @@ describe('CoordinatorTeamsComponent', () => {
     expect(cmp.filtered().map((t) => t.id)).toEqual(['b1']);
     expect(cmp.stale(rows[1])).toBeTrue();
     expect(cmp.stale(rows[0])).toBeFalse();
+  });
+
+  it('saves a manual location', () => {
+    const form = fixture.nativeElement.querySelector('form.loc') as HTMLFormElement;
+    const inputs = form.querySelectorAll('input');
+    (inputs[0] as HTMLInputElement).value = '9.5';
+    (inputs[1] as HTMLInputElement).value = '76.3';
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    const api = TestBed.inject(ApiClientService) as jasmine.SpyObj<ApiClientService>;
+    expect(api.updateResourceLocation).toHaveBeenCalledWith('b1', 9.5, 76.3);
+    expect(fixture.componentInstance.notice()).toContain('saved');
   });
 });

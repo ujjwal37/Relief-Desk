@@ -16,3 +16,8 @@
 .status { font-weight: 800; font-size: 13px; padding: 4px 8px; border-radius: 999px; background: var(--surface-2); }
 .status.free { background: var(--brand-tint); color: var(--brand); }
 .empty { padding: 24px; color: var(--text-2); }
+.sim { color: var(--text-2); font-weight: 800; }
+.loc { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-top: 8px; }
+.loc input { width: 120px; min-height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); padding: 0 8px; }
+.loc button { min-height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-weight: 700; cursor: pointer; }
+.note { margin: 0 0 10px; color: var(--brand); font-weight: 700; }

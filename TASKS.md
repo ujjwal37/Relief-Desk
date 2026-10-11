@@ -111,7 +111,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | FP-07 | Chat fully localized | C | DONE | – | No raw keys in chips, prompts, or review |
 | FP-08 | Dispatched and Completed lifecycle | C | DONE | FP-05 | Approve leaves the active queue; complete frees capacity |
 | FP-09 | Teams view | C | DONE | FP-08 | All resources listed; typed map pins |
-| FP-10 | Team location and simulated movement | C | TODO | FP-09 | Manual update; simulated path labelled |
+| FP-10 | Team location and simulated movement | C | DONE | FP-09 | Manual update; simulated path labelled |
 | FP-11 | Filters in the URL and timestamps | C | TODO | FP-02 | Status, type, area, time persist; empty state |
 | FP-12 | Time-based priority rise | C | TODO | FP-04 | Injected clock raises the score; reason chip |
 | FP-13 | Kerala case study | C | TODO | – | Real districts; synthetic people; no Riverbend/Lucknow in app data |

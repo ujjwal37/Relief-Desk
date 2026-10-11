@@ -34,6 +34,8 @@ class MatchProposal(BaseModel):
     overcommit_warning: bool = False
     is_fallback: bool = False
     fallback_label: Optional[str] = None
+    simulated: bool = False
+    eta_minutes: Optional[int] = None
 
 
 class MatchingAgent:
@@ -133,6 +135,8 @@ class MatchingAgent:
                     overcommit_warning=is_overcommit,
                     is_fallback=is_fallback,
                     fallback_label=fallback_label if is_fallback else None,
+                    simulated=bool(getattr(res, "simulated", False)),
+                    eta_minutes=max(1, round((breakdown.distance_km / 20.0) * 60)),
                 )
             )
 

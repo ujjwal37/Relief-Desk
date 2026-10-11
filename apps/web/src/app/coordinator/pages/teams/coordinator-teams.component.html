@@ -16,6 +16,7 @@
     }
   </div>
 
+  @if (notice()) { <p class="note" role="status">{{ notice() }}</p> }
   <ul class="list">
     @for (team of filtered(); track team.id) {
       <li class="card">
@@ -30,6 +31,13 @@
           @if (team.assigned_request_id) {
             <p class="assigned">{{ 'coord.assigned' | rdTranslate }} {{ team.assigned_request_id }}</p>
           }
+          @if (team.simulated) { <p class="sim">{{ 'coord.simulated' | rdTranslate }}</p> }
+          <form class="loc" (submit)="saveLocation(team, $event)">
+            <span>{{ 'coord.updateLocation' | rdTranslate }}</span>
+            <label>{{ 'coord.lat' | rdTranslate }} <input name="lat" type="number" step="any" [value]="team.lat" /></label>
+            <label>{{ 'coord.lng' | rdTranslate }} <input name="lng" type="number" step="any" [value]="team.lng" /></label>
+            <button type="submit">{{ 'coord.saveLocation' | rdTranslate }}</button>
+          </form>
         </div>
         <span class="status" [class.free]="statusKey(team) === 'available'">{{ statusLabel(team) }}</span>
       </li>

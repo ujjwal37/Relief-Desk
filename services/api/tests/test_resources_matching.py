@@ -166,7 +166,7 @@ def test_approve_match_capacity_transaction():
     updated_req = storage_service.get_request("req_match_tx")
     assert updated_req.status == RequestStatus.DISPATCHED
     assert updated_req.assigned_resource_id == "RES-BOAT-02"
-    assert updated_boat.status in (ResourceStatus.DISPATCHED, ResourceStatus.DEPLETED)
+    assert updated_boat.status in (ResourceStatus.DISPATCHED, ResourceStatus.DEPLETED, ResourceStatus.EN_ROUTE)
     assert updated_boat.assigned_request_id == "req_match_tx"
     assert updated_boat.location_updated_at
 
@@ -181,3 +181,26 @@ def test_approve_match_capacity_transaction():
     assert restored.assigned_request_id is None
     trail = storage_service.get_audit_trail("req_match_tx")
     assert any(entry.action == "status_change" and entry.actor == "coordinator_lead" for entry in trail)
+
+
+def test_simulated_move_and_manual_location():
+    storage_service.load_seed_resources()
+    boat = storage_service.get_resource("RES-BOAT-03")
+    assert boat is not None
+    origin_lat, origin_lng = boat.lat, boat.lng
+    target_lat, target_lng = origin_lat + 0.04, origin_lng + 0.04
+    storage_service.begin_simulation("RES-BOAT-03", target_lat, target_lng, launch=False)
+    moved = storage_service.step_simulation("RES-BOAT-03")
+    assert moved is not None
+    assert moved.simulated is True
+    assert moved.status == ResourceStatus.EN_ROUTE
+    assert moved.lat != origin_lat
+    for _ in range(3):
+        moved = storage_service.step_simulation("RES-BOAT-03")
+    assert moved.status == ResourceStatus.ON_SCENE
+    assert abs(moved.lat - target_lat) < 1e-6
+    placed = storage_service.update_resource_location("RES-BOAT-03", 9.5, 76.3, actor="coordinator_lead")
+    assert placed.lat == 9.5
+    assert placed.lng == 76.3
+    assert placed.simulated is False
+    assert placed.location_updated_at

@@ -267,6 +267,13 @@
     "updatedHour": "{n} ghante pehle",
     "staleTeam": "Location 20 min se purani",
     "assigned": "Assigned case",
+    "simulated": "Nakli",
+    "etaMin": "lagbhag {n} min",
+    "updateLocation": "Location badlein",
+    "lat": "Latitude",
+    "lng": "Longitude",
+    "saveLocation": "Location save karein",
+    "savedLocation": "Location save ho gayi.",
     "kind": { "boat": "Naav", "medical": "Ilaaj", "food": "Khana", "shelter": "Ashray" },
     "resStatus": {
       "available": "Khali",
