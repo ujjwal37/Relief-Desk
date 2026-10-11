@@ -854,3 +854,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_live_dedupe.py tests/test_dedupe.py` — 5 passed.
 - Notes / risks / not done: The end-to-end spec posts "4 people stranded" at the Champakulam pin, which shares "stranded" with a seed description. That was folding the new card away.
 - Next (suggested task id): RT-E2E-2
+
+### 2026-10-12 06:05 IST — RT-E2E-2 — Cursor
+- What changed: Re-ran the full checks after RT-14 through RT-24. No product change in this entry.
+- Files: WORKDONE.md
+- How verified: `pytest tests` from services/api — 144 passed. `node scripts/check-i18n.mjs` — 522 keys, template lint passed. `npx ng build web` succeeded. `npx playwright test --reporter=list` — 2 passed (desktop 1440x900, mobile 390x844).
+- Notes / risks / not done: The first Playwright run failed because a new "stranded" report folded into INC-003. RT-24 fixed that, then the spec passed. Type accuracy on the held-out split is 67.3%, still under the 90% target.
+- Next (suggested task id): none
