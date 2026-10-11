@@ -135,6 +135,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | RT-10 | Mobile coordinator banner, tabs and alerts map | C | DONE | RT-09 | Banner wraps, Accuracy report tab wraps, spike mark is a small circle |
 | RT-11 | Hinglish review does not say Send now | C | DONE | RT-10 | The review line uses Abhi bhejein, the same words as the button |
 | RT-12 | One resource-gap alert, seeded one marked sample | C | DONE | RT-11 | The fictional medical gap is labelled Sample; a live gap replaces it |
+| RT-13 | Team link is labelled demo | C | DONE | RT-12 | /team/:id shows Demo link and is not described as a signed-in screen |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

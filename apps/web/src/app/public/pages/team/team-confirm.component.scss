@@ -4,6 +4,7 @@ header { display:flex; justify-content:space-between; align-items:center; min-he
 .brand { font-weight:800; color:var(--text); text-decoration:none; }
 .label { margin:8px 0; color:var(--brand); font-weight:700; font-size:14px; }
 h1 { margin:8px 0; font-size:28px; }
+.demo { margin:0 0 12px; padding:8px 12px; border-radius:10px; background:var(--brand-tint); color:var(--brand); font-weight:700; }
 .lead { color:var(--text-2); line-height:1.45; }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; }
 .sim { font-weight:800; }

@@ -756,3 +756,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_anomaly.py tests/test_team_confirm.py` — 8 passed. Alerts spec 3 passed.
 - Notes / risks / not done: The map key still uses the plain words Resource gap for the symbol. The card title says Sample.
 - Next (suggested task id): RT-13
+
+### 2026-10-12 03:45 IST — RT-13 — Cursor
+- What changed: The public team page says it is a demo link and not a signed-in coordinator screen. The route is still open so a field phone can update a team without a login.
+- Files: team-confirm component, team.demo in en/hi/hinglish/ta, team-confirm.component.spec.ts, TASKS.md
+- How verified: `npx ng test web --include='**/team-confirm.component.spec.ts'` — 1 passed.
+- Notes / risks / not done: There is no per-team token. Anyone with the team id can open the page. It is labelled demo.
+- Next (suggested task id): none

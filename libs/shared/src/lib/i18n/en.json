@@ -568,6 +568,7 @@
   },
   "team": {
     "open": "Team confirm",
+    "demo": "Demo link. This page is not a signed-in coordinator screen.",
     "atScene": "At scene",
     "done": "Done",
     "back": "Back available",

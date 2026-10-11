@@ -568,6 +568,7 @@
   },
   "team": {
     "open": "Team confirm",
+    "demo": "Demo link. Yeh page sign-in wala coordinator screen nahi hai.",
     "atScene": "Mauke par",
     "done": "Ho gaya",
     "back": "Wapas available",
