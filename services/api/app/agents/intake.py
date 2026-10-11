@@ -54,6 +54,14 @@ Do not include any Markdown fences (like ```json) or explanation outside the JSO
 """
 
 
+def intake_user_prompt(raw_text: str, language_hint: Optional[str] = None) -> str:
+    """The same user prompt submit and `make record-ai` hash."""
+    user_prompt = f"<report>\n{raw_text.strip()}\n</report>"
+    if language_hint:
+        user_prompt += f"\n\nLanguage hint: {language_hint}"
+    return user_prompt
+
+
 class IntakeAgent:
     def __init__(self, client=None):
         self.client = client or llm_client
@@ -66,10 +74,7 @@ class IntakeAgent:
                 needs_human_review=True
             )
 
-        # Delimit untrusted user input safely
-        user_prompt = f"<report>\n{raw_text.strip()}\n</report>"
-        if language_hint:
-            user_prompt += f"\n\nLanguage hint: {language_hint}"
+        user_prompt = intake_user_prompt(raw_text, language_hint)
 
         def validate_json_schema(text_output: str) -> ExtractedRequest:
             # Strip any extraneous code fences if model returned them

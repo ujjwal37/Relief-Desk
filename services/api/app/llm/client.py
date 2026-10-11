@@ -13,6 +13,8 @@ logger = logging.getLogger("relief_desk.llm")
 
 CACHE_DIR = Path(__file__).resolve().parents[4] / "data" / "cache" / "llm"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
+# Recorded Gemini replies. Empty until `make record-ai` runs with a real key.
+REPLAY_DIR = Path(__file__).resolve().parents[4] / "data" / "ai_cache"
 
 
 _PLACEHOLDER_KEYS = {"", "replace-me", "synthetic-demo-gemini-key"}
@@ -43,6 +45,11 @@ class LLMClient:
     def _hash_key(self, prompt: str) -> str:
         return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
+    def cache_key(self, system_instruction: str, user_prompt: str) -> str:
+        cleaned = scrub_pii(user_prompt)
+        full_prompt = f"SYSTEM:\n{system_instruction}\n\nUSER:\n{cleaned}"
+        return self._hash_key(full_prompt)
+
     def gemini_live(self) -> bool:
         """True when a real key is set. DEMO_MODE does not block that call."""
         if (settings.AI_MODE or "auto").lower() == "fallback" or not settings.GEMINI_ENABLED:
@@ -59,26 +66,39 @@ class LLMClient:
         else:
             self.last_source = "offline_fallback"
 
+    def _read_disk(self, cache_file: Path, key: str) -> Optional[str]:
+        if not cache_file.is_file():
+            return None
+        try:
+            with open(cache_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            logger.warning("Error reading cache file %s: %s", cache_file, e)
+            return None
+        val = data.get("response")
+        if not isinstance(val, str):
+            return None
+        self._memory_cache[key] = val
+        source = data.get("source") or data.get("provider") or "offline_fallback"
+        self._memory_source[key] = source
+        self._memory_meta[key] = {
+            "model": data.get("model"),
+            "tokens": data.get("tokens"),
+            "provider": data.get("provider") or ("gemini" if source == "gemini" else "cache"),
+        }
+        return val
+
     def get_cached(self, key: str) -> Optional[str]:
         if key in self._memory_cache:
             return self._memory_cache[key]
-        cache_file = CACHE_DIR / f"{key}.json"
-        if cache_file.exists():
-            try:
-                with open(cache_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    val = data.get("response")
-                    self._memory_cache[key] = val
-                    source = data.get("source") or data.get("provider") or "offline_fallback"
-                    self._memory_source[key] = source
-                    self._memory_meta[key] = {
-                        "model": data.get("model"),
-                        "tokens": data.get("tokens"),
-                        "provider": data.get("provider") or ("gemini" if source == "gemini" else "cache"),
-                    }
-                    return val
-            except Exception as e:
-                logger.warning("Error reading cache file %s: %s", cache_file, e)
+        mode = (settings.AI_MODE or "auto").lower()
+        replay = REPLAY_DIR / f"{key}.json"
+        runtime = CACHE_DIR / f"{key}.json"
+        order = (replay, runtime) if mode == "replay" else (runtime, replay)
+        for path in order:
+            found = self._read_disk(path, key)
+            if found is not None:
+                return found
         return None
 
     def set_cached(
@@ -153,8 +173,7 @@ class LLMClient:
         """
         started = time.perf_counter()
         user_prompt = scrub_pii(user_prompt)
-        full_prompt = f"SYSTEM:\n{system_instruction}\n\nUSER:\n{user_prompt}"
-        cache_key = self._hash_key(full_prompt)
+        cache_key = self.cache_key(system_instruction, user_prompt)
         mode = (settings.AI_MODE or "auto").lower()
 
         cached = self.get_cached(cache_key)
@@ -173,7 +192,7 @@ class LLMClient:
             logger.info("Replay cache hit for prompt hash %s", cache_key[:8])
             self.cache_hits += 1
             return self._from_cache(cache_key, cached, started)
-        if cache_ok and cached is not None and mode != "live" and not self.gemini_live():
+        if cache_ok and cached is not None and recorded and mode != "live" and not self.gemini_live():
             self.cache_hits += 1
             return self._from_cache(cache_key, cached, started)
         self.cache_misses += 1

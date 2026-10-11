@@ -917,3 +917,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 169 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%. Gemini on that split is still unmeasured. /api/health/ai provider is fallback with the circuit closed.
 - Notes / risks / not done: The bucket and semaphore wrap the real SDK call. Tests that replace _call_gemini do not sleep. Cache hit rate is for this process only.
 - Next (suggested task id): GM-09
+
+### 2026-10-12 07:35 IST — GM-09 — Cursor
+- What changed: `make record-ai` calls Gemini for the seeded flood reports and writes `data/ai_cache/{hash}.json`. It exits before writing when the key is missing, `replace-me`, or `synthetic-demo-gemini-key`, and it does not store fallback text. `AI_MODE=replay` reads that directory first and stores provider=cache, which the case badge shows as Recorded Gemini run. A report that is not in the directory still calls Gemini when a real key is set. The directory in git has only a README.
+- Files: services/api/app/llm/client.py, services/api/app/llm/record.py, services/api/app/agents/intake.py, scripts/record_ai.py, data/ai_cache/README.md, Makefile, README.md, services/api/tests/test_replay_cache.py, TASKS.md
+- How verified: `pytest tests` — 172 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%, duplicate F1 62.7%, vulnerable F1 58.5%. Keyword baseline type 16.3%, ward 13.3%. Gemini measured false, reason no_api_key, model gemini-3.8-flash, n=168.
+- Notes / risks / not done: No recorded transcripts are committed. The badge says Recorded Gemini run only after a real `make record-ai` run, or in the test that writes a temporary file.
+- Next (suggested task id): GM-10

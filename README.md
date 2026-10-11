@@ -79,6 +79,8 @@ python scripts/reset_demo
 
 `DEMO_MODE=true` still loads the synthetic scenario and the demo login. It does not block Gemini. A real `GEMINI_API_KEY` calls the model named by `GEMINI_MODEL` (currently `gemini-3.8-flash`, from the Gemini models page dated 2026-10-09). No key, a placeholder key, or `GEMINI_ENABLED=false` uses the deterministic fallback. The case stores `ai.provider` as `gemini`, `cache`, or `fallback`, and the AI reading line shows Gemini, Recorded Gemini run, or Offline fallback.
 
+`data/ai_cache` is empty in git. `make record-ai` writes it only after a real key returns Gemini JSON for the seeded reports. `AI_MODE=replay` serves those files as Recorded Gemini run. A new report that is not in the cache still calls Gemini when a key is set.
+
 Set the key only in `.env`. Do not commit it.
 
 ```
