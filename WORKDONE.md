@@ -770,3 +770,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_match_eta.py tests/test_matches_api.py` — 8 passed.
 - Notes / risks / not done: A request outside Kerala still shows a long real ETA.
 - Next (suggested task id): none
+
+### 2026-10-12 04:05 IST — RT-E2E — Cursor
+- What changed: Re-ran the retest suite after RT-01 through RT-13. No product code in this note.
+- Files: WORKDONE.md
+- How verified: `pytest tests` — 125 passed. `node scripts/check-i18n.mjs` — 513 keys, templates clean. `npx ng build web` — succeeded. `npx playwright test` — desktop 1440×900 passed (19.8s), mobile 390×844 passed (21.4s).
+- Notes / risks / not done: Malayalam was not added. The team page is still open to anyone with the id; it is labelled demo. A simulation step already in flight can write one more point after mark arrived.
+- Next (suggested task id): none
