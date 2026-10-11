@@ -63,6 +63,13 @@
     "approve": "Dispatch Approve Karein",
     "reject": "Reject"
   },
+  "alerts": {
+    "title": "Anomaly aur silent-zone alerts",
+    "subtitle": "Sirf flag. Kuch delete nahi hota. Coordinator decide karega.",
+    "acknowledge": "Acknowledge",
+    "viewMap": "Map par dekhein",
+    "empty": "Abhi koi alert nahi."
+  },
   "auth": {
     "loginTitle": "Coordinator Portal",
     "subtitle": "Authorized Responders aur Triage Leads",

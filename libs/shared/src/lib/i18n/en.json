@@ -63,6 +63,13 @@
     "approve": "Approve Dispatch",
     "reject": "Reject"
   },
+  "alerts": {
+    "title": "Anomaly & silent-zone alerts",
+    "subtitle": "Flags only. Nothing is deleted. Coordinator decides.",
+    "acknowledge": "Acknowledge",
+    "viewMap": "View on map",
+    "empty": "No alerts right now."
+  },
   "auth": {
     "loginTitle": "Coordinator Portal",
     "subtitle": "Authorized Responders and Triage Leads",

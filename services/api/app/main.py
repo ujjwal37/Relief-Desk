@@ -11,6 +11,7 @@ from app.api.reports import router as reports_router
 from app.api.auth import router as auth_router
 from app.api.matches import router as matches_router
 from app.api.public import router as public_router
+from app.api.alerts import router as alerts_router
 
 logging.basicConfig(
     level=settings.LOG_LEVEL,
@@ -50,6 +51,7 @@ app.include_router(reports_router)
 app.include_router(auth_router)
 app.include_router(matches_router)
 app.include_router(public_router)
+app.include_router(alerts_router)
 
 @app.get("/")
 def root():

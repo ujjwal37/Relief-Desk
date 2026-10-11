@@ -10,7 +10,8 @@
 
     <div class="right-cluster">
       <rd-language-switcher></rd-language-switcher>
-      <span class="live-pill">● LIVE MONITOR</span>
+      <a routerLink="/coordinator/command" class="nav-btn">{{ 'queue.title' | rdTranslate }}</a>
+      <a routerLink="/coordinator/alerts" class="nav-btn">{{ 'alerts.title' | rdTranslate }}</a>
       <span class="demo-user">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</span>
       <button type="button" class="nav-btn" (click)="logout()">{{ 'nav.logout' | rdTranslate }}</button>
     </div>

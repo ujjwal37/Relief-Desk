@@ -368,3 +368,13 @@
 - Notes / risks / not done: This is the local demo. Hosted deploy remains T-036. Hindi voice line still asks for a landmark before the card; the Hinglish hero message confirms in one turn.
 - Next (suggested task id): T-031
 
+### 2026-10-11 17:25 IST — T-031 — Cursor
+- What changed: Deterministic anomaly rules for spike (count ≥ 3× baseline), silent zone (0 reports while neighbours have some), resource gap (demand above free capacity), conflicting statements, and stale requests. `GET /api/alerts` and acknowledge are coordinator-only. Alerts view at `/coordinator/alerts` lists the reasons and a ward map. Seed measurements in `anomaly_signals.yaml` produce the Ward 7 spike and Ward 5 silent zone. Flags only; nothing is deleted.
+- Files: services/api/app/tools/anomaly.py, services/api/app/api/alerts.py, services/api/app/main.py, services/api/tests/test_anomaly.py, data/synthetic/flood_v1/anomaly_signals.yaml, apps/web/src/app/coordinator/pages/alerts/*, apps/web/src/app/coordinator/coordinator.routes.ts, apps/web/src/app/coordinator/layouts/coordinator-layout.component.html, libs/shared/src/lib/models/request.model.ts, libs/shared/src/lib/services/api-client.service.ts, libs/shared/src/lib/i18n/*.json, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_anomaly.py` -> 3 passed. Unauthenticated GET is 401. Seeded spike reason contains "14 reports" and silent zone contains "0 reports". Below-threshold spike returns nothing.
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include=**/coordinator-alerts.component.spec.ts` -> 1 passed.
+  - `node scripts/check-i18n.mjs` -> PASSED (66 keys).
+- Notes / risks / not done: News-signal card is stretch S-001 and is not on this screen.
+- Next (suggested task id): T-033
+

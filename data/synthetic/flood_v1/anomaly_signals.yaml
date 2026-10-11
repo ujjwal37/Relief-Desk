@@ -1,0 +1,27 @@
+version: 1
+# Measurements the anomaly engine evaluates. Alerts appear only when a rule fires.
+# Synthetic Riverbend figures for the flood demo.
+signals:
+  - kind: spike
+    ward_id: ward_7
+    ward_name: Ward 7
+    recent_reports: 14
+    baseline: 3
+    window: 20 min
+  - kind: silent_zone
+    ward_id: ward_5
+    ward_name: Ward 5
+    recent_reports: 0
+    neighbour_reports: 6
+    window: 3 h
+  - kind: resource_gap
+    resource_kind: medical
+    demand: 6
+    free: 2
+  - kind: conflict
+    ward_name: Ward 4
+    statement_a: Canal Road open
+    statement_b: blocked
+  - kind: stale
+    count: 4
+    age_minutes: 90

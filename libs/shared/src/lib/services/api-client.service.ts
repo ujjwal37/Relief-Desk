@@ -14,6 +14,7 @@ import {
   PublicCell,
   PublicCellsResponse,
   PublicAlert,
+  AnomalyAlert,
   ReportStatusResponse,
 } from '../models/request.model';
 import { AuthService } from './auth.service';
@@ -147,5 +148,13 @@ export class ApiClientService {
       ? `/api/reports/${reportId}/status?token=${token}`
       : `/api/reports/${reportId}/status`;
     return this.http.get<ReportStatusResponse>(url);
+  }
+
+  getAlerts(): Observable<AnomalyAlert[]> {
+    return this.http.get<AnomalyAlert[]>('/api/alerts', this.getAuthHeaders());
+  }
+
+  acknowledgeAlert(id: string): Observable<AnomalyAlert> {
+    return this.http.post<AnomalyAlert>(`/api/alerts/${id}/acknowledge`, {}, this.getAuthHeaders());
   }
 }

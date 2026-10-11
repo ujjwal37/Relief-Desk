@@ -250,6 +250,17 @@ export interface StatusTimelineStep {
   description: string;
 }
 
+export interface AnomalyAlert {
+  id: string;
+  kind: string;
+  title: string;
+  reason: string;
+  ward_id?: string | null;
+  severity: string;
+  age_label: string;
+  acknowledged: boolean;
+}
+
 export interface ReportStatusResponse {
   report_id: string;
   request_id: string;

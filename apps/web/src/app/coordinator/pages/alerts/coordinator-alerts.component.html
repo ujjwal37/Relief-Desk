@@ -1,0 +1,56 @@
+<div class="alerts-page">
+  <section class="alert-list card" aria-labelledby="alerts-heading">
+    <h1 id="alerts-heading">{{ 'alerts.title' | rdTranslate }}</h1>
+    <p class="sub">{{ 'alerts.subtitle' | rdTranslate }}</p>
+    <p class="error" *ngIf="error()">{{ error() }}</p>
+    <p class="sub" *ngIf="!error() && alerts().length === 0">{{ 'alerts.empty' | rdTranslate }}</p>
+
+    <article
+      class="alert-row"
+      *ngFor="let alert of alerts()"
+      [class.selected]="selectedId() === alert.id"
+      [class.critical]="alert.severity === 'critical'"
+      (click)="select(alert)"
+    >
+      <div class="row-head">
+        <strong>{{ alert.title }}</strong>
+        <span class="age">{{ alert.age_label }}</span>
+      </div>
+      <p class="reason">{{ alert.reason }}</p>
+      <div class="actions">
+        <button type="button" class="chip" (click)="select(alert); $event.stopPropagation()">
+          {{ 'alerts.viewMap' | rdTranslate }}
+        </button>
+        <button
+          type="button"
+          class="chip"
+          [disabled]="alert.acknowledged"
+          (click)="acknowledge(alert); $event.stopPropagation()"
+        >
+          {{ alert.acknowledged ? 'Acknowledged' : ('alerts.acknowledge' | rdTranslate) }}
+        </button>
+      </div>
+    </article>
+  </section>
+
+  <section class="map-panel card" aria-label="Alert map">
+    <svg viewBox="0 0 520 640" class="city-map" role="img" aria-label="Riverbend wards">
+      <rect width="520" height="640" fill="#0a1120"></rect>
+      <path d="M40 80 C 180 140, 220 260, 160 420 C 120 520, 260 580, 400 520" fill="none" stroke="#1d4ed8" stroke-width="28" opacity="0.55"></path>
+      <g *ngFor="let alert of alerts(); let i = index">
+        <circle
+          [attr.cx]="80 + (i % 4) * 110"
+          [attr.cy]="120 + (i % 5) * 90"
+          r="28"
+          [attr.fill]="alert.kind === 'silent_zone' ? '#fbbf24' : '#fb7185'"
+          [attr.opacity]="selectedId() === alert.id ? 0.85 : 0.35"
+        ></circle>
+      </g>
+    </svg>
+    <p class="map-caption" *ngIf="selectedId() as id">
+      <ng-container *ngFor="let alert of alerts()">
+        <span *ngIf="alert.id === id">{{ alert.title }} — {{ alert.reason }}</span>
+      </ng-container>
+    </p>
+  </section>
+</div>
