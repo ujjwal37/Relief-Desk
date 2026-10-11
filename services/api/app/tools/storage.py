@@ -477,15 +477,26 @@ class StorageService:
                 sample_reports = item.get("sample_reports", [])
                 raw_text = None
                 ai_translation = None
+                translations_map: Dict[str, str] = {}
                 for sr in sample_reports:
-                    if sr.get("lang") in ("hi", "hinglish"):
-                        raw_text = sr.get("text")
-                    elif sr.get("lang") == "en":
-                        ai_translation = sr.get("text")
+                    s_lang = sr.get("lang")
+                    s_txt = sr.get("text")
+                    if s_lang and s_txt:
+                        translations_map[s_lang] = s_txt
+                    if s_lang in ("hi", "hinglish", "ta"):
+                        raw_text = s_txt
+                    elif s_lang == "en":
+                        ai_translation = s_txt
                 if not raw_text and sample_reports:
                     raw_text = sample_reports[0].get("text")
                 if not ai_translation:
                     ai_translation = item.get("description", "")
+                if "en" not in translations_map and ai_translation:
+                    translations_map["en"] = ai_translation
+                if "hi" not in translations_map and raw_text:
+                    translations_map["hi"] = raw_text
+
+                flags_list = list(item.get("flags", []))
 
                 req = StoredRequest(
                     id=item["id"],
@@ -498,8 +509,11 @@ class StorageService:
                     vulnerable=vuln,
                     hazard=HazardType(item.get("hazard", "unknown")),
                     status=RequestStatus.NEW,
+                    flags=flags_list,
                     raw_text=raw_text,
                     ai_translation=ai_translation,
+                    translations=translations_map,
+                    translation_confidence=0.92,
                     confidence=FieldConfidences(
                         type=0.96,
                         place=0.88,

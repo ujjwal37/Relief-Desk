@@ -63,6 +63,8 @@ class StoredRequest(BaseModel):
     flags: List[str] = Field(default_factory=list)
     raw_text: Optional[str] = None
     ai_translation: Optional[str] = None
+    translations: Dict[str, str] = Field(default_factory=dict)
+    translation_confidence: float = 1.0
     merged_count: int = 1
     update_count: int = 0
     version: int = 1

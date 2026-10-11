@@ -144,6 +144,8 @@ export interface StoredRequest {
   flags?: string[];
   raw_text?: string | null;
   ai_translation?: string | null;
+  translations?: { [lang: string]: string };
+  translation_confidence?: number;
   merged_count?: number;
   update_count?: number;
   created_at?: string;

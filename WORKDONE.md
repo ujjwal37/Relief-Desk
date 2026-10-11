@@ -322,3 +322,22 @@
 - Notes / risks / not done: Audio transcription stores full transcript and confidence without modifying raw input; synthetic data only (no real victim audio).
 - Next (suggested task id): T-035 (Translation of free-text reports by A) or T-031 (Anomaly engine by C).
 
+### 2026-10-11 16:44 IST — T-035 — Antigravity
+- What changed: Implemented multilingual translation pipeline for free-text disaster reports in Hindi, Hinglish, Tamil, and English with side-by-side display and automated low-confidence flagging:
+  - Backend Translation Tool: Implemented TranslationService in services/api/app/tools/translation.py featuring dynamic language detection (Hindi Devanagari \u0900-\u097F, Tamil \u0B80-\u0BFF, Hinglish keywords, English), live Gemini crisis translation with deterministic synthetic Riverbend fallback, SHA-256 disk and memory caching in data/cache/translations/, and translation confidence scoring (< 0.70 flagged as low confidence).
+  - Pipeline & Domain Models: Added translations map and translation_confidence to StoredRequest in firestore_models.py and request.model.ts; integrated translation_service in submit_report (reports.py) which automatically appends `low_translation_confidence` and `needs_human_review` flags when confidence drops below 0.70 or input is noisy/too-short; populated translations and confidence in storage.py seed incident loader.
+  - Coordinator UI: Updated coordinator command center (apps/web/src/app/coordinator/pages/command/):
+    - Request detail shows original message with detected language badge (Hindi / Tamil / Hinglish / English) side-by-side with plain-language AI translation.
+    - Added translation language toggle pills (EN / HI / TA) in translation card.
+    - Low-confidence reports display prominent amber/red warning card ("Low translation confidence (XX%) · Dialect or noisy phrasing detected. Verify original message with victim before dispatch.") and `⚠️ Low trans conf` badges in the ranked queue.
+  - Test Suite: Created services/api/tests/test_translation.py testing language detection (hi, ta, hinglish, en), side-by-side translations, cache hits, low-confidence input flagging, and POST /api/reports automated flag appending; added Jasmine unit tests in coordinator-command.component.spec.ts.
+- Files: services/api/app/tools/translation.py, services/api/tests/test_translation.py, services/api/app/api/reports.py, services/api/app/models/firestore_models.py, services/api/app/tools/storage.py, libs/shared/src/lib/models/request.model.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.html, apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss, apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_translation.py` -> 7 passed in 1.44s.
+  - `python -m pytest services/api/tests` -> 83 passed in 4.56s across entire test suite.
+  - Live backend verification: Submitting Hindi report translated to English ("4 people trapped near Shiva Temple in Ward 7..."); submitting low-confidence "???" report auto-appended flags `low_translation_confidence` and `needs_human_review` with confidence 0.35.
+  - `node scripts/check-i18n.mjs` -> PASSED (47 keys in 4 languages).
+  - `npx ng build shared` & `npx ng build web` -> Built successfully; produced standalone coordinator-command-component chunk (63.31 kB).
+- Notes / risks / not done: All Day 3 tasks owned by Antigravity (T-030, T-032, T-034, T-035) are now 100% DONE.
+- Next (suggested task id): T-031 (Anomaly engine by C) or T-033 (Benchmark UI view by C) or T-036 (Deploy by U + C).
+

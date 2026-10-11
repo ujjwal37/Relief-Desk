@@ -9,6 +9,7 @@ from app.tools.storage import storage_service
 from app.tools.scoring import scoring_engine
 from app.tools.ratelimit import rate_limiter
 from app.tools.asr import asr_service, VoiceNoteMetadata, ASRResult
+from app.tools.translation import translation_service, TranslationResult
 from app.models.firestore_models import StoredRequest, RequestStatus
 
 router = APIRouter(prefix="/api", tags=["Reports & Intake"])
@@ -117,6 +118,12 @@ def submit_report(payload: ReportSubmitRequest):
     )
     decision = dedupe_agent.evaluate(payload.text, extracted, candidates)
 
+    # Translate report and evaluate translation confidence
+    trans_res = translation_service.translate_report(report_text)
+    if trans_res.is_low_confidence and "low_translation_confidence" not in flags:
+        flags.append("low_translation_confidence")
+        flags.append("needs_human_review")
+
     req_id = f"req_{uuid.uuid4().hex[:10]}"
     req_obj = StoredRequest(
         id=req_id,
@@ -131,6 +138,10 @@ def submit_report(payload: ReportSubmitRequest):
         hazard=extracted.hazard,
         status=RequestStatus.NEW,
         flags=flags,
+        raw_text=report_text,
+        ai_translation=trans_res.text_en,
+        translations=trans_res.translations,
+        translation_confidence=trans_res.confidence,
     )
 
     # 5. Score urgency

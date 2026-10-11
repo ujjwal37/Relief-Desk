@@ -195,6 +195,9 @@
                 @if (req.status === 'approved') {
                   <span class="chip cgr">✓ Dispatched</span>
                 }
+                @if (isLowTranslationConfidence(req)) {
+                  <span class="chip cr">⚠️ Low trans conf</span>
+                }
               </div>
             </div>
           </div>
@@ -445,19 +448,55 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/>
             </svg>
-            <span class="tag">Original message · {{ req.raw_text?.includes('है') ? 'Hindi' : 'Hinglish' }}</span>
+            <span class="tag">Original message · {{ detectOriginalLanguage(req.raw_text) }}</span>
           </div>
           <p class="raw-quote">“{{ req.raw_text || req.place_text || 'Emergency rescue requested in Riverbend' }}”</p>
 
-          <div class="tag-row text-acc">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>
-            </svg>
-            <span class="tag">AI translation</span>
+          <div class="trans-header-row">
+            <div class="tag-row text-acc">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>
+              </svg>
+              <span class="tag">AI translation</span>
+            </div>
+            @if (req.translations && (req.translations['hi'] || req.translations['ta'])) {
+              <div class="trans-lang-pills">
+                <button
+                  type="button"
+                  [class.active]="selectedTranslationLang() === 'en'"
+                  (click)="setTranslationLang('en')"
+                >EN</button>
+                @if (req.translations['hi']) {
+                  <button
+                    type="button"
+                    [class.active]="selectedTranslationLang() === 'hi'"
+                    (click)="setTranslationLang('hi')"
+                  >HI</button>
+                }
+                @if (req.translations['ta']) {
+                  <button
+                    type="button"
+                    [class.active]="selectedTranslationLang() === 'ta'"
+                    (click)="setTranslationLang('ta')"
+                  >TA</button>
+                }
+              </div>
+            }
           </div>
           <p class="trans-quote">
-            {{ req.ai_translation || req.place_text || 'Urgent assistance requested at this location.' }}
+            {{ getTranslationText(req) }}
           </p>
+
+          <!-- Low Translation Confidence Warning -->
+          @if (isLowTranslationConfidence(req)) {
+            <div class="translation-warning-box">
+              <span class="warning-icon">⚠️</span>
+              <div class="warning-text">
+                <strong>Low translation confidence ({{ getTranslationConfidencePercent(req) }}%)</strong>
+                <span>Dialect or noisy phrasing detected. Verify original message with victim before dispatch.</span>
+              </div>
+            </div>
+          }
         </div>
 
         <!-- AI Reading & Field Confidences -->

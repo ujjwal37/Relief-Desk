@@ -41,6 +41,7 @@ export class CoordinatorCommandComponent implements OnInit {
   readonly isOvercommitModalOpen = signal<boolean>(false);
   readonly isRejectModalOpen = signal<boolean>(false);
   readonly actionToast = signal<{ text: string; type: 'success' | 'warning' } | null>(null);
+  readonly selectedTranslationLang = signal<'en' | 'hi' | 'ta'>('en');
 
   pendingMatch: MatchProposal | null = null;
   rejectReasonText = '';
@@ -332,5 +333,50 @@ export class CoordinatorCommandComponent implements OnInit {
     if (score >= 70) return 'HIGH';
     if (score >= 50) return 'MEDIUM';
     return 'LOW';
+  }
+
+  detectOriginalLanguage(text: string | null | undefined): string {
+    if (!text) return 'English';
+    // Devanagari range
+    if (/[\u0900-\u097F]/.test(text)) return 'Hindi';
+    // Tamil range
+    if (/[\u0B80-\u0BFF]/.test(text)) return 'Tamil';
+    // Hinglish keywords
+    const hinglishMarkers = [
+      'paani', 'pani', 'badh', 'raha', 'hai', 'hain', 'ke', 'paas', 'chat',
+      'par', 'bachao', 'bacche', 'bache', 'buzurg', 'log', 'jaldi', 'bhejo',
+      'madad', 'chahiye', 'ghar', 'gali', 'gaya', 'fase', 'chhat'
+    ];
+    const lower = text.toLowerCase();
+    if (hinglishMarkers.some((w) => new RegExp(`\\b${w}\\b`).test(lower))) {
+      return 'Hinglish';
+    }
+    return 'English';
+  }
+
+  isLowTranslationConfidence(req: StoredRequest | undefined): boolean {
+    if (!req) return false;
+    return (
+      (req.flags ? req.flags.includes('low_translation_confidence') : false) ||
+      (req.translation_confidence !== undefined && req.translation_confidence < 0.70)
+    );
+  }
+
+  getTranslationConfidencePercent(req: StoredRequest | undefined): number {
+    if (!req || req.translation_confidence === undefined) return 92;
+    return Math.round(req.translation_confidence * 100);
+  }
+
+  setTranslationLang(lang: 'en' | 'hi' | 'ta'): void {
+    this.selectedTranslationLang.set(lang);
+  }
+
+  getTranslationText(req: StoredRequest | undefined): string {
+    if (!req) return 'Urgent assistance requested at this location.';
+    const lang = this.selectedTranslationLang();
+    if (req.translations && req.translations[lang]) {
+      return req.translations[lang];
+    }
+    return req.ai_translation || req.place_text || 'Urgent assistance requested at this location.';
   }
 }

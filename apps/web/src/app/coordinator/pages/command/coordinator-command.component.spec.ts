@@ -191,4 +191,49 @@ describe('CoordinatorCommandComponent', () => {
     expect(apiClientSpy.updateUrgencyWeights).toHaveBeenCalled();
     expect(component.currentWeights().w_vulnerability).toBe(45);
   });
+
+  it('should accurately detect original languages (Hindi, Tamil, Hinglish, English)', () => {
+    expect(component.detectOriginalLanguage('पानी बहुत तेजी से बढ़ रहा है')).toBe('Hindi');
+    expect(component.detectOriginalLanguage('வெள்ளத்தில் சிக்கியுள்ளோம் காப்பாற்றுங்கள்')).toBe('Tamil');
+    expect(component.detectOriginalLanguage('paani badh raha hai bachao jaldi')).toBe('Hinglish');
+    expect(component.detectOriginalLanguage('Flood water rising rapidly please send boat')).toBe('English');
+  });
+
+  it('should identify low translation confidence and display percentage', () => {
+    const normalReq: StoredRequest = {
+      ...mockRequests[0],
+      translation_confidence: 0.94,
+      flags: [],
+    };
+    const lowConfReq: StoredRequest = {
+      ...mockRequests[0],
+      translation_confidence: 0.42,
+      flags: ['low_translation_confidence'],
+    };
+
+    expect(component.isLowTranslationConfidence(normalReq)).toBeFalse();
+    expect(component.isLowTranslationConfidence(lowConfReq)).toBeTrue();
+    expect(component.getTranslationConfidencePercent(lowConfReq)).toBe(42);
+  });
+
+  it('should switch translation language and retrieve localized translation text', () => {
+    const multiLangReq: StoredRequest = {
+      ...mockRequests[0],
+      ai_translation: 'Water entered the house.',
+      translations: {
+        en: 'Water entered the house.',
+        hi: 'घर में पानी घुस गया है।',
+        ta: 'வீட்டிற்குள் தண்ணீர் புகுந்தது.',
+      },
+    };
+
+    component.setTranslationLang('en');
+    expect(component.getTranslationText(multiLangReq)).toBe('Water entered the house.');
+
+    component.setTranslationLang('hi');
+    expect(component.getTranslationText(multiLangReq)).toBe('घर में पानी घुस गया है।');
+
+    component.setTranslationLang('ta');
+    expect(component.getTranslationText(multiLangReq)).toBe('வீட்டிற்குள் தண்ணீர் புகுந்தது.');
+  });
 });
