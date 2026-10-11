@@ -1,0 +1,51 @@
+id: dog_attack
+title: Dog attack
+description: Synthetic Riverbend pack for animal-attack reports. First aid is the fixed reviewed line only.
+incident_types:
+  - animal_attack
+  - medical
+  - info
+tiles:
+  - id: dog_bite
+    label_en: Dog bite
+    label_hi: कुत्ते ने काटा
+    incident_type: animal_attack
+    icon: medkit
+  - id: need_transport
+    label_en: Need transport to hospital
+    label_hi: अस्पताल ले चलें
+    incident_type: medical
+    icon: medkit
+follow_up_questions:
+  location:
+    en: Where did this happen? Share a landmark or ward.
+    hi: यह कहाँ हुआ? लैंडमार्क या वार्ड बताएं।
+    hinglish: Yeh kahan hua? Landmark ya ward batayein.
+    ta: இது எங்கு நடந்தது? இடத்தைச் சொல்லுங்கள்.
+  people_count:
+    en: How many people were bitten or need help?
+    hi: कितने लोगों को मदद चाहिए?
+    hinglish: Kitne logo ko madad chahiye?
+    ta: எத்தனை பேருக்கு உதவி தேவை?
+  vulnerable:
+    en: Is a child, elderly person, or someone pregnant among them?
+    hi: क्या इनमें बच्चा, बुजुर्ग या गर्भवती व्यक्ति है?
+    hinglish: Kya inme baccha, buzurg ya pregnant vyakti hai?
+    ta: குழந்தை, முதியவர் அல்லது கர்ப்பிணி இருக்கிறார்களா?
+  hazard:
+    en: Is anyone still near the animal, or is the wound bleeding?
+    hi: क्या कोई अभी जानवर के पास है, या घाव से खून बह रहा है?
+    hinglish: Kya koi abhi jaanwar ke paas hai, ya ghaav se khoon bah raha hai?
+    ta: யாராவது இன்னும் விலங்கின் அருகில் இருக்கிறார்களா?
+urgency_rules:
+  base_weight: 10
+  injury_boost: 25
+  child_boost: 15
+  elderly_boost: 15
+  medical_need_boost: 20
+resource_types:
+  - medical
+safety_line_ids:
+  - call_112
+  - dog_bite_first_aid
+  - no_medical_advice

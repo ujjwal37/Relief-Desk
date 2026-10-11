@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -16,6 +16,7 @@ import {
 } from '@rd/shared';
 
 import { OfflineSyncService } from '../../../core/services/offline-sync.service';
+import { ScenarioService } from '../../../core/services/scenario.service';
 import { ConfirmationCardComponent } from '../../components/confirmation-card/confirmation-card.component';
 
 export interface ChatMessage {
@@ -45,6 +46,7 @@ export class ReportComponent implements OnInit {
   private apiClient = inject(ApiClientService);
   private router = inject(Router);
   readonly langService = inject(LanguageService);
+  readonly scenarioState = inject(ScenarioService);
   readonly offlineSync = inject(OfflineSyncService);
 
   readonly sessionId = signal<string>(`sess_${Math.random().toString(36).substring(2, 9)}`);
@@ -58,7 +60,7 @@ export class ReportComponent implements OnInit {
   readonly chatMessages = signal<ChatMessage[]>([]);
   readonly pendingCard = signal<ConfirmationCardData | null>(null);
   readonly submittedResult = signal<ReportSubmitResponse | null>(null);
-  readonly scenarioId = signal('flood');
+  readonly scenarioId = this.scenarioState.activeId;
   readonly tiles = signal<ScenarioTile[]>([
     { id: 'trapped_water', label_en: 'Trapped in Water', label_hi: 'पानी में फंसे हैं', incident_type: 'rescue', icon: 'water' },
     { id: 'medical_urgent', label_en: 'Medical Assistance', label_hi: 'चिकित्सा सहायता', incident_type: 'medical', icon: 'medkit' },
@@ -66,7 +68,24 @@ export class ReportComponent implements OnInit {
     { id: 'shelter_needed', label_en: 'Need Shelter', label_hi: 'आश्रय चाहिए', incident_type: 'shelter', icon: 'home' },
   ]);
 
+  constructor() {
+    effect(() => {
+      const id = this.scenarioState.activeId();
+      this.apiClient.getScenario(id).subscribe({
+        next: (scenario) => {
+          if (scenario?.tiles?.length) {
+            this.tiles.set(scenario.tiles);
+          }
+        },
+        error: () => {
+          // Keep the last tiles so the form still works offline.
+        },
+      });
+    });
+  }
+
   ngOnInit(): void {
+    this.scenarioState.ensureLoaded();
     this.chatMessages.set([
       {
         id: 'msg_welcome',
@@ -76,16 +95,6 @@ export class ReportComponent implements OnInit {
       },
     ]);
     this.tryGeolocation();
-    this.apiClient.getScenario(this.scenarioId()).subscribe({
-      next: (scenario) => {
-        if (scenario?.tiles?.length) {
-          this.tiles.set(scenario.tiles);
-        }
-      },
-      error: () => {
-        // Keep the flood pack fallback so the form still works offline.
-      },
-    });
   }
 
   tileLabel(tile: ScenarioTile): string {

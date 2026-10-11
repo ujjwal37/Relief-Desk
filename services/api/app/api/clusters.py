@@ -119,10 +119,13 @@ def get_cluster_evidence(
 @router.get("/requests", response_model=List[StoredRequest], summary="List ranked requests")
 def list_requests(
     sort: str = "urgency",
+    pack_id: Optional[str] = None,
     coordinator: CoordinatorUser = Depends(get_current_coordinator),
 ):
     reqs = storage_service.list_requests()
-    if not reqs:
+    if pack_id:
+        reqs = [req for req in reqs if (req.pack_id or "flood") == pack_id]
+    elif not reqs:
         storage_service.load_seed_incidents()
         reqs = storage_service.list_requests()
 

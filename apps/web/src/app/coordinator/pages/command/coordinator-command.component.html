@@ -28,18 +28,11 @@
       <button
         type="button"
         class="seg-btn"
-        [class.on]="activeScenario() === 'flood'"
-        (click)="setScenario('flood')"
+        *ngFor="let pack of scenarios()"
+        [class.on]="activeScenario() === pack.id"
+        (click)="setScenario(pack.id)"
       >
-        🌊 Flood
-      </button>
-      <button
-        type="button"
-        class="seg-btn"
-        [class.on]="activeScenario() === 'dog'"
-        (click)="setScenario('dog')"
-      >
-        🐕 Dog attacks
+        {{ pack.title }}
       </button>
     </div>
 

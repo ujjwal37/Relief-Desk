@@ -446,7 +446,7 @@ class StorageService:
         )
         return match
 
-    def load_seed_incidents(self, yaml_path: Optional[str] = None) -> int:
+    def load_seed_incidents(self, yaml_path: Optional[str] = None, pack_id: str = "flood") -> int:
         """Loads seeded flood incidents into storage requests."""
         import os
         import yaml
@@ -501,6 +501,7 @@ class StorageService:
 
                 req = StoredRequest(
                     id=item["id"],
+                    pack_id=item.get("pack_id") or pack_id,
                     type=IncidentType(item.get("type", "rescue")),
                     place_text=item.get("description", ""),
                     ward_id=item.get("ward_id"),
@@ -551,6 +552,19 @@ class StorageService:
         logger.info("Loaded %d synthetic seed incidents into storage.", count)
         return count
 
+    def load_scenario_pack_seeds(self) -> int:
+        """Load data/synthetic/<scenario-id>/seeds.yaml for every pack. No per-scenario branch."""
+        import os
+        from app.tools.scenario_loader import scenario_registry
+
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
+        loaded = 0
+        for scenario in scenario_registry.list_scenarios():
+            path = os.path.join(base_dir, "data", "synthetic", scenario.id, "seeds.yaml")
+            if os.path.exists(path):
+                loaded += self.load_seed_incidents(path, pack_id=scenario.id)
+        return loaded
+
 
 # Singleton instance
 storage_service = StorageService()
@@ -558,6 +572,7 @@ storage_service = StorageService()
 try:
     storage_service.load_seed_resources()
     storage_service.load_seed_incidents()
+    storage_service.load_scenario_pack_seeds()
     if settings.DEMO_MODE:
         from app.tools.demo_seed import load_demo_pack
         load_demo_pack(storage_service)

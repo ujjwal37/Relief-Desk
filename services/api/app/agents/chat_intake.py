@@ -45,6 +45,13 @@ def safety_refusal_lines(message: str) -> Optional[List[str]]:
     return None
 
 
+def pack_notice(scenario, lang: str) -> str:
+    """First non-112 safety line on the active pack, otherwise call 112."""
+    ids = list(getattr(scenario, "safety_line_ids", None) or ["call_112"])
+    chosen = next((line_id for line_id in ids if line_id != "call_112"), ids[0])
+    return scenario_registry.get_safety_line(chosen, lang=lang)
+
+
 def reply_is_only_safety_lines(reply: str) -> bool:
     catalog = []
     for line in scenario_registry._safety_lines.values():
@@ -199,7 +206,7 @@ class ChatIntakeAgent:
                 vulnerable=current.vulnerable.model_dump(),
                 hazard=current.hazard.value,
                 summary=summary_text,
-                safety_line=scenario_registry.get_safety_line("move_to_higher_ground", lang=lang),
+                safety_line=pack_notice(scenario, lang),
                 ready_to_submit=True,
             )
             state.confirmation_card = card

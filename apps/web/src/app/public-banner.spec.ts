@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { ApiClientService } from '@rd/shared';
 import { LandingComponent } from './landing/landing.component';
 import { PublicLayoutComponent } from './public/layouts/public-layout.component';
 
@@ -7,7 +9,10 @@ describe('112 banner on public screens', () => {
   it('landing shows the emergency banner and a 112 link', async () => {
     await TestBed.configureTestingModule({
       imports: [LandingComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        { provide: ApiClientService, useValue: { getScenarios: () => of([]) } },
+      ],
     }).compileComponents();
     const fixture: ComponentFixture<LandingComponent> = TestBed.createComponent(LandingComponent);
     fixture.detectChanges();
@@ -19,7 +24,10 @@ describe('112 banner on public screens', () => {
   it('public layout shows the emergency banner and a 112 link', async () => {
     await TestBed.configureTestingModule({
       imports: [PublicLayoutComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        { provide: ApiClientService, useValue: { getScenarios: () => of([]) } },
+      ],
     }).compileComponents();
     const fixture: ComponentFixture<PublicLayoutComponent> = TestBed.createComponent(PublicLayoutComponent);
     fixture.detectChanges();

@@ -131,9 +131,14 @@ describe('CoordinatorCommandComponent', () => {
       'approveMatch',
       'rejectMatch',
       'splitCluster',
+      'getScenarios',
     ]);
 
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
+    apiClientSpy.getScenarios.and.returnValue(of([
+      { id: 'flood', title: 'Urban Flood Relief', description: '', incident_types: ['rescue'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: [] },
+      { id: 'dog_attack', title: 'Dog attack', description: '', incident_types: ['animal_attack'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: ['dog_bite_first_aid'] },
+    ]));
     apiClientSpy.getRequestMatches.and.returnValue(of([mockProposal]));
     apiClientSpy.getResources.and.returnValue(of(mockResources));
     apiClientSpy.getUrgencyWeights.and.returnValue(of(mockWeights));

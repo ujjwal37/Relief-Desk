@@ -101,8 +101,9 @@ export class ApiClientService {
     return this.http.get<any>('/api/coordinator/verify', this.getAuthHeaders());
   }
 
-  getRequests(sort = 'urgency'): Observable<StoredRequest[]> {
-    return this.http.get<StoredRequest[]>(`/api/requests?sort=${sort}`, this.getAuthHeaders());
+  getRequests(sort = 'urgency', packId?: string): Observable<StoredRequest[]> {
+    const pack = packId ? `&pack_id=${encodeURIComponent(packId)}` : '';
+    return this.http.get<StoredRequest[]>(`/api/requests?sort=${sort}${pack}`, this.getAuthHeaders());
   }
 
   getRequest(id: string): Observable<StoredRequest> {

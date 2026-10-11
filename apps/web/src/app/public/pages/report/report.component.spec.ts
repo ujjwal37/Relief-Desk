@@ -10,7 +10,10 @@ describe('ReportComponent confirmation gate', () => {
   let api: jasmine.SpyObj<ApiClientService>;
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj('ApiClientService', ['sendChatTurn', 'submitReport', 'getScenario']);
+    api = jasmine.createSpyObj('ApiClientService', ['sendChatTurn', 'submitReport', 'getScenario', 'getScenarios']);
+    api.getScenarios.and.returnValue(of([
+      { id: 'flood', title: 'Urban Flood Relief', description: '', incident_types: ['rescue'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: ['call_112'] },
+    ]));
     api.sendChatTurn.and.returnValue(of({
       session_id: 's',
       bot_message: 'Please check the card.',

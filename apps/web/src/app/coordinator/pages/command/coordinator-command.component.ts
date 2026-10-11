@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ScenarioService } from '../../../core/services/scenario.service';
 import {
   ApiClientService,
   MatchProposal,
@@ -26,6 +27,7 @@ import {
 })
 export class CoordinatorCommandComponent implements OnInit {
   private readonly apiClient = inject(ApiClientService);
+  private readonly scenarioService = inject(ScenarioService);
 
   readonly Math = Math;
 
@@ -36,7 +38,8 @@ export class CoordinatorCommandComponent implements OnInit {
   readonly resources = signal<StoredResource[]>([]);
   readonly filterType = signal<string>('all');
   readonly searchQuery = signal<string>('');
-  readonly activeScenario = signal<string>('flood');
+  readonly activeScenario = this.scenarioService.activeId;
+  readonly scenarios = this.scenarioService.scenarios;
   readonly isWeightsDrawerOpen = signal<boolean>(false);
   readonly isOvercommitModalOpen = signal<boolean>(false);
   readonly isRejectModalOpen = signal<boolean>(false);
@@ -97,13 +100,14 @@ export class CoordinatorCommandComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.scenarioService.ensureLoaded();
     this.loadRequests();
     this.loadResources();
     this.loadWeights();
   }
 
   loadRequests(): void {
-    this.apiClient.getRequests('urgency').subscribe({
+    this.apiClient.getRequests('urgency', this.activeScenario()).subscribe({
       next: (reqs) => {
         this.requests.set(reqs);
         if (reqs.length > 0 && !this.selectedRequestId()) {
@@ -157,7 +161,8 @@ export class CoordinatorCommandComponent implements OnInit {
   }
 
   setScenario(scenario: string): void {
-    this.activeScenario.set(scenario);
+    this.scenarioService.select(scenario);
+    this.loadRequests();
     this.actionToast.set({
       text: `Switched active scenario to ${scenario.toUpperCase()}`,
       type: 'success',
