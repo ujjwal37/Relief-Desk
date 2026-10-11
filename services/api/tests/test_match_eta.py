@@ -67,3 +67,19 @@ def test_distant_case_shows_the_real_wait():
     assert best.eta_minutes == _eta(best.breakdown.distance_km)
     assert best.eta_minutes > 60
     assert all(p.eta_minutes < 400 for p in proposals)
+
+
+def test_a_request_outside_kerala_still_offers_the_nearest_cluster():
+    storage_service.load_seed_resources()
+    req = StoredRequest(
+        id="req_far_cluster",
+        type=IncidentType.RESCUE,
+        lat=26.852,
+        lng=80.940,
+        people_count=4,
+        urgency_score=80.0,
+    )
+    proposals = matching_agent.find_matches(req, top_n=5, save_to_storage=False)
+    assert len(proposals) >= 2
+    assert proposals[0].eta_minutes == _eta(proposals[0].breakdown.distance_km)
+    assert proposals[0].eta_minutes > 60

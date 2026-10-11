@@ -175,7 +175,8 @@ def _keep_nearer(scored: list) -> list:
     if nearest <= PRACTICAL_KM:
         limit = min(PRACTICAL_KM, nearest + NEAR_BAND_KM)
     else:
-        limit = nearest + NEAR_BAND_KM
+        # Nothing is close. Keep the nearest cluster so one isolated team is not the only offer.
+        limit = nearest * 1.15
     kept = [item for item in scored if item[1].distance_km <= limit + 0.05]
     return kept or scored
 

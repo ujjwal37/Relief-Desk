@@ -763,3 +763,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --include='**/team-confirm.component.spec.ts'` — 1 passed.
 - Notes / risks / not done: There is no per-team token. Anyone with the team id can open the page. It is labelled demo.
 - Next (suggested task id): none
+
+### 2026-10-12 03:55 IST — RT-06b — Cursor
+- What changed: When every team is far, matching keeps the nearest cluster (within 15 percent of the closest team) instead of a single boat. A team inside 40 km is still preferred, so the Wayanad boat is not offered for a lowland case.
+- Files: services/api/app/agents/matching.py, services/api/tests/test_match_eta.py
+- How verified: `pytest tests/test_match_eta.py tests/test_matches_api.py` — 8 passed.
+- Notes / risks / not done: A request outside Kerala still shows a long real ETA.
+- Next (suggested task id): none
