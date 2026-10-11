@@ -2,8 +2,8 @@
   <div class="emergency-alert-banner">
     <div class="alert-content">
       <span class="alert-icon">⚠️</span>
-      <span class="alert-text">PROTOTYPE ONLY. Not an emergency service. In an emergency call <strong>112</strong> immediately.</span>
-      <a href="tel:112" class="call-112-btn">Call 112</a>
+      <span class="alert-text">{{ 'safety.banner' | rdTranslate }}</span>
+      <a href="tel:112" class="call-112-btn">{{ 'safety.call112' | rdTranslate }}</a>
     </div>
   </div>
 
@@ -11,9 +11,12 @@
     <div class="brand">
       <span class="brand-logo">🛡️</span>
       <div class="brand-titles">
-        <h1>Relief Desk</h1>
-        <p class="brand-tagline">Multilingual Crisis Reporting & Humanitarian Coordination</p>
+        <h1>{{ 'landing.title' | rdTranslate }}</h1>
+        <p class="brand-tagline">{{ 'landing.subtitle' | rdTranslate }}</p>
       </div>
+    </div>
+    <div class="header-actions">
+      <rd-language-switcher></rd-language-switcher>
     </div>
   </header>
 
@@ -22,9 +25,8 @@
       <a routerLink="/report" class="card choice-card public-choice">
         <div class="card-icon">🆘</div>
         <div class="card-body">
-          <h2>I Need Help / Report a Crisis</h2>
-          <p class="desc-en">Fast voice or text reporting. No signup required.</p>
-          <p class="desc-hi">मदद चाहिए या आपदा की सूचना दें। कोई लॉगिन ज़रूरी नहीं।</p>
+          <h2>{{ 'landing.helpTitle' | rdTranslate }}</h2>
+          <p class="desc-en">{{ 'landing.helpDesc' | rdTranslate }}</p>
         </div>
         <div class="action-arrow">→</div>
       </a>
@@ -32,18 +34,17 @@
       <a routerLink="/coordinator/login" class="card choice-card coordinator-choice">
         <div class="card-icon">📋</div>
         <div class="card-body">
-          <h2>I'm a Coordinator</h2>
-          <p class="desc-en">Triage queue, explainable matching, responder dispatch.</p>
-          <p class="desc-hi">समन्वयक पोर्टल: प्राथमिकीकरण, मिलान और संसाधन आवंटन।</p>
+          <h2>{{ 'landing.coordinatorTitle' | rdTranslate }}</h2>
+          <p class="desc-en">{{ 'landing.coordinatorDesc' | rdTranslate }}</p>
         </div>
         <div class="action-arrow">→</div>
       </a>
     </div>
 
     <div class="quick-links">
-      <a routerLink="/status" class="sub-link">Track existing request</a>
+      <a routerLink="/status" class="sub-link">{{ 'nav.status' | rdTranslate }}</a>
       <span class="dot">•</span>
-      <a routerLink="/nearby" class="sub-link">Area incident map</a>
+      <a routerLink="/nearby" class="sub-link">{{ 'nav.nearby' | rdTranslate }}</a>
     </div>
   </main>
 </div>

@@ -14,6 +14,7 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+data/cache/
 
 # Node / Angular
 node_modules/

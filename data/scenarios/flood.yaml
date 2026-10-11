@@ -1,0 +1,69 @@
+id: flood
+title: Urban Flood Relief
+description: Flooding incident response in Riverbend city (water rising, marooned civilians, food and medical assistance)
+incident_types:
+  - rescue
+  - food
+  - medical
+  - shelter
+  - info
+tiles:
+  - id: trapped_water
+    label_en: Trapped in Water
+    label_hi: पानी में फंसे हैं
+    incident_type: rescue
+    icon: water
+  - id: medical_urgent
+    label_en: Medical Assistance
+    label_hi: चिकित्सा सहायता
+    incident_type: medical
+    icon: medkit
+  - id: food_water_needed
+    label_en: Food & Drinking Water
+    label_hi: भोजन और पेयजल
+    incident_type: food
+    icon: nutrition
+  - id: shelter_needed
+    label_en: Need Shelter
+    label_hi: आश्रय चाहिए
+    incident_type: shelter
+    icon: home
+follow_up_questions:
+  location:
+    en: Where are you located? Please share your landmark, street, or ward number.
+    hi: आप किस स्थान पर हैं? कृपया अपना लैंडमार्क, गली या वार्ड नंबर बताएं।
+    hinglish: Aap kahan hain? Kripya apna landmark, gali ya ward number batayein.
+    ta: நீங்கள் எங்கு இருக்கிறீர்கள்? உங்கள் பகுதி அல்லது அடையாளத்தைக் குறிப்பிடவும்.
+  people_count:
+    en: How many people need assistance?
+    hi: कुल कितने लोगों को सहायता की आवश्यकता है?
+    hinglish: Kitne logo ko madad ki zaroorat hai?
+    ta: எத்தனை நபர்களுக்கு உதவி தேவை?
+  vulnerable:
+    en: Are there any children, elderly individuals, pregnant women, or sick individuals with you?
+    hi: क्या आपके साथ बच्चे, बुजुर्ग, गर्भवती महिलाएं या बीमार व्यक्ति हैं?
+    hinglish: Kya aapke saath bache, buzurg, pregnant mahilayein ya bimaar log hain?
+    ta: உங்களுடன் குழந்தைகள், முதியவர்கள், கர்ப்பிணிகள் அல்லது நோயாளிகள் யாராவது இருக்கிறார்களா?
+  hazard:
+    en: Is the water level rising, and are you stranded on a roof or upper floor?
+    hi: क्या पानी का स्तर बढ़ रहा है, और क्या आप छत या ऊपरी मंजिल पर फंसे हैं?
+    hinglish: Kya paani ka level badh raha hai aur aap chat ya upari floor par hain?
+    ta: நீர் மட்டம் உயர்கிறதா, நீங்கள் மேல் தளத்தில் சிக்கியுள்ளீர்களா?
+urgency_rules:
+  base_weight: 10
+  water_rising_boost: 30
+  stranded_boost: 20
+  child_boost: 15
+  elderly_boost: 15
+  medical_need_boost: 25
+  pregnant_boost: 20
+resource_types:
+  - boat
+  - shelter
+  - food
+  - medical
+safety_line_ids:
+  - call_112
+  - move_to_higher_ground
+  - avoid_electrical_wires
+  - no_medical_advice

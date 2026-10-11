@@ -1,0 +1,52 @@
+{
+  "safety": {
+    "banner": "Prototype. Not an emergency service. In an emergency call 112.",
+    "call112": "Call 112",
+    "offlineNotice": "You are offline. Reports will sync automatically when reconnected."
+  },
+  "nav": {
+    "home": "Home",
+    "report": "Report Need",
+    "status": "Check Status",
+    "nearby": "Nearby Incidents",
+    "coordinator": "Coordinator Portal",
+    "logout": "Log Out"
+  },
+  "landing": {
+    "title": "Relief Desk",
+    "subtitle": "Multilingual Crisis Coordination & Urgent Relief Support",
+    "helpTitle": "I Need Help / Report Incident",
+    "helpDesc": "Request rescue, food, shelter, or medical assistance without sign-up.",
+    "coordinatorTitle": "I'm a Relief Coordinator",
+    "coordinatorDesc": "Access the command dashboard, prioritize dispatches, and manage resources."
+  },
+  "report": {
+    "title": "Emergency Crisis Report",
+    "chatTab": "Voice / Chat",
+    "formTab": "Form Details",
+    "placeholder": "Type or speak your message (Hindi, Hinglish, English, Tamil)...",
+    "send": "Send Message",
+    "listening": "Listening...",
+    "submitting": "Submitting report...",
+    "success": "Report submitted successfully!",
+    "statusToken": "Your Status Tracking Token:"
+  },
+  "confirm": {
+    "title": "What We Understood",
+    "people": "People Needing Help",
+    "location": "Location / Landmark",
+    "type": "Incident Type",
+    "hazard": "Hazard Severity",
+    "sendNow": "Confirm & Send Report",
+    "edit": "Edit Details"
+  },
+  "queue": {
+    "title": "Ranked Priority Queue",
+    "critical": "Critical Urgency",
+    "high": "High Urgency",
+    "medium": "Medium Urgency",
+    "low": "Low Urgency",
+    "approve": "Approve Dispatch",
+    "reject": "Reject"
+  }
+}

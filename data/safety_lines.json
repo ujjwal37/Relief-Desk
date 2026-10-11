@@ -1,0 +1,39 @@
+{
+  "safety_lines": {
+    "call_112": {
+      "id": "call_112",
+      "en": "In an immediate life-threatening emergency, please call 112 directly.",
+      "hi": "तत्काल आपात स्थिति में, कृपया सीधे 112 पर कॉल करें।",
+      "hinglish": "Immediate emergency me kripya turant 112 par call karein.",
+      "ta": "உடனடி அவசரநிலைக்கு, 112 ஐ நேரடியாக அழைக்கவும்."
+    },
+    "move_to_higher_ground": {
+      "id": "move_to_higher_ground",
+      "en": "Move to higher ground immediately if water is rising. Do not walk through moving water.",
+      "hi": "यदि पानी बढ़ रहा है तो तुरंत ऊंचे स्थान पर जाएं। बहते पानी में न चलें।",
+      "hinglish": "Agar paani badh raha hai toh turant unchi jagah jayein. Behte paani me na chalein.",
+      "ta": "தண்ணீர் உயர்ந்தால் உடனடியாக உயரமான இடத்திற்குச் செல்லுங்கள்."
+    },
+    "avoid_electrical_wires": {
+      "id": "avoid_electrical_wires",
+      "en": "Stay away from downed power lines and electrical cables.",
+      "hi": "गिरे हुए बिजली के खंभों और तारों से दूर रहें।",
+      "hinglish": "Gire hue bijli ke taaron se door rahein.",
+      "ta": "விழுந்த மின்கம்பிகள் மற்றும் கேபிள்களிலிருந்து விலகி இருங்கள்."
+    },
+    "dog_bite_first_aid": {
+      "id": "dog_bite_first_aid",
+      "en": "Wash the wound immediately with soap and running water for 15 minutes and go to a hospital right now.",
+      "hi": "घाव को तुरंत साबुन और बहते पानी से 15 मिनट तक धोएं और तुरंत अस्पताल जाएं।",
+      "hinglish": "Ghaav ko turant sabun aur behte paani se 15 minute tak dhoye aur abhi hospital jayein.",
+      "ta": "காயத்தை உடனடியாக சோப்பு மற்றும் ஓடும் நீரில் 15 நிமிடங்கள் கழுவி, இப்போதே மருத்துவமனைக்குச் செல்லுங்கள்."
+    },
+    "no_medical_advice": {
+      "id": "no_medical_advice",
+      "en": "I cannot provide medical diagnosis or medication advice. Responders have been alerted. Call 112 for urgent medical distress.",
+      "hi": "मैं चिकित्सा निदान या दवा की सलाह नहीं दे सकता। बचाव दल को सूचित कर दिया गया है। तत्काल सहायता हेतु 112 पर कॉल करें।",
+      "hinglish": "Mai medical diagnosis ya medicine advice nahi de sakta. Responders ko notify kiya gaya hai. Urgent medical help ke liye 112 call karein.",
+      "ta": "மருத்துவ ஆலோசனையை வழங்க முடியாது. அவசர உதவிக்கு 112 ஐ அழைக்கவும்."
+    }
+  }
+}

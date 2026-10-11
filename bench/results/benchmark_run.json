@@ -1,0 +1,13 @@
+{
+  "dataset": "data\\synthetic\\flood_v1",
+  "count": 20,
+  "seed": 42,
+  "type_accuracy_pct": 45.0,
+  "duplicate_f1_pct": 0.0,
+  "hash_baseline_f1_pct": 0.0,
+  "update_accuracy_pct": 100.0,
+  "hoax_catch_rate_pct": 100.0,
+  "avg_latency_ms": 0.29,
+  "total_time_seconds": 0.01,
+  "created_at": "2026-10-11T09:08:47.526281+00:00"
+}

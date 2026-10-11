@@ -1,0 +1,104 @@
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, Field
+from app.tools.storage import storage_service
+from app.models.firestore_models import StoredCluster, StoredRequest
+
+router = APIRouter(prefix="/api", tags=["Requests & Clusters"])
+
+
+class MergeRequestPayload(BaseModel):
+    secondary_request_id: str = Field(..., description="The ID of the request to merge into this one")
+    evidence: List[str] = Field(default_factory=list, description="Concrete evidence reasons for merging")
+    merged_by: str = Field(default="coordinator", description="Actor performing the merge")
+
+
+class MergeResultResponse(BaseModel):
+    cluster_id: str
+    primary_request_id: str
+    secondary_request_id: str
+    evidence: List[str]
+    merged_by: str
+
+
+class SplitResultResponse(BaseModel):
+    cluster_id: str
+    restored_request_ids: List[str]
+    undone: bool
+    actor: str
+
+
+@router.post("/requests/{request_id}/merge", response_model=MergeResultResponse)
+def merge_requests(request_id: str, payload: MergeRequestPayload):
+    req_primary = storage_service.get_request(request_id)
+    if not req_primary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Primary request '{request_id}' not found"
+        )
+
+    req_secondary = storage_service.get_request(payload.secondary_request_id)
+    if not req_secondary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Secondary request '{payload.secondary_request_id}' not found"
+        )
+
+    cluster = storage_service.create_cluster(
+        request_ids=[request_id, payload.secondary_request_id],
+        evidence=payload.evidence or ["Manual coordinator merge"],
+        merged_by=payload.merged_by
+    )
+
+    return MergeResultResponse(
+        cluster_id=cluster.id,
+        primary_request_id=request_id,
+        secondary_request_id=payload.secondary_request_id,
+        evidence=cluster.evidence,
+        merged_by=cluster.merged_by
+    )
+
+
+@router.post("/requests/{request_id}/split", response_model=SplitResultResponse)
+def split_request_cluster(request_id: str, actor: str = "coordinator"):
+    req = storage_service.get_request(request_id)
+    if not req:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Request '{request_id}' not found"
+        )
+
+    if not req.cluster_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Request '{request_id}' is not currently part of any cluster"
+        )
+
+    cluster_id = req.cluster_id
+    cluster = storage_service.get_cluster(cluster_id)
+    if not cluster:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Cluster '{cluster_id}' not found"
+        )
+
+    restored_ids = list(cluster.request_ids)
+    split_cluster = storage_service.split_cluster(cluster_id, actor=actor)
+
+    return SplitResultResponse(
+        cluster_id=cluster_id,
+        restored_request_ids=restored_ids,
+        undone=True,
+        actor=actor
+    )
+
+
+@router.get("/clusters/{cluster_id}", response_model=StoredCluster)
+def get_cluster_evidence(cluster_id: str):
+    cluster = storage_service.get_cluster(cluster_id)
+    if not cluster:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Cluster '{cluster_id}' not found"
+        )
+    return cluster

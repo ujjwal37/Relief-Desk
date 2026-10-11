@@ -1,0 +1,133 @@
+import uuid
+from typing import Any, Dict, List, Optional
+from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, Field
+from app.agents.chat_intake import chat_intake_agent, ChatTurnResponse, ConfirmationCardData
+from app.agents.intake import intake_agent
+from app.agents.dedupe import dedupe_agent
+from app.tools.storage import storage_service
+from app.tools.scoring import scoring_engine
+from app.tools.ratelimit import rate_limiter
+from app.models.firestore_models import StoredRequest, RequestStatus
+
+router = APIRouter(prefix="/api", tags=["Reports & Intake"])
+
+
+class ChatMessageRequest(BaseModel):
+    session_id: Optional[str] = None
+    message: str
+    scenario_id: str = "flood"
+    language: Optional[str] = None
+    location_pin: Optional[Dict[str, float]] = None
+
+
+class ReportSubmitRequest(BaseModel):
+    text: str
+    channel: str = "text"  # "text" | "voice"
+    lang: str = "en"
+    source_id: str = "anon_device"
+    location_pin: Optional[Dict[str, float]] = None
+    scenario_id: str = "flood"
+
+
+class ReportSubmitResponse(BaseModel):
+    report_id: str
+    request_id: str
+    status_token: str
+    summary: str
+    urgency_score: float
+    dedupe_decision: str
+    flags: List[str]
+    safety_line: str
+
+
+@router.post("/intake/chat", response_model=ChatTurnResponse)
+def handle_chat_turn(payload: ChatMessageRequest):
+    return chat_intake_agent.process_turn(
+        session_id=payload.session_id,
+        user_message=payload.message,
+        scenario_id=payload.scenario_id,
+        lang_override=payload.language,
+        location_pin=payload.location_pin
+    )
+
+
+@router.post("/reports", response_model=ReportSubmitResponse)
+def submit_report(payload: ReportSubmitRequest):
+    # 1. Rate limiting check (flags only, never deletes)
+    is_limited, _ = rate_limiter.check_and_record(payload.source_id)
+    flags = ["rate_limited"] if is_limited else []
+
+    # 2. Store raw report immediately
+    raw_report = storage_service.save_report_raw(
+        raw_text=payload.text,
+        channel=payload.channel,
+        lang=payload.lang,
+        source_id=payload.source_id,
+        trust_level="anonymous",
+        pack_id=payload.scenario_id,
+        flags=flags
+    )
+
+    # 3. Extract structured request
+    extracted = intake_agent.parse_report(payload.text, language_hint=payload.lang)
+
+    # 4. Deduplication against active requests
+    existing = storage_service.list_requests()
+    pin_lat = payload.location_pin.get("lat") if payload.location_pin else 26.85
+    pin_lng = payload.location_pin.get("lng") if payload.location_pin else 80.93
+
+    candidates = dedupe_agent.prefilter_candidates(
+        new_req=extracted,
+        new_lat=pin_lat,
+        new_lng=pin_lng,
+        new_ward=None,
+        existing_requests=existing
+    )
+    decision = dedupe_agent.evaluate(payload.text, extracted, candidates)
+
+    req_id = f"req_{uuid.uuid4().hex[:10]}"
+    req_obj = StoredRequest(
+        id=req_id,
+        event_id="event_riverbend_flood",
+        pack_id=payload.scenario_id,
+        type=extracted.type,
+        place_text=extracted.place_text or "Riverbend Area",
+        lat=pin_lat,
+        lng=pin_lng,
+        people_count=extracted.people.count or 1,
+        vulnerable=extracted.vulnerable,
+        hazard=extracted.hazard,
+        status=RequestStatus.NEW,
+        flags=flags,
+    )
+
+    # 5. Score urgency
+    urgency_res = scoring_engine.compute_urgency(req_obj)
+    req_obj.urgency_score = urgency_res.score
+    req_obj.urgency_reason = urgency_res.reason
+
+    # Save request
+    storage_service.save_request(req_obj, actor="intake_pipeline")
+    raw_report.request_id = req_id
+
+    # Handle cluster if duplicate
+    if decision.decision.value == "duplicate" and decision.target_request_id:
+        storage_service.create_cluster(
+            request_ids=[decision.target_request_id, req_id],
+            evidence=decision.evidence,
+            merged_by="auto_suggest"
+        )
+
+    status_token = f"tok_{uuid.uuid4().hex[:12]}"
+
+    return ReportSubmitResponse(
+        report_id=raw_report.id,
+        request_id=req_id,
+        status_token=status_token,
+        summary=f"{req_obj.people_count} person(s) needing {req_obj.type.value} at {req_obj.place_text}",
+        urgency_score=urgency_res.score,
+        dedupe_decision=decision.decision.value,
+        flags=flags,
+        safety_line="In an immediate emergency call 112."
+    )

@@ -1,0 +1,52 @@
+{
+  "safety": {
+    "banner": "Prototype. Emergency service nahi hai. Emergency me turant 112 par call karein.",
+    "call112": "112 Call Karein",
+    "offlineNotice": "Aap offline hain. Reconnect hone par report automatically sync ho jayegi."
+  },
+  "nav": {
+    "home": "Home",
+    "report": "Madad Report Karein",
+    "status": "Status Check Karein",
+    "nearby": "Aas-paas Ke Incidents",
+    "coordinator": "Coordinator Portal",
+    "logout": "Log Out"
+  },
+  "landing": {
+    "title": "Relief Desk",
+    "subtitle": "Multilingual Crisis Coordination aur Instant Relief Support",
+    "helpTitle": "Mujhe Madad Chahiye / Report Karein",
+    "helpDesc": "Bina kisi sign-up ke rescue, food, shelter ya medical help maangein.",
+    "coordinatorTitle": "Mai Ek Relief Coordinator Hoon",
+    "coordinatorDesc": "Command dashboard access karein aur teams dispatch karein."
+  },
+  "report": {
+    "title": "Emergency Crisis Report",
+    "chatTab": "Voice / Chat",
+    "formTab": "Form Details",
+    "placeholder": "Apna message type ya speak karein (Hindi, Hinglish, English, Tamil)...",
+    "send": "Message Bhejo",
+    "listening": "Sun rahe hain...",
+    "submitting": "Report bheji ja rahi hai...",
+    "success": "Report successfully submit ho gayi!",
+    "statusToken": "Aapka Status Tracking Token:"
+  },
+  "confirm": {
+    "title": "Humne Ye Samjha",
+    "people": "Kitne Logo Ko Madad Chahiye",
+    "location": "Location / Landmark",
+    "type": "Incident Type",
+    "hazard": "Khatre Ka Level",
+    "sendNow": "Confirm Karein & Send",
+    "edit": "Edit Karein"
+  },
+  "queue": {
+    "title": "Ranked Priority Queue",
+    "critical": "Critical Urgency",
+    "high": "High Urgency",
+    "medium": "Medium Urgency",
+    "low": "Low Urgency",
+    "approve": "Dispatch Approve Karein",
+    "reject": "Reject"
+  }
+}

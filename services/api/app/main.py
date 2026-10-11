@@ -4,6 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api.health import router as health_router
+from app.api.scenarios import router as scenarios_router
+from app.api.config_router import router as config_router
+from app.api.clusters import router as clusters_router
+from app.api.reports import router as reports_router
 
 logging.basicConfig(
     level=settings.LOG_LEVEL,
@@ -36,6 +40,10 @@ app.add_middleware(
 
 # Root health check directly at /healthz as required by SETUP.md
 app.include_router(health_router)
+app.include_router(scenarios_router)
+app.include_router(config_router)
+app.include_router(clusters_router)
+app.include_router(reports_router)
 
 @app.get("/")
 def root():
