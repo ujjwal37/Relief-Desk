@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiClientService, ReportStatusResponse, RdTranslatePipe } from '@rd/shared';
+import { MyRequestsService } from '../../../core/services/my-requests.service';
 
 @Component({
   selector: 'app-status',
@@ -15,35 +16,38 @@ import { ApiClientService, ReportStatusResponse, RdTranslatePipe } from '@rd/sha
 export class StatusComponent implements OnInit {
   private api = inject(ApiClientService);
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
+  private store = inject(MyRequestsService);
 
-  reportIdInput = signal('R-0412');
-  tokenInput = signal('tok_demo');
+  reportIdInput = signal('');
+  tokenInput = signal('');
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   statusData = signal<ReportStatusResponse | null>(null);
-  copied = signal(false);
+  copied = signal<'' | 'id' | 'link'>('');
+  /** Find form shows when nothing is saved, or when asked for (?find=1). */
+  showFind = signal(false);
+  invalidInput = signal(false);
+  isNew = signal(false);
+  private currentToken = '';
 
   ngOnInit(): void {
-    // Check route query parameters or localStorage for last report ID
-    const queryParams = this.route.snapshot.queryParams;
-    const qId = queryParams['id'] || queryParams['report_id'];
-    const qToken = queryParams['token'];
-
+    const q = this.route.snapshot.queryParams;
+    const qId = q['id'] || q['report_id'];
+    this.isNew.set(q['new'] === '1');
     if (qId) {
       this.reportIdInput.set(qId);
-      if (qToken) this.tokenInput.set(qToken);
-      this.fetchStatus(qId, qToken);
+      this.tokenInput.set(q['token'] || '');
+      this.fetchStatus(qId, q['token']);
+    } else if (q['find']) {
+      this.showFind.set(true);
     } else {
-      const storedId = localStorage.getItem('rd_last_report_id');
-      const storedToken = localStorage.getItem('rd_last_status_token');
-      if (storedId) {
-        this.reportIdInput.set(storedId);
-        if (storedToken) this.tokenInput.set(storedToken);
-        this.fetchStatus(storedId, storedToken || undefined);
+      const saved = this.store.latest();
+      if (saved) {
+        this.reportIdInput.set(saved.id);
+        this.tokenInput.set(saved.token);
+        this.fetchStatus(saved.id, saved.token || undefined);
       } else {
-        // Fallback to canonical synthetic demo case
-        this.fetchStatus('R-0412', 'tok_demo');
+        this.showFind.set(true);
       }
     }
   }
@@ -51,46 +55,80 @@ export class StatusComponent implements OnInit {
   fetchStatus(reportId: string, token?: string): void {
     const cleanId = reportId.trim();
     if (!cleanId) return;
-
     this.isLoading.set(true);
     this.errorMessage.set(null);
-
+    this.currentToken = token?.trim() || '';
     this.api.getReportStatus(cleanId, token?.trim()).subscribe({
       next: (data) => {
         this.statusData.set(data);
+        this.showFind.set(false);
+        this.isLoading.set(false);
+        this.store.add(data.report_id || cleanId, this.currentToken);
+      },
+      error: () => {
+        this.statusData.set(null);
+        this.errorMessage.set('not-found');
+        this.showFind.set(true);
         this.isLoading.set(false);
       },
-      error: (err) => {
-        console.warn('Status fetch error, falling back to demo state:', err);
-        // If 404 or offline, load demo state for uninterrupted evaluation
-        this.api.getReportStatus('R-0412', 'tok_demo').subscribe({
-          next: (demo) => {
-            this.statusData.set(demo);
-            this.isLoading.set(false);
-          },
-          error: () => {
-            this.errorMessage.set('Unable to retrieve status. Please check your request ID.');
-            this.isLoading.set(false);
-          }
-        });
-      }
     });
+  }
+
+  /** Accepts a request ID, or a pasted status link that carries id and token. */
+  onIdInput(value: string): void {
+    this.reportIdInput.set(value);
+    this.invalidInput.set(false);
+    try {
+      const url = new URL(value.trim());
+      const id = url.searchParams.get('id') || url.searchParams.get('report_id');
+      if (id) {
+        this.reportIdInput.set(id);
+        const tok = url.searchParams.get('token');
+        if (tok) this.tokenInput.set(tok);
+      }
+    } catch { /* plain ID */ }
+  }
+
+  async pasteFromClipboard(): Promise<void> {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) this.onIdInput(text);
+    } catch { /* permission denied: user can paste manually */ }
   }
 
   onTrackSubmit(): void {
-    const id = this.reportIdInput();
-    const tok = this.tokenInput();
-    this.fetchStatus(id, tok || undefined);
+    const id = this.reportIdInput().trim();
+    if (!id) {
+      this.invalidInput.set(true);
+      return;
+    }
+    this.fetchStatus(id, this.tokenInput() || undefined);
+  }
+
+  statusLink(id: string): string {
+    const tok = this.currentToken || this.tokenInput();
+    return `${location.origin}/status?id=${encodeURIComponent(id)}${tok ? '&token=' + encodeURIComponent(tok) : ''}`;
+  }
+
+  private flash(kind: 'id' | 'link'): void {
+    this.copied.set(kind);
+    setTimeout(() => this.copied.set(''), 1600);
   }
 
   copyId(id: string): void {
-    navigator.clipboard?.writeText(id).then(() => {
-      this.copied.set(true);
-      setTimeout(() => this.copied.set(false), 1500);
-    });
+    navigator.clipboard?.writeText(id).then(() => this.flash('id'));
   }
 
-  navigateTo(path: string): void {
-    this.router.navigate([path]);
+  copyLink(id: string): void {
+    navigator.clipboard?.writeText(this.statusLink(id)).then(() => this.flash('link'));
+  }
+
+  share(id: string): void {
+    const url = this.statusLink(id);
+    if (navigator.share) {
+      navigator.share({ title: 'Relief Desk', url }).catch(() => undefined);
+    } else {
+      this.copyLink(id);
+    }
   }
 }

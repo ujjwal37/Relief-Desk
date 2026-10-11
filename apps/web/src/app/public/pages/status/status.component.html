@@ -1,18 +1,44 @@
 <div class="status-page">
-  <h1>{{ 'status.title2' | rdTranslate }}</h1>
+  <h1>{{ (showFind() && !statusData() ? 'find.title' : 'status.title2') | rdTranslate }}</h1>
 
   @if (isLoading() && !statusData()) {
     <div class="skeleton" aria-busy="true" [attr.aria-label]="'status.loading' | rdTranslate"><i></i><i></i><i></i></div>
   }
 
   @if (errorMessage() && !statusData()) {
-    <div class="error-card" role="alert">
-      <p>{{ 'status.error' | rdTranslate }}</p>
-      <button type="button" (click)="onTrackSubmit()">{{ 'status.trackBtn' | rdTranslate }}</button>
-    </div>
+    <div class="error-card" role="alert"><p>{{ 'status.error' | rdTranslate }}</p></div>
+  }
+
+  @if (showFind() && !statusData()) {
+    <form class="find" (submit)="$event.preventDefault(); onTrackSubmit()">
+      <p class="hint">{{ 'home.findSub' | rdTranslate }}</p>
+      <label for="rid">{{ 'find.idLabel' | rdTranslate }}</label>
+      <div class="field-row">
+        <input id="rid" type="text" autocomplete="off" autocapitalize="characters" [ngModel]="reportIdInput()" (ngModelChange)="onIdInput($event)" [ngModelOptions]="{ standalone: true }" [placeholder]="'status.idPlaceholder' | rdTranslate" [attr.aria-invalid]="invalidInput()" />
+        <button type="button" class="paste" (click)="pasteFromClipboard()">{{ 'find.paste' | rdTranslate }}</button>
+      </div>
+      <small>{{ 'find.idHint' | rdTranslate }}</small>
+      @if (invalidInput()) { <p class="invalid" role="alert">{{ 'find.invalid' | rdTranslate }}</p> }
+      <label for="tok">{{ 'find.tokenLabel' | rdTranslate }}</label>
+      <input id="tok" type="text" autocomplete="off" [ngModel]="tokenInput()" (ngModelChange)="tokenInput.set($event)" [ngModelOptions]="{ standalone: true }" />
+      <button type="submit" class="go" [disabled]="isLoading()">{{ 'find.go' | rdTranslate }}</button>
+    </form>
   }
 
   @if (statusData(); as data) {
+    @if (isNew()) {
+      <div class="sent" role="status">✓ {{ 'status.new' | rdTranslate }} <small>{{ 'status.saved' | rdTranslate }}</small></div>
+    }
+
+    <section class="idcard" aria-label="{{ 'status.requestId' | rdTranslate }}">
+      <p class="cap">{{ 'status.requestId' | rdTranslate }}</p>
+      <p class="rid">{{ data.report_id }}</p>
+      <div class="idbtns">
+        <button type="button" (click)="copyId(data.report_id)">{{ copied() === 'id' ? ('status.copied' | rdTranslate) : ('status.copy' | rdTranslate) }}</button>
+        <button type="button" (click)="share(data.report_id)">{{ copied() === 'link' ? ('status.copied' | rdTranslate) : ('status.share' | rdTranslate) }}</button>
+      </div>
+    </section>
+
     <section class="hero" aria-live="polite">
       <p class="eta-cap">{{ 'status.eta' | rdTranslate }}</p>
       <p class="eta">{{ data.eta_display }}</p>
@@ -39,16 +65,10 @@
 
     <details class="card details">
       <summary>{{ 'status.details' | rdTranslate }}</summary>
-      <p><span>{{ 'status.requestId' | rdTranslate }}</span> <b>{{ data.report_id }}</b> <button type="button" class="copy" (click)="copyId(data.report_id)">{{ copied() ? '✓' : ('status.copy' | rdTranslate) }}</button></p>
       <p><span>{{ 'status.dispatch' | rdTranslate }}</span> <b>{{ data.delivery_status }}</b></p>
+      <p><button type="button" class="copy" (click)="copyLink(data.report_id)">{{ copied() === 'link' ? ('status.copied' | rdTranslate) : ('status.copyLink' | rdTranslate) }}</button></p>
     </details>
-  }
 
-  <form class="track" (submit)="$event.preventDefault(); onTrackSubmit()">
-    <label for="rid">{{ 'status.track' | rdTranslate }}</label>
-    <div class="track-row">
-      <input id="rid" type="text" [ngModel]="reportIdInput()" (ngModelChange)="reportIdInput.set($event)" [ngModelOptions]="{ standalone: true }" [placeholder]="'status.idPlaceholder' | rdTranslate" />
-      <button type="submit" [disabled]="isLoading()">{{ 'status.trackBtn' | rdTranslate }}</button>
-    </div>
-  </form>
+    <a class="other" routerLink="/status" [queryParams]="{ find: 1 }" (click)="statusData.set(null); showFind.set(true)">{{ 'status.track' | rdTranslate }}</a>
+  }
 </div>
