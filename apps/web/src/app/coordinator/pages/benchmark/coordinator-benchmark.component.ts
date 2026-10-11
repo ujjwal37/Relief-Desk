@@ -50,6 +50,16 @@ export class CoordinatorBenchmarkComponent implements OnInit {
   readonly subtitle = signal('');
   readonly failures = signal<string[]>([]);
   readonly error = signal<string | null>(null);
+  readonly gemini = signal<{
+    measured: boolean;
+    model: string;
+    date: string;
+    n: string;
+    type: string;
+    ward: string;
+    baseType: string;
+    baseWard: string;
+  } | null>(null);
 
   ngOnInit(): void {
     this.reload();
@@ -94,6 +104,21 @@ export class CoordinatorBenchmarkComponent implements OnInit {
     }));
     const examples = (payload['failure_examples'] || []) as Array<Record<string, unknown>>;
     this.failures.set(examples.map((item) => `${item['message_id']}: ${item['category']}`));
+    const gemini = payload['gemini'] as Record<string, unknown> | undefined;
+    if (!gemini) {
+      this.gemini.set(null);
+      return;
+    }
+    this.gemini.set({
+      measured: gemini['measured'] === true,
+      model: String(gemini['model'] ?? ''),
+      date: String(gemini['date'] ?? ''),
+      n: String(gemini['n'] ?? ''),
+      type: this.format(gemini['type_accuracy_pct']),
+      ward: this.format(gemini['place_ward_accuracy_pct']),
+      baseType: this.format(gemini['baseline_type_accuracy_pct']),
+      baseWard: this.format(gemini['baseline_ward_accuracy_pct']),
+    });
   }
 
   private baselineOf(value: Record<string, unknown>): { value: unknown; name: string } {

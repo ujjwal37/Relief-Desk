@@ -11,9 +11,9 @@ duplicate_vs_update_3way_accuracy_pct,61.2,N/A (cannot detect updates),Reported
 false_merge_rate_pct,0.0,N/A,As low as possible
 critical_case_top5_share_pct,60.0,N/A,Clearly above FCFS
 critical_case_top10_share_pct,60.0,20.0,Clearly above FCFS
-critical_case_mean_rank,11.0,13.5,Lower is better
+critical_case_mean_rank,11.5,13.5,Lower is better
 hoax_catch_rate_pct,100.0,0.0%,Reported
 hoax_false_flag_rate_pct,0.0,0.0%,Reported
-latency_p50_ms,0.7,< 1 ms,Reported
-latency_p95_ms,18.2,< 1 ms,Reported
+latency_p50_ms,14.0,< 1 ms,Reported
+latency_p95_ms,27.9,< 1 ms,Reported
 cost_per_1000_msgs_usd,$0.0465,N/A,Reported

@@ -22,6 +22,18 @@
     </article>
   </div>
 
+  <section class="compare" *ngIf="gemini() as g">
+    <h2>{{ 'bench.geminiTitle' | rdTranslate }}</h2>
+    <p>{{ 'bench.model' | rdTranslate }} {{ g.model }}</p>
+    <p>{{ 'bench.date' | rdTranslate }} {{ g.date }}</p>
+    <p>{{ 'bench.count' | rdTranslate }} {{ g.n }}</p>
+    <p *ngIf="!g.measured">{{ 'bench.geminiNotMeasured' | rdTranslate }}</p>
+    <p *ngIf="g.measured">{{ 'bench.geminiType' | rdTranslate }} {{ g.type }}</p>
+    <p *ngIf="g.measured">{{ 'bench.geminiWard' | rdTranslate }} {{ g.ward }}</p>
+    <p>{{ 'bench.keywordType' | rdTranslate }} {{ g.baseType }}</p>
+    <p>{{ 'bench.keywordWard' | rdTranslate }} {{ g.baseWard }}</p>
+  </section>
+
   <section class="failures" *ngIf="failures().length">
     <h2>{{ 'bench.failures' | rdTranslate }}</h2>
     <p *ngFor="let line of failures()">{{ line }}</p>

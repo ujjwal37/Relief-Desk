@@ -21,6 +21,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "services" / "api"))
 
+from collections import Counter
+
 from app.agents.intake import intake_agent
 from app.agents.dedupe import dedupe_agent
 from app.tools.gazetteer import gazetteer
@@ -28,6 +30,34 @@ from app.tools.scoring import scoring_engine
 from app.tools.geo import grid_cell_id
 from app.models.firestore_models import StoredRequest, RequestStatus
 from bench.baselines import compute_hash_dedupe, keyword_extract_baseline
+from bench.gemini_eval import evaluate_gemini
+
+
+def load_split(dataset_dir: Path) -> Dict[str, Any]:
+    split_file = dataset_dir / "split.json"
+    if not split_file.exists():
+        raise SystemExit(f"Missing frozen split file: {split_file}")
+    return json.loads(split_file.read_text(encoding="utf-8"))
+
+
+def messages_for_split(messages: List[Dict[str, Any]], split_meta: Dict[str, Any], split: str) -> List[Dict[str, Any]]:
+    """Test ids stay the frozen list. New rows are train only."""
+    by_id = {row["id"]: row for row in messages}
+    dev_ids = list(split_meta["dev_ids"])
+    test_ids = list(split_meta["test_ids"])
+    held = set(dev_ids) | set(test_ids)
+    if split == "dev":
+        chosen = dev_ids
+    elif split == "test":
+        chosen = test_ids
+    elif split == "train":
+        chosen = [row["id"] for row in messages if row["id"] not in held]
+    else:
+        chosen = [row["id"] for row in messages]
+    missing = [mid for mid in chosen if mid not in by_id]
+    if missing:
+        raise SystemExit(f"Split {split} names {len(missing)} ids that are not in the dataset")
+    return [by_id[mid] for mid in chosen]
 
 
 def calculate_f1(tp: int, fp: int, fn: int) -> Tuple[float, float, float]:
@@ -63,18 +93,16 @@ def run_benchmark(
                 lbl = json.loads(line)
                 all_labels[lbl["message_id"]] = lbl
 
-    total_msgs = len(all_messages)
-    # Dev: 30% (first 72), Test: 70% (remaining 168)
-    dev_cutoff = int(total_msgs * 0.30)
+    split_meta = load_split(dataset_dir)
+    messages = messages_for_split(all_messages, split_meta, split)
     if split == "dev":
-        messages = all_messages[:dev_cutoff]
-        split_desc = f"Dev split (30% = {len(messages)} messages)"
+        split_desc = f"Dev split ({len(messages)} messages, frozen)"
     elif split == "test":
-        messages = all_messages[dev_cutoff:]
-        split_desc = f"Test split (70% = {len(messages)} messages)"
+        split_desc = f"Test split ({len(messages)} messages, frozen)"
+    elif split == "train":
+        split_desc = f"Train split ({len(messages)} messages, not held out)"
     else:
-        messages = all_messages
-        split_desc = f"Full dataset (100% = {len(messages)} messages)"
+        split_desc = f"Full dataset ({len(messages)} messages)"
 
     print("=" * 82)
     print(f" Relief Desk Formal Benchmark Runner (BUILD_BRIEF.md Section 9.3)")
@@ -141,8 +169,9 @@ def run_benchmark(
     rd_ranked_queue: List[StoredRequest] = []
     fcfs_queue: List[Dict[str, Any]] = []
 
-    # Failure cases log
+    # Failure cases log. Counts stay in the result; rules are not edited from them.
     failures: List[Dict[str, Any]] = []
+    type_confusions: Counter = Counter()
 
     # Streaming evaluation
     for idx, msg in enumerate(messages):
@@ -176,6 +205,7 @@ def run_benchmark(
             if extracted.type.value == gt_type:
                 rd_type_correct += 1
             else:
+                type_confusions[f"{gt_type}->{extracted.type.value}"] += 1
                 if len(failures) < 3 and label_type in ("single_incident", "duplicate_of"):
                     failures.append({
                         "message_id": m_id,
@@ -340,16 +370,16 @@ def run_benchmark(
     total_eval_time = time.time() - start_bench_time
 
     # Accuracies
-    type_acc_rd = (rd_type_correct / type_total * 100.0) if type_total > 0 else 92.5
-    type_acc_kw = (kw_type_correct / type_total * 100.0) if type_total > 0 else 64.0
+    type_acc_rd = (rd_type_correct / type_total * 100.0) if type_total > 0 else 0.0
+    type_acc_kw = (kw_type_correct / type_total * 100.0) if type_total > 0 else 0.0
 
-    ward_acc_rd = (rd_ward_correct / ward_total * 100.0) if ward_total > 0 else 88.0
-    ward_acc_kw = (kw_ward_correct / ward_total * 100.0) if ward_total > 0 else 52.0
+    ward_acc_rd = (rd_ward_correct / ward_total * 100.0) if ward_total > 0 else 0.0
+    ward_acc_kw = (kw_ward_correct / ward_total * 100.0) if ward_total > 0 else 0.0
 
-    people_exact_rd = (rd_people_exact / people_total * 100.0) if people_total > 0 else 84.0
-    people_pm1_rd = (rd_people_pm1 / people_total * 100.0) if people_total > 0 else 96.0
-    people_exact_kw = (kw_people_exact / people_total * 100.0) if people_total > 0 else 58.0
-    people_pm1_kw = (kw_people_pm1 / people_total * 100.0) if people_total > 0 else 72.0
+    people_exact_rd = (rd_people_exact / people_total * 100.0) if people_total > 0 else 0.0
+    people_pm1_rd = (rd_people_pm1 / people_total * 100.0) if people_total > 0 else 0.0
+    people_exact_kw = (kw_people_exact / people_total * 100.0) if people_total > 0 else 0.0
+    people_pm1_kw = (kw_people_pm1 / people_total * 100.0) if people_total > 0 else 0.0
 
     # Macro Vulnerable F1
     rd_f1_list = []
@@ -359,15 +389,15 @@ def run_benchmark(
         _, _, f1_kw = calculate_f1(kw_vuln_counts[vf]["tp"], kw_vuln_counts[vf]["fp"], kw_vuln_counts[vf]["fn"])
         rd_f1_list.append(f1_rd)
         kw_f1_list.append(f1_kw)
-    macro_vuln_f1_rd = (sum(rd_f1_list) / len(rd_f1_list) * 100.0) if rd_f1_list else 89.2
-    macro_vuln_f1_kw = (sum(kw_f1_list) / len(kw_f1_list) * 100.0) if kw_f1_list else 51.4
+    macro_vuln_f1_rd = (sum(rd_f1_list) / len(rd_f1_list) * 100.0) if rd_f1_list else 0.0
+    macro_vuln_f1_kw = (sum(kw_f1_list) / len(kw_f1_list) * 100.0) if kw_f1_list else 0.0
 
     # Duplicate Metrics
     rd_dupe_prec, rd_dupe_rec, rd_dupe_f1 = calculate_f1(rd_dupe_tp, rd_dupe_fp, rd_dupe_fn)
     hash_dupe_prec, hash_dupe_rec, hash_dupe_f1 = calculate_f1(hash_dupe_tp, hash_dupe_fp, hash_dupe_fn)
 
     # 3-Way Update-vs-Duplicate
-    three_way_acc_rd = (rd_3way_correct / pair_3way_total * 100.0) if pair_3way_total > 0 else 91.5
+    three_way_acc_rd = (rd_3way_correct / pair_3way_total * 100.0) if pair_3way_total > 0 else 0.0
 
     # False Merge Rate
     false_merge_rate_rd = (rd_hard_neg_false_merge / hard_negatives_total * 100.0) if hard_negatives_total > 0 else 0.0
@@ -391,20 +421,20 @@ def run_benchmark(
     fcfs_top5_critical = sum(1 for req in fcfs_queue[:5] if req["id"] in critical_ids)
     fcfs_top10_critical = sum(1 for req in fcfs_queue[:10] if req["id"] in critical_ids)
 
-    rd_top5_share = (rd_top5_critical / min(5, total_critical) * 100.0) if total_critical > 0 else 100.0
-    rd_top10_share = (rd_top10_critical / min(10, total_critical) * 100.0) if total_critical > 0 else 100.0
-    fcfs_top5_share = (fcfs_top5_critical / min(5, total_critical) * 100.0) if total_critical > 0 else 20.0
-    fcfs_top10_share = (fcfs_top10_critical / min(10, total_critical) * 100.0) if total_critical > 0 else 40.0
+    rd_top5_share = (rd_top5_critical / min(5, total_critical) * 100.0) if total_critical > 0 else 0.0
+    rd_top10_share = (rd_top10_critical / min(10, total_critical) * 100.0) if total_critical > 0 else 0.0
+    fcfs_top5_share = (fcfs_top5_critical / min(5, total_critical) * 100.0) if total_critical > 0 else 0.0
+    fcfs_top10_share = (fcfs_top10_critical / min(10, total_critical) * 100.0) if total_critical > 0 else 0.0
 
     # Mean rank of critical cases (1-based index)
     rd_ranks = [i + 1 for i, req in enumerate(sorted_rd) if req.id in critical_ids]
     fcfs_ranks = [i + 1 for i, req in enumerate(fcfs_queue) if req["id"] in critical_ids]
-    mean_rank_rd = (sum(rd_ranks) / len(rd_ranks)) if rd_ranks else 6.2
-    mean_rank_fcfs = (sum(fcfs_ranks) / len(fcfs_ranks)) if fcfs_ranks else 48.5
+    mean_rank_rd = (sum(rd_ranks) / len(rd_ranks)) if rd_ranks else 0.0
+    mean_rank_fcfs = (sum(fcfs_ranks) / len(fcfs_ranks)) if fcfs_ranks else 0.0
 
     # Hoax rates
-    hoax_catch_rate = (rd_hoax_caught / hoax_total * 100.0) if hoax_total > 0 else 90.0
-    false_flag_rate = (rd_benign_false_flagged / benign_total * 100.0) if benign_total > 0 else 0.5
+    hoax_catch_rate = (rd_hoax_caught / hoax_total * 100.0) if hoax_total > 0 else 0.0
+    false_flag_rate = (rd_benign_false_flagged / benign_total * 100.0) if benign_total > 0 else 0.0
 
     # Latencies
     sorted_lats = sorted(latencies)
@@ -418,26 +448,6 @@ def run_benchmark(
         + (output_tokens_estimate / len(messages)) * (0.40 / 1_000_000.0)
     )
     cost_per_1000 = round(cost_per_msg * 1000.0, 4)
-
-    # Fallback failure examples if less than 3
-    if len(failures) < 3:
-        failures.append({
-            "message_id": "MSG-0142",
-            "raw_text": "Bhaiyya jaldi aao yahan bahut paani hai Mandir road pe",
-            "ground_truth": "landmark: LM-32 (Shiv Mandir, Ward 7)",
-            "relief_desk": "place: Temple Road (confidence 0.68)",
-            "category": "Informal Landmark Ambiguity",
-            "reason": "Colloquial local temple reference lacked ward number; flagged for coordinator review."
-        })
-    if len(failures) < 3:
-        failures.append({
-            "message_id": "MSG-0189",
-            "raw_text": "Ghar me 5-6 log hain rashan khatam ho gaya hai",
-            "ground_truth": "people: 5 (exact)",
-            "relief_desk": "people: 6 (within +/- 1)",
-            "category": "Range Quantifier Imprecision",
-            "reason": "Range '5-6 log' resolved to upper bound 6 for safety margin."
-        })
 
     # Assemble structured results dictionary
     results: Dict[str, Any] = {
@@ -539,8 +549,23 @@ def run_benchmark(
             }
         },
         "failure_examples": failures[:3],
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "error_analysis": {
+            "type_confusions": [
+                {"pair": pair, "count": count} for pair, count in type_confusions.most_common(8)
+            ],
+            "note": "Counts from this split only. Rules were not edited from these misses.",
+        },
+        "corpus_messages": len(all_messages),
+        "frozen_test_count": len(split_meta.get("test_ids") or []),
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
+    run_day = results["created_at"][:10]
+    gemini = evaluate_gemini(messages, all_labels, run_day)
+    gemini["baseline_type_accuracy_pct"] = results["metrics"]["type_accuracy_pct"]["baseline_keyword"]
+    gemini["baseline_ward_accuracy_pct"] = results["metrics"]["place_ward_accuracy_pct"]["baseline_keyword"]
+    gemini["rules_type_accuracy_pct"] = results["metrics"]["type_accuracy_pct"]["relief_desk"]
+    gemini["rules_ward_accuracy_pct"] = results["metrics"]["place_ward_accuracy_pct"]["relief_desk"]
+    results["gemini"] = gemini
 
     # Print Formatted Benchmark Table
     m = results["metrics"]
@@ -582,11 +607,13 @@ def run_benchmark(
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     ts_json = target_out_dir / f"benchmark_{timestamp}.json"
     latest_json = target_out_dir / "latest.json"
+    results_json = target_out_dir / "results.json"
     latest_md = target_out_dir / "latest.md"
+    results_md = target_out_dir / "RESULTS.md"
     latest_csv = target_out_dir / "latest.csv"
 
     # Write JSON
-    for jp in (ts_json, latest_json):
+    for jp in (ts_json, latest_json, results_json):
         with open(jp, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
 
@@ -597,7 +624,7 @@ def run_benchmark(
 - **Split**: {split_desc}
 - **Seed**: {seed}
 - **Generated At**: {results['created_at']}
-- **Status**: Verified on synthetic test set
+- **Status**: Synthetic labels. The Gemini column is filled only when a live or cached model call is scored.
 
 ## Comparative Metrics Table
 
@@ -634,7 +661,38 @@ def run_benchmark(
 
 """
 
+    g = results["gemini"]
+    if g.get("measured"):
+        gemini_line = (
+            f"Gemini ({g['model']}, {g['date']}, n={g['n']}): "
+            f"type {g['type_accuracy_pct']}%, ward {g['place_ward_accuracy_pct']}%. "
+            f"Keyword baseline: type {g['baseline_type_accuracy_pct']}%, ward {g['baseline_ward_accuracy_pct']}%."
+        )
+    else:
+        gemini_line = (
+            f"Gemini was not measured ({g.get('reason')}). Configured model {g['model']}, "
+            f"date {g['date']}, n={g['n']}. Keyword baseline on this split: "
+            f"type {g['baseline_type_accuracy_pct']}%, ward {g['baseline_ward_accuracy_pct']}%. "
+            f"Rule pipeline: type {g['rules_type_accuracy_pct']}%, ward {g['rules_ward_accuracy_pct']}%."
+        )
+    confusion = results["error_analysis"]["type_confusions"]
+    confusion_lines = "\n".join(f"- {row['pair']}: {row['count']}" for row in confusion) or "- none"
+    md_content += f"""## Gemini and the keyword baseline
+
+{gemini_line}
+
+Cache is on. Live calls are limited to 30 per minute. A run without an API key does not fill the Gemini column.
+
+## Type error counts
+
+{confusion_lines}
+
+{results['error_analysis']['note']}
+
+"""
     with open(latest_md, "w", encoding="utf-8") as f:
+        f.write(md_content)
+    with open(results_md, "w", encoding="utf-8") as f:
         f.write(md_content)
 
     # Write CSV
@@ -645,14 +703,15 @@ def run_benchmark(
             baseline_val = v.get("baseline_keyword") or v.get("baseline_hash") or v.get("baseline_fcfs") or v.get("baseline") or "N/A"
             writer.writerow([k, v.get("relief_desk"), baseline_val, v.get("target")])
 
-    print(f"Results written to:\n  - {latest_json}\n  - {latest_md}\n  - {latest_csv}\n")
+    print(f"Results written to:\n  - {latest_json}\n  - {results_json}\n  - {latest_md}\n  - {results_md}\n  - {latest_csv}\n")
+    print(gemini_line)
     return results
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Relief Desk Full Benchmark Runner")
     parser.add_argument("--dataset", type=str, default="data/synthetic/flood_v1")
-    parser.add_argument("--split", type=str, choices=["test", "dev", "all"], default="test")
+    parser.add_argument("--split", type=str, choices=["test", "dev", "train", "all"], default="test")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--out", type=str, default="bench/results")
     args = parser.parse_args()
