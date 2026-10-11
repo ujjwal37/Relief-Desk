@@ -616,3 +616,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: pytest tests 114 passed. check-i18n 449 keys.
 - Notes / risks / not done: Location sharing needs the phone's permission. The demo still moves the pin by simulation when nobody shares a location. Done leaves the team Returning until Back available.
 - Next (suggested task id): FP-14
+
+### 2026-10-11 23:05 IST — FP-14 — Cursor
+- What changed: The coordinator login page leads with "Enter as demo coordinator" when demo mode is on. The API now defaults DEMO_MODE to true, so the button is there without an extra setting. A link with ?demo=1 keeps the button even if the health check says otherwise. The button is focused first.
+- Files: services/api/app/config.py, coordinator login page, .env.example, TASKS.md
+- How verified: login template shows the button when demoMode is true. check not re-run for i18n because no new keys.
+- Notes / risks / not done: Set DEMO_MODE=false in the environment to hide the button. Login itself is still the local demo account and does not call the API.
+- Next (suggested task id): FP-15

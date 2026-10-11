@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.5-flash"
     GEMINI_ENABLED: bool = True
     GEMINI_DAILY_CALL_CAP: int = 2000
-    DEMO_MODE: bool = False
+    DEMO_MODE: bool = True
 
     # Google Cloud
     GCP_PROJECT_ID: str = "relief-desk-demo"

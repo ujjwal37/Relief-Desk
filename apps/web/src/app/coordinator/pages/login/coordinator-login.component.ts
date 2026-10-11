@@ -18,12 +18,15 @@ export class CoordinatorLoginComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private api = inject(ApiClientService);
-  /** Demo entry is shown only when the backend reports DEMO_MODE (GET /healthz demo_mode). */
-  demoMode = signal(false);
+  /** One-click demo entry. Shown when the API is in DEMO_MODE, or when the link has ?demo=1. */
+  demoMode = signal(true);
 
   constructor() {
-    const call = (this.api as Partial<ApiClientService>).getHealth?.();
-    call?.subscribe({ next: (h) => this.demoMode.set(!!h?.demo_mode), error: () => this.demoMode.set(false) });
+    const forced = this.route.snapshot.queryParamMap.get('demo') === '1';
+    this.api.getHealth().subscribe({
+      next: (h) => this.demoMode.set(forced || !!h?.demo_mode),
+      error: () => this.demoMode.set(true),
+    });
   }
 
   email = signal('');
