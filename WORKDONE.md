@@ -931,3 +931,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: No new code. Previous gate still stands: `pytest tests` — 172 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%. Gemini on that split is still unmeasured (no_api_key, model gemini-3.8-flash, n=168).
 - Notes / risks / not done: Multimodal intake, Gemini Live voice, Search grounding, Malayalam, extra scenario packs, Pub/Sub, and BigQuery stay out.
 - Next (suggested task id): GM-11
+
+### 2026-10-12 07:55 IST — GM-11 — Cursor
+- What changed: The README now maps each ADK agent and each Gemini call to a file, and it copies the frozen-split numbers: rule type 67.3% (under the 90% target), ward 100.0%, Gemini not measured (`no_api_key`, model gemini-3.8-flash, n=168, date 2026-10-11). The `$0.0465` cost line is labelled as an estimate, not an invoice. A root Dockerfile and `deploy/cloudrun.md` describe Cloud Run and a Secret Manager env injection. The doc says there is no live URL. Case storage stays in process memory; the Firestore client is not used for writes.
+- Files: README.md, Dockerfile, .dockerignore, deploy/cloudrun.md, services/api/tests/test_readme_claims.py, TASKS.md
+- How verified: `pytest tests` — 174 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Benchmark was not re-run. Last held-out type 67.3%, ward 100.0%, duplicate F1 62.7%, vulnerable F1 58.5%. Keyword type 16.3%, ward 13.3%. Gemini measured false.
+- Notes / risks / not done: The container image was not built or deployed here. Photo intake remains unbuilt.
+- Next (suggested task id): GM-12

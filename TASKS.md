@@ -157,6 +157,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | GM-08 | AI limits, injection, and health | C | DONE | GM-07 | Token bucket, semaphore, circuit breaker, daily cap, cache. Injection does not raise the score. /api/health/ai reports provider and quota |
 | GM-09 | Replay cache of recorded Gemini runs | C | DONE | GM-08 | data/ai_cache stays empty until make record-ai. Replay badges Recorded Gemini run. A new report with a key still calls Gemini |
 | GM-10 | Photo intake | C | BLOCKED | GM-09 | Not built. An uploaded image is not sent to Gemini. No assistive photo fields are shown |
+| GM-11 | Honest ADK docs and deploy recipe | C | DONE | GM-10 | README maps ADK and Gemini to files. Held-out type 67.3%, ward 100%, Gemini not measured. Dockerfile and Secret Manager notes are a recipe, not a live service |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
