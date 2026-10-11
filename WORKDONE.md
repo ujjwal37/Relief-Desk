@@ -896,3 +896,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 161 passed, 1 skipped. `node scripts/check-i18n.mjs` — 533 keys. `npx ng build web` succeeded. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%. Gemini on that split is still unmeasured.
 - Notes / risks / not done: ADK 2.11 warns that SequentialAgent and ParallelAgent are deprecated in favor of Workflow. They still construct and are what the brief asked for. The live Runner is not called in CI; the tools run in a background thread. A model call happens only when a real key is set, and that path is not measured here.
 - Next (suggested task id): GM-06
+
+### 2026-10-12 07:05 IST — GM-06 — Cursor
+- What changed: Each case stores trace steps for Intake, Dedupe, Triage, Matching, and Explainer. While the pipeline is queued the first step is working and the rest are pending. When the tools finish, every step is complete and records the input summary, output, configured model, latency, token count (null without a live call), tool names, and timestamp. GET /api/cases/{id}/trace returns that list to a signed-in coordinator. The case detail has an Agent trace timeline. The live line says Agents working in all four languages.
+- Files: services/api/app/agents/pipeline.py, services/api/app/models/firestore_models.py, services/api/app/api/clusters.py, services/api/tests/test_adk_pipeline.py, services/api/tests/test_request_contract.py, coordinator command html/ts/scss, request.model.ts, i18n en/hi/hinglish/ta, TASKS.md
+- How verified: `pytest tests` — 161 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Command spec 20 passed. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%.
+- Notes / risks / not done: Token counts stay empty until a live Gemini call is measured. The trace is written by the tool runner, not by an ADK event log.
+- Next (suggested task id): GM-07

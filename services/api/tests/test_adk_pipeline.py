@@ -64,6 +64,8 @@ def test_submit_shows_analysing_then_completes(monkeypatch):
     stored = storage_service.get_request(request_id)
     assert stored is not None
     assert stored.analysis_status == "analysing"
+    assert stored.trace[0]["status"] == "working"
+    assert stored.trace[1]["status"] == "pending"
     assert held, "analysis should be queued, not finished inside the request"
     held[0]()
     done = storage_service.get_request(request_id)
@@ -74,3 +76,11 @@ def test_submit_shows_analysing_then_completes(monkeypatch):
     listed = client.get("/api/requests", headers=AUTH)
     card = next(row for row in listed.json() if row["id"] == request_id)
     assert card["analysis_status"] == "complete"
+    denied = client.get(f"/api/cases/{request_id}/trace")
+    assert denied.status_code == 401
+    trace = client.get(f"/api/cases/{request_id}/trace", headers=AUTH)
+    assert trace.status_code == 200
+    agents = [step["agent"] for step in trace.json()]
+    assert agents == ["Intake", "Dedupe", "Triage", "Matching", "Explainer"]
+    assert all(step["status"] == "complete" for step in trace.json())
+    assert "score_urgency" in trace.json()[2]["tool_calls"]

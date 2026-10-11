@@ -5,6 +5,8 @@ Without a Gemini key the same tools still finish the case, and the run is marked
 """
 import logging
 import threading
+import time
+from datetime import datetime, timezone
 from typing import Callable, List, Optional
 
 from google.adk.agents import LlmAgent, ParallelAgent, SequentialAgent
@@ -127,11 +129,40 @@ def set_spawn(fn: Callable[[Callable[[], None]], None]) -> None:
     _spawn = fn
 
 
+_TRACE_AGENTS = ("Intake", "Dedupe", "Triage", "Matching", "Explainer")
+
+
+def _trace_step(agent: str, status: str, summary: str, output: str, tools: List[str], started: float) -> dict:
+    return {
+        "agent": agent,
+        "status": status,
+        "input_summary": (summary or "")[:180],
+        "output": (output or "")[:400],
+        "model": settings.GEMINI_MODEL,
+        "latency_ms": max(0, int((time.perf_counter() - started) * 1000)),
+        "tokens": None,
+        "tool_calls": tools,
+        "ts": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 def mark_analysing(request_id: str) -> None:
     req = storage_service.get_request(request_id)
     if req is None:
         return
     req.analysis_status = "analysing"
+    now = time.perf_counter()
+    req.trace = [
+        _trace_step(
+            agent,
+            "working" if agent == "Intake" else "pending",
+            req.raw_text or "",
+            "",
+            [],
+            now,
+        )
+        for agent in _TRACE_AGENTS
+    ]
     storage_service.save_request(req, actor="pipeline")
 
 
@@ -140,12 +171,21 @@ def finish(request_id: str) -> None:
     req = storage_service.get_request(request_id)
     if req is None:
         return
+    started = time.perf_counter()
     scored = scoring_engine.compute_urgency(req)
+    triage_at = time.perf_counter()
     req.urgency_score = scored.score
     req.urgency_reason = scored.reason
     kind = {"medical": "medical", "food": "food", "shelter": "shelter"}.get(req.type.value, "boat")
     capacity = check_capacity(kind)
+    match_at = time.perf_counter()
     provider = "gemini" if llm_client.gemini_live() else "fallback"
+    summary = (req.raw_text or "")[:180]
+    explanation = (
+        f"The urgency score is {scored.score}. "
+        f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch. "
+        "This is not medical or legal advice."
+    )
     req.analysis = {
         "provider": provider,
         "model": settings.GEMINI_MODEL,
@@ -153,12 +193,15 @@ def finish(request_id: str) -> None:
         "dedupe": "duplicate" if req.merged_into else "distinct",
         "triage": {"score": scored.score, "reason": scored.reason},
         "matching": capacity,
-        "explainer": (
-            f"The urgency score is {scored.score}. "
-            f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch. "
-            "This is not medical or legal advice."
-        ),
+        "explainer": explanation,
     }
+    req.trace = [
+        _trace_step("Intake", "complete", summary, summary or req.type.value, [], started),
+        _trace_step("Dedupe", "complete", summary, "duplicate" if req.merged_into else "distinct", [], started),
+        _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], triage_at),
+        _trace_step("Matching", "complete", summary, f"{capacity['available']} {kind} free", ["check_capacity"], match_at),
+        _trace_step("Explainer", "complete", summary, explanation, [], match_at),
+    ]
     req.analysis_status = "complete"
     storage_service.save_request(req, actor="pipeline")
 

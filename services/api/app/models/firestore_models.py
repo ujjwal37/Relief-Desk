@@ -77,6 +77,7 @@ class StoredRequest(BaseModel):
     merged_count: int = 1
     analysis_status: str = "complete"
     analysis: Dict[str, Any] = Field(default_factory=dict)
+    trace: List[Dict[str, Any]] = Field(default_factory=list)
     update_count: int = 0
     assigned_resource_id: Optional[str] = None
     reserved_people: Optional[int] = None

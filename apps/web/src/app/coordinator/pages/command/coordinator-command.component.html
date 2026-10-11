@@ -158,7 +158,19 @@
               <button type="button" class="link" (click)="showOriginal.set(!showOriginal())">{{ (showOriginal() ? 'coord.showTranslation' : 'coord.showOriginal') | rdTranslate }}</button>
             </div>
             <p class="quote">“{{ showOriginal() ? (req.raw_text || req.place_text) : getTranslationText(req) }}”</p>
-            @if (req.analysis_status === 'analysing') { <p class="ai-read">{{ 'coord.analysing' | rdTranslate }}</p> }
+            @if (req.analysis_status === 'analysing') { <p class="ai-read">{{ 'coord.traceWorking' | rdTranslate }}</p> }
+            <button type="button" class="link" (click)="traceOpen.set(!traceOpen())">{{ 'coord.trace' | rdTranslate }}</button>
+            @if (traceOpen() && req.trace?.length) {
+              <ol class="trace">
+                @for (step of req.trace; track step.agent) {
+                  <li>
+                    <b>{{ step.agent }}</b>
+                    <span class="tag">{{ traceStatusKey(step.status) | rdTranslate }}</span>
+                    <span>{{ step.output }}</span>
+                  </li>
+                }
+              </ol>
+            }
             <p class="ai-read">
               <span class="cap">{{ 'coord.aiReading' | rdTranslate }}</span>
               <span class="ai-src" [class.live]="aiKind(req) === 'gemini'">{{ (aiKind(req) === 'gemini' ? 'coord.aiGemini' : aiKind(req) === 'recorded' ? 'coord.aiRecorded' : 'coord.aiOffline') | rdTranslate }}</span>

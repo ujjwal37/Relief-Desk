@@ -177,6 +177,17 @@ export interface StoredRequest {
   reserved_people?: number | null;
   merged_count?: number;
   analysis_status?: 'analysing' | 'complete';
+  trace?: Array<{
+    agent: string;
+    status: string;
+    input_summary?: string;
+    output?: string;
+    model?: string;
+    latency_ms?: number;
+    tokens?: number | null;
+    tool_calls?: string[];
+    ts?: string;
+  }>;
   update_count?: number;
   created_at?: string;
   updated_at?: string;

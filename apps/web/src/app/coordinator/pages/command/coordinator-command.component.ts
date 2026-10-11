@@ -102,6 +102,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private media: MediaQueryList | null = null;
   readonly openSection = signal<'why' | 'reports' | null>(null);
   readonly showOriginal = signal(false);
+  readonly traceOpen = signal(false);
+
+  traceStatusKey(status: string): string {
+    if (status === 'working') return 'coord.traceWorking';
+    if (status === 'pending') return 'coord.tracePending';
+    return 'coord.traceComplete';
+  }
   readonly changeOpen = signal(false);
   readonly matchIdx = signal(0);
   readonly activeScenario = this.scenarioService.activeId;

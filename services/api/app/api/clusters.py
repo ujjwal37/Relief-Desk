@@ -116,6 +116,17 @@ def get_cluster_evidence(
     return cluster
 
 
+@router.get("/cases/{case_id}/trace")
+def case_trace(
+    case_id: str,
+    coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
+    req = storage_service.get_request(case_id)
+    if req is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Case '{case_id}' not found")
+    return req.trace
+
+
 @router.get("/requests", response_model=List[StoredRequest], summary="List ranked requests")
 def list_requests(
     sort: str = "urgency",
