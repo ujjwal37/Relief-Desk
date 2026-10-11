@@ -69,7 +69,11 @@ def detect_hoax_or_flood(
         "forward this to 10 groups",
         "nasa announced",
         "free helicopter rescue call this number",
-        "100% verified news share fast"
+        "100% verified news share fast",
+        "free money",
+        "bit.ly",
+        "win iphone",
+        "send otp",
     ]
     if any(phrase in clean_new for phrase in viral_hoax_phrases):
         flags.append("hoax")

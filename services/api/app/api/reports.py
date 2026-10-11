@@ -15,6 +15,7 @@ from app.models.firestore_models import StoredRequest, RequestStatus
 from app.models.schemas import HazardType, IncidentType
 from app.tools.request_contract import canonical_request_dict
 from app.tools.nlu_rules import extract_place, vulnerable_flags
+from app.tools.trust import detect_hoax_or_flood
 from app.tools.gazetteer import gazetteer
 
 router = APIRouter(prefix="/api", tags=["Reports & Intake"])
@@ -127,6 +128,14 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     citizen_text = (payload.raw_text or payload.text or report_text or "").strip()
     if citizen_text:
         report_text = citizen_text
+
+    for flag in detect_hoax_or_flood(
+        storage_service.list_reports(),
+        citizen_text or report_text,
+        payload.source_id,
+    ):
+        if flag not in flags:
+            flags.append(flag)
 
     # 3. Extract, then overlay the confirmed card. Chat and form share one canonical shape.
     extracted = intake_agent.parse_report(report_text, language_hint=payload.lang)

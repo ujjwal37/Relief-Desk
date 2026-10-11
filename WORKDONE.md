@@ -805,3 +805,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_live_dedupe.py tests/test_dedupe.py tests/test_intake_nlu.py tests/test_request_contract.py tests/test_live_queue.py tests/test_idempotency.py tests/test_confirmation.py tests/test_public_api.py` — 21 passed.
 - Notes / risks / not done: Matching uses the street name and the people count. Two different households on the same street with the same count still fold together.
 - Next (suggested task id): RT-18
+
+### 2026-10-12 04:55 IST — RT-18 — Cursor
+- What changed: Live intake flags "FREE MONEY click bit.ly win iphone send OTP" as hoax. The report is kept. A hoax or flood-copy flag caps the urgency score at 40, so it cannot land in Needs help now (75 and above). An otherwise critical rescue with that flag is capped the same way.
+- Files: services/api/app/tools/trust.py, services/api/app/tools/scoring.py, services/api/app/api/reports.py, services/api/tests/test_hoax_intake.py, TASKS.md
+- How verified: `pytest tests/test_hoax_intake.py tests/test_trust_ratelimit.py tests/test_scoring.py` — 8 passed.
+- Notes / risks / not done: The case still appears in the review filter because any flag marks it for a person to look at. It is not deleted.
+- Next (suggested task id): RT-19

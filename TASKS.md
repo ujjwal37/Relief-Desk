@@ -140,6 +140,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | RT-15 | Nearby teams per district and honest ETAs | C | DONE | RT-14 | Each district has a boat, medical and food team within 30 km; farther cases say No nearby team |
 | RT-16 | Landing checkmark is a CSS escape | C | DONE | RT-15 | content uses \\2713 and no source file contains the mojibake marker |
 | RT-17 | Live reports dedupe the same street and people | C | DONE | RT-16 | A reworded Hinglish pair returns duplicate and the open card has merged_count 2 |
+| RT-18 | Spam sample is flagged and kept out of Needs help | C | DONE | RT-17 | FREE MONEY bit.ly OTP text is hoax and its score stays under 75 |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

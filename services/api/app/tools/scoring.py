@@ -124,6 +124,10 @@ class ScoringEngine:
             IncidentType.SHELTER: 2.0,
         }.get(req.type, 0.0)
         final_score = round(max(0.0, min(100.0, raw_weighted * discount * 100.0 + type_bonus)), 1)
+        # A hoax or spam copy is kept, but it must not sit in Needs help now (score >= 75).
+        if any(flag in (req.flags or []) for flag in ("hoax", "hoax_or_flood")):
+            final_score = min(final_score, 40.0)
+            reasons_parts.append("flagged as hoax or spam")
 
         breakdown = {
             "vulnerability": round(v_score * 100, 1),
