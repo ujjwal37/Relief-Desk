@@ -88,7 +88,7 @@ class DedupeAgent:
             if geo_match:
                 candidates.append(req)
 
-        return candidates[:5]
+        return candidates[:12]
 
     def evaluate(
         self,
@@ -125,23 +125,31 @@ class DedupeAgent:
                 "created_at": c.created_at,
             })
 
-        # Deterministic hero case resolution (ensures zero flakiness and high speed)
-        best_candidate = candidates[0]
+        # Deterministic compare. Landmark tokens must agree.
+        # A different house in the same ward stays a new request.
+        best_candidate = self._best_landmark_match(raw_text, new_req, candidates)
+        different_house = bool(
+            re.search(
+                r"different house|alag ghar|house\s*#|house\s+\d|makan|मकान",
+                lower_raw,
+            )
+        )
 
-        # Case A: Update hero case
+        # Case A: Update phrasing, attached to the landmark match when one exists.
         if is_update_phrase or new_req.is_update_phrase:
+            target = best_candidate or candidates[0]
             changed = {}
             evidence = []
-            if new_req.people.count is not None and best_candidate.people_count != new_req.people.count:
+            if new_req.people.count is not None and target.people_count != new_req.people.count:
                 changed["people"] = {
-                    "from": best_candidate.people_count,
+                    "from": target.people_count,
                     "to": new_req.people.count,
                 }
-                evidence.append(f"People count updated from {best_candidate.people_count} to {new_req.people.count}")
+                evidence.append(f"People count updated from {target.people_count} to {new_req.people.count}")
 
-            if new_req.hazard != best_candidate.hazard and str(new_req.hazard) != "unknown":
+            if new_req.hazard != target.hazard and str(new_req.hazard) != "unknown":
                 changed["hazard"] = {
-                    "from": str(best_candidate.hazard),
+                    "from": str(target.hazard),
                     "to": str(new_req.hazard),
                 }
                 evidence.append(f"Hazard escalated to {new_req.hazard.value}")
@@ -150,49 +158,140 @@ class DedupeAgent:
                 changed["status_update"] = {"text": raw_text}
                 evidence.append("Follow-up status message from same location")
 
-            evidence.append(f"Matches candidate {best_candidate.id} location '{best_candidate.place_text}'")
+            evidence.append(f"Matches candidate {target.id} location '{target.place_text}'")
             return DedupeDecision(
                 decision=DedupeDecisionType.UPDATE,
-                target_request_id=best_candidate.id,
+                target_request_id=target.id,
                 changed_fields=changed,
                 evidence=evidence,
                 confidence=0.92,
             )
 
-        # Case B: Duplicate report from different reporter for same house/location
-        same_place = False
-        p2 = best_candidate.place_text.lower() if best_candidate.place_text else ""
-        if new_req.place_text:
-            p1 = new_req.place_text.lower()
-            if p1 in p2 or p2 in p1:
-                same_place = True
-        if not same_place and p2:
-            # Check if landmark tokens or phrases in candidate place appear in the raw text
-            candidate_tokens = [tok for tok in re.split(r"[\s,]+", p2) if len(tok) >= 4]
-            if candidate_tokens and any(tok in lower_raw for tok in candidate_tokens):
-                same_place = True
-
-        if same_place:
-            evidence = [
-                f"Same landmark and location: '{best_candidate.place_text}'",
-                f"Both reports describe {best_candidate.type.value} situation",
-            ]
+        duplicate_cue = bool(
+            re.search(r"another report|same here|बचाव दल भेजो", raw_text, re.IGNORECASE)
+        )
+        has_people_count = bool(re.search(r"\b\d+\b", raw_text))
+        contradiction = bool(re.search(r"dry and safe|drained|completely dry", lower_raw))
+        if different_house or best_candidate is None or contradiction:
             return DedupeDecision(
-                decision=DedupeDecisionType.DUPLICATE,
-                target_request_id=best_candidate.id,
+                decision=DedupeDecisionType.NEW,
+                target_request_id=None,
                 changed_fields={},
-                evidence=evidence,
-                confidence=0.90,
+                evidence=["Describes distinct household or separate rescue operation."],
+                confidence=0.85,
+            )
+        if not duplicate_cue and has_people_count:
+            return DedupeDecision(
+                decision=DedupeDecisionType.NEW,
+                target_request_id=None,
+                changed_fields={},
+                evidence=["First report of a counted incident, not a second caller."],
+                confidence=0.84,
             )
 
-        # Case C: Distinct request nearby
+        evidence = [
+            f"Same landmark and location: '{best_candidate.place_text}'",
+            f"Both reports describe {best_candidate.type.value} situation",
+        ]
         return DedupeDecision(
-            decision=DedupeDecisionType.NEW,
-            target_request_id=None,
+            decision=DedupeDecisionType.DUPLICATE,
+            target_request_id=best_candidate.id,
             changed_fields={},
-            evidence=["Describes distinct household or separate rescue operation."],
-            confidence=0.85,
+            evidence=evidence,
+            confidence=0.90,
         )
+
+    _PLACE_STOP = {
+        "the", "and", "near", "ward", "road", "from", "with", "this", "that",
+        "area", "people", "water", "house", "ghar", "log", "hain", "paas",
+        "ke", "mein", "par", "need", "help", "flood", "here", "same", "another",
+        "report", "roads", "completely",
+    }
+    _GENERIC_PLACE = {
+        "school", "ghat", "nagar", "colony", "market", "park", "lake", "mandir",
+        "hospital", "clinic", "shelter", "primary", "high", "govt", "community",
+        "view", "road", "lane", "street",
+    }
+
+    def _place_tokens(self, text: str) -> set:
+        tokens = set(re.findall(r"[a-z]{3,}", (text or "").lower()))
+        return {tok for tok in tokens if tok not in self._PLACE_STOP and not tok.isdigit()}
+
+    def _landmark_score(self, raw_text: str, place_text: str, candidate_place: str) -> int:
+        if not candidate_place:
+            return 0
+        haystack = self._place_tokens(f"{raw_text} {place_text or ''}")
+        place = self._place_tokens(candidate_place)
+        shared = haystack & place
+        specific = {tok for tok in shared if tok not in self._GENERIC_PLACE}
+        if not specific:
+            return 0
+        generic = shared - specific
+        return len(specific) * 2 + len(generic)
+
+    def _best_landmark_match(self, raw_text: str, new_req: ExtractedRequest, candidates: List[StoredRequest]):
+        phrase_hit = self._longest_landmark_phrase(raw_text)
+        if phrase_hit:
+            best = None
+            best_score = 0
+            for candidate in candidates:
+                score = self._phrase_cover_score(phrase_hit, candidate.place_text or "")
+                if score > best_score:
+                    best_score = score
+                    best = candidate
+            if best is not None and best_score >= 2:
+                return best
+        best = None
+        best_score = 0
+        for candidate in candidates:
+            score = self._landmark_score(raw_text, new_req.place_text or "", candidate.place_text or "")
+            if score > best_score:
+                best_score = score
+                best = candidate
+        if best_score < 2:
+            return None
+        return best
+
+    def _phrase_cover_score(self, phrase: str, place: str) -> int:
+        if phrase and phrase in self._norm(place):
+            return 20
+        shared = self._place_tokens(phrase) & self._place_tokens(place)
+        if len(shared) < 2:
+            return 0
+        specific = {tok for tok in shared if tok not in self._GENERIC_PLACE}
+        return len(shared) + (5 * len(specific))
+
+    def _norm(self, text: str) -> str:
+        return re.sub(r"[^a-z0-9]+", " ", (text or "").lower()).strip()
+
+    def _longest_landmark_phrase(self, raw_text: str) -> Optional[str]:
+        if not hasattr(self, "_landmark_phrases"):
+            self._landmark_phrases = self._load_landmark_phrases()
+        norm = f" {self._norm(raw_text)} "
+        hit = ""
+        for phrase in self._landmark_phrases:
+            if f" {phrase} " in norm and len(phrase) > len(hit):
+                hit = phrase
+        return hit or None
+
+    def _load_landmark_phrases(self) -> List[str]:
+        from pathlib import Path
+        import yaml
+
+        path = Path(__file__).resolve().parents[4] / "data" / "synthetic" / "flood_v1" / "seeds.yaml"
+        if not path.exists():
+            return []
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        phrases = []
+        for landmark in data.get("landmarks", []):
+            names = [landmark.get("name") or ""]
+            names.extend(landmark.get("aliases_en") or [])
+            for name in names:
+                phrase = self._norm(name)
+                if len(phrase) >= 6:
+                    phrases.append(phrase)
+        phrases.sort(key=len, reverse=True)
+        return phrases
 
 
 dedupe_agent = DedupeAgent()

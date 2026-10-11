@@ -3,7 +3,7 @@ import math
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
-from app.models.schemas import HazardType, VulnerableFlags
+from app.models.schemas import HazardType, IncidentType, VulnerableFlags
 from app.models.firestore_models import StoredRequest
 
 logger = logging.getLogger("relief_desk.scoring")
@@ -111,13 +111,19 @@ class ScoringEngine:
             + (w.w_wait_time * w_score)
         )
 
-        # 6. Confidence discount
+        # 6. Confidence discount, then a fixed type priority.
+        # Rescue and medical outrank food or info of a similar size.
         conf = req.confidence
         avg_conf = (
             conf.type + conf.place + conf.people + conf.vulnerable + conf.urgency
         ) / 5.0
         discount = 1.0 - ((1.0 - avg_conf) * w.confidence_discount_factor)
-        final_score = round(max(0.0, min(100.0, raw_weighted * discount * 100.0)), 1)
+        type_bonus = {
+            IncidentType.MEDICAL: 16.0,
+            IncidentType.RESCUE: 12.0,
+            IncidentType.SHELTER: 2.0,
+        }.get(req.type, 0.0)
+        final_score = round(max(0.0, min(100.0, raw_weighted * discount * 100.0 + type_bonus)), 1)
 
         breakdown = {
             "vulnerability": round(v_score * 100, 1),
@@ -125,6 +131,7 @@ class ScoringEngine:
             "hazard": round(h_score * 100, 1),
             "wait_time": round(w_score * 100, 1),
             "confidence_factor": round(discount, 3),
+            "type_priority": type_bonus,
             "final_score": final_score,
         }
 

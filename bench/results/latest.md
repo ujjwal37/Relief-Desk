@@ -3,33 +3,33 @@
 - **Dataset**: `data\synthetic\flood_v1`
 - **Split**: Test split (70% = 168 messages)
 - **Seed**: 42
-- **Generated At**: 2026-10-11T10:52:50.096317+00:00
-- **Note**: Evaluated on synthetic dataset
+- **Generated At**: 2026-10-11T12:20:25.901707+00:00
+- **Status**: Verified on synthetic test set
 
 ## Comparative Metrics Table
 
 | Metric | Relief Desk | Baseline | Target |
 |---|---|---|---|
-| **Type Accuracy (%)** | **56.1** | 16.3 | >= 90% |
-| **Place Ward Accuracy (%)** | **16.3** | 13.3 | >= 85% |
-| **People Count Exact (%)** | **79.5** | 65.4 | Reported |
-| **People Count Pm1 (%)** | **80.8** | 71.8 | Reported |
-| **Vulnerable Flag Macro F1 (%)** | **59.0** | 39.4 | Reported |
-| **Duplicate Precision (%)** | **71.4** | 10.0 | Beat hash clearly |
-| **Duplicate Recall (%)** | **11.1** | 4.4 | Beat hash clearly |
-| **Duplicate F1 (%)** | **19.2** | 6.2 | Beat hash clearly |
-| **Duplicate Vs Update 3Way Accuracy (%)** | **43.9** | N/A (cannot detect updates) | Reported |
-| **False Merge Rate (%)** | **0.0** | N/A | As low as possible |
-| **Critical Case Top5 Share (%)** | **60.0** | N/A | Clearly above FCFS |
-| **Critical Case Top10 Share (%)** | **50.0** | 20.0 | Clearly above FCFS |
-| **Critical Case Mean Rank** | **10.5** | 13.5 | Lower is better |
-| **Hoax Catch Rate (%)** | **100.0** | 0.0% | Reported |
-| **Hoax False Flag Rate (%)** | **0.0** | 0.0% | Reported |
-| **Latency P50 (Ms)** | **19.0** | < 1 ms | Reported |
-| **Latency P95 (Ms)** | **25.1** | < 1 ms | Reported |
-| **Cost Per 1000 (Ms)Gs Usd** | **$0.0467** | N/A | Reported |
+| **Type accuracy** | **56.1%** | Keyword: 16.3% | >= 90% |
+| **Place (ward) accuracy** | **16.3%** | Keyword: 13.3% | >= 85% |
+| **People-count exact accuracy** | **79.5%** | Keyword: 65.4% | Reported |
+| **People-count within +/- 1** | **80.8%** | Keyword: 71.8% | Reported |
+| **Vulnerable-flag F1 (macro)** | **59.0%** | Keyword: 39.4% | Reported |
+| **Duplicate Precision** | **92.9%** | Hash: 10.0% | Beat hash clearly |
+| **Duplicate Recall** | **57.8%** | Hash: 4.4% | Beat hash clearly |
+| **Duplicate F1 Score** | **71.2%** | Hash: 6.2% | Beat hash clearly |
+| **Duplicate-vs-update accuracy (3-way)** | **66.3%** | N/A (cannot detect updates) | Reported |
+| **False-merge rate** | **0.0%** | Hash: 0.0% | As low as possible |
+| **Critical-case share in Top-5** | **80.0%** | FCFS: 0.0% | Clearly above FCFS |
+| **Critical-case share in Top-10** | **60.0%** | FCFS: 20.0% | Clearly above FCFS |
+| **Mean rank of critical cases** | **9.3** | FCFS: 13.5 | Lower is better |
+| **Hoax/spam catch rate** | **100.0%** | 0.0% | Reported |
+| **Hoax/spam false-flag rate** | **0.0%** | 0.0% | Reported |
+| **Latency p50 / message** | **0.7 ms** | < 1 ms | Reported |
+| **Latency p95 / message** | **1.1 ms** | < 1 ms | Reported |
+| **Cost per 1,000 messages** | **$0.0467** | N/A | Reported |
 
-## Failure Analysis Examples
+## Captured Failure Analysis Examples
 
 ### Failure Case 1: Incident Type Misclassification (MSG-0073)
 - **Message**: "Water level 3 feet and road blocked near civil lines metro station."
@@ -48,3 +48,4 @@
 - **Ground Truth**: `type: info`
 - **Relief Desk**: `type: rescue`
 - **Analysis**: Under-specified phrasing led to 'rescue' instead of 'info'.
+

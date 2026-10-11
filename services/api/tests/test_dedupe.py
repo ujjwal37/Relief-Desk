@@ -99,3 +99,37 @@ def test_hero_case_two_reporters_same_house_becomes_duplicate_with_evidence():
     # 2. Concrete evidence list provided
     assert len(decision.evidence) >= 2
     assert any("landmark" in ev.lower() or "location" in ev.lower() for ev in decision.evidence)
+
+
+def test_second_candidate_landmark_is_the_duplicate_and_a_different_house_is_not():
+    gandhi = StoredRequest(
+        id="req_gandhi",
+        type=IncidentType.RESCUE,
+        place_text="Gandhi High School, Ward 2",
+        ward_id="ward_2",
+        lat=26.852,
+        lng=80.925,
+        people_count=4,
+        hazard=HazardType.WATER_RISING,
+    )
+    sangam = StoredRequest(
+        id="req_sangam",
+        type=IncidentType.RESCUE,
+        place_text="Sangam Primary School, Ward 1",
+        ward_id="ward_1",
+        lat=26.845,
+        lng=80.932,
+        people_count=3,
+        hazard=HazardType.STRANDED,
+    )
+    text = "Another report from Gandhi High School: roads completely submerged, people on second floor needing help."
+    extracted = intake_agent.parse_report(text)
+    decision = dedupe_agent.evaluate(text, extracted, [sangam, gandhi])
+    assert decision.decision == DedupeDecisionType.DUPLICATE
+    assert decision.target_request_id == "req_gandhi"
+
+    other_house = "Different house in Ward 2, House #42: need drinking water for 2 adults."
+    other_extracted = intake_agent.parse_report(other_house)
+    other = dedupe_agent.evaluate(other_house, other_extracted, [gandhi, sangam])
+    assert other.decision == DedupeDecisionType.NEW
+

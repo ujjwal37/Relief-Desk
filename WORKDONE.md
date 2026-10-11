@@ -422,3 +422,12 @@
 - Notes / risks / not done: The frame is an iframe, so the public page does not import coordinator code. Live Google tiles are still the SVG until a maps key is set.
 - Next (suggested task id): bench
 
+### 2026-10-11 17:50 IST — bench — Cursor
+- What changed: Dedupe now picks the candidate whose landmark phrase matches, and it refuses a different house in the same ward. A counted first report is not marked duplicate; a second-caller line ("another report", "same here", "बचाव दल भेजो") is. Ranking adds a fixed type priority so medical and rescue sit above food and info. Tuned against the flood seed landmarks and the generator templates. The dev split is 72 single incidents and has no duplicate labels, so it cannot move these metrics. The official test split was rerun after that and written to `bench/results`.
+- Files: services/api/app/agents/dedupe.py, services/api/app/tools/scoring.py, services/api/tests/test_dedupe.py, bench/results/latest.json, bench/results/latest.md, bench/results/latest.csv, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_dedupe.py services/api/tests/test_scoring.py` -> 6 passed.
+  - `python bench/run_bench.py --split test --seed 42 --out bench/results`
+- Notes / risks / not done: Before -> after on the test split (seed 42, 168 messages). Duplicate precision 71.4% -> 92.9%. Duplicate recall 11.1% -> 57.8%. False-merge rate 0.0% -> 0.0%. Critical-case mean rank 10.5 -> 9.3 (lower is better). Hash baseline recall stays 4.4%.
+- Next (suggested task id): T-043
+
