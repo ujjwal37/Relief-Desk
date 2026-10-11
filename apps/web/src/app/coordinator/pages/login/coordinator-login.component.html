@@ -27,6 +27,7 @@
       <h1 id="login-h" tabindex="-1">{{ 'auth.signIn' | rdTranslate }}</h1>
       <p class="sub">{{ 'auth.toDashboard' | rdTranslate }}</p>
 
+      @if (demoMode()) {
       <section class="demo" aria-labelledby="judge-h">
         <h2 id="judge-h">{{ 'auth.judgeTitle' | rdTranslate }}</h2>
         <p>{{ 'auth.judgeSub' | rdTranslate }}</p>
@@ -35,6 +36,7 @@
       </section>
 
       <p class="or"><span>{{ 'auth.orAccount' | rdTranslate }}</span></p>
+      }
 
       @if (failed()) {
         <div class="error-banner" role="alert">{{ 'auth.wrong' | rdTranslate }}</div>

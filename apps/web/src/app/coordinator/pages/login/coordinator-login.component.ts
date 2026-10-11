@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, inject, signal, viewChi
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
-  AuthService, RdTranslatePipe, SettingsButtonComponent, CallPillComponent, QuietFooterComponent,
+  ApiClientService, AuthService, RdTranslatePipe, SettingsButtonComponent, CallPillComponent, QuietFooterComponent,
 } from '@rd/shared';
 
 @Component({
@@ -17,6 +17,14 @@ export class CoordinatorLoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private api = inject(ApiClientService);
+  /** Demo entry is shown only when the backend reports DEMO_MODE (GET /healthz demo_mode). */
+  demoMode = signal(false);
+
+  constructor() {
+    const call = (this.api as Partial<ApiClientService>).getHealth?.();
+    call?.subscribe({ next: (h) => this.demoMode.set(!!h?.demo_mode), error: () => this.demoMode.set(false) });
+  }
 
   email = signal('');
   password = signal('');
