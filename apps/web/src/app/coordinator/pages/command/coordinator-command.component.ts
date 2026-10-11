@@ -9,10 +9,18 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HostListener, effect } from '@angular/core';
+import { CoordUiService } from '../../../core/services/coord-ui.service';
+import { SevChipComponent } from '../../../core/components/sev-chip.component';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import {
   ApiClientService,
+  RdTranslatePipe,
+  LanguageService,
+  bandCounts,
+  needsReview,
+  urgencyBand,
   MatchProposal,
   StoredRequest,
   StoredResource,
@@ -22,7 +30,7 @@ import {
 @Component({
   selector: 'app-coordinator-command',
   standalone: true,
-  imports: [CommonModule, FormsModule, MapProviderComponent],
+  imports: [CommonModule, FormsModule, MapProviderComponent, SevChipComponent, RdTranslatePipe],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,6 +38,8 @@ import {
 export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private readonly apiClient = inject(ApiClientService);
   private readonly scenarioService = inject(ScenarioService);
+  readonly ui = inject(CoordUiService);
+  private readonly langService = inject(LanguageService);
 
   readonly Math = Math;
 
@@ -57,7 +67,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return pins;
   });
   readonly filterType = signal<string>('all');
-  readonly searchQuery = signal<string>('');
+  readonly searchQuery = this.ui.searchQuery;
+  readonly bandFilter = signal<'all' | 'now' | 'soon' | 'review'>('all');
+  readonly briefingOpen = signal(true);
+  readonly openSection = signal<'why' | 'reports' | null>(null);
+  readonly showOriginal = signal(false);
+  readonly changeOpen = signal(false);
+  readonly matchIdx = signal(0);
   readonly activeScenario = this.scenarioService.activeId;
   readonly scenarios = this.scenarioService.scenarios;
   readonly isWeightsDrawerOpen = signal<boolean>(false);
@@ -66,6 +82,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly actionToast = signal<{ text: string; type: 'success' | 'warning' } | null>(null);
   readonly selectedTranslationLang = signal<'en' | 'hi' | 'ta'>('en');
 
+  private initialSelectDone = false;
   pendingMatch: MatchProposal | null = null;
   rejectReasonText = '';
 
@@ -86,7 +103,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
 
   readonly activeProposal = computed<MatchProposal | undefined>(() => {
-    return this.matches()[0];
+    return this.matches()[this.matchIdx()] || this.matches()[0];
   });
 
   readonly filteredRequests = computed<StoredRequest[]>(() => {
@@ -97,6 +114,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (type !== 'all') {
       list = list.filter((r) => r.type === type);
     }
+    const bf = this.bandFilter();
+    if (bf === 'now') list = list.filter((r) => urgencyBand(r.urgency_score) === 'critical');
+    if (bf === 'soon') list = list.filter((r) => urgencyBand(r.urgency_score) === 'high');
+    if (bf === 'review') list = list.filter((r) => needsReview(r));
 
     if (query) {
       list = list.filter(
@@ -110,16 +131,81 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return list;
   });
 
-  readonly criticalCount = computed<number>(() => {
-    return this.requests().filter((r) => r.urgency_score >= 85).length;
+  readonly counts = computed(() => bandCounts(this.requests()));
+  readonly criticalCount = computed<number>(() => this.counts().critical);
+  readonly teamsFree = computed(() => {
+    const teams = this.resources().filter((r) => r.kind === 'boat' || r.kind === 'medical');
+    const pool = teams.length ? teams : this.resources();
+    return { free: pool.filter((r) => r.capacity_remaining > 0).length, total: pool.length };
   });
+  readonly quietCount = computed(() => this.ui.alerts().filter((a) => a.kind === 'silent_zone').length);
+  readonly briefing = computed(() => {
+    this.langService.currentLang();
+    const c = this.counts();
+    const t = (k: string, n: number) => this.langService.translate(k).replace('{n}', String(n));
+    if (c.critical > 0) return t('coord.briefNow', c.critical);
+    if (c.high > 0) return t('coord.briefSoon', c.high);
+    return this.langService.translate('coord.briefNone');
+  });
+  readonly svgPins = computed(() => {
+    const reqs = this.requests().filter((r) => r.lat != null && r.lng != null);
+    const res = this.resources();
+    const pts = [...reqs.map((r) => ({ lat: r.lat as number, lng: r.lng as number })), ...res.map((r) => ({ lat: r.lat, lng: r.lng }))];
+    if (!pts.length) return [] as { id: string; x: number; y: number; band: string; kind: 'req' | 'team'; n: number }[];
+    const minLa = Math.min(...pts.map((p) => p.lat)), maxLa = Math.max(...pts.map((p) => p.lat));
+    const minLo = Math.min(...pts.map((p) => p.lng)), maxLo = Math.max(...pts.map((p) => p.lng));
+    const fx = (lng: number) => 50 + ((lng - minLo) / Math.max(1e-6, maxLo - minLo)) * 500;
+    const fy = (lat: number) => 40 + (1 - (lat - minLa) / Math.max(1e-6, maxLa - minLa)) * 400;
+    const top = this.filteredRequests().filter((r) => r.lat != null && r.lng != null).slice(0, 14);
+    return [
+      ...res.slice(0, 8).map((r) => ({ id: r.id, x: fx(r.lng), y: fy(r.lat), band: 'team', kind: 'team' as const, n: 0 })),
+      ...top.map((r, i) => ({ id: r.id, x: fx(r.lng as number), y: fy(r.lat as number), band: urgencyBand(r.urgency_score), kind: 'req' as const, n: i + 1 })),
+    ];
+  });
+  readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
+
+  bandOf(score: number): 'critical' | 'high' | 'medium' | 'low' { return urgencyBand(score); }
+  isReview(r: StoredRequest): boolean { return needsReview(r); }
+  fitPct(p: MatchProposal): number { return Math.round(p.score); }
+  ageLabel(r: StoredRequest): string {
+    if (!r.created_at) return '';
+    const m = Math.max(0, Math.round((Date.now() - new Date(r.created_at).getTime()) / 60000));
+    return m < 60 ? `${m} min` : `${Math.round(m / 60)} h`;
+  }
+  tr(key: string, n: number): string { this.langService.currentLang(); return this.langService.translate(key).replace('{n}', String(n)); }
+  toggleSection(s: 'why' | 'reports'): void { this.openSection.set(this.openSection() === s ? null : s); }
+  setBandFilter(f: 'all' | 'now' | 'soon' | 'review'): void { this.bandFilter.set(f); }
+  pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); }
+  closeWeights(): void { this.ui.weightsOpen.set(false); }
+
+  @HostListener('document:keydown', ['$event'])
+  onKey(e: KeyboardEvent): void {
+    const t = e.target as HTMLElement;
+    if (/INPUT|TEXTAREA|SELECT/.test(t?.tagName) || e.ctrlKey || e.metaKey) return;
+    const list = this.filteredRequests();
+    const i = list.findIndex((r) => r.id === this.selectedRequestId());
+    if (e.key === 'j' && i < list.length - 1) this.selectRequest(list[i + 1].id);
+    if (e.key === 'k' && i > 0) this.selectRequest(list[i - 1].id);
+    if (e.key === 'a') (document.querySelector('.btn-approve') as HTMLElement | null)?.focus();
+  }
 
   readonly availableBoatsCount = computed<number>(() => {
     const boats = this.resources().filter((res) => res.kind === 'boat');
     return boats.filter((b) => b.capacity_remaining > 0).length || 4;
   });
 
+  constructor() {
+    effect((onCleanup) => {
+      if (this.actionToast()) {
+        const id = setTimeout(() => this.actionToast.set(null), 5000);
+        onCleanup(() => clearTimeout(id));
+      }
+    });
+  }
+
   ngOnInit(): void {
+    this.ui.loadAlerts();
+    if (!this.ui.tourDone()) setTimeout(() => this.ui.startTour(), 900);
     this.scenarioService.ensureLoaded();
     this.loadRequests();
     this.loadResources();
@@ -144,6 +230,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.apiClient.getRequests('urgency', this.activeScenario()).subscribe({
       next: (reqs) => {
         this.requests.set(reqs);
+        this.ui.lastRefresh.set(Date.now());
+        if (!this.initialSelectDone && reqs.length > 0) {
+          this.initialSelectDone = true;
+          this.selectedRequestId.set(reqs[0].id);
+        }
         if (reqs.length > 0 && !this.selectedRequestId()) {
           this.selectRequest(reqs[0].id);
         } else if (this.selectedRequestId()) {
@@ -182,6 +273,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   selectRequest(id: string): void {
     this.selectedRequestId.set(id);
+    this.matchIdx.set(0);
+    this.openSection.set(this.ui.demoWhy ? 'why' : null);
+    this.showOriginal.set(false);
     this.loadMatches(id);
   }
 

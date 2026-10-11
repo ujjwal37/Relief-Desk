@@ -21,6 +21,13 @@ export class ThemeService {
     this.apply();
   }
 
+  /** Apply a default mode when the user has not chosen one yet (not persisted). */
+  ensureDefault(mode: ThemeMode): void {
+    let saved: string | null = null;
+    try { saved = localStorage.getItem(KEY); } catch { /* ignore */ }
+    if (!saved) { this.mode.set(mode); this.apply(); }
+  }
+
   setMode(mode: ThemeMode): void {
     this.mode.set(mode);
     try { localStorage.setItem(KEY, mode); } catch { /* ignore */ }

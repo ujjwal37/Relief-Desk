@@ -1,39 +1,50 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink, RouterOutlet } from '@angular/router';
-import { AuthService, RdTranslatePipe, LanguageSwitcherComponent } from '@rd/shared';
-import { ScenarioSwitcherComponent } from '../../core/components/scenario-switcher.component';
+import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService, LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, SettingsButtonComponent, ThemeMode, ThemeService } from '@rd/shared';
+import { ScenarioService } from '../../core/services/scenario.service';
+import { CoordUiService } from '../../core/services/coord-ui.service';
+import { TourComponent } from '../../core/components/tour.component';
 
 @Component({
   selector: 'app-coordinator-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RdTranslatePipe, LanguageSwitcherComponent, ScenarioSwitcherComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, RdTranslatePipe, TourComponent, SettingsButtonComponent],
   templateUrl: './coordinator-layout.component.html',
   styleUrl: './coordinator-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CoordinatorLayoutComponent implements OnDestroy {
   readonly authService = inject(AuthService);
+  readonly ui = inject(CoordUiService);
+  readonly theme = inject(ThemeService);
+  readonly lang = inject(LanguageService);
+  readonly scenarioService = inject(ScenarioService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
   readonly demoOn = signal(false);
   readonly wideEnough = signal(true);
   readonly showPhone = computed(() => this.demoOn() && this.wideEnough());
+  readonly menuOpen = signal(false);
+  readonly langs = SUPPORTED_LANGUAGES;
+  readonly themes: { m: ThemeMode; k: string }[] = [
+    { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' }, { m: 'system', k: 'settings.themeSystem' },
+  ];
+  readonly initial = computed(() => (this.authService.currentUser()?.email || 'D').charAt(0).toUpperCase());
 
   private media?: MediaQueryList;
-  private onMedia = (event: MediaQueryListEvent): void => {
-    this.wideEnough.set(event.matches);
-  };
+  private onMedia = (event: MediaQueryListEvent): void => { this.wideEnough.set(event.matches); };
   private stopQuery?: () => void;
 
   constructor() {
+    this.theme.ensureDefault('light');
     this.media = window.matchMedia('(min-width: 600px)');
     this.wideEnough.set(this.media.matches);
     this.media.addEventListener('change', this.onMedia);
-    const sub = this.route.queryParamMap.subscribe((params) => {
-      this.demoOn.set(params.get('demo') === '1');
-    });
+    const sub = this.route.queryParamMap.subscribe((params) => { this.demoOn.set(params.get('demo') === '1'); });
     this.stopQuery = () => sub.unsubscribe();
+    this.scenarioService.ensureLoaded();
+    this.ui.loadAlerts();
   }
 
   ngOnDestroy(): void {
@@ -42,15 +53,26 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   }
 
   toggleDemo(): void {
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { demo: this.demoOn() ? null : '1' },
-      queryParamsHandling: 'merge',
-    });
+    this.menuOpen.set(false);
+    this.router.navigate([], { relativeTo: this.route, queryParams: { demo: this.demoOn() ? null : '1' }, queryParamsHandling: 'merge' });
   }
+
+  onSearch(event: Event): void { this.ui.searchQuery.set((event.target as HTMLInputElement).value); }
+  openWeights(): void { this.menuOpen.set(false); this.ui.weightsOpen.set(true); }
+  takeTour(): void { this.menuOpen.set(false); this.router.navigateByUrl('/coordinator/command').then(() => setTimeout(() => this.ui.startTour(), 150)); }
+  selectScenario(id: string): void { this.scenarioService.select(id); this.menuOpen.set(false); location.reload(); }
 
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/coordinator/login']);
+  }
+
+  @HostListener('document:keydown.escape') onEsc(): void { this.menuOpen.set(false); }
+  @HostListener('document:keydown', ['$event']) onSlash(e: KeyboardEvent): void {
+    const t = e.target as HTMLElement;
+    if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(t?.tagName)) {
+      e.preventDefault();
+      (document.getElementById('coord-search') as HTMLInputElement | null)?.focus();
+    }
   }
 }

@@ -12,3 +12,4 @@ export * from './lib/services/theme.service';
 export * from './lib/components/settings-button.component';
 export * from './lib/components/call-pill.component';
 export * from './lib/components/quiet-footer.component';
+export * from './lib/utils/band.util';

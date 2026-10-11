@@ -1,24 +1,58 @@
 <div class="coordinator-shell" [class.with-phone]="showPhone()">
   <div class="coord-column">
     <header class="top-nav">
-      <div class="left-cluster">
-        <a routerLink="/" class="brand-badge">
-          <span class="shield">🛡️</span>
-          <span class="title">{{ 'landing.title' | rdTranslate }} - {{ 'nav.coordinator' | rdTranslate }}</span>
+      <a routerLink="/" class="brand" aria-label="Relief Desk">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z" fill="var(--brand)"/><path d="M12 7v8M8 11h8" stroke="var(--on-brand)" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <span class="name">Relief Desk</span>
+      </a>
+
+      <nav class="tabs" aria-label="Coordinator">
+        <a routerLink="/coordinator/command" routerLinkActive="on">{{ 'coord.cases' | rdTranslate }}</a>
+        <a routerLink="/coordinator/alerts" routerLinkActive="on">{{ 'coord.alerts' | rdTranslate }}
+          @if (ui.alerts().length) { <span class="count" aria-label="{{ ui.alerts().length }}">{{ ui.alerts().length }}</span> }
         </a>
-        <app-scenario-switcher></app-scenario-switcher>
+        <a routerLink="/coordinator/benchmark" routerLinkActive="on">{{ 'coord.accuracy' | rdTranslate }}</a>
+      </nav>
+
+      <div class="search">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="coord-search" type="search" [placeholder]="'coord.search' | rdTranslate" [attr.aria-label]="'coord.search' | rdTranslate" [value]="ui.searchQuery()" (input)="onSearch($event)" />
+        <kbd>/</kbd>
       </div>
 
-      <div class="right-cluster">
-        <rd-language-switcher></rd-language-switcher>
-        <button type="button" class="nav-btn demo-toggle" (click)="toggleDemo()">
-          {{ (showPhone() ? 'demo.hide' : 'demo.phone') | rdTranslate }}
-        </button>
-        <a routerLink="/coordinator/command" class="nav-btn">{{ 'queue.title' | rdTranslate }}</a>
-        <a routerLink="/coordinator/alerts" class="nav-btn">{{ 'alerts.title' | rdTranslate }}</a>
-        <a routerLink="/coordinator/benchmark" class="nav-btn">{{ 'benchmark.nav' | rdTranslate }}</a>
-        <span class="demo-user">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</span>
-        <button type="button" class="nav-btn" (click)="logout()">{{ 'nav.logout' | rdTranslate }}</button>
+      <div class="right">
+        <button type="button" class="tour-btn" (click)="takeTour()">{{ 'coord.tour' | rdTranslate }}</button>
+        <span class="live"><i></i>{{ 'coord.live' | rdTranslate }}</span>
+        <div class="menu-wrap">
+          <button type="button" class="avatar" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate">{{ initial() }}</button>
+          @if (menuOpen()) {
+            <div class="menu-back" (click)="menuOpen.set(false)"></div>
+            <div class="menu" role="menu">
+              <p class="who">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</p>
+              <h3>{{ 'coord.scenario' | rdTranslate }}</h3>
+              <div class="seg stack">
+                @for (pack of scenarioService.scenarios(); track pack.id) {
+                  <button type="button" [class.on]="scenarioService.activeId() === pack.id" (click)="selectScenario(pack.id)">{{ pack.title }}</button>
+                }
+              </div>
+              <h3>{{ 'settings.theme' | rdTranslate }}</h3>
+              <div class="seg">
+                @for (t of themes; track t.m) {
+                  <button type="button" [class.on]="theme.mode() === t.m" [attr.aria-pressed]="theme.mode() === t.m" (click)="theme.setMode(t.m)">{{ t.k | rdTranslate }}</button>
+                }
+              </div>
+              <h3>{{ 'settings.language' | rdTranslate }}</h3>
+              <div class="seg two">
+                @for (l of langs; track l.code) {
+                  <button type="button" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" (click)="lang.setLanguage(l.code)">{{ l.label }}</button>
+                }
+              </div>
+              <button type="button" class="item" (click)="openWeights()">{{ 'coord.weights' | rdTranslate }}</button>
+              <button type="button" class="item" (click)="toggleDemo()">{{ (showPhone() ? 'demo.hide' : 'coord.demoPhone') | rdTranslate }}</button>
+              <button type="button" class="item out" (click)="logout()">{{ 'coord.signOut' | rdTranslate }}</button>
+            </div>
+          }
+        </div>
       </div>
     </header>
 
@@ -32,4 +66,5 @@
       <iframe title="Public report" src="/report"></iframe>
     </aside>
   }
+  <app-tour />
 </div>

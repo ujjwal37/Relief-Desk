@@ -1,677 +1,193 @@
-<div class="coordinator-command-view">
-  <!-- Top Command Toolbar -->
-  <div class="command-toolbar">
-    <div class="search-box">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
-      </svg>
-      <input
-        type="text"
-        [placeholder]="'Search requests (Ward, Landmark)...'"
-        [value]="searchQuery()"
-        (input)="onSearchInput($event)"
-      />
-      <span class="kbd">Ctrl K</span>
-    </div>
-
-    <div class="pill synth">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 3l10 18H2zM12 10v5M12 18h.01"/>
-      </svg>
-      <span>Synthetic demo data · Riverbend</span>
-    </div>
-
-    <div class="spacer"></div>
-
-    <!-- Scenario switcher -->
-    <div class="seg scenario-seg">
-      <button
-        type="button"
-        class="seg-btn"
-        *ngFor="let pack of scenarios()"
-        [class.on]="activeScenario() === pack.id"
-        (click)="setScenario(pack.id)"
-      >
-        {{ pack.title }}
-      </button>
-    </div>
-
-    <!-- Weights Drawer Toggle -->
-    <button type="button" class="btn-toolbar" (click)="toggleWeightsDrawer()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>
-      </svg>
-      <span>Weights & Triage</span>
-    </button>
-  </div>
-
-  <!-- Toast Notification Message -->
-  @if (actionToast()) {
-    <div class="toast-banner" [class.success]="actionToast()?.type === 'success'" [class.warning]="actionToast()?.type === 'warning'">
-      <span>{{ actionToast()?.text }}</span>
-      <button type="button" class="toast-close" (click)="clearToast()">✕</button>
+<div class="cmd">
+  @if (briefingOpen()) {
+    <div class="briefing" role="status">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.5"/></svg>
+      <p>{{ briefing() }}</p>
+      <button type="button" (click)="briefingOpen.set(false)">{{ 'coord.hide' | rdTranslate }}</button>
     </div>
   }
 
-  <!-- 3-Pane Command Center -->
-  <div class="panes-container">
-    <!-- PANE 1: Ranked Request Queue -->
-    <section class="pane left-pane-queue card glow">
-      <div class="pane-title-row">
-        <div class="title-with-icon">
-          <span class="ib">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M7 18v-6a5 5 0 0 1 10 0v6M5 18h14M12 3v2M4.2 7.2l1.4 1.4M19.8 7.2l-1.4 1.4"/>
-            </svg>
-          </span>
-          <h3>Request queue</h3>
-        </div>
-        <span class="chip cac">Vulnerability-weighted</span>
-      </div>
+  @if (actionToast()) {
+    <div class="toast" role="status" [class.warn]="actionToast()?.type === 'warning'">
+      <span>{{ actionToast()?.text }}</span>
+      <button type="button" (click)="clearToast()" aria-label="Close">✕</button>
+    </div>
+  }
 
-      <div class="pane-subtitle-row">
-        <span class="sub">Ranked by deterministic urgency</span>
-        <span class="mono count-total">{{ filteredRequests().length }} requests</span>
+  <div class="grid" [class.has-brief]="briefingOpen()">
+    <!-- CASES -->
+    <section class="cases" data-tour="cases" aria-labelledby="cases-h">
+      <div class="cases-head">
+        <h1 id="cases-h">{{ 'coord.cases' | rdTranslate }}</h1>
+        <span class="sort">{{ 'coord.sorted' | rdTranslate }}</span>
       </div>
-
-      <!-- Quick Type Filter Chips -->
-      <div class="filter-chips-row">
-        <button
-          type="button"
-          class="f-chip"
-          [class.active]="filterType() === 'all'"
-          (click)="setFilterType('all')"
-        >
-          All
-        </button>
-        <button
-          type="button"
-          class="f-chip"
-          [class.active]="filterType() === 'rescue'"
-          (click)="setFilterType('rescue')"
-        >
-          Rescue
-        </button>
-        <button
-          type="button"
-          class="f-chip"
-          [class.active]="filterType() === 'medical'"
-          (click)="setFilterType('medical')"
-        >
-          Medical
-        </button>
-        <button
-          type="button"
-          class="f-chip"
-          [class.active]="filterType() === 'food'"
-          (click)="setFilterType('food')"
-        >
-          Food
-        </button>
-        <button
-          type="button"
-          class="f-chip"
-          [class.active]="filterType() === 'shelter'"
-          (click)="setFilterType('shelter')"
-        >
-          Shelter
-        </button>
+      <div class="filters" role="group">
+        <button type="button" [class.on]="bandFilter() === 'all'" (click)="setBandFilter('all')">{{ 'coord.filterAll' | rdTranslate }} {{ counts().total }}</button>
+        <button type="button" class="f-now" [class.on]="bandFilter() === 'now'" (click)="setBandFilter('now')">{{ 'coord.filterNow' | rdTranslate }} {{ counts().critical }}</button>
+        <button type="button" [class.on]="bandFilter() === 'soon'" (click)="setBandFilter('soon')">{{ 'coord.filterSoon' | rdTranslate }} {{ counts().high }}</button>
+        <button type="button" [class.on]="bandFilter() === 'review'" (click)="setBandFilter('review')">{{ 'coord.filterReview' | rdTranslate }} {{ counts().review }}</button>
       </div>
-
-      <!-- Scrollable Queue Items -->
-      <div class="queue-scroll-list">
+      <div class="list" role="listbox" aria-label="Cases">
         @for (req of filteredRequests(); track req.id) {
-          <div
-            class="queue-card"
-            [class.selected]="selectedRequestId() === req.id"
-            [class.critical]="req.urgency_score >= 85"
-            [class.high]="req.urgency_score >= 70 && req.urgency_score < 85"
-            [class.medium]="req.urgency_score >= 50 && req.urgency_score < 70"
-            [class.low]="req.urgency_score < 50"
-            (click)="selectRequest(req.id)"
-          >
-            <!-- Radial Score Gauge -->
-            <svg width="46" height="46" viewBox="0 0 46 46" class="score-radial">
-              <circle cx="23" cy="23" r="21" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4" />
-              <circle
-                cx="23"
-                cy="23"
-                r="21"
-                fill="none"
-                [attr.stroke]="getUrgencyColor(req.urgency_score)"
-                stroke-width="4"
-                stroke-linecap="round"
-                [attr.stroke-dasharray]="getRadialDasharray(req.urgency_score)"
-                transform="rotate(-90 23 23)"
-              />
-              <text x="50%" y="50%" dy=".35em" text-anchor="middle" fill="#f1f5fb" font-size="16" font-weight="700">
-                {{ Math.round(req.urgency_score) }}
-              </text>
-            </svg>
-
-            <!-- Request Summary Details -->
-            <div class="q-content">
-              <div class="q-top-row">
-                <span class="req-type-label">{{ req.type | uppercase }}</span>
-                <span class="chip" [class]="getUrgencyChipClass(req.urgency_score)">
-                  {{ getUrgencyBand(req.urgency_score) }}
-                </span>
-                <span class="spacer"></span>
-                <span class="people-count mono">{{ req.people_count || 1 }} people</span>
-              </div>
-
-              <div class="q-place-text">
-                {{ req.ward_id ? (req.ward_id | uppercase) + ' · ' : '' }}{{ req.place_text || 'Riverbend Area' }}
-              </div>
-
-              <!-- Vulnerability & Merge Tags -->
-              <div class="q-tags-row">
-                @if (req.vulnerable.child) {
-                  <span class="chip cne">👶 Child</span>
-                }
-                @if (req.vulnerable.elderly) {
-                  <span class="chip cne">👴 Elderly</span>
-                }
-                @if (req.vulnerable.medical_need) {
-                  <span class="chip cne">🩺 Medical need</span>
-                }
-                @if (req.vulnerable.pregnant) {
-                  <span class="chip cne">🤰 Pregnant</span>
-                }
-                @if ((req.merged_count || 1) > 1) {
-                  <span class="chip cgr">🔀 Merged ×{{ req.merged_count }}</span>
-                }
-                @if ((req.update_count || 0) > 0) {
-                  <span class="chip cam">⚡ Updated</span>
-                }
-                @if (req.status === 'approved') {
-                  <span class="chip cgr">✓ Dispatched</span>
-                }
-                @if (isLowTranslationConfidence(req)) {
-                  <span class="chip cr">⚠️ Low trans conf</span>
-                }
-              </div>
-            </div>
-          </div>
+          <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id)">
+            <span class="row1">
+              <app-sev-chip [band]="bandOf(req.urgency_score)" />
+              <span class="prio">{{ 'coord.priority' | rdTranslate }} <b>{{ Math.round(req.urgency_score) }}</b></span>
+            </span>
+            <span class="title">{{ req.ai_translation || req.urgency_reason || req.place_text || req.id }}</span>
+            <span class="meta">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text || 'Riverbend' }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}</span>
+            <span class="tags">
+              @if ((req.merged_count || 1) > 1) { <span class="tag">{{ tr('coord.sameIncident', req.merged_count || 1) }}</span> }
+              <span class="tag">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
+              @if (isReview(req)) { <span class="tag warn">{{ 'coord.review' | rdTranslate }}</span> }
+              @if (req.status === 'approved') { <span class="tag ok">✓</span> }
+            </span>
+          </button>
+        } @empty {
+          <p class="empty">{{ 'coord.empty' | rdTranslate }}</p>
         }
       </div>
     </section>
 
-    <!-- PANE 2: Situation Map & Top KPI Stats -->
-    <section class="pane centre-pane-map">
-      <!-- 4 Stat Metric Cards -->
-      <div class="stats-cards-row">
-        <div class="card stat-card">
-          <div class="stat-info">
-            <span class="tag">Open Requests</span>
-            <span class="mono stat-value">{{ filteredRequests().length }}</span>
-          </div>
-          <svg width="40" height="26" viewBox="0 0 38 26" class="sparkline">
-            <path d="M2,23 C7,18 13,20 19,14 C24,11 30,9 36,5" fill="none" stroke="#8b8cf8" stroke-width="2" />
-            <circle cx="36" cy="5" r="3" fill="#8b8cf8" />
-          </svg>
-        </div>
-
-        <div class="card stat-card">
-          <div class="stat-info">
-            <span class="tag">Critical</span>
-            <span class="mono stat-value text-red">{{ criticalCount() }}</span>
-          </div>
-          <svg width="40" height="26" viewBox="0 0 38 26" class="sparkline">
-            <path d="M2,23 C7,19 13,19 19,15 C24,12 30,8 36,5" fill="none" stroke="#fb7185" stroke-width="2" />
-            <circle cx="36" cy="5" r="3" fill="#fb7185" />
-          </svg>
-        </div>
-
-        <div class="card stat-card">
-          <div class="stat-info">
-            <span class="tag">Duplicates Merged</span>
-            <span class="mono stat-value text-grn">19</span>
-          </div>
-          <svg width="40" height="26" viewBox="0 0 38 26" class="sparkline">
-            <path d="M2,23 C7,20 13,17 19,15 C24,12 30,8 36,5" fill="none" stroke="#34d399" stroke-width="2" />
-            <circle cx="36" cy="5" r="3" fill="#34d399" />
-          </svg>
-        </div>
-
-        <div class="card stat-card">
-          <div class="stat-info">
-            <span class="tag">Boats Available</span>
-            <span class="mono stat-value text-blu">{{ availableBoatsCount() }}</span>
-          </div>
-          <svg width="40" height="26" viewBox="0 0 38 26" class="sparkline">
-            <path d="M2,5 C7,8 13,12 19,15 C24,18 30,21 36,23" fill="none" stroke="#60a5fa" stroke-width="2" />
-            <circle cx="36" cy="23" r="3" fill="#60a5fa" />
-          </svg>
-        </div>
+    <!-- CENTRE -->
+    <section class="centre">
+      <div class="tiles">
+        <div class="tile t-now"><span class="lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5"/></svg>{{ 'coord.tileNow' | rdTranslate }}</span><span class="num">{{ counts().critical }}</span><span class="unit">{{ 'coord.unitCases' | rdTranslate }}</span></div>
+        <div class="tile t-soon"><span class="lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>{{ 'coord.tileSoon' | rdTranslate }}</span><span class="num">{{ counts().high }}</span><span class="unit">{{ 'coord.unitCases' | rdTranslate }}</span></div>
+        <div class="tile t-teams"><span class="lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 3-6 6-6s6 2 6 6M17 11a3 3 0 1 0 0-6M21 20c0-3-2-5-4-5"/></svg>{{ 'coord.tileTeams' | rdTranslate }}</span><span class="num">{{ teamsFree().free }}/{{ teamsFree().total }}</span><span class="unit">{{ 'coord.unitReady' | rdTranslate }}</span></div>
+        <div class="tile t-quiet"><span class="lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/></svg>{{ 'coord.tileQuiet' | rdTranslate }}</span><span class="num">{{ quietCount() }}</span><span class="unit">{{ 'coord.unitQuiet' | rdTranslate }}</span></div>
       </div>
 
-      <!-- Riverbend Interactive Map Card -->
-      <div class="card map-container">
-        <!-- Map Top Bar Overlay -->
-        <div class="map-overlay-top">
-          <div class="map-pill live-map-pill">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b8cf8" stroke-width="2">
-              <path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/>
-              <circle cx="12" cy="10" r="2.5"/>
-            </svg>
-            <span>Live Map · Riverbend Bounding Box</span>
-          </div>
-          <span class="chip cr">⚠️ 3 Anomaly alerts</span>
-          <span class="spacer"></span>
-          <div class="map-pill">
-            <span>Clusters: 6 · Wards: 12</span>
-          </div>
-        </div>
-
-        <!-- Riverbend SVG Map -->
+      <div class="map-card">
         <rd-map-provider [pins]="mapPins()" (pinSelect)="selectRequest($event)">
-        <svg viewBox="0 0 608 550" class="riverbend-svg-map">
-          <defs>
-            <radialGradient id="hrRed">
-              <stop offset="0" stop-color="#fb7185" stop-opacity=".75"/>
-              <stop offset=".5" stop-color="#fb7185" stop-opacity=".22"/>
-              <stop offset="1" stop-color="#fb7185" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="haAmb">
-              <stop offset="0" stop-color="#fbbf24" stop-opacity=".6"/>
-              <stop offset="1" stop-color="#fbbf24" stop-opacity="0"/>
-            </radialGradient>
-            <radialGradient id="hbBlu">
-              <stop offset="0" stop-color="#60a5fa" stop-opacity=".55"/>
-              <stop offset="1" stop-color="#60a5fa" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="floodGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#38bdf8" stop-opacity=".34"/>
-              <stop offset="1" stop-color="#6366f1" stop-opacity=".22"/>
-            </linearGradient>
-            <filter id="glowBlur"><feGaussianBlur stdDeviation="3"/></filter>
-          </defs>
-
-          <!-- Background Grid & City Base -->
-          <rect width="608" height="550" fill="#0a1120"/>
-
-          <!-- Riverbend River Winding Waterway -->
-          <path
-            d="M -20,460 C 110,340 180,530 316,410 S 486,200 628,250"
-            fill="none"
-            stroke="#2b6cb0"
-            stroke-width="54"
-            opacity=".25"
-            filter="url(#glowBlur)"
-          />
-          <path
-            d="M -20,460 C 110,340 180,530 316,410 S 486,200 628,250"
-            fill="none"
-            stroke="#0f3358"
-            stroke-width="40"
-            stroke-linecap="round"
-          />
-
-          <!-- Flooded Area Inundation Polygon -->
-          <path
-            d="M 60,330 C 120,240 220,265 285,305 S 400,200 470,180 L 545,210 C 510,340 425,460 315,530 S 130,580 70,500 Z"
-            fill="url(#floodGrad)"
-            stroke="#38bdf8"
-            stroke-width="1.6"
-            stroke-dasharray="6 5"
-          />
-
-          <!-- Flood Hazard Heatmap Glows -->
-          <circle cx="200" cy="300" r="85" fill="url(#hrRed)"/>
-          <circle cx="360" cy="330" r="65" fill="url(#haAmb)"/>
-          <circle cx="120" cy="450" r="70" fill="url(#hbBlu)"/>
-
-          <!-- Ward Labels -->
-          <text x="110" y="520" fill="#5d6e8c" font-size="11" font-weight="600" letter-spacing=".12em">WARD 6</text>
-          <text x="470" y="110" fill="#5d6e8c" font-size="11" font-weight="600" letter-spacing=".12em">WARD 3</text>
-          <text x="110" y="160" fill="#5d6e8c" font-size="11" font-weight="600" letter-spacing=".12em">WARD 7</text>
-          <text x="380" y="520" fill="#5d6e8c" font-size="12" font-weight="700" letter-spacing=".12em">RIVERBEND</text>
-
-          <!-- Seeded Resources on Map -->
-          <!-- Boat 1 -->
-          <g transform="translate(148,348)" class="map-res-pin" title="Rescue Boat #01">
-            <rect width="24" height="24" rx="8" fill="#818cf8"/>
-            <text x="12" y="16" text-anchor="middle" font-size="12">🚤</text>
-          </g>
-          <!-- Shelter 1 -->
-          <g transform="translate(288,258)" class="map-res-pin" title="Central Community Shelter">
-            <rect width="24" height="24" rx="8" fill="#34d399"/>
-            <text x="12" y="16" text-anchor="middle" font-size="12">⛺</text>
-          </g>
-          <!-- Medical Clinic -->
-          <g transform="translate(408,388)" class="map-res-pin" title="Civil Lines Hospital">
-            <rect width="24" height="24" rx="8" fill="#fb7185"/>
-            <text x="12" y="16" text-anchor="middle" font-size="12">🏥</text>
-          </g>
-
-          <!-- Interactive Incident Cluster Pins (1 to 6) -->
-          <!-- Pin 1: Gandhi School / Ram Ghat (Critical, Score 94) -->
-          <g class="map-cluster-pin" (click)="selectRequest('INC-001')">
-            <circle cx="240" cy="300" r="24" fill="#fb7185" opacity=".25"/>
-            <circle cx="240" cy="300" r="14" fill="#fb7185" stroke="#fff" stroke-width="2.5"/>
-            <text x="240" y="300" dy=".35em" text-anchor="middle" font-size="12" font-weight="800" fill="#0a0d18">1</text>
-          </g>
-
-          <!-- Pin 2: Sangam Vihar (Critical, Score 88) -->
-          <g class="map-cluster-pin" (click)="selectRequest('INC-002')">
-            <circle cx="340" cy="370" r="12" fill="#fb7185" stroke="#0a1120" stroke-width="2"/>
-            <text x="340" y="370" dy=".35em" text-anchor="middle" font-size="11" font-weight="700" fill="#0a0d18">2</text>
-          </g>
-
-          <!-- Pin 3: Temple Road (High, Score 81) -->
-          <g class="map-cluster-pin" (click)="selectRequest('INC-003')">
-            <circle cx="380" cy="285" r="12" fill="#fbbf24" stroke="#0a1120" stroke-width="2"/>
-            <text x="380" y="285" dy=".35em" text-anchor="middle" font-size="11" font-weight="700" fill="#0a0d18">3</text>
-          </g>
-
-          <!-- Pin 4: Relief shelter cluster (Medium, Score 67) -->
-          <g class="map-cluster-pin" (click)="selectRequest('INC-004')">
-            <circle cx="110" cy="445" r="12" fill="#60a5fa" stroke="#0a1120" stroke-width="2"/>
-            <text x="110" y="445" dy=".35em" text-anchor="middle" font-size="11" font-weight="700" fill="#0a0d18">4</text>
-          </g>
-
-          <!-- Pin 5: Mill Colony (Medium, Score 54) -->
-          <g class="map-cluster-pin" (click)="selectRequest('INC-005')">
-            <circle cx="445" cy="190" r="12" fill="#60a5fa" stroke="#0a1120" stroke-width="2"/>
-            <text x="445" y="190" dy=".35em" text-anchor="middle" font-size="11" font-weight="700" fill="#0a0d18">5</text>
-          </g>
-
-          <!-- Pin 6: Bus depot (Low, Score 31) -->
-          <g class="map-cluster-pin" (click)="selectRequest('INC-006')">
-            <circle cx="290" cy="510" r="12" fill="#94a3b8" stroke="#0a1120" stroke-width="2"/>
-            <text x="290" y="510" dy=".35em" text-anchor="middle" font-size="11" font-weight="700" fill="#0a0d18">6</text>
-          </g>
-
-          <!-- Map Callout Card for Selected Request -->
-          @if (selectedRequest(); as req) {
-            <g transform="translate(266, 260)" class="map-callout-box">
-              <rect width="220" height="52" rx="10" fill="#111b30" stroke="#33466b" stroke-width="1.5" />
-              <path d="M 0,26 L -8,31 L 0,36 Z" fill="#111b30" />
-              <text x="12" y="22" font-size="12" font-weight="700" fill="#f1f5fb">
-                {{ req.id }} · {{ req.type | uppercase }} · Score {{ Math.round(req.urgency_score) }}
-              </text>
-              <text x="12" y="40" font-size="10.5" font-weight="500" fill="#9fb0cc">
-                {{ req.ward_id ? (req.ward_id | uppercase) + ' · ' : '' }}{{ req.place_text || 'Riverbend' }}
-              </text>
-            </g>
-          }
-        </svg>
+          <svg viewBox="0 0 600 480" class="svgmap" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map">
+            <rect width="600" height="480" fill="var(--map-bg)"/>
+            <path d="M-20 400 C 110 300 200 460 320 360 S 500 180 640 220" fill="none" stroke="var(--map-water)" stroke-width="46" stroke-linecap="round"/>
+            <path d="M70 300 C 130 220 230 240 290 280 S 400 180 470 160 L 540 190 C 510 310 430 410 320 450 S 140 470 80 420 Z" fill="var(--map-flood)" stroke="var(--map-flood-line)" stroke-width="1.5" stroke-dasharray="6 5"/>
+            @for (p of svgPins(); track p.id) {
+              @if (p.kind === 'team') {
+                <g [attr.transform]="'translate(' + (p.x - 11) + ',' + (p.y - 11) + ')'"><rect width="22" height="22" rx="7" fill="var(--sev-med)"/><path d="M5 14l2 3h8l2-3zM11 5v7" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>
+              }
+            }
+            @if (selectedPin(); as sp) {
+              <circle [attr.cx]="sp.x" [attr.cy]="sp.y" r="26" fill="none" stroke="var(--brand)" stroke-width="3"/>
+            }
+            @for (p of svgPins(); track p.id) {
+              @if (p.kind === 'req') {
+                <g class="pin" (click)="selectRequest(p.id)" tabindex="0" (keydown.enter)="selectRequest(p.id)" role="button" [attr.aria-label]="'Case ' + p.n">
+                  <circle [attr.cx]="p.x" [attr.cy]="p.y" r="14" [attr.fill]="'var(--sev-' + (p.band === 'critical' ? 'crit' : p.band === 'high' ? 'high' : p.band === 'medium' ? 'med' : 'low') + ')'" stroke="#fff" stroke-width="2.5"/>
+                  <text [attr.x]="p.x" [attr.y]="p.y" dy=".35em" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">{{ p.n }}</text>
+                </g>
+              }
+            }
+          </svg>
         </rd-map-provider>
-
-        <!-- Map Bottom Legend -->
-        <div class="map-overlay-bottom">
-          <div class="legend-pill">
-            <span class="leg-item"><i class="leg-box blue"></i>Flooded area</span>
-            <span class="leg-item"><i class="leg-dot red"></i>Report clusters</span>
-            <span class="leg-item"><i class="leg-box purple"></i>Resources</span>
-          </div>
-          <span class="spacer"></span>
-          <div class="gmaps-badge">
-            <span class="g-icon">🗺️</span>
-            <span>Google Maps Platform (styled Riverbend)</span>
-          </div>
+        <div class="legend" aria-label="Map key">
+          <b>{{ 'coord.mapKey' | rdTranslate }}</b>
+          <span><i class="d crit"></i>{{ 'coord.band.critical' | rdTranslate }}</span>
+          <span><i class="d high"></i>{{ 'coord.band.high' | rdTranslate }}</span>
+          <span><i class="d med"></i>{{ 'coord.band.medium' | rdTranslate }}</span>
+          <span><i class="sq"></i>{{ 'coord.tileTeams' | rdTranslate }}</span>
         </div>
       </div>
     </section>
 
-    <!-- PANE 3: Request Detail & Why This Match -->
-    <section class="pane right-pane-detail card glow">
+    <!-- DETAIL -->
+    <aside class="detail" aria-label="Selected case">
       @if (selectedRequest(); as req) {
-        <!-- Request Header -->
-        <div class="pane-title-row">
-          <div class="title-with-icon">
-            <span class="ib">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
-              </svg>
-            </span>
-            <h3>Request {{ req.id }}</h3>
+        <div class="detail-scroll">
+          <div class="d-head">
+            <app-sev-chip [band]="bandOf(req.urgency_score)" />
+            <span class="id">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}</span>
           </div>
-          <span class="chip" [class]="getUrgencyChipClass(req.urgency_score)">
-            {{ getUrgencyBand(req.urgency_score) }}
-          </span>
-          @if ((req.merged_count || 1) > 1) {
-            <span class="chip cgr">🔀 Merged ×{{ req.merged_count }}</span>
-          }
-        </div>
+          <h2>{{ req.ai_translation || req.urgency_reason || req.place_text }}</h2>
+          <p class="place">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text }} · {{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</p>
 
-        <!-- Raw Message & Translation Box -->
-        <div class="inner message-box">
-          <div class="tag-row">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/>
-            </svg>
-            <span class="tag">Original message · {{ detectOriginalLanguage(req.raw_text) }}</span>
-          </div>
-          <p class="raw-quote">“{{ req.raw_text || req.place_text || 'Emergency rescue requested in Riverbend' }}”</p>
-
-          <div class="trans-header-row">
-            <div class="tag-row text-acc">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>
-              </svg>
-              <span class="tag">AI translation</span>
+          <div class="said">
+            <div class="said-head">
+              <span class="cap">{{ 'coord.said' | rdTranslate }}</span>
+              @if (isLowTranslationConfidence(req)) { <span class="tag warn">{{ 'coord.lowTrans' | rdTranslate }} ({{ getTranslationConfidencePercent(req) }}%)</span> }
+              <button type="button" class="link" (click)="showOriginal.set(!showOriginal())">{{ (showOriginal() ? 'coord.showTranslation' : 'coord.showOriginal') | rdTranslate }}</button>
             </div>
-            @if (req.translations && (req.translations['hi'] || req.translations['ta'])) {
-              <div class="trans-lang-pills">
-                <button
-                  type="button"
-                  [class.active]="selectedTranslationLang() === 'en'"
-                  (click)="setTranslationLang('en')"
-                >EN</button>
-                @if (req.translations['hi']) {
-                  <button
-                    type="button"
-                    [class.active]="selectedTranslationLang() === 'hi'"
-                    (click)="setTranslationLang('hi')"
-                  >HI</button>
-                }
-                @if (req.translations['ta']) {
-                  <button
-                    type="button"
-                    [class.active]="selectedTranslationLang() === 'ta'"
-                    (click)="setTranslationLang('ta')"
-                  >TA</button>
-                }
+            <p class="quote">“{{ showOriginal() ? (req.raw_text || req.place_text) : getTranslationText(req) }}”</p>
+            @if ((req.merged_count || 1) > 1) { <p class="more">{{ tr('coord.moreReports', (req.merged_count || 1) - 1) }}</p> }
+          </div>
+
+          @if (activeProposal(); as prop) {
+            <div class="best" data-tour="detail">
+              <div class="best-head">
+                <span class="cap">{{ 'coord.bestTeam' | rdTranslate }}</span>
+                <span class="fit">{{ tr('coord.fit', fitPct(prop)) }}</span>
+              </div>
+              <div class="team">{{ prop.resource_name }}</div>
+              <div class="facts">{{ prop.breakdown.distance_km }} km · {{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ prop.resource_kind }}</div>
+              @if (prop.capacity_remaining < (req.people_count || 1) || prop.overcommit_warning) { <p class="warnline">⚠ {{ 'coord.overcommit' | rdTranslate }}</p> }
+            </div>
+
+            <div class="acc">
+              <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'why'" (click)="toggleSection('why')"><span>{{ 'coord.why' | rdTranslate }}</span><span class="chev">{{ openSection() === 'why' ? '⌃' : '⌄' }}</span></button>
+              @if (openSection() === 'why') {
+                <div class="acc-b">
+                  <div class="bd"><span>Distance</span><div class="bar"><b [style.width.%]="(prop.breakdown.distance_score / 30) * 100"></b></div><em>{{ prop.breakdown.distance_score.toFixed(1) }}/30</em></div>
+                  <div class="bd"><span>Capacity</span><div class="bar"><b [style.width.%]="(prop.breakdown.capacity_fit_score / 25) * 100"></b></div><em>{{ prop.breakdown.capacity_fit_score.toFixed(1) }}/25</em></div>
+                  <div class="bd"><span>Urgency</span><div class="bar"><b [style.width.%]="(prop.breakdown.urgency_score / 25) * 100"></b></div><em>{{ prop.breakdown.urgency_score.toFixed(1) }}/25</em></div>
+                  <div class="bd"><span>Vulnerability</span><div class="bar"><b [style.width.%]="(prop.breakdown.vulnerability_fit_score / 20) * 100"></b></div><em>{{ prop.breakdown.vulnerability_fit_score.toFixed(1) }}/20</em></div>
+                  @if (prop.explanation) { <p class="expl">{{ prop.explanation }}</p> }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="best"><p class="facts">…</p></div>
+          }
+
+          <div class="acc">
+            <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'reports'" (click)="toggleSection('reports')"><span>{{ (req.merged_count || 1) > 1 ? tr('coord.allReports', req.merged_count || 1) : ('coord.reportDetails' | rdTranslate) }}</span><span class="chev">{{ openSection() === 'reports' ? '⌃' : '⌄' }}</span></button>
+            @if (openSection() === 'reports') {
+              <div class="acc-b">
+                <p class="expl">“{{ req.raw_text || req.place_text }}”</p>
+                <div class="conf">
+                  <span>Type {{ Math.round((req.confidence?.type || 0.96) * 100) }}%</span>
+                  <span>Place {{ Math.round((req.confidence?.place || 0.88) * 100) }}%</span>
+                  <span>People {{ Math.round((req.confidence?.people || 0.82) * 100) }}%</span>
+                </div>
+                @if (req.cluster_id) { <button type="button" class="link" (click)="splitCluster(req.id)">Undo merge</button> }
               </div>
             }
           </div>
-          <p class="trans-quote">
-            {{ getTranslationText(req) }}
-          </p>
+        </div>
 
-          <!-- Low Translation Confidence Warning -->
-          @if (isLowTranslationConfidence(req)) {
-            <div class="translation-warning-box">
-              <span class="warning-icon">⚠️</span>
-              <div class="warning-text">
-                <strong>Low translation confidence ({{ getTranslationConfidencePercent(req) }}%)</strong>
-                <span>Dialect or noisy phrasing detected. Verify original message with victim before dispatch.</span>
-              </div>
+        <div class="actionbar" data-tour="actions">
+          <p class="decide">{{ 'coord.youDecide' | rdTranslate }}</p>
+          @if (changeOpen()) {
+            <div class="chooser" role="listbox" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">
+              @for (m of matches(); track m.match_id; let i = $index) {
+                <button type="button" role="option" [class.on]="i === matchIdx()" (click)="pickMatch(i)">{{ m.resource_name }} <em>{{ tr('coord.fit', fitPct(m)) }} · {{ m.breakdown.distance_km }} km</em></button>
+              }
             </div>
           }
+          @if (activeProposal(); as prop) {
+            <div class="btns">
+              <button type="button" class="btn-approve" (click)="approveMatch(prop)">{{ 'coord.approve' | rdTranslate }}</button>
+              <button type="button" class="btn-sec" (click)="changeOpen.set(!changeOpen())" [attr.aria-expanded]="changeOpen()">{{ 'coord.change' | rdTranslate }}</button>
+              <button type="button" class="btn-sec" (click)="openRejectModal(prop)">{{ 'coord.reject' | rdTranslate }}</button>
+            </div>
+          } @else {
+            <div class="btns"><button type="button" class="btn-approve" disabled>{{ 'coord.approve' | rdTranslate }}</button></div>
+          }
         </div>
-
-        <!-- AI Reading & Field Confidences -->
-        <div class="confidence-section">
-          <span class="tag section-tag">AI reading · Confidence</span>
-
-          <div class="conf-row">
-            <span class="conf-lbl">Type</span>
-            <span class="conf-val">{{ req.type | uppercase }}</span>
-            <div class="bar"><b [style.width.%]="(req.confidence?.type || 0.96) * 100"></b></div>
-            <span class="mono conf-pct">{{ Math.round((req.confidence?.type || 0.96) * 100) }}%</span>
-          </div>
-
-          <div class="conf-row">
-            <span class="conf-lbl">Place</span>
-            <span class="conf-val">{{ req.ward_id ? (req.ward_id | uppercase) : 'Riverbend' }}</span>
-            <div class="bar"><b [style.width.%]="(req.confidence?.place || 0.88) * 100"></b></div>
-            <span class="mono conf-pct">{{ Math.round((req.confidence?.place || 0.88) * 100) }}%</span>
-          </div>
-
-          <div class="conf-row">
-            <span class="conf-lbl">People</span>
-            <span class="conf-val">{{ req.people_count || 1 }}</span>
-            <div class="bar"><b [style.width.%]="(req.confidence?.people || 0.82) * 100"></b></div>
-            <span class="mono conf-pct">{{ Math.round((req.confidence?.people || 0.82) * 100) }}%</span>
-          </div>
-
-          <div class="conf-row">
-            <span class="conf-lbl">Vulnerable</span>
-            <span class="conf-val">
-              {{ req.vulnerable.child ? 'Child ' : '' }}{{ req.vulnerable.elderly ? 'Elderly ' : '' }}{{ req.vulnerable.medical_need ? 'Medical' : '' }}
-            </span>
-            <div class="bar"><b [style.width.%]="(req.confidence?.vulnerable || 0.91) * 100"></b></div>
-            <span class="mono conf-pct">{{ Math.round((req.confidence?.vulnerable || 0.91) * 100) }}%</span>
-          </div>
-        </div>
-
-        <!-- Dedupe Evidence & Split/Undo Merge UI -->
-        @if (req.cluster_id) {
-          <div class="inner dedupe-card">
-            <div class="dedupe-header">
-              <span class="chip-grn">🔀 Merge Evidence</span>
-              <button type="button" class="btn-undo" (click)="splitCluster(req.id)">
-                Undo merge
-              </button>
-            </div>
-            <ul class="evidence-list">
-              <li>3 reports received within 9 minutes in same street</li>
-              <li>"Ab 5 log hain" matched as hero update (urgency raised)</li>
-            </ul>
-          </div>
-        }
-
-        <!-- "Why This Match" Card -->
-        @if (activeProposal(); as prop) {
-          <div class="inner why-match-card">
-            <div class="why-match-header">
-              <span class="match-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 15l2 5h14l2-5zM12 3v10M12 4l6 8h-6"/>
-                </svg>
-                Why this match
-              </span>
-              <span class="chip cgr">Best match proposal</span>
-            </div>
-
-            <!-- Score Radial + Resource Details -->
-            <div class="prop-overview">
-              <svg width="54" height="54" viewBox="0 0 54 54" class="match-score-radial">
-                <circle cx="27" cy="27" r="24" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="4.5" />
-                <circle
-                  cx="27"
-                  cy="27"
-                  r="24"
-                  fill="none"
-                  stroke="#8b8cf8"
-                  stroke-width="4.5"
-                  stroke-linecap="round"
-                  [attr.stroke-dasharray]="getMatchDasharray(prop.score)"
-                  transform="rotate(-90 27 27)"
-                />
-                <text x="50%" y="50%" dy=".35em" text-anchor="middle" fill="#f1f5fb" font-size="15" font-weight="700">
-                  {{ (prop.score / 100).toFixed(2) }}
-                </text>
-              </svg>
-
-              <div class="prop-text">
-                <div class="res-name">{{ prop.resource_name }}</div>
-                <div class="res-sub">
-                  {{ prop.breakdown.distance_km }} km · {{ prop.capacity_remaining }} free / {{ req.people_count || 1 }} needed
-                </div>
-                <div class="res-status">
-                  Capacity: {{ prop.capacity_remaining }}/{{ prop.capacity_total }}
-                </div>
-              </div>
-            </div>
-
-            <!-- 4 Breakdown Sub-Scores (Strictly summing to score) -->
-            <div class="scores-breakdown">
-              <div class="bd-row">
-                <span class="bd-lbl">Distance</span>
-                <div class="bar"><b [style.width.%]="(prop.breakdown.distance_score / 30) * 100"></b></div>
-                <span class="mono bd-val">{{ prop.breakdown.distance_score.toFixed(1) }}/30</span>
-              </div>
-              <div class="bd-row">
-                <span class="bd-lbl">Capacity</span>
-                <div class="bar"><b [style.width.%]="(prop.breakdown.capacity_fit_score / 25) * 100"></b></div>
-                <span class="mono bd-val">{{ prop.breakdown.capacity_fit_score.toFixed(1) }}/25</span>
-              </div>
-              <div class="bd-row">
-                <span class="bd-lbl">Urgency</span>
-                <div class="bar"><b [style.width.%]="(prop.breakdown.urgency_score / 25) * 100"></b></div>
-                <span class="mono bd-val">{{ prop.breakdown.urgency_score.toFixed(1) }}/25</span>
-              </div>
-              <div class="bd-row">
-                <span class="bd-lbl">Vulnerability</span>
-                <div class="bar"><b [style.width.%]="(prop.breakdown.vulnerability_fit_score / 20) * 100"></b></div>
-                <span class="mono bd-val">{{ prop.breakdown.vulnerability_fit_score.toFixed(1) }}/20</span>
-              </div>
-            </div>
-
-            <!-- Plain-Language Explanation in EN & HI -->
-            @if (prop.explanation) {
-              <div class="explanation-box">
-                <p class="exp-en">{{ prop.explanation }}</p>
-                @if (prop.explanation_hi) {
-                  <p class="exp-hi">{{ prop.explanation_hi }}</p>
-                }
-              </div>
-            }
-
-            <!-- Live Action Buttons: Approve, Edit, Reject -->
-            <div class="action-buttons-row">
-              <button
-                type="button"
-                class="btn-approve"
-                (click)="approveMatch(prop)"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06101a" stroke-width="2.6">
-                  <path d="M4 12l5 5L20 6"/>
-                </svg>
-                Approve Dispatch
-              </button>
-
-              <button
-                type="button"
-                class="btn-reject"
-                (click)="openRejectModal(prop)"
-              >
-                ✕ Reject
-              </button>
-            </div>
-
-            <div class="human-notice">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
-              </svg>
-              <span>A human approves every dispatch. Never auto-dispatch.</span>
-            </div>
-          </div>
-        } @else {
-          <div class="inner empty-match-box">
-            <p>Searching best rescue resource match...</p>
-          </div>
-        }
       } @else {
-        <div class="no-selection-box">
-          <p>Select a request from the queue to view details and match recommendations.</p>
-        </div>
+        <p class="empty pad">{{ 'coord.noSelection' | rdTranslate }}</p>
       }
-    </section>
+    </aside>
   </div>
 
   <!-- WEIGHTS SLIDER DRAWER (Slide-over from right) -->
-  @if (isWeightsDrawerOpen()) {
-    <div class="drawer-backdrop" (click)="toggleWeightsDrawer()"></div>
+  @if (ui.weightsOpen()) {
+    <div class="drawer-backdrop" (click)="closeWeights()"></div>
     <aside class="weights-drawer card">
       <div class="drawer-header">
         <h3>Urgency Weights Tuning</h3>
-        <button type="button" class="drawer-close" (click)="toggleWeightsDrawer()">✕</button>
+        <button type="button" class="drawer-close" (click)="closeWeights()">✕</button>
       </div>
 
       <p class="drawer-desc">
@@ -753,7 +269,7 @@
         <button type="button" class="btn-reset" (click)="resetWeightsToDefaults()">
           Reset to Defaults
         </button>
-        <button type="button" class="btn-save" (click)="toggleWeightsDrawer()">
+        <button type="button" class="btn-save" (click)="closeWeights()">
           Close
         </button>
       </div>

@@ -27,10 +27,11 @@ describe('tap targets and language layouts', () => {
     }).compileComponents();
     const fixture: ComponentFixture<LandingComponent> = TestBed.createComponent(LandingComponent);
     fixture.detectChanges();
-    const call = fixture.nativeElement.querySelector('.call-112-btn') as HTMLElement;
-    expect(call.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
-    const lang = fixture.nativeElement.querySelectorAll('.lang-chip')[1] as HTMLButtonElement;
-    lang.click();
+    const call = fixture.nativeElement.querySelector('a.pill') as HTMLElement;
+    expect(call.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+    (fixture.nativeElement.querySelector('.rd-set-btn') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelectorAll('.opt')[1] as HTMLButtonElement).click();
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(text.length).toBeGreaterThan(10);
