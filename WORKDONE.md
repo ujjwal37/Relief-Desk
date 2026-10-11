@@ -924,3 +924,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 172 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%, duplicate F1 62.7%, vulnerable F1 58.5%. Keyword baseline type 16.3%, ward 13.3%. Gemini measured false, reason no_api_key, model gemini-3.8-flash, n=168.
 - Notes / risks / not done: No recorded transcripts are committed. The badge says Recorded Gemini run only after a real `make record-ai` run, or in the test that writes a temporary file.
 - Next (suggested task id): GM-10
+
+### 2026-10-12 07:45 IST — GM-10 — Cursor
+- What changed: Photo intake was not built. No upload path sends an image to Gemini, and no screen labels an image analysis as assistive.
+- Files: TASKS.md
+- How verified: No new code. Previous gate still stands: `pytest tests` — 172 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%. Gemini on that split is still unmeasured (no_api_key, model gemini-3.8-flash, n=168).
+- Notes / risks / not done: Multimodal intake, Gemini Live voice, Search grounding, Malayalam, extra scenario packs, Pub/Sub, and BigQuery stay out.
+- Next (suggested task id): GM-11
