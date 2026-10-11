@@ -1,0 +1,47 @@
+import logging
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.config import settings
+from app.api.health import router as health_router
+
+logging.basicConfig(
+    level=settings.LOG_LEVEL,
+    format="%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s"
+)
+logger = logging.getLogger("relief_desk.api")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting %s v%s...", settings.PROJECT_NAME, settings.VERSION)
+    logger.info("Gemini enabled: %s (Model: %s)", settings.GEMINI_ENABLED, settings.GEMINI_MODEL)
+    logger.info("Demo mode: %s", settings.DEMO_MODE)
+    yield
+    logger.info("Shutting down %s...", settings.PROJECT_NAME)
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    description="Multilingual crisis-reporting and coordination API",
+    lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.API_CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Root health check directly at /healthz as required by SETUP.md
+app.include_router(health_router)
+
+@app.get("/")
+def root():
+    return {
+        "app": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "docs_url": "/docs",
+        "healthz": "/healthz"
+    }

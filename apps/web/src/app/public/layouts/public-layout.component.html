@@ -1,0 +1,23 @@
+<div class="public-shell">
+  <div class="emergency-header">
+    <div class="emergency-bar">
+      <span>🚨 Call <strong>112</strong> for immediate life-threatening emergency</span>
+      <a href="tel:112" class="call-pill">112</a>
+    </div>
+    <header class="app-nav">
+      <a routerLink="/" class="nav-brand">
+        <span class="icon">🛡️</span>
+        <span class="name">Relief Desk</span>
+      </a>
+      <nav class="nav-links">
+        <a routerLink="/report" class="nav-link">Report</a>
+        <a routerLink="/status" class="nav-link">Status</a>
+        <a routerLink="/nearby" class="nav-link">Nearby</a>
+      </nav>
+    </header>
+  </div>
+
+  <main class="content-container">
+    <router-outlet></router-outlet>
+  </main>
+</div>

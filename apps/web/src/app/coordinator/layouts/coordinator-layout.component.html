@@ -1,0 +1,21 @@
+<div class="coordinator-shell">
+  <header class="top-nav">
+    <div class="left-cluster">
+      <a routerLink="/" class="brand-badge">
+        <span class="shield">🛡️</span>
+        <span class="title">Relief Desk Coordinator</span>
+      </a>
+      <span class="scenario-pill">🌊 Flood Scenario (Main Demo)</span>
+    </div>
+
+    <div class="right-cluster">
+      <span class="live-pill">● LIVE MONITOR</span>
+      <span class="demo-user">demo-coordinator&#64;reliefdesk.internal</span>
+      <a routerLink="/coordinator/login" class="nav-btn">Sign Out</a>
+    </div>
+  </header>
+
+  <main class="dashboard-body">
+    <router-outlet></router-outlet>
+  </main>
+</div>

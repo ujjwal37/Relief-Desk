@@ -20,7 +20,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 ## Day 0 / Mon 12 Oct — Foundation + intake
 | ID | Task | Owner | Status | Depends | Acceptance criteria |
 |---|---|---|---|---|---|
-| T-001 | Repo scaffold: ONE Angular+Ionic+Capacitor PWA at `apps/web` (lazy route trees `public/` and `coordinator/`, shared code in `libs/shared`) + `services/api`, .gitignore, .env.example, push public repo | U + C | TODO | – | SETUP.md section 8 sanity checks pass; repo public; CI lint runs |
+| T-001 | Repo scaffold: ONE Angular+Ionic+Capacitor PWA at `apps/web` (lazy route trees `public/` and `coordinator/`, shared code in `libs/shared`) + `services/api`, .gitignore, .env.example, push public repo | U + A | DONE | – | SETUP.md section 8 sanity checks pass; repo public; CI lint runs |
 | T-002 | Agent rules file (AGENTS.md/.cursorrules) pointing to TASKS.md + WORKDONE.md | U | TODO | T-001 | Both tools show they read it; first WORKDONE entry exists |
 | T-003 | GCP + Firebase project, budget alerts (50/80/100%), Maps key restricted, Gemini key in .env | U | TODO | – | Budget alert email test; Maps key blocked from other referrer |
 | T-004 | FastAPI skeleton: `/healthz`, config, pydantic schemas (`ExtractedRequest`, `DedupeDecision`, `Explanation`) | C | TODO | T-001 | `pytest` passes; schema rejects bad enums |

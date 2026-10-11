@@ -1,0 +1,49 @@
+<div class="landing-container">
+  <div class="emergency-alert-banner">
+    <div class="alert-content">
+      <span class="alert-icon">⚠️</span>
+      <span class="alert-text">PROTOTYPE ONLY. Not an emergency service. In an emergency call <strong>112</strong> immediately.</span>
+      <a href="tel:112" class="call-112-btn">Call 112</a>
+    </div>
+  </div>
+
+  <header class="landing-header">
+    <div class="brand">
+      <span class="brand-logo">🛡️</span>
+      <div class="brand-titles">
+        <h1>Relief Desk</h1>
+        <p class="brand-tagline">Multilingual Crisis Reporting & Humanitarian Coordination</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="role-selector">
+    <div class="choice-cards">
+      <a routerLink="/report" class="card choice-card public-choice">
+        <div class="card-icon">🆘</div>
+        <div class="card-body">
+          <h2>I Need Help / Report a Crisis</h2>
+          <p class="desc-en">Fast voice or text reporting. No signup required.</p>
+          <p class="desc-hi">मदद चाहिए या आपदा की सूचना दें। कोई लॉगिन ज़रूरी नहीं।</p>
+        </div>
+        <div class="action-arrow">→</div>
+      </a>
+
+      <a routerLink="/coordinator/login" class="card choice-card coordinator-choice">
+        <div class="card-icon">📋</div>
+        <div class="card-body">
+          <h2>I'm a Coordinator</h2>
+          <p class="desc-en">Triage queue, explainable matching, responder dispatch.</p>
+          <p class="desc-hi">समन्वयक पोर्टल: प्राथमिकीकरण, मिलान और संसाधन आवंटन।</p>
+        </div>
+        <div class="action-arrow">→</div>
+      </a>
+    </div>
+
+    <div class="quick-links">
+      <a routerLink="/status" class="sub-link">Track existing request</a>
+      <span class="dot">•</span>
+      <a routerLink="/nearby" class="sub-link">Area incident map</a>
+    </div>
+  </main>
+</div>

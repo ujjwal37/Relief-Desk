@@ -1,0 +1,44 @@
+<div class="report-view">
+  <div class="toggle-bar">
+    <button class="mode-toggle-btn" (click)="toggleMode()">
+      {{ mode() === 'chat' ? 'Switch to Form View' : 'Switch to Chat View' }}
+    </button>
+  </div>
+
+  <div class="chat-thread" *ngIf="mode() === 'chat'">
+    <div class="assistant-msg">
+      <div class="avatar">🤖</div>
+      <div class="bubble">
+        <p><strong>Relief Desk Intake:</strong> Describe what happened and what help is needed. You can speak in Hindi, Hinglish, or English.</p>
+        <p class="hi-text">आप हिंदी, हिंग्लिश या अंग्रेज़ी में बोलकर या लिखकर मदद मांग सकते हैं।</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-container" *ngIf="mode() === 'form'">
+    <div class="quick-tiles">
+      <button class="tile active">🌊 Flood / पानी</button>
+      <button class="tile">🚑 Medical / चोट</button>
+      <button class="tile">🍲 Food / खाना</button>
+      <button class="tile">🏚️ Shelter / आश्रय</button>
+    </div>
+  </div>
+
+  <div class="action-footer">
+    <div class="input-row">
+      <button class="voice-btn" [class.recording]="isRecording()" (click)="toggleVoice()">
+        {{ isRecording() ? '🔴 Stop' : '🎤 Mic' }}
+      </button>
+      <input 
+        type="text" 
+        placeholder="Type emergency details..." 
+        [ngModel]="userInput()" 
+        (ngModelChange)="userInput.set($event)"
+      />
+      <button class="send-btn">Send</button>
+    </div>
+    <div class="fast-links">
+      <a href="sms:112?body=EMERGENCY%20RELIEF%20REQUEST" class="sms-btn">Send by SMS</a>
+    </div>
+  </div>
+</div>
