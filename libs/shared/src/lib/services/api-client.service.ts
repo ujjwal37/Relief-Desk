@@ -8,6 +8,11 @@ import {
   ChatTurnResponse,
   UrgencyWeights,
   DedupeDecision,
+  ReliefResource,
+  MatchProposal,
+  ApproveMatchRequest,
+  RejectMatchRequest,
+  CapacityDecision,
 } from '../models/request.model';
 
 export interface HealthResponse {
@@ -73,5 +78,27 @@ export class ApiClientService {
 
   getCluster(clusterId: string): Observable<any> {
     return this.http.get<any>(`/api/clusters/${clusterId}`);
+  }
+
+  listResources(): Observable<ReliefResource[]> {
+    return this.http.get<ReliefResource[]>('/api/resources');
+  }
+
+  proposeMatch(requestId: string, resourceId: string): Observable<MatchProposal> {
+    return this.http.post<MatchProposal>('/api/matches', {
+      request_id: requestId,
+      resource_id: resourceId,
+    });
+  }
+
+  approveMatch(matchId: string, payload: ApproveMatchRequest = {}): Observable<CapacityDecision> {
+    return this.http.post<CapacityDecision>(`/api/matches/${matchId}/approve`, {
+      approved_by: payload.approved_by ?? 'coordinator',
+      override: payload.override ?? false,
+    });
+  }
+
+  rejectMatch(matchId: string, payload: RejectMatchRequest): Observable<CapacityDecision> {
+    return this.http.post<CapacityDecision>(`/api/matches/${matchId}/reject`, payload);
   }
 }

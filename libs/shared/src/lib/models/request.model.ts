@@ -116,3 +116,74 @@ export interface UrgencyWeights {
   w_wait_time: number;
   confidence_discount_factor: number;
 }
+
+export type ResourceKind = 'boat' | 'shelter' | 'food' | 'medical';
+export type ResourceStatus = 'available' | 'depleted' | 'overcommitted' | 'offline';
+export type MatchState = 'proposed' | 'approved' | 'rejected';
+
+export interface ReliefResource {
+  id: string;
+  event_id: string;
+  pack_id: string;
+  kind: ResourceKind;
+  name: string;
+  landmark_id?: string | null;
+  ward_id?: string | null;
+  lat: number;
+  lng: number;
+  capacity_total: number;
+  capacity_remaining: number;
+  unit: string;
+  status: ResourceStatus;
+  synthetic: boolean;
+}
+
+export interface MatchBreakdown {
+  dist: number;
+  capacity: number;
+  urgency: number;
+  vuln: number;
+}
+
+export interface MatchProposal {
+  id: string;
+  request_id: string;
+  resource_id: string;
+  score: number;
+  breakdown: MatchBreakdown;
+  explanation: string;
+  state: MatchState;
+  overcommit: boolean;
+  warning?: string | null;
+  approved_by?: string | null;
+  reserved_units: number;
+  distance_km?: number | null;
+}
+
+export interface ApproveMatchRequest {
+  approved_by?: string;
+  override?: boolean;
+}
+
+export interface RejectMatchRequest {
+  rejected_by?: string;
+  reason: string;
+}
+
+export interface CapacityDecision {
+  match_id: string;
+  request_id: string;
+  resource_id: string;
+  resource_name: string;
+  state: MatchState;
+  overcommit: boolean;
+  warning: string | null;
+  requires_override: boolean;
+  people_requested: number;
+  reserved_units: number;
+  capacity_total: number;
+  capacity_remaining: number;
+  audit_action: string;
+  idempotent: boolean;
+  call_112: string;
+}
