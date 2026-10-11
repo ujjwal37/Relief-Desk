@@ -70,6 +70,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   private voiceTimers: ReturnType<typeof setTimeout>[] = [];
   private threadEnd = viewChild<ElementRef<HTMLElement>>('threadEnd');
   private lastCount = 0;
+  private queuedLocally = false;
+
   readonly suggestions = [
     { key: 'landing.chipFlood', text: 'Flood or water rising' },
     { key: 'landing.chipAnimal', text: 'Animal attack or bite' },
@@ -92,6 +94,17 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   ]);
 
   constructor() {
+    effect(() => {
+      const read = this.offlineSync.lastSynced;
+      if (typeof read !== 'function') return;
+      const synced = read();
+      const reportId = synced?.response?.report_id;
+      if (!this.queuedLocally || !reportId) return;
+      this.queuedLocally = false;
+      this.router.navigate(['/status'], {
+        queryParams: { id: reportId, token: synced.response.status_token, new: 1 },
+      });
+    });
     effect(() => {
       const id = this.scenarioState.activeId();
       this.apiClient.getScenario(id).subscribe({
@@ -489,6 +502,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private noteQueued(): void {
+    this.queuedLocally = true;
     this.chatMessages.update((msgs) => [
       ...msgs,
       {

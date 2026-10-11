@@ -686,3 +686,17 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_intake_nlu.py` — 5 passed.
 - Notes / risks / not done: Tamil place names are still not parsed by the ward regex, which looks for the English or Hindi word "ward".
 - Next (suggested task id): RT-03
+
+### 2026-10-12 02:05 IST — RT-03 — Cursor
+- What changed: The home My requests card translates the status key and shows the RD-xxxx code from the status response. The link still uses the internal id and token.
+- Files: home component, home.component.spec.ts, e2e/first-pass.spec.ts, TASKS.md
+- How verified: `npx ng test web --watch=false --browsers=ChromeHeadless --include='**/home.component.spec.ts'` — 1 passed.
+- Notes / risks / not done: If the status call fails, the card has no code to show.
+- Next (suggested task id): RT-04
+
+### 2026-10-12 02:15 IST — RT-04 — Cursor
+- What changed: When a report saved on the phone is accepted after the network returns, the app opens the status page with that id and token, the same confirmation as an online send.
+- Files: report.component.ts, report.component.spec.ts, TASKS.md
+- How verified: `npx ng test web --watch=false --browsers=ChromeHeadless --include='**/report.component.spec.ts'` — 5 passed.
+- Notes / risks / not done: The public RD code appears on the status page after it loads, not on the review card itself.
+- Next (suggested task id): RT-05
