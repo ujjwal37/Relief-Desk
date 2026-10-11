@@ -145,6 +145,8 @@ export interface StoredRequest {
   hazard: HazardType;
   urgency_score: number;
   urgency_reason: string;
+  wait_points?: number | null;
+  wait_minutes?: number | null;
   status: RequestStatus;
   confidence?: {
     type: number;

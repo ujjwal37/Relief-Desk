@@ -274,6 +274,7 @@
     "caseUpdatedHour": "{n} ghante pehle update",
     "noFilterMatch": "In filters se koi case nahi.",
     "clearFilters": "Filters hataein.",
+    "waitChip": "{time} se intezaar, +{n}",
     "teamsEmpty": "In filters se koi team nahi.",
     "updated": "update",
     "updatedMin": "{n} min pehle",

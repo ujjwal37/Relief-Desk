@@ -58,6 +58,8 @@ class StoredRequest(BaseModel):
     hazard: HazardType = HazardType.UNKNOWN
     urgency_score: float = 0.0
     urgency_reason: str = ""
+    wait_points: Optional[float] = None
+    wait_minutes: Optional[int] = None
     status: RequestStatus = RequestStatus.NEW
     confidence: FieldConfidences = Field(default_factory=FieldConfidences)
     report_ids: List[str] = Field(default_factory=list)

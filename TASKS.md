@@ -113,7 +113,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | FP-09 | Teams view | C | DONE | FP-08 | All resources listed; typed map pins |
 | FP-10 | Team location and simulated movement | C | DONE | FP-09 | Manual update; simulated path labelled |
 | FP-11 | Filters in the URL and timestamps | C | DONE | FP-02 | Status, type, area, time persist; empty state |
-| FP-12 | Time-based priority rise | C | TODO | FP-04 | Injected clock raises the score; reason chip |
+| FP-12 | Time-based priority rise | C | DONE | FP-04 | Injected clock raises the score; reason chip |
 | FP-13 | Kerala case study | C | TODO | – | Real districts; synthetic people; no Riverbend/Lucknow in app data |
 | FP-14 | Demo coordinator button on login | C | TODO | – | One click from /coordinator/login in demo mode |
 | FP-15 | Alerts map polish | C | TODO | – | Ward outlines, numbered typed pins, silent zone |

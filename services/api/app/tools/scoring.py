@@ -130,6 +130,8 @@ class ScoringEngine:
             "people": round(p_score * 100, 1),
             "hazard": round(h_score * 100, 1),
             "wait_time": round(w_score * 100, 1),
+            "wait_points": round(w.w_wait_time * w_score * discount * 100.0, 1),
+            "wait_minutes": int(wait_minutes),
             "confidence_factor": round(discount, 3),
             "type_priority": type_bonus,
             "final_score": final_score,

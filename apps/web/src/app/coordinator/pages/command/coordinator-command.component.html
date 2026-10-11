@@ -64,6 +64,7 @@
             <span class="tags">
               @if ((req.merged_count || 1) > 1) { <span class="tag">{{ tr('coord.sameIncident', req.merged_count || 1) }}</span> }
               <span class="tag">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
+              @if (waitChip(req)) { <span class="tag warn">{{ waitChip(req) }}</span> }
               @if (isReview(req)) { <span class="tag warn">{{ 'coord.review' | rdTranslate }}</span> }
               @if (isDispatched(req)) { <span class="tag ok">{{ 'coord.filterDispatched' | rdTranslate }}</span> }
               @if (isCompleted(req)) { <span class="tag ok">{{ 'coord.filterCompleted' | rdTranslate }}</span> }

@@ -274,6 +274,7 @@
     "caseUpdatedHour": "updated {n} h ago",
     "noFilterMatch": "No cases match these filters.",
     "clearFilters": "Clear filters.",
+    "waitChip": "waiting {time}, +{n}",
     "teamsEmpty": "No teams match these filters.",
     "updated": "updated",
     "updatedMin": "{n} min ago",

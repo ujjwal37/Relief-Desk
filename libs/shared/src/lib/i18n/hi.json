@@ -274,6 +274,7 @@
     "caseUpdatedHour": "{n} घंटे पहले अपडेट",
     "noFilterMatch": "इन फ़िल्टर से कोई मामला नहीं।",
     "clearFilters": "फ़िल्टर हटाएँ।",
+    "waitChip": "{time} से प्रतीक्षा, +{n}",
     "teamsEmpty": "इन फ़िल्टर से कोई टीम नहीं।",
     "updated": "अपडेट",
     "updatedMin": "{n} मिनट पहले",

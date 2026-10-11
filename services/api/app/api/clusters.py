@@ -130,13 +130,26 @@ def list_requests(
         storage_service.load_seed_incidents()
         reqs = storage_service.list_requests()
 
-    if updated_since:
-        # Inclusive bound so a row saved on the watermark is not skipped.
-        reqs = [req for req in reqs if (req.updated_at or "") >= updated_since]
+    from app.models.firestore_models import RequestStatus
+    from app.tools.scoring import scoring_engine
+
+    closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED}
+    refreshed = []
+    for req in reqs:
+        before = req.urgency_score
+        if req.status not in closed:
+            result = scoring_engine.compute_urgency(req)
+            req.urgency_score = result.score
+            req.urgency_reason = result.reason
+            req.wait_points = result.breakdown.get("wait_points")
+            req.wait_minutes = int(result.breakdown.get("wait_minutes") or 0)
+        score_changed = req.urgency_score != before
+        if not updated_since or (req.updated_at or "") >= updated_since or score_changed:
+            refreshed.append(req)
 
     if sort == "urgency":
-        reqs = sorted(reqs, key=lambda r: r.urgency_score, reverse=True)
-    return reqs
+        refreshed = sorted(refreshed, key=lambda r: r.urgency_score, reverse=True)
+    return refreshed
 
 
 @router.get("/requests/{id}", response_model=StoredRequest, summary="Get single request detail")

@@ -212,6 +212,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return r.status === 'completed' || r.status === 'resolved' || r.status === 'closed';
   }
   fitPct(p: MatchProposal): number { return Math.round(p.score); }
+  waitChip(r: StoredRequest): string {
+    const pts = Math.round(r.wait_points || 0);
+    if (pts < 1) return '';
+    const mins = r.wait_minutes ?? 0;
+    const time = mins >= 60 ? `${Math.round(mins / 60)} h` : `${mins} min`;
+    return this.langService.translate('coord.waitChip').replace('{time}', time).replace('{n}', String(pts));
+  }
   ageLabel(r: StoredRequest): string { return this.agoPhrase(r.created_at, 'reported'); }
   updatedLabel(r: StoredRequest): string { return this.agoPhrase(r.updated_at, 'updated'); }
   fullStamp(iso?: string | null): string {

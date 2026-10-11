@@ -595,3 +595,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: command and alerts specs 14 passed. check-i18n 434 keys.
 - Notes / risks / not done: Area is the ward id until the Kerala pack adds districts. Time "last hour" hides the seeded cases because they are older than an hour.
 - Next (suggested task id): FP-12
+
+### 2026-10-11 21:50 IST — FP-12 — Cursor
+- What changed: Listing cases recomputes urgency with the current clock, including the wait term, and returns the row when the score changed even if nothing else was edited. Two hours of waiting adds at least 12 points. The case card shows a chip "waiting 2 h, +N". Completed cases are left as they were.
+- Files: services/api/app/tools/scoring.py, services/api/app/api/clusters.py, services/api/app/models/firestore_models.py, services/api/tests/test_wait_priority.py, coordinator command card, i18n, TASKS.md
+- How verified: pytest tests/test_wait_priority.py tests/test_live_queue.py 2 passed. check-i18n 435 keys.
+- Notes / risks / not done: The chip appears once wait points reach 1, which is after a few minutes, not only after 30 minutes.
+- Next (suggested task id): FP-13
