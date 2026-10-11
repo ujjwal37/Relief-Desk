@@ -812,3 +812,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_hoax_intake.py tests/test_trust_ratelimit.py tests/test_scoring.py` — 8 passed.
 - Notes / risks / not done: The case still appears in the review filter because any flag marks it for a person to look at. It is not deleted.
 - Next (suggested task id): RT-19
+
+### 2026-10-12 05:05 IST — RT-19 — Cursor
+- What changed: All 40 Tamil seed lines are Tamil sentences. INC-005 now says the wall collapsed near the Aluva clock tower and six people are on the terrace, instead of pasting the English clause. Other lines that had pasted English (the masjid rations, the gurudwara supplies, St. Jude, the convent) were rewritten the same way. Hindi and Hinglish were left as they were. The place check accepts the Tamil name for each landmark the English line names.
+- Files: data/synthetic/flood_v1/seeds.yaml, services/api/tests/test_seed_translations.py, TASKS.md
+- How verified: `pytest tests/test_seed_translations.py tests/test_no_mojibake.py` — 6 passed.
+- Notes / risks / not done: Tamil place names are transliterations, not a second gazetteer. A Tamil alias must appear as written; a case ending that changes the last letter will fail the place check.
+- Next (suggested task id): RT-20
