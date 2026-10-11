@@ -1,0 +1,40 @@
+<section class="teams">
+  <header class="head">
+    <h1>{{ 'coord.teams' | rdTranslate }}</h1>
+    <p>{{ 'coord.teamsLead' | rdTranslate }}</p>
+  </header>
+
+  <div class="filters" role="group" [attr.aria-label]="'coord.teams' | rdTranslate">
+    <button type="button" [class.on]="typeFilter() === 'all'" (click)="typeFilter.set('all')">{{ 'coord.allTypes' | rdTranslate }}</button>
+    @for (k of ['boat', 'medical', 'food', 'shelter']; track k) {
+      <button type="button" [class.on]="typeFilter() === k" (click)="typeFilter.set(k)">{{ kindLabel(k) }}</button>
+    }
+    <span class="gap"></span>
+    <button type="button" [class.on]="statusFilter() === 'all'" (click)="statusFilter.set('all')">{{ 'coord.allStatuses' | rdTranslate }}</button>
+    @for (s of ['available', 'dispatched', 'en_route', 'on_scene', 'returning', 'depleted']; track s) {
+      <button type="button" [class.on]="statusFilter() === s" (click)="statusFilter.set(s)">{{ ('coord.resStatus.' + s) | rdTranslate }}</button>
+    }
+  </div>
+
+  <ul class="list">
+    @for (team of filtered(); track team.id) {
+      <li class="card">
+        <span class="swatch" [style.background]="fill(team.kind)" aria-hidden="true"></span>
+        <div class="body">
+          <h2>{{ team.name }}</h2>
+          <p class="meta">{{ kindLabel(team.kind) }} · {{ team.capacity_remaining }}/{{ team.capacity_total }} {{ 'coord.seats' | rdTranslate }}</p>
+          <p class="can">{{ canDo(team) }}</p>
+          <p class="where">{{ area(team) }} · {{ 'coord.updated' | rdTranslate }} {{ ageLabel(team) }}
+            @if (stale(team)) { <strong class="stale">{{ 'coord.staleTeam' | rdTranslate }}</strong> }
+          </p>
+          @if (team.assigned_request_id) {
+            <p class="assigned">{{ 'coord.assigned' | rdTranslate }} {{ team.assigned_request_id }}</p>
+          }
+        </div>
+        <span class="status" [class.free]="statusKey(team) === 'available'">{{ statusLabel(team) }}</span>
+      </li>
+    } @empty {
+      <li class="empty">{{ 'coord.teamsEmpty' | rdTranslate }}</li>
+    }
+  </ul>
+</section>

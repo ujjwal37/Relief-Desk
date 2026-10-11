@@ -166,7 +166,9 @@ def test_approve_match_capacity_transaction():
     updated_req = storage_service.get_request("req_match_tx")
     assert updated_req.status == RequestStatus.DISPATCHED
     assert updated_req.assigned_resource_id == "RES-BOAT-02"
-    assert updated_boat.status in (ResourceStatus.BUSY, ResourceStatus.DEPLETED)
+    assert updated_boat.status in (ResourceStatus.DISPATCHED, ResourceStatus.DEPLETED)
+    assert updated_boat.assigned_request_id == "req_match_tx"
+    assert updated_boat.location_updated_at
 
     arrived = storage_service.mark_arrived("req_match_tx", actor="coordinator_lead")
     assert arrived.status == RequestStatus.IN_PROGRESS
@@ -176,5 +178,6 @@ def test_approve_match_capacity_transaction():
     restored = storage_service.get_resource("RES-BOAT-02")
     assert restored.capacity_remaining == initial_cap
     assert restored.status == ResourceStatus.AVAILABLE
+    assert restored.assigned_request_id is None
     trail = storage_service.get_audit_trail("req_match_tx")
     assert any(entry.action == "status_change" and entry.actor == "coordinator_lead" for entry in trail)

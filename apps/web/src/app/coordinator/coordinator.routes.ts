@@ -22,6 +22,10 @@ export const COORDINATOR_ROUTES: Routes = [
         loadComponent: () => import('./pages/command/coordinator-command.component').then(m => m.CoordinatorCommandComponent),
       },
       {
+        path: 'teams',
+        loadComponent: () => import('./pages/teams/coordinator-teams.component').then(m => m.CoordinatorTeamsComponent),
+      },
+      {
         path: 'alerts',
         loadComponent: () => import('./pages/alerts/coordinator-alerts.component').then(m => m.CoordinatorAlertsComponent),
       },

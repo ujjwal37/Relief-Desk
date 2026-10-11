@@ -109,6 +109,10 @@ class ResourceKind(str, Enum):
 class ResourceStatus(str, Enum):
     AVAILABLE = "available"
     BUSY = "busy"
+    DISPATCHED = "dispatched"
+    EN_ROUTE = "en_route"
+    ON_SCENE = "on_scene"
+    RETURNING = "returning"
     DEPLETED = "depleted"
 
 
@@ -125,6 +129,9 @@ class StoredResource(BaseModel):
     capacity_total: int
     capacity_remaining: int
     status: ResourceStatus = ResourceStatus.AVAILABLE
+    location_updated_at: Optional[str] = None
+    assigned_request_id: Optional[str] = None
+    area_name: Optional[str] = None
     synthetic: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

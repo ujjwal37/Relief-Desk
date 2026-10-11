@@ -70,7 +70,7 @@
             <path d="M70 300 C 130 220 230 240 290 280 S 400 180 470 160 L 540 190 C 510 310 430 410 320 450 S 140 470 80 420 Z" fill="var(--map-flood)" stroke="var(--map-flood-line)" stroke-width="1.5" stroke-dasharray="6 5"/>
             @for (p of svgPins(); track p.id) {
               @if (p.kind === 'team') {
-                <g [attr.transform]="'translate(' + (p.x - 11) + ',' + (p.y - 11) + ')'"><rect width="22" height="22" rx="7" fill="var(--sev-med)"/><path d="M5 14l2 3h8l2-3zM11 5v7" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>
+                <g [attr.transform]="'translate(' + (p.x - 11) + ',' + (p.y - 11) + ')'"><rect width="22" height="22" rx="7" [attr.fill]="teamFill(p.team)"/><path d="M5 14l2 3h8l2-3zM11 5v7" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>
               }
             }
             @if (selectedPin(); as sp) {
@@ -91,7 +91,10 @@
           <span><i class="d crit"></i>{{ 'coord.band.critical' | rdTranslate }}</span>
           <span><i class="d high"></i>{{ 'coord.band.high' | rdTranslate }}</span>
           <span><i class="d med"></i>{{ 'coord.band.medium' | rdTranslate }}</span>
-          <span><i class="sq"></i>{{ 'coord.tileTeams' | rdTranslate }}</span>
+          <span><i class="sq boat"></i>{{ 'coord.kind.boat' | rdTranslate }}</span>
+          <span><i class="sq med"></i>{{ 'coord.kind.medical' | rdTranslate }}</span>
+          <span><i class="sq food"></i>{{ 'coord.kind.food' | rdTranslate }}</span>
+          <span><i class="sq shelter"></i>{{ 'coord.kind.shelter' | rdTranslate }}</span>
         </div>
       </div>
     </section>

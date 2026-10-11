@@ -178,7 +178,10 @@ export interface StoredResource {
   lng: number;
   capacity_total: number;
   capacity_remaining: number;
-  status: 'available' | 'busy' | 'depleted';
+  status: 'available' | 'busy' | 'dispatched' | 'en_route' | 'on_scene' | 'returning' | 'depleted';
+  location_updated_at?: string | null;
+  assigned_request_id?: string | null;
+  area_name?: string | null;
 }
 
 export interface MatchBreakdown {

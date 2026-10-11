@@ -574,3 +574,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: pytest tests/test_resources_matching.py tests/test_matches_api.py tests/test_public_api.py 14 passed. Coordinator spec 12 passed. check-i18n 389 keys.
 - Notes / risks / not done: There is no separate public link for a team to confirm. The coordinator marks arrived and completed on their behalf.
 - Next (suggested task id): FP-09
+
+### 2026-10-11 21:35 IST — FP-09 — Cursor
+- What changed: A Teams tab lists every resource with type, seats left, status, area, updated time, a stale warning after 20 minutes, a can-do line, and the assigned case. Filters cover type and status. Dashboard map pins use one colour per team type, matching the legend. Approve marks the team dispatched and stores the case id.
+- Files: coordinator teams page, command map, layout nav, routes, resource model, storage, i18n, TASKS.md
+- How verified: pytest tests/test_resources_matching.py 4 passed. Teams spec and command spec 13 passed. check-i18n 414 keys.
+- Notes / risks / not done: Manual location edit and the simulated move after approve are FP-10. Area names are still the current ward labels until the Kerala pack.
+- Next (suggested task id): FP-10

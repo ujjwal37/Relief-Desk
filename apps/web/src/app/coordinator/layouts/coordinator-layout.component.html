@@ -8,6 +8,7 @@
 
       <nav class="tabs" [attr.aria-label]="'ui.coordNav' | rdTranslate">
         <a routerLink="/coordinator/command" routerLinkActive="on">{{ 'coord.cases' | rdTranslate }}</a>
+        <a routerLink="/coordinator/teams" routerLinkActive="on">{{ 'coord.teams' | rdTranslate }}</a>
         <a routerLink="/coordinator/alerts" routerLinkActive="on">{{ 'coord.alerts' | rdTranslate }}
           @if (ui.alerts().length) { <span class="count" aria-label="{{ ui.alerts().length }}">{{ ui.alerts().length }}</span> }
         </a>

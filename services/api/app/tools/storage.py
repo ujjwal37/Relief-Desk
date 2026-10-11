@@ -317,7 +317,7 @@ class StorageService:
         if res.capacity_remaining == 0:
             res.status = ResourceStatus.DEPLETED
         else:
-            res.status = ResourceStatus.BUSY
+            res.status = ResourceStatus.DISPATCHED
 
         res.updated_at = datetime.now(timezone.utc).isoformat()
         self._resources[resource_id] = res
@@ -391,6 +391,9 @@ class StorageService:
                 capacity_total=int(item["capacity_total"]),
                 capacity_remaining=int(item.get("capacity_remaining", item["capacity_total"])),
                 status=ResourceStatus(item.get("status", "available")),
+                location_updated_at=item.get("location_updated_at") or datetime.now(timezone.utc).isoformat(),
+                assigned_request_id=item.get("assigned_request_id"),
+                area_name=item.get("area_name"),
                 synthetic=bool(item.get("synthetic", True)),
             )
             self._resources[res.id] = res
@@ -439,6 +442,12 @@ class StorageService:
             allow_overcommit=allow_overcommit,
             actor=approved_by,
         )
+        assigned = self._resources.get(match.resource_id)
+        if assigned and req:
+            assigned.assigned_request_id = req.id
+            if not assigned.location_updated_at:
+                assigned.location_updated_at = assigned.updated_at
+            self._resources[assigned.id] = assigned
 
         before = match.model_dump()
         match.state = MatchState.APPROVED
@@ -514,9 +523,13 @@ class StorageService:
             )
             res = self._resources[resource_id]
             if still_out and res.capacity_remaining > 0:
-                res.status = ResourceStatus.BUSY
+                res.status = ResourceStatus.DISPATCHED
             elif res.capacity_remaining <= 0:
                 res.status = ResourceStatus.DEPLETED
+            else:
+                res.assigned_request_id = None
+            if not still_out:
+                res.assigned_request_id = None
             self._resources[resource_id] = res
         return req
 

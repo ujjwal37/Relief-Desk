@@ -166,19 +166,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const reqs = this.requests().filter((r) => r.lat != null && r.lng != null);
     const res = this.resources();
     const pts = [...reqs.map((r) => ({ lat: r.lat as number, lng: r.lng as number })), ...res.map((r) => ({ lat: r.lat, lng: r.lng }))];
-    if (!pts.length) return [] as { id: string; x: number; y: number; band: string; kind: 'req' | 'team'; n: number }[];
+    if (!pts.length) return [] as { id: string; x: number; y: number; band: string; kind: 'req' | 'team'; team: string; n: number }[];
     const minLa = Math.min(...pts.map((p) => p.lat)), maxLa = Math.max(...pts.map((p) => p.lat));
     const minLo = Math.min(...pts.map((p) => p.lng)), maxLo = Math.max(...pts.map((p) => p.lng));
     const fx = (lng: number) => 50 + ((lng - minLo) / Math.max(1e-6, maxLo - minLo)) * 500;
     const fy = (lat: number) => 40 + (1 - (lat - minLa) / Math.max(1e-6, maxLa - minLa)) * 400;
     const top = this.filteredRequests().filter((r) => r.lat != null && r.lng != null).slice(0, 14);
     return [
-      ...res.slice(0, 8).map((r) => ({ id: r.id, x: fx(r.lng), y: fy(r.lat), band: 'team', kind: 'team' as const, n: 0 })),
-      ...top.map((r, i) => ({ id: r.id, x: fx(r.lng as number), y: fy(r.lat as number), band: urgencyBand(r.urgency_score), kind: 'req' as const, n: i + 1 })),
+      ...res.map((r) => ({ id: r.id, x: fx(r.lng), y: fy(r.lat), band: 'team', kind: 'team' as const, team: r.kind, n: 0 })),
+      ...top.map((r, i) => ({ id: r.id, x: fx(r.lng as number), y: fy(r.lat as number), band: urgencyBand(r.urgency_score), kind: 'req' as const, team: '', n: i + 1 })),
     ];
   });
   readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
 
+  teamFill(kind: string): string {
+    return ({ boat: '#0b6e99', medical: '#b42318', food: '#b54708', shelter: '#067647' } as Record<string, string>)[kind] || '#0b6e99';
+  }
   bandOf(score: number): 'critical' | 'high' | 'medium' | 'low' { return urgencyBand(score); }
   isReview(r: StoredRequest): boolean { return needsReview(r); }
   isDispatched(r: StoredRequest): boolean {
@@ -422,7 +425,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         const updatedResources = this.resources().map((res) => {
           if (res.id !== prop.resource_id) return res;
           const left = Math.max(0, res.capacity_remaining - people);
-          return { ...res, capacity_remaining: left, status: (left > 0 ? 'busy' : 'depleted') as StoredResource['status'] };
+          return { ...res, capacity_remaining: left, status: (left > 0 ? 'dispatched' : 'depleted') as StoredResource['status'], assigned_request_id: prop.request_id };
         });
         this.resources.set(updatedResources);
 
