@@ -49,3 +49,12 @@
 - Notes / risks / not done: monorepo scaffold complete. Capacitor/Ionic CLI wrappers can be added when packaging for native mobile.
 - Next (suggested task id): T-004 (FastAPI skeleton schemas by C) and T-006 (Shared lib expansion by C).
 
+### 2026-10-11 14:13 IST — T-002 — Antigravity
+- What changed: created .cursorrules and updated AGENTS.md establishing uniform agent guidelines for Antigravity and Cursor: mandatory read order, task ownership and lifecycle conventions, append-only WORKDONE.md requirements, commit rules, and architectural constraints. Concurrently launched background servers for backend and frontend.
+- Files: AGENTS.md, .cursorrules, TASKS.md
+- How verified (commands / screenshots):
+  - Verified FastAPI backend server: `Invoke-RestMethod http://127.0.0.1:8000/healthz` -> returned `{"status": "ok", "app": "Relief Desk API", "version": "0.1.0", "gemini_enabled": true, "demo_mode": false}`.
+  - Verified Angular frontend dev server: `ng serve web` compiled application and listening at `http://localhost:4200/`.
+- Notes / risks / not done: agent rules established; servers running in background.
+- Next (suggested task id): T-004 (FastAPI schemas) or T-003 (GCP/Firebase project setup by U).
+

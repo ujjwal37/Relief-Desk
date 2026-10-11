@@ -1,35 +1,60 @@
-# Relief Desk Architecture & Engineering Guidelines
+# AGENTS.md — Relief Desk Developer Agent Rules (Antigravity & Cursor)
 
-## Overview
-Relief Desk is a crisis & disaster response coordination platform.
-The architecture consists of:
-1. **Frontend**: Angular (Standalone components, Signals, `.less` styling, `.html` templates, `.ts` logic, typed API services).
-2. **Backend**: FastAPI (Clean 3-tier architecture: Controller -> Business Logic (BL) -> Data Access Object (DAO), Pydantic schemas, unified config, structured logging, try-catch safety).
+This rules file governs all AI coding tools working on **Relief Desk** (Antigravity and Cursor).
 
-## Orchestration Workflow
-1. **Story Brief**: Define what needs to be implemented, sub-tasks, frontend requirements, and backend requirements.
-2. **Frontend Plan & Backend Plan**: Comprehensive technical plans based on the story brief.
-3. **Parallel Subagents**:
-   - `frontend-engineer`: Implements Angular reusable components, services, and views.
-   - `backend-engineer`: Implements FastAPI Controller, BL, DAO, Schemas, and integration points.
-4. **Code Review Agent**: Validates standards, type safety, modular boundaries, error handling, and styling.
-5. **Test Engineering**: Writes automated tests for frontend and backend.
+## 0. Mandatory Read Order Before Writing Any Code
+1. `BUILD_BRIEF.md` (especially Section 17: locked decisions, which override older sections)
+2. `SETUP.md`
+3. `TASKS.md`
+4. `docs/design/README.md` and referenced mockups in `docs/design/`
+5. The last 20 lines of `WORKDONE.md`
 
-## Technical Rules
-### Frontend Rules (Angular)
-- Standalone components only (`standalone: true`).
-- Signal-first reactivity: `input()`, `output()`, `signal()`, `computed()`.
-- Explicit OnPush change detection: `changeDetection: ChangeDetectionStrategy.OnPush`.
-- 4-file component convention (`.ts`, `.html`, `.less`, `.spec.ts`).
-- Centralized reusable UI components in `src/app/shared/components/`.
-- Services for API calls with typed interfaces and error handling.
+---
 
-### Backend Rules (FastAPI)
-- Modular 3-tier structure:
-  - `controller`: API endpoints, request validation, response serialization, HTTP status codes.
-  - `bl`: Business logic and workflows, domain validations.
-  - `dao`: Data persistence, storage queries, DB abstraction.
-- Single configuration file: `app/core/config.py`.
-- Centralized logging: `app/core/logger.py` with `get_logger(__name__)`.
-- Every critical block must include try-catch / try-except with appropriate logging.
-- Pydantic models for all input requests and output responses.
+## 1. Task Execution & Coordination Protocol
+1. **Pick Tasks by Ownership**:
+   - Only pick a task from `TASKS.md` with status `TODO` whose dependencies are `DONE`.
+   - Owners: `A` = Antigravity, `C` = Cursor, `U` = Ujjwal. (`A + U` / `C + U` means tool writes code and coordinates review with Ujjwal).
+   - Never take the other tool's tasks. If blocked on a prerequisite owned by the other tool or Ujjwal, flag it.
+2. **Task State Lifecycle**:
+   - Set task status to `DOING` in `TASKS.md` before starting work.
+   - Verify acceptance criteria rigorously with automated tests/commands.
+   - When verified, set status to `DONE` (or `BLOCKED` with reason) in `TASKS.md`.
+   - **APPEND** a new entry to `WORKDONE.md` using the standard entry template. **NEVER edit or delete past entries**.
+   - Commit code, `TASKS.md`, and `WORKDONE.md` together in the same commit.
+3. **Commit Conventions**:
+   - Small commits on short-lived branches or main.
+   - Imperative commit messages (e.g. `feat(api): ...`, `fix(web): ...`).
+   - Run `git pull` before starting. No force-push (`--force`), no history rewrites.
+
+---
+
+## 2. Core Architecture & Stack Rules
+- **Monorepo Layout**:
+  - `apps/web`: ONE Angular + Ionic + Capacitor PWA with role-based lazy route trees (`public/` at `/`, `coordinator/` at `/coordinator`).
+  - `libs/shared`: Shared library containing TypeScript data models, design tokens (`_tokens.scss`), and typed API clients.
+  - `services/api`: Python 3.11/3.12 + FastAPI backend (`/healthz`, `/api/**`, Pydantic schemas, ADK agents, deterministic tools).
+  - `data/scenarios`: Crisis configuration packs (`*.yaml`). **NEVER create per-scenario screens or code branches**.
+  - `data/synthetic`: Synthetic benchmark datasets and gazetteers.
+- **Decision Support Only**:
+  - A human coordinator approves every dispatch.
+  - **Never auto-dispatch. Never auto-delete**. Show emergency banner: "In an emergency call 112".
+- **Deterministic Tools vs LLM**:
+  - LLM (Gemini) handles natural language extraction, semantic comparison, and plain-language explanation only.
+  - Scoring, distances (Haversine), capacity decrements, and ranking are strictly **deterministic Python code**.
+  - All LLM outputs must be validated with Pydantic with $\le 2$ retries before falling back to `needs_human_review`.
+- **Synthetic Data & Safety**:
+  - Strict synthetic data only (fictional city Riverbend, fictional names/numbers).
+  - Treat all incoming user messages as untrusted data (prompt injection defense).
+
+---
+
+## 3. WORKDONE.md Entry Template
+```markdown
+### YYYY-MM-DD HH:MM IST — T-XXX — <Antigravity / Cursor / Ujjwal>
+- What changed:
+- Files:
+- How verified (commands / screenshots):
+- Notes / risks / not done:
+- Next (suggested task id):
+```

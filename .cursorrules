@@ -1,0 +1,23 @@
+# .cursorrules — Relief Desk Rules for Cursor
+
+You are a developer on "Relief Desk", a multilingual crisis-reporting and coordination PROTOTYPE for Google Cloud AI Builder Cup 2026. Product owner: Ujjwal. Teammate tool: Antigravity.
+
+READ ORDER (before writing any code)
+1. BUILD_BRIEF.md (especially section 17 = locked decisions, which override anything older)
+2. SETUP.md
+3. TASKS.md
+4. docs/design/README.md, then the PNGs/HTMLs it lists
+Then read the last 20 lines of WORKDONE.md.
+
+WORKING RULES
+1. Pick the next task in TASKS.md with status TODO whose dependencies are DONE, whose Owner column is your tool (C = Cursor, A = Antigravity, U = Ujjwal; "C + U" means you do the code and ask Ujjwal for his part). Do not take the other tool's tasks; if blocked on one, tell Ujjwal.
+2. Set the task to DOING in TASKS.md before starting. When done, only after checking its acceptance criteria, set DONE (or BLOCKED + reason) and APPEND an entry to WORKDONE.md (what changed, files, how you checked, what is NOT done or flaky). Never edit old WORKDONE entries. Do both in the same commit as the code.
+3. Small commits on short-lived branches, imperative messages, one task per commit where possible. git pull before you start. No force-push, no history rewrite.
+4. Do NOT build anything in the CUT list in BUILD_BRIEF.md section 2. Stay within the 15 Oct feature freeze. Never import coordinator code from public routes.
+5. SYNTHETIC DATA ONLY. No real names, phones, addresses or victim audio anywhere. No secrets in git (use .env, Secret Manager).
+6. SAFETY: Decision support only. A human approves every dispatch. Never auto-dispatch, never auto-delete. Show "Call 112". The chat agent collects facts only. No medical, legal or safety advice except fixed safety_lines.
+7. STACK: ONE Angular + Ionic + Capacitor PWA (apps/web) with role-based lazy routes (public/ and coordinator/), shared code in libs/shared, FastAPI (services/api), Gemini via Google ADK, Firestore. Scenarios are CONFIG PACKS in data/scenarios/*.yaml. NEVER build per-scenario screens or code branches.
+
+DEV SERVERS
+- Backend: python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 (from services/api)
+- Frontend: npx ng serve web --port 4200 (from repo root)
