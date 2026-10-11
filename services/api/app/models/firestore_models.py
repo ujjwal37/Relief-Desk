@@ -60,6 +60,10 @@ class StoredRequest(BaseModel):
     report_ids: List[str] = Field(default_factory=list)
     cluster_id: Optional[str] = None
     flags: List[str] = Field(default_factory=list)
+    raw_text: Optional[str] = None
+    ai_translation: Optional[str] = None
+    merged_count: int = 1
+    update_count: int = 0
     version: int = 1
     synthetic: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

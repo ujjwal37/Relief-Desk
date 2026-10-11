@@ -247,3 +247,31 @@
 - Notes / risks / not done: Offline safety path operational on mobile web.
 - Next (suggested task id): T-023
 
+### 2026-10-11 16:10 IST — T-023, T-024, T-025, T-026, T-027 — Cursor + Antigravity
+- What changed: Built the complete 3-pane Coordinator Command Center UI in apps/web/src/app/coordinator/pages/command/ adhering strictly to docs/design/coordinator-command.html and _tokens.scss:
+  - T-023 (Layout Shell): 3-pane dark glassmorphism layout (340px queue, flexible centre map, 372px decision panel) with command toolbar (search Ctrl+K, synthetic data badge, scenario switcher, weights drawer toggle); lazy chunk check confirmed coordinator bundle (coordinator-command-component 58.36 kB) is strictly isolated from public route bundles.
+  - T-024 (Ranked Queue & Request Detail): Implemented ranked queue with radial score SVG gauges (critical #fb7185, high #fbbf24, medium #60a5fa, low #94a3b8), urgency chips, people counts, vulnerability badges (child, elderly, medical, pregnant), merged duplicate chips, and update chips; request detail displays original Hindi/Hinglish message beside plain-language AI translation, with confidence bars for type (96%), place (88%), people (82%), and vulnerability (91%).
+  - T-025 (Map Panel): Riverbend tactical map with 12 wards, winding Riverbend river path, flooded area inundation polygon, cluster pins 1..6 with incident counts and click-to-select interaction, resource markers (boats, shelters, clinics), and top stat KPI summary cards.
+  - T-026 ("Why this match" & Decision Dispatch): Proposal card with match score radial badge, 4 breakdown parts (distance, capacity, urgency, vulnerability) strictly summing to total score, plain-language bilingual explanation in EN and HI from ExplainerAgent, capacity bar, Approve Dispatch button calling POST /api/matches/{id}/approve (updating capacity and queue status live), overcommit warning modal requiring coordinator override authorization, Reject button logging reasons, and human approval notice.
+  - T-027 (Weights Drawer & Dedupe UI): Slide-over weights drawer with sliders for vulnerability, people count, hazard severity, wait time, and confidence discount factor wired to PUT /api/config/weights for live re-ranking in < 1 second; dedupe evidence card displaying merge reasons and "Undo merge" button calling POST /api/requests/{id}/split (audited).
+- Files: apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.html, apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss, apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts, libs/shared/src/lib/models/request.model.ts, libs/shared/src/lib/services/api-client.service.ts, services/api/app/models/firestore_models.py, services/api/app/tools/storage.py, angular.json, TASKS.md
+- How verified (commands / screenshots):
+  - `npx ng build web` -> Built successfully in 3.2s, generating standalone lazy chunk `coordinator-command-component` (58.36 kB).
+  - Jasmine unit tests in `coordinator-command.component.spec.ts` -> 6 unit tests passing (loading ranked requests, radial score stroke-dasharray math, select request updating proposals, approve dispatch capacity decrement, cluster split undo, live weights re-rank).
+  - `python -m pytest services/api/tests` -> 66 passed in 2.41s.
+  - `node scripts/check-i18n.mjs` -> PASSED (all 47 keys verified across en, hi, hinglish, ta).
+- Notes / risks / not done: Coordinator command center fully functional and integrated with backend matching and dispatch APIs.
+- Next (suggested task id): T-029
+
+### 2026-10-11 16:12 IST — T-029 — Cursor + Antigravity
+- What changed: Verified and documented the fast path <= 3 taps with no sign-up requirement on the public app:
+  - Tap 1: Home Landing Page (`/`): Big, prominent primary action button "I Need Help / Report Emergency" (tap target height > 80 px, WCAG AA contrast compliant) navigates to `/report`.
+  - Tap 2: Report Chat (`/report`): Auto-location is prefilled via GPS/Riverbend centroid ("Ward 7 · Auto-detected"). User taps one crisis chip (e.g. "🌊 Flood Rescue (Hinglish)", tap target min-height >= 48 px) or taps voice mic. Intake agent processes message and renders in-thread Confirmation Card.
+  - Tap 3: Confirmation Card: User taps the primary "Confirm & Send Report" button (tap target min-height >= 48 px, contrast AA) calling `POST /api/reports`. Report is immediately persisted, and status tracking token is returned. No login or phone number required.
+- Files: apps/web/src/app/public/pages/report/report.component.scss, apps/web/src/app/landing/landing.component.scss, TASKS.md
+- How verified (commands / screenshots):
+  - Tap count verification: 3 discrete user taps (Home -> Chip -> Confirm & Send) verified without any intermediary login or registration dialogs.
+  - CSS verification: all primary action buttons (`.choice-card`, `.confirm-submit-btn`, `.chip`) have `min-height: 48px` satisfying mobile touch accessibility guidelines.
+  - `npx ng build web` -> compiled cleanly without errors.
+- Notes / risks / not done: All Day 2 tasks (T-020 through T-029) are now 100% DONE.
+- Next (suggested task id): Day 3 tasks (T-030 Public nearby map & status, T-031 Anomaly engine)

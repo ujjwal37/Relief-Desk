@@ -231,14 +231,18 @@
 
         .confirm-submit-btn {
           width: 100%;
+          min-height: 48px;
           background: #14b8a6;
           color: #0b192c;
           border: none;
-          padding: 10px;
+          padding: 12px;
           border-radius: 8px;
           font-weight: 700;
-          font-size: 0.95rem;
+          font-size: 1rem;
           cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           transition: background 0.15s ease-in-out;
 
           &:hover {
@@ -265,11 +269,14 @@
         background: rgba(30, 41, 59, 0.7);
         border: 1px solid rgba(255, 255, 255, 0.12);
         color: #cbd5e1;
-        padding: 8px 12px;
+        padding: 12px 14px;
+        min-height: 48px;
         border-radius: 8px;
         text-align: left;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         cursor: pointer;
+        display: flex;
+        align-items: center;
         transition: all 0.15s ease-in-out;
 
         &:hover {

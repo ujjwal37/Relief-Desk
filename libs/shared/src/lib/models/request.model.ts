@@ -116,3 +116,84 @@ export interface UrgencyWeights {
   w_wait_time: number;
   confidence_discount_factor: number;
 }
+
+export interface StoredRequest {
+  id: string;
+  event_id?: string;
+  pack_id?: string;
+  type: IncidentType;
+  place_text: string | null;
+  ward_id: string | null;
+  lat: number | null;
+  lng: number | null;
+  people_count: number | null;
+  vulnerable: VulnerableFlags;
+  hazard: HazardType;
+  urgency_score: number;
+  urgency_reason: string;
+  status: RequestStatus;
+  confidence?: {
+    type: number;
+    place: number;
+    people: number;
+    vulnerable: number;
+    urgency: number;
+  };
+  report_ids?: string[];
+  cluster_id?: string | null;
+  flags?: string[];
+  raw_text?: string | null;
+  ai_translation?: string | null;
+  merged_count?: number;
+  update_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface StoredResource {
+  id: string;
+  kind: 'boat' | 'shelter' | 'food' | 'medical';
+  name: string;
+  name_hi?: string;
+  ward_id: string;
+  lat: number;
+  lng: number;
+  capacity_total: number;
+  capacity_remaining: number;
+  status: 'available' | 'busy' | 'depleted';
+}
+
+export interface MatchBreakdown {
+  distance_km: number;
+  distance_score: number;
+  capacity_fit_score: number;
+  urgency_score: number;
+  vulnerability_fit_score: number;
+  total_score: number;
+}
+
+export interface MatchProposal {
+  match_id: string;
+  request_id: string;
+  resource_id: string;
+  resource_name: string;
+  resource_kind: string;
+  resource_ward: string;
+  capacity_total: number;
+  capacity_remaining: number;
+  score: number;
+  breakdown: MatchBreakdown;
+  explanation?: string;
+  explanation_hi?: string;
+  state: 'proposed' | 'approved' | 'rejected';
+  overcommit_warning: boolean;
+}
+
+export interface StoredCluster {
+  id: string;
+  request_ids: string[];
+  evidence: string[];
+  merged_by: string;
+  undone: boolean;
+  created_at?: string;
+}

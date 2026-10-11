@@ -433,12 +433,105 @@ class StorageService:
         )
         return match
 
+    def load_seed_incidents(self, yaml_path: Optional[str] = None) -> int:
+        """Loads seeded flood incidents into storage requests."""
+        import os
+        import yaml
+        from app.models.schemas import IncidentType, HazardType, VulnerableFlags
+        from app.tools.scoring import scoring_engine
+
+        if yaml_path is None:
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
+            yaml_path = os.path.join(base_dir, "data", "synthetic", "flood_v1", "seeds.yaml")
+
+        if not os.path.exists(yaml_path):
+            return 0
+
+        with open(yaml_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+
+        count = 0
+        for item in data.get("incidents", []):
+            try:
+                vuln_data = item.get("vulnerable", {})
+                vuln = VulnerableFlags(
+                    child=bool(vuln_data.get("child")),
+                    elderly=bool(vuln_data.get("elderly")),
+                    disabled=bool(vuln_data.get("disabled")),
+                    pregnant=bool(vuln_data.get("pregnant")),
+                    medical_need=bool(vuln_data.get("medical_need")),
+                )
+
+                sample_reports = item.get("sample_reports", [])
+                raw_text = None
+                ai_translation = None
+                for sr in sample_reports:
+                    if sr.get("lang") in ("hi", "hinglish"):
+                        raw_text = sr.get("text")
+                    elif sr.get("lang") == "en":
+                        ai_translation = sr.get("text")
+                if not raw_text and sample_reports:
+                    raw_text = sample_reports[0].get("text")
+                if not ai_translation:
+                    ai_translation = item.get("description", "")
+
+                req = StoredRequest(
+                    id=item["id"],
+                    type=IncidentType(item.get("type", "rescue")),
+                    place_text=item.get("description", ""),
+                    ward_id=item.get("ward_id"),
+                    lat=float(item.get("lat", 26.85)),
+                    lng=float(item.get("lng", 80.94)),
+                    people_count=int(item.get("people", 1)),
+                    vulnerable=vuln,
+                    hazard=HazardType(item.get("hazard", "unknown")),
+                    status=RequestStatus.NEW,
+                    raw_text=raw_text,
+                    ai_translation=ai_translation,
+                    confidence=FieldConfidences(
+                        type=0.96,
+                        place=0.88,
+                        people=0.82,
+                        vulnerable=0.91,
+                        urgency=0.94,
+                    ),
+                )
+                urg_res = scoring_engine.compute_urgency(req)
+                req.urgency_score = urg_res.score
+                req.urgency_reason = urg_res.reason
+
+                # Hero demo case: INC-001 has merged duplicates and update
+                if req.id == "INC-001":
+                    req.merged_count = 3
+                    req.update_count = 1
+                    cluster_id = f"cl_seed_{req.id}"
+                    req.cluster_id = cluster_id
+                    cluster = StoredCluster(
+                        id=cluster_id,
+                        request_ids=[req.id, "INC-001-dup1", "INC-001-dup2"],
+                        evidence=[
+                            "3 reports, same lane, within 9 min",
+                            "Now 5 people = update, urgency raised",
+                        ],
+                        merged_by="dedupe_agent",
+                    )
+                    self._clusters[cluster.id] = cluster
+
+                self._requests[req.id] = req
+                count += 1
+            except Exception as e:
+                logger.warning("Error loading seed incident %s: %s", item.get("id"), e)
+        logger.info("Loaded %d synthetic seed incidents into storage.", count)
+        return count
+
 
 # Singleton instance
 storage_service = StorageService()
-# Auto-load seed resources
+# Auto-load seed resources and incidents
 try:
     storage_service.load_seed_resources()
+    storage_service.load_seed_incidents()
 except Exception:
     pass
+
 

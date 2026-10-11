@@ -114,3 +114,32 @@ def get_cluster_evidence(
             detail=f"Cluster '{cluster_id}' not found"
         )
     return cluster
+
+
+@router.get("/requests", response_model=List[StoredRequest], summary="List ranked requests")
+def list_requests(
+    sort: str = "urgency",
+    coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
+    reqs = storage_service.list_requests()
+    if not reqs:
+        storage_service.load_seed_incidents()
+        reqs = storage_service.list_requests()
+
+    if sort == "urgency":
+        reqs = sorted(reqs, key=lambda r: r.urgency_score, reverse=True)
+    return reqs
+
+
+@router.get("/requests/{id}", response_model=StoredRequest, summary="Get single request detail")
+def get_request_detail(
+    id: str,
+    coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
+    req = storage_service.get_request(id)
+    if not req:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Request '{id}' not found"
+        )
+    return req

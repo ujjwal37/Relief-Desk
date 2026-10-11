@@ -8,6 +8,9 @@ import {
   ChatTurnResponse,
   UrgencyWeights,
   DedupeDecision,
+  StoredRequest,
+  StoredResource,
+  MatchProposal,
 } from '../models/request.model';
 import { AuthService } from './auth.service';
 
@@ -91,5 +94,38 @@ export class ApiClientService {
 
   verifyCoordinatorSession(): Observable<any> {
     return this.http.get<any>('/api/coordinator/verify', this.getAuthHeaders());
+  }
+
+  getRequests(sort = 'urgency'): Observable<StoredRequest[]> {
+    return this.http.get<StoredRequest[]>(`/api/requests?sort=${sort}`, this.getAuthHeaders());
+  }
+
+  getRequest(id: string): Observable<StoredRequest> {
+    return this.http.get<StoredRequest>(`/api/requests/${id}`, this.getAuthHeaders());
+  }
+
+  getRequestMatches(id: string, topN = 5): Observable<MatchProposal[]> {
+    return this.http.get<MatchProposal[]>(`/api/requests/${id}/matches?top_n=${topN}`, this.getAuthHeaders());
+  }
+
+  approveMatch(id: string, allowOvercommit = false): Observable<any> {
+    return this.http.post<any>(
+      `/api/matches/${id}/approve`,
+      { allow_overcommit: allowOvercommit },
+      this.getAuthHeaders()
+    );
+  }
+
+  rejectMatch(id: string, reason: string): Observable<any> {
+    return this.http.post<any>(
+      `/api/matches/${id}/reject`,
+      { reason },
+      this.getAuthHeaders()
+    );
+  }
+
+  getResources(kind?: string): Observable<StoredResource[]> {
+    const url = kind ? `/api/resources?kind=${kind}` : '/api/resources';
+    return this.http.get<StoredResource[]>(url, this.getAuthHeaders());
   }
 }
