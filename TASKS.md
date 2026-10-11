@@ -154,6 +154,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | GM-05 | ADK pipeline after submit | C | DONE | GM-04 | SequentialAgent of Intake, parallel Dedupe and Triage, Matching, Explainer. Score and capacity stay in tools. The case shows Analysing, then complete, and is not dispatched |
 | GM-06 | Per-case agent trace | C | DONE | GM-05 | GET /api/cases/{id}/trace returns each agent step. The case drawer shows the timeline and Agents working |
 | GM-07 | Assist dispatcher with a human confirmation | C | DONE | GM-06 | Tools run in order. Commit requires confirmation. Reject releases the hold. Two coordinators cannot hold the same boat |
+| GM-08 | AI limits, injection, and health | C | DONE | GM-07 | Token bucket, semaphore, circuit breaker, daily cap, cache. Injection does not raise the score. /api/health/ai reports provider and quota |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

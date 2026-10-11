@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 from app.config import settings
+from app.llm.guards import Guard, scrub_pii
 from app.models.schemas import AiCall
 
 logger = logging.getLogger("relief_desk.llm")
@@ -35,6 +36,9 @@ class LLMClient:
         self._memory_cache: Dict[str, str] = {}
         self._memory_source: Dict[str, str] = {}
         self._memory_meta: Dict[str, Dict[str, Any]] = {}
+        self.guard = Guard()
+        self.cache_hits = 0
+        self.cache_misses = 0
 
     def _hash_key(self, prompt: str) -> str:
         return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
@@ -148,6 +152,7 @@ class LLMClient:
         default is one repair, then fallback.
         """
         started = time.perf_counter()
+        user_prompt = scrub_pii(user_prompt)
         full_prompt = f"SYSTEM:\n{system_instruction}\n\nUSER:\n{user_prompt}"
         cache_key = self._hash_key(full_prompt)
         mode = (settings.AI_MODE or "auto").lower()
@@ -166,9 +171,12 @@ class LLMClient:
         recorded = self._memory_source.get(cache_key) in ("gemini", "cache")
         if cache_ok and cached is not None and mode == "replay" and recorded:
             logger.info("Replay cache hit for prompt hash %s", cache_key[:8])
+            self.cache_hits += 1
             return self._from_cache(cache_key, cached, started)
         if cache_ok and cached is not None and mode != "live" and not self.gemini_live():
+            self.cache_hits += 1
             return self._from_cache(cache_key, cached, started)
+        self.cache_misses += 1
 
         if not self.gemini_live():
             reason = "disabled" if not settings.GEMINI_ENABLED or mode == "fallback" else "no_api_key"
@@ -178,6 +186,8 @@ class LLMClient:
         if self.call_count >= self.daily_cap:
             logger.warning("Gemini daily call cap reached (%d).", self.daily_cap)
             return self._fallback(user_prompt, "daily_cap", started)
+        if self.guard.circuit_open():
+            return self._fallback(user_prompt, "circuit_open", started)
 
         current_prompt = user_prompt
         repairs_left = max_retries
@@ -207,10 +217,14 @@ class LLMClient:
                     fallback_reason=None,
                 )
                 self._remember(usage)
+                self.guard.record_success()
                 self.set_cached(cache_key, text, source="gemini", model=usage.model, tokens=usage.tokens)
                 return text
         except Exception as exc:
+            self.guard.record_failure()
             reason = "quota" if _is_quota(exc) else ("timeout" if isinstance(exc, TimeoutError) else "error")
+            if reason != "quota":
+                self.guard.backoff(0)
             logger.error("Live Gemini call failed (%s). Falling back.", exc)
             return self._fallback(user_prompt, reason, started)
 
@@ -220,6 +234,9 @@ class LLMClient:
         from concurrent.futures import TimeoutError as FuturesTimeout
 
         self._last_tokens = None
+        self.guard.wait_turn()
+        if not self.guard.semaphore.acquire(timeout=timeout_s):
+            raise TimeoutError("Gemini concurrency limit")
 
         def _run() -> str:
             import google.genai as genai  # type: ignore
@@ -235,12 +252,15 @@ class LLMClient:
             self._last_tokens = int(total) if isinstance(total, int) else None
             return response_obj.text or ""
 
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            future = pool.submit(_run)
-            try:
-                text = future.result(timeout=timeout_s)
-            except FuturesTimeout as exc:
-                raise TimeoutError("Gemini timed out") from exc
+        try:
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(_run)
+                try:
+                    text = future.result(timeout=timeout_s)
+                except FuturesTimeout as exc:
+                    raise TimeoutError("Gemini timed out") from exc
+        finally:
+            self.guard.semaphore.release()
         if not text.strip():
             raise RuntimeError("Gemini returned an empty reply")
         return text

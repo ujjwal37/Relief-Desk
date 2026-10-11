@@ -14,6 +14,7 @@ from google.adk.tools import FunctionTool
 
 from app.config import settings
 from app.llm.client import llm_client
+from app.llm.guards import strip_advice
 from app.models.firestore_models import ResourceStatus, StoredRequest
 from app.models.schemas import IncidentType
 from app.tools.scoring import scoring_engine
@@ -181,11 +182,11 @@ def finish(request_id: str) -> None:
     match_at = time.perf_counter()
     provider = "gemini" if llm_client.gemini_live() else "fallback"
     summary = (req.raw_text or "")[:180]
-    explanation = (
+    explanation = strip_advice(
         f"The urgency score is {scored.score}. "
-        f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch. "
-        "This is not medical or legal advice."
+        f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch."
     )
+    explanation = f"{explanation} This note is not medical or legal advice."
     req.analysis = {
         "provider": provider,
         "model": settings.GEMINI_MODEL,
