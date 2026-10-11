@@ -511,3 +511,6 @@ Stretch S-001, S-002, and S-003 are still TODO in TASKS.md and were not part of 
 
 ## 2026-10-11 UX3 uplift, part 1 (branch ux-uplift)
 Changed: apps/web/src/theme.scss (tokens), libs/shared (ThemeService, CallPill, QuietFooter, SettingsButton, 4-language i18n keys), landing, coordinator login. Checked: check-i18n pass, ng build shared and web pass, Playwright 390x844/1440x900/1280x720, min font 13px, tap targets >= 44px, 0 console errors. Not done: remaining screens (see TASKS.md). Screenshots: C:\Users\aggar\uxshots.
+
+## T-UX-03 UX3 uplift, part 2 (2026-10-11 19:39)
+Coordinator dashboard (light default, tighter type, plain-language cases, sticky Approve/Change/Reject, 3-step tour, user menu with theme/language/scenario, shared critical-count via band.util), public layout with 5-item tab bar, Gemini-style report chat with voice overlay, review screen, status, nearby, alerts, accuracy report. Login demo card only when /healthz demo_mode is true. AA contrast checked in both themes (ux3/contrast-check.mjs, 0 fails). Tests: ng test web 40/40, shared 8/8, i18n parity OK, ng build OK.
