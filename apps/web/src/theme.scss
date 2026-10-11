@@ -1,0 +1,22 @@
+/* Relief Desk theme tokens (UX3). One token set, light + dark. Red only for SOS/Call 112/Critical. */
+:root, :root[data-theme='light'] {
+  --bg:#F5F7FA; --surface:#FFFFFF; --surface-2:#EEF2F7; --border:#DDE3EC;
+  --text:#0F172A; --text-2:#475569; --muted:#64748B;
+  --brand:#0F766E; --on-brand:#FFFFFF; --brand-tint:#E6F4F1;
+  --sos:#C81E3A; --sos-text:#C81E3A; --on-sos:#FFFFFF;
+  --amber:#B45309; --amber-tint:#FEF3C7; --green:#15803D; --blue:#1D4ED8; --focus:#1D4ED8;
+  --e1:0 1px 2px rgba(15,23,42,.08); --e2:0 4px 12px rgba(15,23,42,.10); --e3:0 12px 32px rgba(15,23,42,.18);
+  --ease:cubic-bezier(.2,0,0,1);
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
+  --r1:8px; --r2:12px; --r3:16px; --r4:24px;
+}
+:root[data-theme='dark'] {
+  --bg:#0A1020; --surface:#111A2E; --surface-2:#18233B; --border:#243250;
+  --text:#EAF0FA; --text-2:#A9B6CE; --muted:#8493AF;
+  --brand:#2DD4BF; --on-brand:#04211D; --brand-tint:#0F2E33;
+  --sos:#C81E3A; --sos-text:#FF8DA1; --on-sos:#FFFFFF;
+  --amber:#FBBF24; --amber-tint:#3A2A08; --green:#34D399; --blue:#60A5FA; --focus:#93C5FD;
+  --e1:0 1px 2px rgba(0,0,0,.4); --e2:0 4px 12px rgba(0,0,0,.45); --e3:0 12px 32px rgba(0,0,0,.6);
+}
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }

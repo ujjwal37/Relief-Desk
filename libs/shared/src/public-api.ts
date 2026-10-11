@@ -8,3 +8,7 @@ export * from './lib/services/api-client.service';
 export * from './lib/services/language.service';
 export * from './lib/services/auth.service';
 export * from './lib/components/language-switcher.component';
+export * from './lib/services/theme.service';
+export * from './lib/components/settings-button.component';
+export * from './lib/components/call-pill.component';
+export * from './lib/components/quiet-footer.component';
