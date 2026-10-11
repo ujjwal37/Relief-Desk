@@ -4,7 +4,7 @@ import { AnomalyAlert, ApiClientService, LanguageService, RdTranslatePipe } from
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 
 type Kind = 'spike' | 'silent_zone' | 'resource_gap' | 'conflict' | 'stale';
-interface Ward { id: string; name: string; lat: number; lng: number; }
+interface Ward { id: string; name: string; district: string; lat: number; lng: number; }
 interface Pt { x: number; y: number; }
 interface Landmark { name: string; lat: number; lng: number; }
 interface ResPin { id: string; name: string; lat: number; lng: number; free: boolean; }
@@ -21,18 +21,18 @@ const proj = (lat: number, lng: number): Pt => ({ x: (lng - LNG_MIN) * 1100, y: 
 
 /** Real Kerala panchayats used by the synthetic flood pack. */
 const WARDS: Ward[] = [
-  { id: 'ward_1', name: 'Kainakary', lat: 9.470, lng: 76.390 },
-  { id: 'ward_2', name: 'Champakulam', lat: 9.416, lng: 76.411 },
-  { id: 'ward_3', name: 'Nedumudi', lat: 9.430, lng: 76.398 },
-  { id: 'ward_4', name: 'Aluva', lat: 10.108, lng: 76.352 },
-  { id: 'ward_5', name: 'Varapuzha', lat: 10.078, lng: 76.268 },
-  { id: 'ward_6', name: 'Kothamangalam', lat: 10.065, lng: 76.628 },
-  { id: 'ward_7', name: 'Chalakudy', lat: 10.308, lng: 76.331 },
-  { id: 'ward_8', name: 'Mala', lat: 10.241, lng: 76.267 },
-  { id: 'ward_9', name: 'Anthikad', lat: 10.466, lng: 76.130 },
-  { id: 'ward_10', name: 'Meppadi', lat: 11.557, lng: 76.140 },
-  { id: 'ward_11', name: 'Vythiri', lat: 11.550, lng: 76.038 },
-  { id: 'ward_12', name: 'Kalpetta', lat: 11.608, lng: 76.082 },
+  { id: 'ward_1', name: 'Kainakary', district: 'Alappuzha', lat: 9.470, lng: 76.390 },
+  { id: 'ward_2', name: 'Champakulam', district: 'Alappuzha', lat: 9.416, lng: 76.411 },
+  { id: 'ward_3', name: 'Nedumudi', district: 'Alappuzha', lat: 9.430, lng: 76.398 },
+  { id: 'ward_4', name: 'Aluva', district: 'Ernakulam', lat: 10.108, lng: 76.352 },
+  { id: 'ward_5', name: 'Varapuzha', district: 'Ernakulam', lat: 10.078, lng: 76.268 },
+  { id: 'ward_6', name: 'Kothamangalam', district: 'Ernakulam', lat: 10.065, lng: 76.628 },
+  { id: 'ward_7', name: 'Chalakudy', district: 'Thrissur', lat: 10.308, lng: 76.331 },
+  { id: 'ward_8', name: 'Mala', district: 'Thrissur', lat: 10.241, lng: 76.267 },
+  { id: 'ward_9', name: 'Anthikad', district: 'Thrissur', lat: 10.466, lng: 76.130 },
+  { id: 'ward_10', name: 'Meppadi', district: 'Wayanad', lat: 11.557, lng: 76.140 },
+  { id: 'ward_11', name: 'Vythiri', district: 'Wayanad', lat: 11.550, lng: 76.038 },
+  { id: 'ward_12', name: 'Kalpetta', district: 'Wayanad', lat: 11.608, lng: 76.082 },
 ];
 const LANDMARKS: Landmark[] = [
   { name: 'Little Flower Hospital', lat: 10.108, lng: 76.352 },

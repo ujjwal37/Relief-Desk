@@ -26,7 +26,7 @@
         <span class="age" [attr.title]="it.alert.detected_at || ''">{{ ageText(it.alert) }}</span>
       </div>
       <p class="reason">{{ it.alert.reason }}</p>
-      <p class="where" *ngIf="it.ward">{{ it.ward.name }}</p>
+      <p class="where" *ngIf="it.ward">{{ it.ward.name }} · {{ it.ward.district }}</p>
       <p class="where off" *ngIf="!it.at">{{ 'alerts.noPin' | rdTranslate }}</p>
       <div class="actions">
         <button type="button" class="primary" [disabled]="it.alert.acknowledged" (click)="acknowledge(it.alert); $event.stopPropagation()">
@@ -53,6 +53,7 @@
               [class.conf]="selected()?.kind === 'conflict' && selectedWard() === c.ward.id"></polygon>
             <text [attr.x]="c.c.x" [attr.y]="c.c.y + 26" class="wname" [class.dim]="selected() && selectedWard() !== c.ward.id">
               <tspan *ngFor="let l of c.lines; let li = index" [attr.x]="c.c.x" [attr.dy]="li ? 15 : 0">{{ l }}</tspan>
+              <tspan [attr.x]="c.c.x" dy="14" class="dist">{{ c.ward.district }}</tspan>
             </text>
           </g>
 

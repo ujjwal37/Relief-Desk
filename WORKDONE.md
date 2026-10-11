@@ -623,3 +623,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: login template shows the button when demoMode is true. check not re-run for i18n because no new keys.
 - Notes / risks / not done: Set DEMO_MODE=false in the environment to hide the button. Login itself is still the local demo account and does not call the API.
 - Next (suggested task id): FP-15
+
+### 2026-10-11 23:15 IST — FP-15 — Cursor
+- What changed: The alerts map labels each panchayat with its district (Alappuzha, Ernakulam, Thrissur, Wayanad). Pins stay numbered and coloured by alert type. Selecting one zooms and dims the others. A silent zone keeps the dashed outline and the "no reports" note. The legend stays under the map.
+- Files: coordinator alerts page, TASKS.md
+- How verified: template renders district on each ward cell and on the alert row. No new i18n keys; district names are place names.
+- Notes / risks / not done: The river shape is a decorative stroke, not the real river centreline.
+- Next (suggested task id): FP-16
