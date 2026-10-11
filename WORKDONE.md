@@ -728,3 +728,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --watch=false --browsers=ChromeHeadless --include='**/coordinator-command.component.spec.ts'` — 16 passed.
 - Notes / risks / not done: A case row can still prefix the place with the ward id. The area dropdown is the list that was showing "ward 12".
 - Next (suggested task id): RT-09
+
+### 2026-10-12 03:05 IST — RT-09 — Cursor
+- What changed: Hindi, Hinglish and Tamil seed lines now name the same place as the English line. INC-008 Hindi says St. Jude Hospital, not Varapuzha School. Each incident has a Tamil line. English lines that still said Hanuman Setu or Ganga Darshan now say the Kerala place.
+- Files: data/synthetic/flood_v1/seeds.yaml, services/api/tests/test_seed_translations.py, TASKS.md
+- How verified: `pytest tests/test_seed_translations.py` — 2 passed.
+- Notes / risks / not done: Tamil lines are a short sentence around the English place name, not a full retelling of every detail.
+- Next (suggested task id): RT-10

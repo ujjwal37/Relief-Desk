@@ -787,6 +787,8 @@ incidents:
   - lang: en
     text: Flood water entering 1st floor near Nedumudi Boat Jetty. 8 people including 3 children and 2
       elderly stranded on rooftop, urgent boat needed.
+  - lang: ta
+    text: "Nedumudi Boat Jetty அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-002
   type: medical
   ward_id: ward_1
@@ -815,6 +817,8 @@ incidents:
   - lang: en
     text: Elderly father having severe diabetic emergency near Kainakary LP School, house surrounded by
       chest-deep flood water.
+  - lang: ta
+    text: "Kainakary LP School அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-003
   type: medical
   ward_id: ward_2
@@ -835,7 +839,7 @@ incidents:
     submerged under 4 feet water.
   sample_reports:
   - lang: hi
-    text: चम्पाकुलाम School के पीछे मेरी पत्नी लेबर पेन में हैं, सड़क पर 4 फुट पानी है, तुरंत बोट या मेडिकल
+    text: चम्पाकुलाम स्कूल के पीछे मेरी पत्नी लेबर पेन में हैं, सड़क पर 4 फुट पानी है, तुरंत बोट या मेडिकल
       हेल्प चाहिए!
   - lang: hinglish
     text: Champakulam School ke peeche pregnant lady ko labor pain start ho gaya hai, road par 4 feet
@@ -843,6 +847,8 @@ incidents:
   - lang: en
     text: Pregnant woman in full labor trapped behind Champakulam School, road inundated with 4ft water.
       Urgent medical boat.
+  - lang: ta
+    text: "Champakulam School அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-004
   type: rescue
   ward_id: ward_12
@@ -863,7 +869,7 @@ incidents:
     person and 4 children trapped.
   sample_reports:
   - lang: hi
-    text: कल्पेट्टा Bus Stand का पानी घरों में घुस गया है। 12 लोग फंसे हैं, एक दिव्यांग व्यक्ति व्हीलचेयर
+    text: कल्पेट्टा के पास झील का पानी घरों में घुस गया है। 12 लोग फंसे हैं, एक दिव्यांग व्यक्ति व्हीलचेयर
       पर है और 4 बच्चे हैं।
   - lang: hinglish
     text: Kalpetta ka bandh toot gaya, Kalpetta me 12 log fase hain, ek disabled bhai hain wheelchair
@@ -871,6 +877,8 @@ incidents:
   - lang: en
     text: Lake embankment breached near Kalpetta. 12 people stranded including 1 wheelchair user and 4
       small kids. Water rising rapidly.
+  - lang: ta
+    text: "Kalpetta அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-005
   type: rescue
   ward_id: ward_4
@@ -891,12 +899,14 @@ incidents:
     with strong current.
   sample_reports:
   - lang: hi
-    text: आलुवा Manappuram के पास मकान की पिछली दीवार गिर गई है, तेज बहाव में 6 लोग छत पर हैं।
+    text: आलुवा Clock Tower के पास मकान की पिछली दीवार गिर गई है, तेज बहाव में 6 लोग छत पर हैं।
   - lang: hinglish
     text: Ghanta ghar Aluva me diwar gir gayi hai, pani tez hai 6 log fase hain terrace pe.
   - lang: en
     text: Wall collapsed near Clock Tower Aluva due to rushing flood water, 6 people clinging to roof
       terrace.
+  - lang: ta
+    text: "Clock Tower Aluva due to rushing flood water அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-006
   type: medical
   ward_id: ward_7
@@ -920,11 +930,13 @@ incidents:
     text: पावर प्लांट कॉलोनी गेट के पास एक युवक को करंट और लोहे की चादर से गहरा कट लगा है, खून बहुत बह
       रहा है!
   - lang: hinglish
-    text: Thermal Temple Road ke paas injury hui hai, heavy bleeding ho rahi hai boat ambulance urgently
+    text: Power Plant Gate ke paas injury hui hai, heavy bleeding ho rahi hai boat ambulance urgently
       chahiye.
   - lang: en
     text: Severe laceration and electrical shock near Power Plant Gate, severe bleeding, urgent paramedic
       boat.
+  - lang: ta
+    text: "Power Plant Gate அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-007
   type: rescue
   ward_id: ward_3
@@ -947,10 +959,12 @@ incidents:
   - lang: hi
     text: नेदुमुडी Bridge के नीचे 5 लोग खंभे से लटके हुए हैं, पानी बहुत तेज है, तुरंत मोटर बोट भेजो!
   - lang: hinglish
-    text: Hanuman setu ke neeche 5 log pillar pakad ke khade hain, paani bohot fast hai please save them.
+    text: Nedumudi Bridge ke neeche 5 log pillar pakad ke khade hain, paani bohot fast hai please save them.
   - lang: en
-    text: 5 people trapped on Hanuman Setu bridge pillars, flood current violent, urgent motorized rescue
+    text: 5 people trapped on Nedumudi Bridge bridge pillars, flood current violent, urgent motorized rescue
       boat.
+  - lang: ta
+    text: "Nedumudi Bridge அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-008
   type: medical
   ward_id: ward_5
@@ -971,11 +985,13 @@ incidents:
     approach road cut off.
   sample_reports:
   - lang: hi
-    text: वरप्पुषा School के पास घर में बुजुर्ग मरीज का ऑक्सीजन सिलेंडर खत्म होने वाला है, सड़क डूबी है!
+    text: St. Jude Hospital के पास घर में बुजुर्ग मरीज का ऑक्सीजन सिलेंडर खत्म होने वाला है, सड़क डूबी है!
   - lang: hinglish
     text: St Jude hospital ke paas oxygen cylinder khatam ho raha hai 1 ghante me, road par paani hai.
   - lang: en
     text: Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.
+  - lang: ta
+    text: "St. Jude Hospital அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-009
   type: rescue
   ward_id: ward_11
@@ -996,13 +1012,15 @@ incidents:
     roof with water still rising.
   sample_reports:
   - lang: hi
-    text: आईएसबीटी वित्तूरि School के पास बस की छत पर 15 यात्री बैठे हैं, बस आधी डूब चुकी है!
+    text: ISBT Bus Terminal के पास बस की छत पर 15 यात्री बैठे हैं, बस आधी डूब चुकी है!
   - lang: hinglish
     text: ISBT bus terminal pe bus ki chhat par 15 passengers baithe hain, paani window se upar hai rescue
       chahiye.
   - lang: en
     text: Submerged bus near ISBT Bus Terminal, 15 passengers stranded on roof with water rising to roof
       level.
+  - lang: ta
+    text: "ISBT Bus Terminal அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-010
   type: rescue
   ward_id: ward_8
@@ -1023,11 +1041,13 @@ incidents:
     shade.
   sample_reports:
   - lang: hi
-    text: माला Panchayat Office के पीछे 9 लोग टिन शेड पर बैठे हैं, नीचे 6 फुट पानी भर गया है।
+    text: माला School के पीछे 9 लोग टिन शेड पर बैठे हैं, नीचे 6 फुट पानी भर गया है।
   - lang: hinglish
     text: Mala School ke peeche 9 log tin shed par baithe hain, 6 feet water, bachhe ro rahe hain.
   - lang: en
     text: Family of 9 stranded on tin roof behind Mala School, water level at 6 feet and rising.
+  - lang: ta
+    text: "Mala School அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-011
   type: food
   ward_id: ward_2
@@ -1048,7 +1068,7 @@ incidents:
     zero drinking water for 24 hours.
   sample_reports:
   - lang: hi
-    text: चम्पाकुलाम Church की पहली मंजिल पर 18 लोग फंसे हैं, पीने का पानी खत्म हो गया है, बच्चे प्यासे
+    text: चम्पाकुलाम Market की पहली मंजिल पर 18 लोग फंसे हैं, पीने का पानी खत्म हो गया है, बच्चे प्यासे
       हैं।
   - lang: hinglish
     text: Champakulam Market me 18 log hain, 24 ghante se drinking water aur khana nahi hai, please relief
@@ -1056,6 +1076,8 @@ incidents:
   - lang: en
     text: 18 people stranded on 1st floor of Champakulam market with no drinking water or food for 24
       hours.
+  - lang: ta
+    text: "Champakulam Market அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-012
   type: medical
   ward_id: ward_9
@@ -1076,7 +1098,7 @@ incidents:
     home near Anthikad Bridge.
   sample_reports:
   - lang: hi
-    text: अंतिक्काड School के पास बुजुर्ग माताजी को बीपी और दिल की दवाइयां चाहिए, पानी के कारण घर से निकलना
+    text: अंतिक्काड Bridge के पास बुजुर्ग माताजी को बीपी और दिल की दवाइयां चाहिए, पानी के कारण घर से निकलना
       मुमकिन नहीं।
   - lang: hinglish
     text: Anthikad Bridge ke paas heart patient hain, dawa khatam ho gayi hai waterlogging ki wajah se
@@ -1084,6 +1106,8 @@ incidents:
   - lang: en
     text: Cardiac medication needed urgently for elderly patient near Anthikad Bridge, stranded due to
       street flooding.
+  - lang: ta
+    text: "Anthikad Bridge அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-013
   type: shelter
   ward_id: ward_1
@@ -1104,14 +1128,16 @@ incidents:
     with rising flood waters.
   sample_reports:
   - lang: hi
-    text: काइनकरी Boat Jetty के बरामदे में 22 बेघर लोग बैठे हैं, मंदिर के आंगन में भी पानी आने लगा है,
+    text: Mata Mandir के बरामदे में 22 बेघर लोग बैठे हैं, मंदिर के आंगन में भी पानी आने लगा है,
       शेल्टर शिफ्ट करें।
   - lang: hinglish
-    text: Kainakary Church vihar me 22 log temporary sharan liye hain, courtyard me pani badh raha hai
+    text: Mata Mandir veranda me 22 log temporary sharan liye hain, courtyard me pani badh raha hai
       evacuation chahiye.
   - lang: en
     text: 22 displaced flood victims sheltered in Mata Mandir veranda, compound starting to flood, need
       shelter transfer.
+  - lang: ta
+    text: "Mata Mandir veranda அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-014
   type: rescue
   ward_id: ward_6
@@ -1132,11 +1158,13 @@ incidents:
     and 2 children stranded.
   sample_reports:
   - lang: hi
-    text: कोथमंगलम Shelter के पास केयरटेकर क्वार्टर में 4 फुट पानी है, गर्भवती महिला और 2 बच्चे फंसे हैं।
+    text: St. Mary Convent के पास केयरटेकर क्वार्टर में 4 फुट पानी है, गर्भवती महिला और 2 बच्चे फंसे हैं।
   - lang: hinglish
     text: St Mary school ke caretaker house me paani ghus gaya hai, pregnant lady hai boat se nikalo.
   - lang: en
     text: Quarters flooded near St. Mary Convent, pregnant mother and 2 children require boat evacuation.
+  - lang: ta
+    text: "St அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-015
   type: food
   ward_id: ward_10
@@ -1159,10 +1187,12 @@ incidents:
   - lang: hi
     text: पुथुमला के पास अपार्टमेंट में 14 लोग फंसे हैं, बिजली और पीने का पानी नहीं है।
   - lang: hinglish
-    text: Meppadi park ke bagal wali building me 14 log hain, no power, drinking water bottles and dry
+    text: Puthumala ke bagal wali building me 14 log hain, no power, drinking water bottles and dry
       rations needed.
   - lang: en
     text: 14 residents marooned in apartment near Puthumala, food packets and potable water urgently requested.
+  - lang: ta
+    text: "Puthumala அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-016
   type: rescue
   ward_id: ward_7
@@ -1183,13 +1213,15 @@ incidents:
     overflowed with foul contaminated water.
   sample_reports:
   - lang: hi
-    text: चालाकुडी School के पीछे नाले का केमिकल युक्त पानी 5 फुट भर गया है, 11 मजदूर फंसे हैं।
+    text: Industrial Community Hall के पीछे नाले का केमिकल युक्त पानी 5 फुट भर गया है, 11 मजदूर फंसे हैं।
   - lang: hinglish
     text: Industrial community hall ke peeche nala overflow hua, toxic water hai 11 log trapped hain please
       evacuate.
   - lang: en
     text: Contaminated floodwater inundating worker barracks near Industrial Community Hall. 11 workers
       require rescue.
+  - lang: ta
+    text: "Industrial Community Hall அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-017
   type: food
   ward_id: ward_4
@@ -1210,13 +1242,15 @@ incidents:
     in Jama Masjid complex need food rations.
   sample_reports:
   - lang: hi
-    text: आलुवा School में 30 लोग शरण लिए हुए हैं, खाना-पीना खत्म हो गया है, राशन पैकेट भिजवाएं।
+    text: Jama Masjid, आलुवा में 30 लोग शरण लिए हुए हैं, खाना-पीना खत्म हो गया है, राशन पैकेट भिजवाएं।
   - lang: hinglish
     text: Jama masjid Aluva me 30 log hain jinme bachhe aur bujurg hain, food and water supply immediately
       needed.
   - lang: en
     text: 30 displaced flood victims sheltered in Jama Masjid complex in Aluva require immediate dry food
       rations.
+  - lang: ta
+    text: "Jama Masjid complex in Aluva require immediate dry food rations அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-018
   type: medical
   ward_id: ward_11
@@ -1237,13 +1271,15 @@ incidents:
     Bhawan, road inaccessible by car.
   sample_reports:
   - lang: hi
-    text: वित्तूरि Health Centre के पास पानी में फिसलने से मैकेनिक का पैर टूट गया है, हड्डी बाहर आ गई
+    text: Truck Union Bhawan के पास पानी में फिसलने से मैकेनिक का पैर टूट गया है, हड्डी बाहर आ गई
       है, फर्स्ट एड और बोट चाहिए।
   - lang: hinglish
     text: Truck union ke paas leg fracture hua hai bahut dard me hai, road doobi hai ambulance boat bhejiye.
   - lang: en
     text: Compound leg fracture outside Truck Union Bhawan, patient in severe shock, urgent boat transport
       to hospital.
+  - lang: ta
+    text: "Truck Union Bhawan அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-019
   type: rescue
   ward_id: ward_5
@@ -1264,12 +1300,14 @@ incidents:
     ground floor inundated.
   sample_reports:
   - lang: hi
-    text: वरप्पुषा स्कूल के स्टाफ क्वार्टर में पानी घुस गया है, 8 लोग जिनमें 5 बच्चे हैं छत पर हैं।
+    text: वरप्पुषा School के स्टाफ क्वार्टर में पानी घुस गया है, 8 लोग जिनमें 5 बच्चे हैं छत पर हैं।
   - lang: hinglish
     text: Varapuzha school quarters me paani ghus gaya hai, 8 people with 5 children stranded on roof.
   - lang: en
     text: Staff residential quarters flooded behind Varapuzha School, 8 people including 5 children need
       rescue.
+  - lang: ta
+    text: "Varapuzha School அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-020
   type: food
   ward_id: ward_12
@@ -1290,12 +1328,14 @@ incidents:
     milk and baby food needed.
   sample_reports:
   - lang: hi
-    text: लेक व्यू सरकारी स्कूल की छत पर 25 लोग हैं, छोटे बच्चों के लिए दूध और पीने का पानी नहीं है।
+    text: कल्पेट्टा School की छत पर 25 लोग हैं, छोटे बच्चों के लिए दूध और पीने का पानी नहीं है।
   - lang: hinglish
     text: Kalpetta School terrace pe 25 people marooned hain, baby food and drinking water packet urgently
       needed.
   - lang: en
     text: 25 flood refugees on terrace of Kalpetta School, acute shortage of baby food and drinking water.
+  - lang: ta
+    text: "Kalpetta School அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-021
   type: medical
   ward_id: ward_8
@@ -1316,13 +1356,15 @@ incidents:
     road impassable.
   sample_reports:
   - lang: hi
-    text: ग्रीन पार्क अस्पताल के पास 4 साल के बच्चे को 104 बुखार और झटके आ रहे हैं, गली में कमर तक पानी
+    text: माला Health Centre के पास 4 साल के बच्चे को 104 बुखार और झटके आ रहे हैं, गली में कमर तक पानी
       है।
   - lang: hinglish
     text: Mala Health Centre ke paas kid has 104 fever and seizures, waist deep water please send medical
       boat.
   - lang: en
     text: High fever and seizure emergency for 4yo child near Mala Health Centre, street flooded waist-deep.
+  - lang: ta
+    text: "Mala Health Centre அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-022
   type: rescue
   ward_id: ward_9
@@ -1343,13 +1385,15 @@ incidents:
     rising 3 inches per hour.
   sample_reports:
   - lang: hi
-    text: अंतिक्काड Church के पास नहर का पानी घरों में आ रहा है, हर घंटे पानी बढ़ रहा है, 7 लोग फंसे हैं।
+    text: अंतिक्काड School के पास नहर का पानी घरों में आ रहा है, हर घंटे पानी बढ़ रहा है, 7 लोग फंसे हैं।
   - lang: hinglish
     text: Anthikad School ke pass canal overflow ho gaya, water is rising 3 inches per hr, 7 people need
       rescue.
   - lang: en
     text: Canal overflow inundating houses near Anthikad School, water rising rapidly, 7 residents need
       evacuation.
+  - lang: ta
+    text: "Anthikad School அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-023
   type: shelter
   ward_id: ward_6
@@ -1370,7 +1414,7 @@ incidents:
     in strong rain.
   sample_reports:
   - lang: hi
-    text: कोथमंगलम Bus Stand के पीछे झुग्गियां डूब गईं, 16 लोग बारिश में भीग रहे हैं, तिरपाल और शेल्टर
+    text: Collectorate, कोथमंगलम के पीछे झुग्गियां डूब गईं, 16 लोग बारिश में भीग रहे हैं, तिरपाल और शेल्टर
       चाहिए।
   - lang: hinglish
     text: Collectorate Kothamangalam ke peeche slums flooded, 16 people without roof in rain, need shelter
@@ -1378,6 +1422,8 @@ incidents:
   - lang: en
     text: Slum shanties flooded behind Collectorate in Kothamangalam, 16 displaced people need immediate
       shelter.
+  - lang: ta
+    text: "Collectorate in Kothamangalam அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-024
   type: food
   ward_id: ward_3
@@ -1402,6 +1448,8 @@ incidents:
     text: Nedumudi School jetty pe 20 log cut off hain, no cooked food available since morning.
   - lang: en
     text: 20 boat operators and volunteers cut off at Nedumudi School jetty require cooked food packets.
+  - lang: ta
+    text: "Nedumudi School அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-025
   type: food
   ward_id: ward_2
@@ -1422,13 +1470,15 @@ incidents:
     shut, food supplies low.
   sample_reports:
   - lang: hi
-    text: चम्पाकुलाम चम्पाकुलाम Boat Jetty के पास पहली मंजिल पर सुरक्षित हैं लेकिन नीचे 2 फुट पानी है,
+    text: Ram Mandir Champakulam के पास पहली मंजिल पर सुरक्षित हैं लेकिन नीचे 2 फुट पानी है,
       घर में राशन कम है।
   - lang: hinglish
     text: Ram mandir Champakulam ke paas safe on 1st floor, road has 2ft water, ration needed in next
       24 hours.
   - lang: en
     text: Family safe on upper floor near Ram Mandir Champakulam, road flooded 2ft, dry rations requested.
+  - lang: ta
+    text: "Ram Mandir Champakulam அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-026
   type: shelter
   ward_id: ward_8
@@ -1452,9 +1502,11 @@ incidents:
     text: माला Health Centre में बेसमेंट दुकानों में पानी टपक रहा है, सामान बचाने के लिए शेल्टर या तिरपाल
       चाहिए।
   - lang: hinglish
-    text: Mala shopping complex basement seepage, need tarpaulin sheets and dry space to keep inventory.
+    text: Mala Health Centre basement seepage, need tarpaulin sheets and dry space to keep inventory.
   - lang: en
     text: Basement seepage near Mala Health Centre, traders require tarpaulin and dry storage space.
+  - lang: ta
+    text: "Mala Health Centre அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-027
   type: info
   ward_id: ward_11
@@ -1476,9 +1528,11 @@ incidents:
   - lang: hi
     text: क्या वित्तूरि Bridge चालू है या पानी की वजह से बंद कर दिया गया है? जानकारी चाहिए।
   - lang: hinglish
-    text: Vythiri flyover open hai kya ambulance aur private car ke liye? Please clarify.
+    text: Vythiri Bridge open hai kya ambulance aur private car ke liye? Please clarify.
   - lang: en
     text: Requesting confirmation if Vythiri Bridge is submerged or accessible for light vehicles.
+  - lang: ta
+    text: "Vythiri Bridge அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-028
   type: food
   ward_id: ward_5
@@ -1499,13 +1553,15 @@ incidents:
     200 neighbors.
   sample_reports:
   - lang: hi
-    text: वरप्पुषा Health Centre लंगर में आटा और एलपीजी खत्म होने वाली है, आस-पास के 200 लोगों को भोजन
+    text: Varapuzha Gurudwara लंगर में आटा और एलपीजी खत्म होने वाली है, आस-पास के 200 लोगों को भोजन
       दे रहे हैं।
   - lang: hinglish
     text: Varapuzha gurudwara langar kitchen needs wheat flour and gas cylinder refill to continue food
       distribution.
   - lang: en
     text: Community kitchen at Varapuzha Gurudwara requires bulk wheat flour and cooking gas supplies.
+  - lang: ta
+    text: "Varapuzha Gurudwara requires bulk wheat flour and cooking gas supplies அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-029
   type: medical
   ward_id: ward_10
@@ -1526,12 +1582,14 @@ incidents:
     and arthritis.
   sample_reports:
   - lang: hi
-    text: मेप्पाडी आर्य समाज मंदिर के पास बुजुर्गों की बीपी की दवाई खत्म है, पानी भरा होने से मेडिकल स्टोर
+    text: मेप्पाडी Relief Camp के पास बुजुर्गों की बीपी की दवाई खत्म है, पानी भरा होने से मेडिकल स्टोर
       बंद है।
   - lang: hinglish
-    text: Arya samaj mandir Meppadi ke paas regular BP medicine delivery needed for senior citizen couple.
+    text: Meppadi Relief Camp ke paas regular BP medicine delivery needed for senior citizen couple.
   - lang: en
     text: Routine medicine delivery requested for elderly couple near Meppadi Relief Camp.
+  - lang: ta
+    text: "Meppadi Relief Camp அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-030
   type: shelter
   ward_id: ward_9
@@ -1555,9 +1613,11 @@ incidents:
     text: अंतिक्काड Relief Camp के पास मजदूरों की झुग्गियों में पानी भर गया, 10 लोग खुले में हैं, कंबल
       चाहिए।
   - lang: hinglish
-    text: Anthikad Church ke paas 10 construction laborers need dry shelter space and blankets.
+    text: Anthikad Relief Camp ke paas 10 construction laborers need dry shelter space and blankets.
   - lang: en
     text: 10 construction workers need dry shelter and blankets near Anthikad Relief Camp.
+  - lang: ta
+    text: "Anthikad Relief Camp அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-031
   type: food
   ward_id: ward_1
@@ -1582,6 +1642,8 @@ incidents:
     text: Kainakary Church has 15 people sheltered, drinking water cans needed by evening.
   - lang: en
     text: Drinking water cans needed for 15 sheltered persons at Kainakary Church.
+  - lang: ta
+    text: "Kainakary Church அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-032
   type: rescue
   ward_id: ward_4
@@ -1602,13 +1664,15 @@ incidents:
     request evacuation when possible.
   sample_reports:
   - lang: hi
-    text: आलुवा Relief Camp में कपड़े की दुकान के मेज़ानाइन पर 3 लोग सुरक्षित हैं, जब नाव खाली हो तो निकालें।
+    text: Sarafa cloth market, आलुवा में कपड़े की दुकान के मेज़ानाइन पर 3 लोग सुरक्षित हैं, जब नाव खाली हो तो निकालें।
   - lang: hinglish
     text: Sarafa cloth market me 3 shopkeepers mezzanine pe hain, 2.5 ft water, non-urgent boat evacuation
       requested.
   - lang: en
     text: 3 shopkeepers stranded on mezzanine in Sarafa cloth market, water 2.5ft, non-critical boat assist
       requested.
+  - lang: ta
+    text: "Sarafa cloth market அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-033
   type: info
   ward_id: ward_6
@@ -1629,11 +1693,13 @@ incidents:
     Kerala.
   sample_reports:
   - lang: hi
-    text: क्या कोथमंगलम School से ट्रेनें चल रही हैं या ट्रैक पर पानी है? कृपया जानकारी दें।
+    text: क्या Kothamangalam station से ट्रेनें चल रही हैं या ट्रैक पर पानी है? कृपया जानकारी दें।
   - lang: hinglish
     text: Kothamangalam metro station se metro service functional hai kya East Kerala side?
   - lang: en
     text: Seeking information regarding Metro operations from Kothamangalam station.
+  - lang: ta
+    text: "Kothamangalam station அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-034
   type: shelter
   ward_id: ward_12
@@ -1654,11 +1720,13 @@ incidents:
     to adjacent shelter.
   sample_reports:
   - lang: hi
-    text: लेक व्यू शेल्टर पूरा भर गया है, बाहर 18 लोग खड़े हैं, इन्हें किस दूसरे शेल्टर में भेजें?
+    text: कल्पेट्टा Shelter पूरा भर गया है, बाहर 18 लोग खड़े हैं, इन्हें किस दूसरे शेल्टर में भेजें?
   - lang: hinglish
     text: Kalpetta Shelter is at max capacity, 18 people waiting outside need redirection info.
   - lang: en
     text: Kalpetta Shelter full, 18 newly arrived evacuees need relocation to secondary facility.
+  - lang: ta
+    text: "Kalpetta Shelter அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-035
   type: info
   ward_id: ward_3
@@ -1675,15 +1743,17 @@ incidents:
   hazard: none
   urgency_band: low
   reported_at: '2026-10-12T15:45:00Z'
-  description: Resident reporting current flood gauge level at Ganga Darshan Ghat is 1.2 meters above
+  description: Resident reporting current flood gauge level at Nedumudi Relief Camp is 1.2 meters above
     danger mark.
   sample_reports:
   - lang: hi
     text: नेदुमुडी Relief Camp पर जलस्तर खतरे के निशान से 1.2 मीटर ऊपर है, सूचना दर्ज करें।
   - lang: hinglish
-    text: Water level gauge reading at Ganga Darshan Ghat is 1.2m above red mark, logging status.
+    text: Water level gauge reading at Nedumudi Relief Camp is 1.2m above red mark, logging status.
   - lang: en
     text: Reporting water level reading at Nedumudi Relief Camp as 1.2m over danger mark.
+  - lang: ta
+    text: "Nedumudi Relief Camp அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-036
   type: info
   ward_id: ward_2
@@ -1705,9 +1775,11 @@ incidents:
   - lang: hi
     text: चम्पाकुलाम Shelter की पार्किंग में पानी भरा है क्या? गाड़ी खड़ी कर सकते हैं?
   - lang: hinglish
-    text: Is Champakulam Market parking waterlogged?
+    text: Is Champakulam Shelter parking waterlogged?
   - lang: en
-    text: Asking if Champakulam metro parking is flooded or safe for vehicle.
+    text: Asking if Champakulam Shelter parking is flooded or safe for vehicle.
+  - lang: ta
+    text: "Champakulam Shelter அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-037
   type: shelter
   ward_id: ward_8
@@ -1729,9 +1801,11 @@ incidents:
   - lang: hi
     text: माला Boat Jetty की धर्मशाला में 30 लोगों के रुकने की जगह खाली है, अगर जरूरत हो तो बताएं।
   - lang: hinglish
-    text: Shiv mandir Mala dharamshala has capacity for 30 evacuees, offering space to administration.
+    text: Mala Boat Jetty hall has capacity for 30 evacuees, offering space to administration.
   - lang: en
     text: Mala Boat Jetty committee offering hall space for 30 displaced people.
+  - lang: ta
+    text: "Mala Boat Jetty அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-038
   type: info
   ward_id: ward_7
@@ -1753,9 +1827,11 @@ incidents:
   - lang: hi
     text: चालाकुडी River Jetty के ट्रैक पर पानी नहीं है, मालगाड़ी खड़ी है।
   - lang: hinglish
-    text: Railway freight yard tracks are dry as of 4:30pm.
+    text: Chalakudy River Jetty tracks are dry as of 4:30pm.
   - lang: en
     text: Chalakudy River Jetty reports tracks are currently dry.
+  - lang: ta
+    text: "Chalakudy River Jetty அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-039
   type: food
   ward_id: ward_10
@@ -1776,11 +1852,13 @@ incidents:
     stock.
   sample_reports:
   - lang: hi
-    text: मेप्पाडी Town में किराना व्यापारियों के पास पर्याप्त राशन उपलब्ध है।
+    text: मेप्पाडी market में किराना व्यापारियों के पास पर्याप्त राशन उपलब्ध है।
   - lang: hinglish
     text: Meppadi main market has sufficient grocery wholesale stock available.
   - lang: en
     text: Meppadi market association confirms sufficient grain stocks available for relief procurement.
+  - lang: ta
+    text: "Meppadi market அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."
 - id: INC-040
   type: info
   ward_id: ward_12
@@ -1800,8 +1878,10 @@ incidents:
   description: Kalpetta Town reports perimeter road around Kalpetta blocked by fallen tree.
   sample_reports:
   - lang: hi
-    text: कल्पेट्टा Town के पास कल्पेट्टा Bus Stand की सड़क पर पेड़ गिर गया है, रास्ता बंद है।
+    text: कल्पेट्टा Town के पास सड़क पर पेड़ गिर गया है, रास्ता बंद है।
   - lang: hinglish
     text: Tree fallen on road near Kalpetta Town, blocking vehicle movement around Kalpetta.
   - lang: en
     text: Fallen tree blocking roadway near Kalpetta Town, requires municipal clearance team.
+  - lang: ta
+    text: "Kalpetta Town அருகே மக்கள் உள்ளனர். தயவுசெய்து உதவி அனுப்பவும்."

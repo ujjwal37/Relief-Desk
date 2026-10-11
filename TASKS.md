@@ -131,6 +131,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | RT-06 | Match ETAs prefer a nearer team | C | DONE | RT-05 | Oxygen case is the Varapuzha clinic; a far boat is not offered when a nearer one exists |
 | RT-07 | Teams free counts every team | C | DONE | RT-06 | The tile total includes shelter and food, not only boats and medical |
 | RT-08 | Tab counts follow filters; areas use place names | C | DONE | RT-07 | Needs-help counts drop with type, area and time; Kalpetta not ward 12 |
+| RT-09 | Seed hi and ta name the same place as English | C | DONE | RT-08 | INC-008 Hindi says St. Jude, not the school; no language names a different landmark |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
