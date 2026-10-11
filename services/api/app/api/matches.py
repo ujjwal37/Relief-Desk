@@ -142,3 +142,43 @@ def list_resources(
     user: CoordinatorUser = Depends(get_current_coordinator),
 ):
     return storage_service.list_resources(kind=kind)
+
+
+class TeamActionRequest(BaseModel):
+    action: str
+
+
+@router.get(
+    "/team/{resource_id}",
+    response_model=StoredResource,
+    summary="One team, for the field confirm link",
+)
+def get_team(resource_id: str):
+    res = storage_service.get_resource(resource_id)
+    if not res:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+    return res
+
+
+@router.post(
+    "/team/{resource_id}",
+    response_model=StoredResource,
+    summary="At scene, done, or back available",
+)
+def confirm_team(resource_id: str, payload: TeamActionRequest):
+    try:
+        return storage_service.team_action(resource_id, payload.action, actor="team")
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.post(
+    "/team/{resource_id}/location",
+    response_model=StoredResource,
+    summary="Optional location share from the team phone",
+)
+def share_team_location(resource_id: str, payload: ResourceLocationRequest):
+    try:
+        return storage_service.update_resource_location(resource_id, payload.lat, payload.lng, actor="team")
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))

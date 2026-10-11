@@ -609,3 +609,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: python scripts/validate_seeds.py (12 wards, 60 landmarks, 40 incidents). pytest tests 110 passed. node scripts/check-i18n.mjs 437 keys. Benchmark test split (168 messages, seed 42): type 51.0% vs keyword 16.3%; place/ward 25.5% vs 13.3%; people exact 79.5%; vulnerable F1 60.0%; duplicate F1 69.4% vs hash 6.2%; false-merge 0%; critical share top-5 60% vs FCFS 0%, top-10 60% vs 20%; mean rank of critical cases 11.3 vs FCFS 13.5; hoax catch 100%; latency p50 0.4 ms.
 - Notes / risks / not done: Historical notes in WORKDONE.md, BUILD_BRIEF.md, AGENTS.md and docs/design still say Riverbend. Type accuracy on this split is 51.0% (was 56.1% on the previous place names). Critical top-5 is 60% (was 80%) and still above first-come-first-served. The old seed generator exits instead of rewriting the pack.
 - Next (suggested task id): no-team-free flow
+
+### 2026-10-11 22:45 IST — FP-GAP — Cursor
+- What changed: When no primary team is free, the match card keeps the labelled nearest alternative and adds an estimated wait until the nearest busy team finishes (straight-line travel at 20 km/h plus time on scene). A Resource gap alert is raised when open cases have zero free teams of that kind. Waiting cases still rise in priority. Seeded demo cases are stamped at load time, staggered across the last 50 minutes, so the Last hour filter includes them. A team confirm link (/team/:id) has At scene, Done and Back available, plus optional location sharing every 45 seconds. Each move is kept as a trail on the coordinator map and on the confirm page. The automatic move stays labelled Simulated until a person confirms or sends a location.
+- Files: matching agent, anomaly rules, storage, team API, command map, teams page, team confirm page, i18n, TASKS.md
+- How verified: pytest tests 114 passed. check-i18n 449 keys.
+- Notes / risks / not done: Location sharing needs the phone's permission. The demo still moves the pin by simulation when nobody shares a location. Done leaves the team Returning until Back available.
+- Next (suggested task id): FP-14

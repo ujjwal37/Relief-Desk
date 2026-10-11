@@ -115,6 +115,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | FP-11 | Filters in the URL and timestamps | C | DONE | FP-02 | Status, type, area, time persist; empty state |
 | FP-12 | Time-based priority rise | C | DONE | FP-04 | Injected clock raises the score; reason chip |
 | FP-13 | Kerala case study | C | DONE | – | Districts Alappuzha, Ernakulam, Thrissur, Wayanad; synthetic people; Riverbend and Lucknow removed from app data |
+| FP-GAP | No team free, confirm link, seed clock | C | DONE | FP-12 | Estimated wait, resource gap alert, team confirm page, last-hour seeds |
 | FP-14 | Demo coordinator button on login | C | TODO | – | One click from /coordinator/login in demo mode |
 | FP-15 | Alerts map polish | C | TODO | – | Ward outlines, numbered typed pins, silent zone |
 | FP-16 | Accuracy report naming | C | TODO | – | Plain metric names vs first-come-first-served |

@@ -185,6 +185,7 @@ export interface StoredResource {
   assigned_request_id?: string | null;
   area_name?: string | null;
   simulated?: boolean;
+  location_trail?: { lat: number; lng: number; at: string }[];
 }
 
 export interface MatchBreakdown {
@@ -214,6 +215,8 @@ export interface MatchProposal {
   fallback_label?: string | null;
   simulated?: boolean;
   eta_minutes?: number | null;
+  wait_minutes?: number | null;
+  wait_team_name?: string | null;
   overcommit_warning: boolean;
 }
 

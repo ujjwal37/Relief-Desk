@@ -9,7 +9,10 @@ from app.models.firestore_models import (
     MatchState,
     MatchBreakdown,
     ResourceKind,
+    ResourceStatus,
 )
+from app.models.schemas import IncidentType
+from app.tools.geo import haversine_distance
 from app.tools.storage import storage_service
 from app.tools.scoring import scoring_engine
 from app.agents.explainer import explainer_agent
@@ -36,6 +39,8 @@ class MatchProposal(BaseModel):
     fallback_label: Optional[str] = None
     simulated: bool = False
     eta_minutes: Optional[int] = None
+    wait_minutes: Optional[int] = None
+    wait_team_name: Optional[str] = None
 
 
 class MatchingAgent:
@@ -79,6 +84,9 @@ class MatchingAgent:
         scored_candidates.sort(key=lambda item: item[1].total_score, reverse=True)
         top_candidates = scored_candidates[:top_n]
         fallback_label = _fallback_label(request.type) if using_fallback else None
+        wait_minutes, wait_team_name = (None, None)
+        if using_fallback:
+            wait_minutes, wait_team_name = _nearest_finish(request, resources)
 
         proposals: List[MatchProposal] = []
         for res, breakdown, is_fallback in top_candidates:
@@ -137,6 +145,8 @@ class MatchingAgent:
                     fallback_label=fallback_label if is_fallback else None,
                     simulated=bool(getattr(res, "simulated", False)),
                     eta_minutes=max(1, round((breakdown.distance_km / 20.0) * 60)),
+                    wait_minutes=wait_minutes if is_fallback else None,
+                    wait_team_name=wait_team_name if is_fallback else None,
                 )
             )
 
@@ -146,6 +156,48 @@ class MatchingAgent:
             request.id,
         )
         return proposals
+
+
+_PRIMARY = {
+    IncidentType.RESCUE: [ResourceKind.BOAT],
+    IncidentType.MEDICAL: [ResourceKind.MEDICAL],
+    IncidentType.FOOD: [ResourceKind.FOOD],
+    IncidentType.SHELTER: [ResourceKind.SHELTER],
+    IncidentType.ANIMAL_ATTACK: [ResourceKind.MEDICAL],
+}
+
+
+def _finish_minutes(res: StoredResource) -> int:
+    """Minutes until this team can take another case. Straight-line, 20 km/h, plus time on scene."""
+    if res.status == ResourceStatus.ON_SCENE:
+        return 20
+    if res.status == ResourceStatus.RETURNING:
+        return 15
+    travel = 15
+    if res.sim_target_lat is not None and res.sim_target_lng is not None:
+        dist = haversine_distance(res.lat, res.lng, res.sim_target_lat, res.sim_target_lng)
+        travel = max(1, round((dist / 20.0) * 60))
+    if res.status in (ResourceStatus.EN_ROUTE, ResourceStatus.DISPATCHED):
+        return travel + 20
+    return travel + 20
+
+
+def _nearest_finish(request: StoredRequest, resources: List[StoredResource]):
+    kinds = _PRIMARY.get(request.type, [])
+    busy = [
+        res for res in resources
+        if res.kind in kinds and res.status != ResourceStatus.AVAILABLE
+    ]
+    if not busy:
+        return None, None
+
+    def distance(res: StoredResource) -> float:
+        if request.lat is None or request.lng is None:
+            return 0.0
+        return haversine_distance(request.lat, request.lng, res.lat, res.lng)
+
+    nearest = min(busy, key=distance)
+    return _finish_minutes(nearest), nearest.name
 
 
 def _fallback_label(incident_type) -> str:

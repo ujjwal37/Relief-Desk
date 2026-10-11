@@ -354,7 +354,8 @@
     "demoPhone": "Demo phone",
     "dismissTour": "Skip tour",
     "reportDetails": "Report details",
-    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
+    "estimatedWait": "Estimated wait {n} min until {team} finishes"
   },
   "tour": {
     "next": "Next",
@@ -487,5 +488,18 @@
     "rjBody": "Why? For example: route under water, boat sent elsewhere.",
     "rjPh": "Reason for rejecting",
     "rjGo": "Reject"
+  },
+  "team": {
+    "open": "Team confirm",
+    "atScene": "At scene",
+    "done": "Done",
+    "back": "Back available",
+    "share": "Share my location during this job",
+    "sharing": "Sharing location about every 45 seconds",
+    "lead": "Tell us where this team is. The demo movement stays labelled Simulated until a real location is sent.",
+    "trail": "Movement trail",
+    "saved": "Updated",
+    "missing": "This team link could not be opened.",
+    "noGps": "This phone did not share a location. The demo can keep the simulated move."
   }
 }

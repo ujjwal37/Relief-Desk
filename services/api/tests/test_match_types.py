@@ -39,5 +39,7 @@ def test_rescue_uses_labelled_shelter_only_when_boats_are_busy():
         assert proposals[0].is_fallback is True
         assert proposals[0].resource_kind == ResourceKind.SHELTER
         assert proposals[0].fallback_label == "coord.noBoatFree"
+        assert proposals[0].wait_minutes is not None and proposals[0].wait_minutes >= 1
+        assert proposals[0].wait_team_name
     finally:
         storage_service.load_seed_resources()

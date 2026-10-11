@@ -32,6 +32,7 @@
             <p class="assigned">{{ 'coord.assigned' | rdTranslate }} {{ team.assigned_request_id }}</p>
           }
           @if (team.simulated) { <p class="sim">{{ 'coord.simulated' | rdTranslate }}</p> }
+          <a class="confirm" [routerLink]="['/team', team.id]">{{ 'team.open' | rdTranslate }}</a>
           <form class="loc" (submit)="saveLocation(team, $event)">
             <span>{{ 'coord.updateLocation' | rdTranslate }}</span>
             <label>{{ 'coord.lat' | rdTranslate }} <input name="lat" type="number" step="any" [value]="team.lat" /></label>

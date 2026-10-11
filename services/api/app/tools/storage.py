@@ -2,7 +2,7 @@ import logging
 import threading
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from app.config import settings
 from app.models.firestore_models import (
@@ -12,6 +12,7 @@ from app.models.firestore_models import (
     AuditEntry,
     RequestStatus,
     StoredResource,
+    LocationPoint,
     ResourceKind,
     ResourceStatus,
     StoredMatch,
@@ -375,6 +376,7 @@ class StorageService:
         res.updated_at = res.location_updated_at
         res.simulated = False
         res.sim_step = 0
+        self._append_trail(res)
         self._resources[resource_id] = res
         self.record_audit(
             actor=actor, action="location_update", target=resource_id, before=before, after=res.model_dump()
@@ -394,6 +396,7 @@ class StorageService:
         res.simulated = True
         res.status = ResourceStatus.EN_ROUTE
         res.location_updated_at = datetime.now(timezone.utc).isoformat()
+        self._append_trail(res)
         self._resources[resource_id] = res
 
         def run() -> None:
@@ -419,7 +422,64 @@ class StorageService:
         res.lng = res.sim_origin_lng + (res.sim_target_lng - res.sim_origin_lng) * frac
         res.location_updated_at = datetime.now(timezone.utc).isoformat()
         res.status = ResourceStatus.ON_SCENE if frac >= 1 else ResourceStatus.EN_ROUTE
+        self._append_trail(res)
         self._resources[resource_id] = res
+        return res
+
+    def _append_trail(self, res: StoredResource) -> None:
+        res.location_trail.append(LocationPoint(
+            lat=res.lat,
+            lng=res.lng,
+            at=res.location_updated_at or datetime.now(timezone.utc).isoformat(),
+        ))
+        if len(res.location_trail) > 40:
+            res.location_trail = res.location_trail[-40:]
+
+    def team_action(self, resource_id: str, action: str, actor: str = "team") -> StoredResource:
+        """Field confirmation: at the scene, job done, or back in the pool."""
+        res = self._resources.get(resource_id)
+        if not res:
+            raise ValueError(f"Resource {resource_id} not found")
+        if action == "at_scene":
+            res.status = ResourceStatus.ON_SCENE
+            res.simulated = False
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+            if res.assigned_request_id:
+                try:
+                    self.mark_arrived(res.assigned_request_id, actor=actor)
+                except ValueError:
+                    pass
+        elif action == "done":
+            if res.assigned_request_id:
+                try:
+                    self.complete_request(res.assigned_request_id, actor=actor)
+                except ValueError:
+                    pass
+            res = self._resources[resource_id]
+            res.status = ResourceStatus.RETURNING
+            res.simulated = False
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+        elif action == "available":
+            if res.assigned_request_id:
+                current = self._requests.get(res.assigned_request_id)
+                if current and current.status in (
+                    RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS
+                ):
+                    try:
+                        self.complete_request(res.assigned_request_id, actor=actor)
+                    except ValueError:
+                        pass
+            res = self._resources[resource_id]
+            res.assigned_request_id = None
+            res.simulated = False
+            res.status = ResourceStatus.AVAILABLE if res.capacity_remaining > 0 else ResourceStatus.DEPLETED
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+        else:
+            raise ValueError(f"Unknown team action {action}")
+        self.record_audit(actor=actor, action="team_confirm", target=resource_id, after={"action": action, "status": res.status.value})
         return res
 
     def load_seed_resources(self, yaml_path: Optional[str] = None) -> int:
@@ -673,6 +733,8 @@ class StorageService:
 
                 flags_list = list(item.get("flags", []))
 
+                minutes_ago = count % 50
+                stamp = (datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)).isoformat()
                 req = StoredRequest(
                     id=item["id"],
                     pack_id=item.get("pack_id") or pack_id,
@@ -697,6 +759,8 @@ class StorageService:
                         vulnerable=0.91,
                         urgency=0.94,
                     ),
+                    created_at=stamp,
+                    updated_at=stamp,
                 )
                 urg_res = scoring_engine.compute_urgency(req)
                 req.urgency_score = urg_res.score

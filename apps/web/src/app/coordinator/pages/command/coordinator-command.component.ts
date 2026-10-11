@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { HostListener, effect } from '@angular/core';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
@@ -32,7 +32,7 @@ import {
 @Component({
   selector: 'app-coordinator-command',
   standalone: true,
-  imports: [CommonModule, FormsModule, MapProviderComponent, SevChipComponent, RdTranslatePipe],
+  imports: [CommonModule, FormsModule, RouterLink, MapProviderComponent, SevChipComponent, RdTranslatePipe],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -193,6 +193,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     ];
   });
   readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
+  readonly movementTrail = computed(() => {
+    const req = this.selectedRequest();
+    const team = req ? this.assignedTeam(req) : undefined;
+    const trail = team?.location_trail || [];
+    if (trail.length < 2) return '';
+    const pts = [
+      ...this.requests().filter((r) => r.lat != null && r.lng != null).map((r) => ({ lat: r.lat as number, lng: r.lng as number })),
+      ...this.resources().map((r) => ({ lat: r.lat, lng: r.lng })),
+      ...trail,
+    ];
+    const minLa = Math.min(...pts.map((p) => p.lat)), maxLa = Math.max(...pts.map((p) => p.lat));
+    const minLo = Math.min(...pts.map((p) => p.lng)), maxLo = Math.max(...pts.map((p) => p.lng));
+    const fx = (lng: number) => 50 + ((lng - minLo) / Math.max(1e-6, maxLo - minLo)) * 500;
+    const fy = (lat: number) => 40 + (1 - (lat - minLa) / Math.max(1e-6, maxLa - minLa)) * 400;
+    return trail.map((p) => `${fx(p.lng).toFixed(1)},${fy(p.lat).toFixed(1)}`).join(' ');
+  });
 
   etaMinutes(km: number): number {
     return Math.max(1, Math.round((km / 20) * 60));
@@ -237,6 +253,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
   readonly areas = computed(() => [...new Set(this.requests().map((r) => r.ward_id).filter((w): w is string => !!w))].sort());
   tr(key: string, n: number): string { this.langService.currentLang(); return this.langService.translate(key).replace('{n}', String(n)); }
+  waitLabel(prop: MatchProposal): string {
+    this.langService.currentLang();
+    return this.langService.translate('coord.estimatedWait')
+      .replace('{n}', String(prop.wait_minutes || 0))
+      .replace('{team}', prop.wait_team_name || '');
+  }
   toggleSection(s: 'why' | 'reports'): void { this.openSection.set(this.openSection() === s ? null : s); }
   setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void { this.bandFilter.set(f); this.writeFilters(); }
   pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); }

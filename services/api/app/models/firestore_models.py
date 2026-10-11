@@ -118,6 +118,12 @@ class ResourceStatus(str, Enum):
     DEPLETED = "depleted"
 
 
+class LocationPoint(BaseModel):
+    lat: float
+    lng: float
+    at: str
+
+
 class StoredResource(BaseModel):
     id: str
     event_id: str = "event_kerala_flood"
@@ -135,6 +141,7 @@ class StoredResource(BaseModel):
     assigned_request_id: Optional[str] = None
     area_name: Optional[str] = None
     simulated: bool = False
+    location_trail: List[LocationPoint] = Field(default_factory=list)
     sim_origin_lat: Optional[float] = None
     sim_origin_lng: Optional[float] = None
     sim_target_lat: Optional[float] = None

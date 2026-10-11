@@ -354,7 +354,8 @@
     "demoPhone": "Demo phone",
     "dismissTour": "Tour chhodein",
     "reportDetails": "Report details",
-    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
+    "estimatedWait": "Andaza {n} min, jab tak {team} free na ho"
   },
   "tour": {
     "next": "Aage",
@@ -487,5 +488,18 @@
     "rjBody": "Kyun? Jaise: raasta doob gaya, boat kahin aur bheji.",
     "rjPh": "Reject karne ka kaaran",
     "rjGo": "Reject karein"
+  },
+  "team": {
+    "open": "Team confirm",
+    "atScene": "Mauke par",
+    "done": "Ho gaya",
+    "back": "Wapas available",
+    "share": "Is kaam ke dauran meri location share karo",
+    "sharing": "Har 45 second mein location ja rahi hai",
+    "lead": "Batao yeh team kahan hai. Demo ki movement Simulated likhi rehti hai, jab tak asli location na bhejo.",
+    "trail": "Raste ka nishan",
+    "saved": "Update ho gaya",
+    "missing": "Yeh team link nahi khula.",
+    "noGps": "Is phone ne location nahi bheji. Demo ki simulated movement chal sakti hai."
   }
 }

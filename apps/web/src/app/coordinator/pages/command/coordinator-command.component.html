@@ -93,6 +93,9 @@
             <rect width="600" height="480" fill="var(--map-bg)"/>
             <path d="M-20 400 C 110 300 200 460 320 360 S 500 180 640 220" fill="none" stroke="var(--map-water)" stroke-width="46" stroke-linecap="round"/>
             <path d="M70 300 C 130 220 230 240 290 280 S 400 180 470 160 L 540 190 C 510 310 430 410 320 450 S 140 470 80 420 Z" fill="var(--map-flood)" stroke="var(--map-flood-line)" stroke-width="1.5" stroke-dasharray="6 5"/>
+            @if (movementTrail()) {
+              <polyline [attr.points]="movementTrail()" fill="none" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            }
             @for (p of svgPins(); track p.id) {
               @if (p.kind === 'team') {
                 <g [attr.transform]="'translate(' + (p.x - 11) + ',' + (p.y - 11) + ')'"><rect width="22" height="22" rx="7" [attr.fill]="teamFill(p.team)"/><path d="M5 14l2 3h8l2-3zM11 5v7" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>
@@ -153,6 +156,10 @@
               </div>
               <div class="team">{{ prop.resource_name }}</div>
               @if (prop.is_fallback && prop.fallback_label) { <p class="warnline">{{ prop.fallback_label | rdTranslate }}</p> }
+              @if (prop.wait_minutes) { <p class="warnline">{{ waitLabel(prop) }}</p> }
+              @if (req.assigned_resource_id) {
+                <a class="link" [routerLink]="['/team', req.assigned_resource_id]">{{ 'team.open' | rdTranslate }}</a>
+              }
               <div class="facts">{{ prop.breakdown.distance_km }} km · {{ tr('coord.etaMin', prop.eta_minutes || etaMinutes(prop.breakdown.distance_km)) }} · {{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ ('coord.kind.' + prop.resource_kind) | rdTranslate }}
                 @if (prop.simulated || assignedTeam(req)?.simulated) { <span class="tag">{{ 'coord.simulated' | rdTranslate }}</span> }
               </div>

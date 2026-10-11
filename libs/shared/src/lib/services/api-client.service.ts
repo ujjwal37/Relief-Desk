@@ -147,6 +147,18 @@ export class ApiClientService {
     return this.http.post<StoredResource>(`/api/resources/${id}/location`, { lat, lng }, this.getAuthHeaders());
   }
 
+  getTeam(id: string): Observable<StoredResource> {
+    return this.http.get<StoredResource>(`/api/team/${id}`);
+  }
+
+  confirmTeam(id: string, action: 'at_scene' | 'done' | 'available'): Observable<StoredResource> {
+    return this.http.post<StoredResource>(`/api/team/${id}`, { action });
+  }
+
+  shareTeamLocation(id: string, lat: number, lng: number): Observable<StoredResource> {
+    return this.http.post<StoredResource>(`/api/team/${id}/location`, { lat, lng });
+  }
+
   getResources(kind?: string): Observable<StoredResource[]> {
     const url = kind ? `/api/resources?kind=${kind}` : '/api/resources';
     return this.http.get<StoredResource[]>(url, this.getAuthHeaders());

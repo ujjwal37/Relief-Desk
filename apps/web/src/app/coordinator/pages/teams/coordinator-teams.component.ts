@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ApiClientService, LanguageService, RdTranslatePipe, StoredResource } from '@rd/shared';
 
 const AREAS: Record<string, string> = {
@@ -20,7 +21,7 @@ const AREAS: Record<string, string> = {
 @Component({
   selector: 'app-coordinator-teams',
   standalone: true,
-  imports: [CommonModule, RdTranslatePipe],
+  imports: [CommonModule, RouterLink, RdTranslatePipe],
   templateUrl: './coordinator-teams.component.html',
   styleUrl: './coordinator-teams.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

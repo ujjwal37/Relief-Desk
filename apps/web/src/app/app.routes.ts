@@ -2,6 +2,10 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
+    path: 'team/:id',
+    loadComponent: () => import('./public/pages/team/team-confirm.component').then(m => m.TeamConfirmComponent),
+  },
+  {
     path: 'welcome',
     loadComponent: () => import('./landing/landing.component').then(m => m.LandingComponent),
   },
