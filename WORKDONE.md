@@ -658,3 +658,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_reset_demo.py` — 2 passed. `node scripts/check-i18n.mjs` — 511 keys, template lint PASS.
 - Notes / risks / not done: Reset is demo mode only and needs the API process to be running. The audit log is not wiped.
 - Next (suggested task id): ng build web and Angular unit tests
+
+### 2026-10-12 00:40 IST — build — Cursor
+- What changed: The weights API test puts the default urgency weights back so the seed-band test still sees a Soon case. The teams unit test provides a router for the confirm link. The accuracy spec looks for the current synthetic-reports line.
+- Files: services/api/tests/test_scoring.py, coordinator teams spec, coordinator benchmark spec, WORKDONE.md
+- How verified: `npx ng build web` succeeded. `npx ng test web --watch=false --browsers=ChromeHeadless` 47 passed. `npx ng test shared --watch=false --browsers=ChromeHeadless` 8 passed. `pytest tests` from services/api: 116 passed. `node scripts/check-i18n.mjs` was already green on the previous commit.
+- Notes / risks / not done: Sass @use compiled inside the production build with no theme-import warning in that log.
+- Next (suggested task id): Playwright end-to-end

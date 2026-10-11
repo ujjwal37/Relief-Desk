@@ -32,7 +32,7 @@ describe('CoordinatorBenchmarkComponent', () => {
 
   it('prints the JSON numbers and the synthetic-data line', () => {
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Synthetic data, our own labels');
+    expect(text).toContain('Synthetic reports, our own labels');
     expect(text).toContain('71.4');
     expect(text).toContain('11.1');
     expect(text).toContain('10.5');

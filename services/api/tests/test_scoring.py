@@ -108,3 +108,6 @@ def test_weights_api_endpoint_and_audit():
     trail = storage_service.get_audit_trail(target="config/weights")
     assert len(trail) >= 1
     assert trail[-1].action == "weights_updated"
+    # Later tests score the seed pack with the desk defaults.
+    from app.tools.scoring import UrgencyWeights, scoring_engine
+    scoring_engine.update_weights(UrgencyWeights())

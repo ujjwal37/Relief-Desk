@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { ApiClientService, StoredResource } from '@rd/shared';
 import { CoordinatorTeamsComponent } from './coordinator-teams.component';
@@ -17,7 +18,7 @@ describe('CoordinatorTeamsComponent', () => {
     api.updateResourceLocation.and.returnValue(of({ ...rows[0], lat: 9.5, lng: 76.3, simulated: false }));
     await TestBed.configureTestingModule({
       imports: [CoordinatorTeamsComponent],
-      providers: [{ provide: ApiClientService, useValue: api }],
+      providers: [{ provide: ApiClientService, useValue: api }, provideRouter([])],
     }).compileComponents();
     fixture = TestBed.createComponent(CoordinatorTeamsComponent);
     fixture.detectChanges();
