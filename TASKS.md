@@ -99,6 +99,29 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | T-053 | Final video upload, description ≤1,024 chars, theme dropdown, submit on portal; save confirmation | U | TODO | T-050, T-052 | Confirmation saved in WORKDONE |
 | – | 18 Oct: buffer only (deadline 11:59 PM IST) | U | – | – | – |
 
+## First-pass reliability (branch cursor/first-pass-e2e-70f2 → ux-uplift)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| FP-01 | Offline report queue stores, retries, and dedupes | C | DONE | T-028 | Phone queue survives offline send; retry uses one idempotency key; server returns the same request |
+| FP-02 | Live coordinator queue | C | TODO | FP-01 | New public report appears within 5 s without reload |
+| FP-03 | Hinglish/Hindi intake place, ward, vulnerable, raw text | C | TODO | FP-01 | Pytest for the three TEST_REPORT examples |
+| FP-04 | Triage bands: critical cases are Needs help now | C | TODO | – | At least 3 seeds in Needs help now; chip and banner counts match |
+| FP-05 | Rescue matches boat/rescue, not shelter, unless labelled fallback | C | TODO | – | Pytest; benchmark not worse |
+| FP-06 | Honest status timeline, local time, short ID | C | TODO | FP-08 | Timeline matches real status |
+| FP-07 | Chat fully localized | C | TODO | – | No raw keys in chips, prompts, or review |
+| FP-08 | Dispatched and Completed lifecycle | C | TODO | FP-05 | Approve leaves the active queue; complete frees capacity |
+| FP-09 | Teams view | C | TODO | FP-08 | All resources listed; typed map pins |
+| FP-10 | Team location and simulated movement | C | TODO | FP-09 | Manual update; simulated path labelled |
+| FP-11 | Filters in the URL and timestamps | C | TODO | FP-02 | Status, type, area, time persist; empty state |
+| FP-12 | Time-based priority rise | C | TODO | FP-04 | Injected clock raises the score; reason chip |
+| FP-13 | Kerala case study | C | TODO | – | Real districts; synthetic people; no Riverbend/Lucknow in app data |
+| FP-14 | Demo coordinator button on login | C | TODO | – | One click from /coordinator/login in demo mode |
+| FP-15 | Alerts map polish | C | TODO | – | Ward outlines, numbered typed pins, silent zone |
+| FP-16 | Accuracy report naming | C | TODO | – | Plain metric names vs first-come-first-served |
+| FP-17 | Mobile coordinator layout | C | TODO | FP-08 | No horizontal overflow at 390; case detail sheet |
+| FP-18 | i18n of case content | C | TODO | FP-13 | Translations field shown for the selected language |
+| FP-19 | Small fixes: 112 text, chhat, sass @use, reset demo | C | TODO | – | Documented build and reset |
+
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
 - TODO/BLOCKED (not started): public layout + tab bar, report chat + voice overlay, confirm, status, nearby, coordinator dashboard + tour, alerts, accuracy report, states

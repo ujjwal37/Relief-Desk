@@ -8,7 +8,12 @@
   </a>
 
   <section class="card" aria-labelledby="my-h">
-    <h2 id="my-h">{{ 'home.my' | rdTranslate }}</h2>
+    <h2 id="my-h">{{ 'home.my' | rdTranslate }}
+      @if (offline.pendingCount() > 0) { <span class="pending">{{ offline.pendingCount() }} {{ 'report.queued' | rdTranslate }}</span> }
+    </h2>
+    @if (offline.pendingCount() > 0) {
+      <p class="pending-note" role="status">{{ 'report.savedPending' | rdTranslate }}</p>
+    }
     @for (r of rows(); track r.req.id) {
       <div class="req">
         <div class="req-main">

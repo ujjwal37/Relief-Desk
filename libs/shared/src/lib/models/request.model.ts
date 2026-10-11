@@ -105,6 +105,10 @@ export interface ReportSubmitRequest {
   location_pin?: { lat: number; lng: number };
   scenario_id?: string;
   structured?: StructuredReportFacts;
+  /** Client retry key. The server returns the original request when this repeats. */
+  idempotency_key?: string;
+  /** Citizen's own words, kept separate from the machine summary. */
+  raw_text?: string;
 }
 
 export interface ReportSubmitResponse {

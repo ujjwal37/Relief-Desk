@@ -86,7 +86,8 @@
     "qrNot": "Not sure",
     "reviewSend": "Review and send",
     "sendSms": "Send by SMS",
-    "offlineBanner": "No network. Saved on this phone. Sending automatically.",
+    "offlineBanner": "No network.",
+    "savedPending": "Saved on this phone, will send when online.",
     "queued": "Queued",
     "placeholder2": "Describe what happened",
     "qrNone": "None of these"

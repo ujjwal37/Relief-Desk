@@ -86,7 +86,8 @@
     "qrNot": "Pakka nahi",
     "reviewSend": "Jaanchein aur bhejein",
     "sendSms": "SMS se bhejein",
-    "offlineBanner": "Network nahi hai. Is phone mein save hua. Apne aap bheja jayega.",
+    "offlineBanner": "Network nahi hai.",
+    "savedPending": "Is phone mein save hua, online aane par bhej denge.",
     "queued": "Queue mein",
     "placeholder2": "Batayein kya hua",
     "qrNone": "Inmein se koi nahi"

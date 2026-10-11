@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { OfflineSyncService } from './offline-sync.service';
 import { ApiClientService, ReportSubmitRequest, ReportSubmitResponse } from '@rd/shared';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 describe('OfflineSyncService (T-028 Offline + SMS Fallback)', () => {
   let service: OfflineSyncService;
@@ -64,6 +64,43 @@ describe('OfflineSyncService (T-028 Offline + SMS Fallback)', () => {
     expect(apiClient.submitReport).toHaveBeenCalledTimes(1);
     expect(service.pendingCount()).toBe(0);
     expect(service.lastSyncedToken()).toBe('ST-998877');
+  });
+
+  it('keeps one queued report and retries the same idempotency key', () => {
+    const saved = service.saveReportOffline({
+      text: 'Ward 7 Temple Road, bachcha stranded',
+      channel: 'text',
+      lang: 'hinglish',
+    });
+    const again = service.saveReportOffline({
+      ...saved.payload,
+      idempotency_key: saved.idempotency_key,
+    });
+    expect(again.client_id).toBe(saved.client_id);
+    expect(service.pendingCount()).toBe(1);
+
+    const submit = spyOn(apiClient, 'submitReport').and.returnValue(throwError(() => new Error('offline')));
+    service.syncPendingReports();
+    expect(service.pendingCount()).toBe(1);
+    expect(service.getPendingReports()[0].attempts).toBe(1);
+    expect(submit.calls.mostRecent().args[0].idempotency_key).toBe(saved.idempotency_key);
+
+    submit.and.returnValue(of({
+      report_id: 'rep_once',
+      request_id: 'req_once',
+      status_token: 'tok_once',
+      summary: 'ok',
+      urgency_score: 80,
+      dedupe_decision: 'new',
+      flags: [],
+      safety_line: 'Call 112',
+    }));
+    service.syncPendingReports();
+    expect(service.pendingCount()).toBe(0);
+    expect(submit).toHaveBeenCalledTimes(2);
+    const keys = submit.calls.allArgs().map((args) => args[0].idempotency_key);
+    expect(keys).toEqual([saved.idempotency_key, saved.idempotency_key]);
+    expect(localStorage.getItem('rd_last_report_id')).toBe('rep_once');
   });
 
   it('should generate prefilled SMS link with compact text for 112 emergency', () => {

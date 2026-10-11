@@ -310,6 +310,12 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     this.chatMessages.update((msgs) => [...msgs, userMsg]);
     this.userInput.set('');
+
+    if (!this.onlineNow()) {
+      this.queueCitizenText(text);
+      return;
+    }
+
     this.isLoading.set(true);
     this.slow.set(false);
     if (this.slowTimer) clearTimeout(this.slowTimer);
@@ -343,15 +349,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
         },
         error: () => {
           this.isLoading.set(false);
-          this.chatMessages.update((msgs) => [
-            ...msgs,
-            {
-              id: `err_${Date.now()}`,
-              role: 'assistant',
-              text: 'Connection failed. Your message is saved locally and will auto-retry. Call 112 for urgent emergency.',
-              timestamp: new Date(),
-            },
-          ]);
+          this.queueCitizenText(text);
         },
       });
   }
@@ -382,17 +380,9 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       structured: facts,
     };
 
-    if (!this.offlineSync.isOnline()) {
-      const item = this.offlineSync.saveReportOffline(payload);
-      this.chatMessages.update((msgs) => [
-        ...msgs,
-        {
-          id: `off_${Date.now()}`,
-          role: 'assistant',
-          text: `Offline. Report queued on this phone (${item.idempotency_key}). It sends when the network returns. You can also use Send by SMS.`,
-          timestamp: new Date(),
-        },
-      ]);
+    if (!this.onlineNow()) {
+      this.offlineSync.saveReportOffline(payload);
+      this.noteQueued();
       return;
     }
 
@@ -414,16 +404,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       },
       error: () => {
         this.isLoading.set(false);
-        const item = this.offlineSync.saveReportOffline(payload);
-        this.chatMessages.update((msgs) => [
-          ...msgs,
-          {
-            id: `err_${Date.now()}`,
-            role: 'assistant',
-            text: `Network error. Report queued locally (${item.idempotency_key}) and will auto-retry. Call 112 for an urgent emergency.`,
-            timestamp: new Date(),
-          },
-        ]);
+        this.offlineSync.saveReportOffline(payload);
+        this.noteQueued();
       },
     });
   }
@@ -460,6 +442,37 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       parts.push(`Hazard: ${card.hazard}`);
     }
     return { ...card, summary: parts.join(' | ') };
+  }
+
+  private onlineNow(): boolean {
+    const reader = this.offlineSync.readOnline;
+    if (typeof reader === 'function') return reader.call(this.offlineSync);
+    return this.offlineSync.isOnline();
+  }
+
+  /** Store the citizen's words so a failed or offline send is retried, not dropped. */
+  private queueCitizenText(text: string): void {
+    this.offlineSync.saveReportOffline({
+      text,
+      raw_text: text,
+      channel: 'text',
+      lang: this.langService.currentLang(),
+      location_pin: this.locationPin(),
+      scenario_id: this.scenarioId(),
+    });
+    this.noteQueued();
+  }
+
+  private noteQueued(): void {
+    this.chatMessages.update((msgs) => [
+      ...msgs,
+      {
+        id: `off_${Date.now()}`,
+        role: 'assistant',
+        text: this.langService.translate('report.savedPending'),
+        timestamp: new Date(),
+      },
+    ]);
   }
 
   private tryGeolocation(): void {

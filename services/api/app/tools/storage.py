@@ -1,4 +1,5 @@
 import logging
+import threading
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -28,6 +29,8 @@ class StorageService:
         self._resources: Dict[str, StoredResource] = {}
         self._matches: Dict[str, StoredMatch] = {}
         self._audit_log: List[AuditEntry] = []  # Strictly append-only
+        self._idempotent: Dict[str, Dict[str, Any]] = {}
+        self._submit_lock = threading.Lock()
         self._firestore_client = None
         self._init_firestore()
 
@@ -125,6 +128,41 @@ class StorageService:
 
     def list_reports(self) -> List[StoredReport]:
         return list(self._reports.values())
+
+    def get_idempotent(self, key: Optional[str]) -> Optional[Dict[str, Any]]:
+        if not key:
+            return None
+        with self._submit_lock:
+            body = self._idempotent.get(key)
+            return dict(body) if body else None
+
+    def begin_or_replay(self, key: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Reserve a new key, or return the stored body / an in-flight marker."""
+        if not key:
+            return None
+        with self._submit_lock:
+            existing = self._idempotent.get(key)
+            if existing and existing.get("request_id"):
+                return dict(existing)
+            if existing and existing.get("_inflight"):
+                return {"_inflight": True}
+            self._idempotent[key] = {"_inflight": True}
+            return None
+
+    def save_idempotent(self, key: Optional[str], body: Dict[str, Any]) -> None:
+        if not key:
+            return
+        with self._submit_lock:
+            self._idempotent[key] = dict(body)
+
+    def release_idempotent(self, key: Optional[str]) -> None:
+        """Drop a reservation when submit fails, so the phone can retry the same key."""
+        if not key:
+            return
+        with self._submit_lock:
+            existing = self._idempotent.get(key)
+            if existing and existing.get("_inflight") and not existing.get("request_id"):
+                self._idempotent.pop(key, None)
 
     # --- Requests DAO ---
     def save_request(self, req: StoredRequest, actor: str = "system") -> StoredRequest:

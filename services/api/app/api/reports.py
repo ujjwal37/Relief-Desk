@@ -1,3 +1,4 @@
+import time
 import uuid
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, status
@@ -45,6 +46,8 @@ class ReportSubmitRequest(BaseModel):
     voice_note_id: Optional[str] = None
     audio_base64: Optional[str] = None
     structured: Optional[StructuredReportFacts] = None
+    idempotency_key: Optional[str] = None
+    raw_text: Optional[str] = None
 
 
 class ReportSubmitResponse(BaseModel):
@@ -77,8 +80,12 @@ def get_synthetic_voice_notes():
     return asr_service.list_voice_notes()
 
 
-@router.post("/reports", response_model=ReportSubmitResponse)
-def submit_report(payload: ReportSubmitRequest):
+def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
+    # Retries from the phone queue send the same key and must not create a second case.
+    replay = _replay_idempotent(payload.idempotency_key)
+    if replay is not None:
+        return replay
+
     # 0. ASR Audio transcription
     transcript: Optional[str] = None
     asr_confidence: Optional[float] = None
@@ -197,7 +204,7 @@ def submit_report(payload: ReportSubmitRequest):
             merged_by="auto_suggest"
         )
 
-    return ReportSubmitResponse(
+    response = ReportSubmitResponse(
         report_id=raw_report.id,
         request_id=req_id,
         status_token=status_token,
@@ -209,3 +216,34 @@ def submit_report(payload: ReportSubmitRequest):
         transcript=transcript,
         asr_confidence=asr_confidence,
     )
+    storage_service.save_idempotent(payload.idempotency_key, response.model_dump())
+    return response
+
+
+@router.post("/reports", response_model=ReportSubmitResponse)
+def submit_report(payload: ReportSubmitRequest):
+    try:
+        return _submit_report_impl(payload)
+    except Exception:
+        storage_service.release_idempotent(payload.idempotency_key)
+        raise
+
+
+def _replay_idempotent(key: Optional[str]) -> Optional[ReportSubmitResponse]:
+    """Return the original response for a repeated key. Parallel retries wait for the first save."""
+    if not key:
+        return None
+    prior = storage_service.begin_or_replay(key)
+    if prior and prior.get("request_id"):
+        return ReportSubmitResponse(**prior)
+    if prior and prior.get("_inflight"):
+        for _ in range(40):
+            time.sleep(0.05)
+            done = storage_service.get_idempotent(key)
+            if done and done.get("request_id"):
+                return ReportSubmitResponse(**done)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This report is still being saved. It will retry.",
+        )
+    return None

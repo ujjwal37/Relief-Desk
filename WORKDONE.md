@@ -518,3 +518,10 @@ Coordinator dashboard (light default, tighter type, plain-language cases, sticky
 P0 fix: '/' is now Home (landing moved to /welcome). Saved requests live in localStorage rd_my_requests (legacy keys kept in sync). Status tab opens latest saved request or the find form. Report keeps the tab bar so users can always leave.
 
 Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), pins numbered like cards, per-type icon+colour, silent=dashed outline, resource gap shows medical pins, conflict shows both claims. Google Maps used when key works (plain markers; map-provider not modified). Template i18n lint added to scripts/check-i18n.mjs.
+
+### 2026-10-11 20:53 IST — FP-01 — Cursor
+- What changed: Offline and failed sends now write a pending report (client id, payload, timestamp, attempts) to localStorage. Retries run on the online event, on app start, and on a backoff timer, always with the same idempotency key. The API returns the original request when that key is repeated. Home and the report screen show a pending badge only when something is actually stored.
+- Files: apps/web/src/app/core/services/offline-sync.service.ts, apps/web/src/app/public/pages/report/report.component.ts, apps/web/src/app/public/pages/report/report.component.html, apps/web/src/app/public/pages/home/home.component.ts, apps/web/src/app/public/pages/home/home.component.html, apps/web/src/app/public/pages/home/home.component.scss, libs/shared/src/lib/models/request.model.ts, libs/shared/src/lib/i18n/*.json, services/api/app/api/reports.py, services/api/app/tools/storage.py, services/api/tests/test_idempotency.py, apps/web/src/app/core/services/offline-sync.service.spec.ts, TASKS.md
+- How verified: `python -m pytest services/api/tests` 99 passed. `node scripts/check-i18n.mjs` 343 keys. `ng test web --include=**/offline-sync.service.spec.ts` 4 passed.
+- Notes / risks / not done: Playwright click-through of the offline path is in the final e2e pass. A parallel duplicate that starts before the first save finishes waits, then replays.
+- Next (suggested task id): FP-02

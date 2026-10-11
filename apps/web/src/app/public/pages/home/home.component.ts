@@ -2,6 +2,7 @@
 import { Router, RouterLink } from '@angular/router';
 import { ApiClientService, AuthService, RdTranslatePipe } from '@rd/shared';
 import { MyRequestsService, SavedRequest } from '../../../core/services/my-requests.service';
+import { OfflineSyncService } from '../../../core/services/offline-sync.service';
 
 interface Row { req: SavedRequest; state: 'loading' | 'ok' | 'err'; headline: string; eta: string; }
 
@@ -20,6 +21,7 @@ export class HomeComponent implements OnInit {
   private router = inject(Router);
   readonly rows = signal<Row[]>([]);
   readonly demoMode = signal(false);
+  readonly offline = inject(OfflineSyncService);
 
   async enterDemo(): Promise<void> {
     if (await this.auth.loginDemo()) await this.router.navigateByUrl('/coordinator/command');

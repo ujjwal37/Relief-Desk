@@ -1,8 +1,10 @@
 <div class="report-view" [style.padding-bottom.px]="kbOffset()">
-  @if (!offlineSync.isOnline()) {
+  @if (!offlineSync.isOnline() || offlineSync.pendingCount() > 0) {
     <div class="offline-banner" role="status">
-      <span>{{ 'report.offlineBanner' | rdTranslate }}</span>
-      @if (offlineSync.pendingCount() > 0) { <b>{{ 'report.queued' | rdTranslate }}: {{ offlineSync.pendingCount() }}</b> }
+      @if (!offlineSync.isOnline()) { <span>{{ 'report.offlineBanner' | rdTranslate }}</span> }
+      @if (offlineSync.pendingCount() > 0) {
+        <b>{{ 'report.savedPending' | rdTranslate }} · {{ offlineSync.pendingCount() }}</b>
+      }
     </div>
   }
 
