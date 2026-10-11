@@ -11,6 +11,7 @@ from app.tools.ratelimit import rate_limiter
 from app.tools.asr import asr_service, VoiceNoteMetadata, ASRResult
 from app.tools.translation import translation_service, TranslationResult
 from app.models.firestore_models import StoredRequest, RequestStatus
+from app.models.schemas import HazardType, IncidentType
 
 router = APIRouter(prefix="/api", tags=["Reports & Intake"])
 
@@ -23,6 +24,16 @@ class ChatMessageRequest(BaseModel):
     location_pin: Optional[Dict[str, float]] = None
 
 
+class StructuredReportFacts(BaseModel):
+    """Facts confirmed on the shared card. Chat and form both send this shape."""
+    incident_type: Optional[str] = None
+    place_text: Optional[str] = None
+    people_count: Optional[int] = None
+    vulnerable: Optional[Dict[str, bool]] = None
+    hazard: Optional[str] = None
+    summary: Optional[str] = None
+
+
 class ReportSubmitRequest(BaseModel):
     text: Optional[str] = ""
     channel: str = "text"  # "text" | "voice"
@@ -32,6 +43,7 @@ class ReportSubmitRequest(BaseModel):
     scenario_id: str = "flood"
     voice_note_id: Optional[str] = None
     audio_base64: Optional[str] = None
+    structured: Optional[StructuredReportFacts] = None
 
 
 class ReportSubmitResponse(BaseModel):
@@ -101,8 +113,25 @@ def submit_report(payload: ReportSubmitRequest):
         asr_confidence=asr_confidence,
     )
 
-    # 3. Extract structured request from text / transcript
+    # 3. Extract structured request from text / transcript, then apply confirmed card edits.
     extracted = intake_agent.parse_report(report_text, language_hint=payload.lang)
+    if payload.structured:
+        facts = payload.structured
+        if facts.incident_type:
+            extracted.type = IncidentType(facts.incident_type)
+        if facts.place_text:
+            extracted.place_text = facts.place_text
+        if facts.people_count is not None:
+            extracted.people.count = facts.people_count
+            extracted.people.confidence = 1.0
+        if facts.vulnerable:
+            for flag, value in facts.vulnerable.items():
+                if hasattr(extracted.vulnerable, flag):
+                    setattr(extracted.vulnerable, flag, bool(value))
+        if facts.hazard:
+            extracted.hazard = HazardType(facts.hazard)
+        if facts.summary:
+            report_text = facts.summary
 
     # 4. Deduplication against active requests
     existing = storage_service.list_requests()

@@ -1,44 +1,63 @@
 <div class="report-view">
-  <!-- Offline Alert Banner -->
   <div class="offline-banner" *ngIf="!offlineSync.isOnline()">
-    <span>📵 {{ 'safety.offlineNotice' | rdTranslate }}</span>
+    <span>{{ 'safety.offlineNotice' | rdTranslate }}</span>
     <span class="badge" *ngIf="offlineSync.pendingCount() > 0">Queued: {{ offlineSync.pendingCount() }}</span>
   </div>
 
-  <!-- Top bar: Location & Toggle -->
   <div class="report-topbar">
     <div class="location-badge">
-      <span class="pin-icon">📍</span>
+      <span class="pin-icon" aria-hidden="true">📍</span>
       <span class="location-text">{{ locationText() }}</span>
     </div>
-    <button class="mode-toggle-btn" (click)="toggleMode()">
-      {{ mode() === 'chat' ? '📋 Switch to Form' : '💬 Switch to Chat' }}
+    <button type="button" class="mode-toggle-btn" (click)="toggleMode()">
+      {{ mode() === 'chat' ? ('report.formTab' | rdTranslate) : ('report.chatTab' | rdTranslate) }}
     </button>
   </div>
 
-  <!-- Form View Toggle -->
   <div class="form-container" *ngIf="mode() === 'form'">
     <div class="form-header">
       <h3>{{ 'report.formTab' | rdTranslate }}</h3>
-      <p class="form-sub">Tap quick incident category or switch back to chat.</p>
+      <p class="form-sub">{{ 'confirm.nothingSent' | rdTranslate }}</p>
     </div>
     <div class="quick-tiles">
-      <button class="tile active" (click)="setQuickChip('Trapped in flood water, need urgent boat rescue')">
-        🌊 Flood Rescue / पानी
+      <button type="button" class="tile" [class.active]="pendingCard()?.incident_type === 'rescue'" (click)="selectFormType('rescue')">
+        Flood rescue
       </button>
-      <button class="tile" (click)="setQuickChip('Urgent medical distress and medicine needed')">
-        🚑 Medical / चिकित्सा
+      <button type="button" class="tile" [class.active]="pendingCard()?.incident_type === 'medical'" (click)="selectFormType('medical')">
+        Medical
       </button>
-      <button class="tile" (click)="setQuickChip('Need food and drinking water packets')">
-        🍲 Food & Water / भोजन
+      <button type="button" class="tile" [class.active]="pendingCard()?.incident_type === 'food'" (click)="selectFormType('food')">
+        Food and water
       </button>
-      <button class="tile" (click)="setQuickChip('Roof collapsed, need emergency shelter')">
-        🏚️ Shelter / आश्रय
+      <button type="button" class="tile" [class.active]="pendingCard()?.incident_type === 'shelter'" (click)="selectFormType('shelter')">
+        Shelter
       </button>
     </div>
+
+    <label class="field">
+      <span>{{ 'confirm.location' | rdTranslate }}</span>
+      <input type="text" [ngModel]="locationText()" (ngModelChange)="updatePlace($event)" />
+    </label>
+    <label class="field">
+      <span>{{ 'confirm.people' | rdTranslate }}</span>
+      <input type="number" min="0" max="99" [ngModel]="pendingCard()?.people_count" (ngModelChange)="updatePeople($event)" />
+    </label>
+    <div class="vuln-row">
+      <button type="button" class="tile" [class.active]="isVulnerableChecked('child')" (click)="toggleFormVulnerable('child')">{{ 'confirm.child' | rdTranslate }}</button>
+      <button type="button" class="tile" [class.active]="isVulnerableChecked('elderly')" (click)="toggleFormVulnerable('elderly')">{{ 'confirm.elderly' | rdTranslate }}</button>
+      <button type="button" class="tile" [class.active]="isVulnerableChecked('pregnant')" (click)="toggleFormVulnerable('pregnant')">{{ 'confirm.pregnant' | rdTranslate }}</button>
+      <button type="button" class="tile" [class.active]="isVulnerableChecked('medical_need')" (click)="toggleFormVulnerable('medical_need')">{{ 'confirm.medical' | rdTranslate }}</button>
+    </div>
+
+    <rd-confirmation-card
+      *ngIf="pendingCard() as card"
+      [card]="card"
+      [busy]="isLoading()"
+      (cardChange)="onCardEdited($event)"
+      (send)="confirmAndSubmit($event)"
+    ></rd-confirmation-card>
   </div>
 
-  <!-- Chat View -->
   <div class="chat-thread" *ngIf="mode() === 'chat'">
     <div
       *ngFor="let msg of chatMessages()"
@@ -46,71 +65,36 @@
       [class.user-row]="msg.role === 'user'"
       [class.assistant-row]="msg.role === 'assistant'"
     >
-      <div class="avatar" *ngIf="msg.role === 'assistant'">🤖</div>
-
+      <div class="avatar" *ngIf="msg.role === 'assistant'" aria-hidden="true">RD</div>
       <div class="bubble" [class.user-bubble]="msg.role === 'user'" [class.assistant-bubble]="msg.role === 'assistant'">
         <p class="msg-text">{{ msg.text }}</p>
-
-        <!-- Confirmation Card In Thread -->
-        <div class="confirmation-card" *ngIf="msg.card as card">
-          <div class="card-header">
-            <span class="card-title">🛡️ {{ 'confirm.title' | rdTranslate }}</span>
-            <span class="type-badge">{{ card.incident_type | uppercase }}</span>
-          </div>
-
-          <div class="card-details">
-            <div class="detail-row">
-              <span class="label">{{ 'confirm.location' | rdTranslate }}:</span>
-              <span class="val">{{ card.place_text }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">{{ 'confirm.people' | rdTranslate }}:</span>
-              <span class="val font-bold">{{ card.people_count }} people</span>
-            </div>
-            <div class="detail-row" *ngIf="card.hazard">
-              <span class="label">{{ 'confirm.hazard' | rdTranslate }}:</span>
-              <span class="val badge-hazard">{{ card.hazard }}</span>
-            </div>
-            <div class="safety-advisory" *ngIf="card.safety_line">
-              <span class="safety-icon">⚠️</span>
-              <span class="safety-text">{{ card.safety_line }}</span>
-            </div>
-          </div>
-
-          <div class="card-actions" *ngIf="!submittedResult()">
-            <button
-              class="confirm-submit-btn"
-              [disabled]="isLoading()"
-              (click)="confirmAndSubmit(card)"
-            >
-              {{ isLoading() ? 'Submitting...' : ('confirm.sendNow' | rdTranslate) }}
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 
-    <!-- Loading Indicator -->
-    <div class="typing-indicator" *ngIf="isLoading()">
-      <span>🤖 Relief Desk Intake is analyzing message...</span>
+    <div class="typing-indicator" *ngIf="isLoading()">Relief Desk is reading the message...</div>
+
+    <div class="quick-chips-row" *ngIf="chatMessages().length <= 2">
+      <button type="button" class="chip" (click)="setQuickChip('Gandhi school ke paas 5 log chat par hain, paani badh raha hai, 2 bache hain')">
+        Flood rescue (Hinglish)
+      </button>
+      <button type="button" class="chip" (click)="setQuickChip('गांधी स्कूल के पास 5 लोग छत पर फंसे हैं, 2 बच्चे हैं')">
+        बाढ़ बचाव (Hindi)
+      </button>
+      <button type="button" class="chip" (click)="setQuickChip('3 people stranded on rooftop, water level rising rapidly')">
+        3 people stranded (English)
+      </button>
     </div>
 
-    <!-- Quick prompt chips -->
-    <div class="quick-chips-row" *ngIf="chatMessages().length <= 2">
-      <button class="chip" (click)="setQuickChip('Gandhi school ke paas 5 log chat par hain, paani badh raha hai, 2 bache hain')">
-        🌊 Flood Rescue (Hinglish)
-      </button>
-      <button class="chip" (click)="setQuickChip('गांधी स्कूल के पास 5 लोग छत पर फंसे हैं, 2 बच्चे हैं')">
-        🇮🇳 बाढ़ बचाव (Hindi)
-      </button>
-      <button class="chip" (click)="setQuickChip('3 people stranded on rooftop, water level rising rapidly')">
-        🇬🇧 3 People Stranded (English)
-      </button>
-    </div>
+    <rd-confirmation-card
+      *ngIf="pendingCard() as card"
+      [card]="card"
+      [busy]="isLoading()"
+      (cardChange)="onCardEdited($event)"
+      (send)="confirmAndSubmit($event)"
+    ></rd-confirmation-card>
   </div>
 
-  <!-- Bottom Action Footer -->
-  <div class="action-footer">
+  <div class="action-footer" *ngIf="mode() === 'chat'">
     <div class="input-row">
       <button
         type="button"
@@ -119,7 +103,7 @@
         (click)="toggleVoice()"
         aria-label="Toggle voice input"
       >
-        {{ isRecording() ? '🔴 Listening...' : '🎤 Mic' }}
+        {{ isRecording() ? ('report.listening' | rdTranslate) : 'Mic' }}
       </button>
       <input
         type="text"
@@ -139,8 +123,8 @@
     </div>
 
     <div class="fast-links">
-      <a [href]="offlineSync.getPrefilledSmsLink(userInput())" class="sms-btn">📱 Send by SMS</a>
-      <a href="tel:112" class="call112-link">🚨 In Danger? Call 112</a>
+      <a [href]="offlineSync.getPrefilledSmsLink(userInput() || pendingCard()?.summary || '')" class="sms-btn">Send by SMS</a>
+      <a href="tel:112" class="call112-link">{{ 'safety.call112' | rdTranslate }}</a>
     </div>
   </div>
 </div>

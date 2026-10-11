@@ -341,3 +341,12 @@
 - Notes / risks / not done: All Day 3 tasks owned by Antigravity (T-030, T-032, T-034, T-035) are now 100% DONE.
 - Next (suggested task id): T-031 (Anomaly engine by C) or T-033 (Benchmark UI view by C) or T-036 (Deploy by U + C).
 
+### 2026-10-11 17:08 IST — T-039 — Cursor
+- What changed: Shared confirmation card (`rd-confirmation-card`) used by both chat and form. It shows the understood summary, editable type / location / people / vulnerable flags, and Send now. Chat turns do not persist a request. POST /api/reports runs only after the confirm tap, applies the edited structured facts, and routes to `/status`. Card labels render in English and Hindi.
+- Files: apps/web/src/app/public/components/confirmation-card/*, apps/web/src/app/public/pages/report/*, services/api/app/api/reports.py, services/api/tests/test_confirmation.py, libs/shared/src/lib/models/request.model.ts, libs/shared/src/lib/i18n/*.json, apps/web/src/app/core/services/offline-sync.service.spec.ts, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_confirmation.py services/api/tests/test_chat_intake.py` -> 7 passed.
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include=**/confirmation-card.component.spec.ts --include=**/report.component.spec.ts` -> 5 passed. Submit is not called until Send now; Hindi title renders.
+- Notes / risks / not done: Form tiles are still the flood set; scenario-pack tiles and the identical Request JSON contract test are T-038. Offline-sync spec fixture was updated so the suite typechecks against ReportSubmitResponse.
+- Next (suggested task id): T-038
+

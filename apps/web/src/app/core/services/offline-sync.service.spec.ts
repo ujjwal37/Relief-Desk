@@ -48,9 +48,13 @@ describe('OfflineSyncService (T-028 Offline + SMS Fallback)', () => {
 
     const mockResponse: ReportSubmitResponse = {
       report_id: 'rep_123',
+      request_id: 'req_123',
       status_token: 'ST-998877',
-      understood_summary: 'Test summary',
-      estimated_wait_minutes: 10,
+      summary: 'Test summary',
+      urgency_score: 10,
+      dedupe_decision: 'new',
+      flags: [],
+      safety_line: 'Call 112',
     };
 
     spyOn(apiClient, 'submitReport').and.returnValue(of(mockResponse));

@@ -88,6 +88,15 @@ export interface ScenarioConfig {
   safety_line_ids: string[];
 }
 
+export interface StructuredReportFacts {
+  incident_type: string;
+  place_text: string | null;
+  people_count: number | null;
+  vulnerable: Record<string, boolean>;
+  hazard: string;
+  summary: string;
+}
+
 export interface ReportSubmitRequest {
   text: string;
   channel?: 'text' | 'voice';
@@ -95,6 +104,7 @@ export interface ReportSubmitRequest {
   source_id?: string;
   location_pin?: { lat: number; lng: number };
   scenario_id?: string;
+  structured?: StructuredReportFacts;
 }
 
 export interface ReportSubmitResponse {

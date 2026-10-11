@@ -55,10 +55,11 @@
       background: rgba(255, 255, 255, 0.08);
       color: #e2e8f0;
       border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.76rem;
-      font-weight: 600;
+      padding: 8px 12px;
+      min-height: 48px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
       cursor: pointer;
 
       &:hover {
@@ -80,28 +81,55 @@
       .form-sub { margin: 4px 0 0 0; font-size: 0.85rem; color: #94a3b8; }
     }
 
-    .quick-tiles {
+    .quick-tiles,
+    .vuln-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
+    }
 
-      .tile {
-        padding: 14px;
-        background: #1e293b;
-        color: #e2e8f0;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        text-align: left;
-        font-size: 0.9rem;
+    .tile {
+      min-height: 48px;
+      padding: 14px;
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      font-size: 0.9rem;
 
-        &:hover, &.active {
-          background: #0f6b5a;
-          border-color: #14b8a6;
-          color: #ffffff;
-        }
+      &:hover, &.active {
+        background: #0f6b5a;
+        border-color: #14b8a6;
+        color: #ffffff;
       }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 12px 0;
+      color: #94a3b8;
+      font-size: 0.82rem;
+      font-weight: 600;
+
+      input {
+        min-height: 48px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: #0b1220;
+        color: #f8fafc;
+        padding: 8px 12px;
+        font-size: 1rem;
+      }
+    }
+
+    rd-confirmation-card {
+      display: block;
+      margin-top: 12px;
     }
   }
 
