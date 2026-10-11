@@ -43,7 +43,7 @@
     </div>
   } @else if (pendingCard() && reviewOpen()) {
     <div class="review-wrap">
-      <rd-confirmation-card [card]="pendingCard()!" [busy]="isLoading()" [smsHref]="offlineSync.getPrefilledSmsLink(pendingCard()!.summary)" (cardChange)="onCardEdited($event)" (send)="confirmAndSubmit($event)"></rd-confirmation-card>
+      <rd-confirmation-card [card]="pendingCard()!" [quote]="citizenWords()" [busy]="isLoading()" [smsHref]="offlineSync.getPrefilledSmsLink(pendingCard()!.summary)" (cardChange)="onCardEdited($event)" (send)="confirmAndSubmit($event)"></rd-confirmation-card>
       <button type="button" class="link back-chat" (click)="reviewOpen.set(false)">{{ 'report.back' | rdTranslate }}</button>
     </div>
   } @else {

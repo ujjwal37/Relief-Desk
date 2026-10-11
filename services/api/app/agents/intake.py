@@ -1,8 +1,9 @@
 import json
 import logging
 from typing import Optional
-from app.models.schemas import ExtractedRequest
+from app.models.schemas import ExtractedRequest, HazardType
 from app.llm.client import llm_client
+from app.tools.nlu_rules import extract_place, hazard_name, people_count, vulnerable_flags
 
 logger = logging.getLogger("relief_desk.intake_agent")
 
@@ -100,8 +101,27 @@ class IntakeAgent:
 
         # Validate evidence spans strictly against the actual raw text
         extracted.validate_spans_against_raw(raw_text)
+        return _repair_with_rules(extracted, raw_text)
 
-        return extracted
+
+def _repair_with_rules(extracted: ExtractedRequest, raw_text: str) -> ExtractedRequest:
+    """Fill place, ward phrase, people and vulnerability from the citizen's words."""
+    place = extract_place(raw_text)
+    if place:
+        extracted.place_text = place
+        extracted.confidence.place = max(extracted.confidence.place, 0.9)
+    count = people_count(raw_text)
+    if count is not None:
+        extracted.people.count = count
+        extracted.people.confidence = max(extracted.people.confidence, 0.9)
+    flags = vulnerable_flags(raw_text)
+    for name, present in flags.items():
+        if present:
+            setattr(extracted.vulnerable, name, True)
+    hazard = hazard_name(raw_text)
+    if hazard and extracted.hazard.value in ("none", "unknown"):
+        extracted.hazard = HazardType(hazard)
+    return extracted
 
 
 intake_agent = IntakeAgent()

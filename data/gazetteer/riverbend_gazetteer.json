@@ -1020,6 +1020,22 @@
         "lake view police post",
         "moti jheel chowki"
       ]
+    },
+    {
+      "id": "LM-61",
+      "name": "Temple Road",
+      "ward_id": "ward_7",
+      "lat": 26.829,
+      "lng": 80.962,
+      "category": "road",
+      "aliases_hi": [
+        "मंदिर रोड",
+        "वार्ड 7 मंदिर रोड"
+      ],
+      "aliases_en": [
+        "temple road",
+        "ward 7 temple road"
+      ]
     }
   ]
 }

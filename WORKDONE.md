@@ -532,3 +532,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_live_queue.py` passed. Command component spec 11 passed. `node scripts/check-i18n.mjs` 344 keys.
 - Notes / risks / not done: Playwright assertion that a POST shows up within 5 s is in the final e2e pass.
 - Next (suggested task id): FP-03
+
+### 2026-10-11 21:05 IST — FP-03 — Cursor
+- What changed: After parsing, place, people, child/elderly/pregnant/disabled and water hazard are repaired from the citizen's words, including "bachcha" and "Ward 7 Temple Road" / "वार्ड 7". The request stores those words as raw_text and the pipe summary separately. Ward 7 resolves to ward_7. The review headline shows the citizen's words.
+- Files: services/api/app/tools/nlu_rules.py, services/api/app/agents/intake.py, services/api/app/api/reports.py, services/api/app/models/firestore_models.py, services/api/tests/test_intake_nlu.py, data/gazetteer/riverbend_gazetteer.json, apps/web/src/app/public/pages/report/*, apps/web/src/app/public/components/confirmation-card/*, TASKS.md
+- How verified: `pytest tests/test_intake_nlu.py` 4 passed. Full `pytest tests` 104 passed.
+- Notes / risks / not done: A card place the citizen edited to a short landmark is kept. A sentence-length place is replaced by the ward phrase.
+- Next (suggested task id): FP-04

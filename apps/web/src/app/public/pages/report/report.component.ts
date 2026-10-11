@@ -371,8 +371,10 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       summary: card.summary,
     };
 
+    const words = this.citizenWords() || card.summary;
     const payload: ReportSubmitRequest = {
-      text: card.summary,
+      text: words,
+      raw_text: words,
       channel: this.mode() === 'form' ? 'form' : 'text',
       lang: this.langService.currentLang(),
       location_pin: this.locationPin(),
@@ -442,6 +444,10 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       parts.push(`Hazard: ${card.hazard}`);
     }
     return { ...card, summary: parts.join(' | ') };
+  }
+
+  citizenWords(): string {
+    return this.chatMessages().filter((msg) => msg.role === 'user').map((msg) => msg.text).join('\n');
   }
 
   private onlineNow(): boolean {

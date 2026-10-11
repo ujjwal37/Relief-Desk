@@ -62,6 +62,7 @@ class StoredRequest(BaseModel):
     cluster_id: Optional[str] = None
     flags: List[str] = Field(default_factory=list)
     raw_text: Optional[str] = None
+    summary: Optional[str] = None
     ai_translation: Optional[str] = None
     translations: Dict[str, str] = Field(default_factory=dict)
     translation_confidence: float = 1.0

@@ -14,6 +14,8 @@ from app.tools.translation import translation_service, TranslationResult
 from app.models.firestore_models import StoredRequest, RequestStatus
 from app.models.schemas import HazardType, IncidentType
 from app.tools.request_contract import canonical_request_dict
+from app.tools.nlu_rules import extract_place, vulnerable_flags
+from app.tools.gazetteer import gazetteer
 
 router = APIRouter(prefix="/api", tags=["Reports & Intake"])
 
@@ -121,8 +123,14 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         asr_confidence=asr_confidence,
     )
 
+    # Citizen words stay the raw report. The card summary is a separate field.
+    citizen_text = (payload.raw_text or payload.text or report_text or "").strip()
+    if citizen_text:
+        report_text = citizen_text
+
     # 3. Extract, then overlay the confirmed card. Chat and form share one canonical shape.
     extracted = intake_agent.parse_report(report_text, language_hint=payload.lang)
+    machine_summary = None
     if payload.structured:
         facts = payload.structured
         canon = canonical_request_dict(
@@ -142,21 +150,39 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         extracted.people.count = canon["people_count"]
         extracted.people.confidence = 1.0
         extracted.hazard = HazardType(canon["hazard"])
+        heard = vulnerable_flags(report_text)
         for flag, value in canon["vulnerable"].items():
-            setattr(extracted.vulnerable, flag, value)
+            setattr(extracted.vulnerable, flag, bool(value or heard.get(flag)))
         if facts.summary:
-            report_text = canon["summary"]
+            machine_summary = canon["summary"]
+        # Keep a short confirmed place. A sentence-length card place is the old bad parse.
+        card_place = (facts.place_text or "").strip()
+        ruled = extract_place(report_text)
+        weak = (
+            not card_place
+            or "auto-detected" in card_place.lower()
+            or len(card_place) > 60
+            or card_place.count(" ") > 8
+        )
+        if ruled and weak:
+            extracted.place_text = ruled
+        elif card_place and not weak:
+            extracted.place_text = card_place
 
     # 4. Deduplication against active requests
     existing = storage_service.list_requests()
     pin_lat = payload.location_pin.get("lat") if payload.location_pin else 26.85
     pin_lng = payload.location_pin.get("lng") if payload.location_pin else 80.93
+    ward_id = _resolve_ward_id(extracted.place_text, report_text)
+    geo = gazetteer.lookup(extracted.place_text or report_text or "")
+    if not payload.location_pin and geo.lat is not None and geo.lng is not None and not geo.is_low_confidence:
+        pin_lat, pin_lng = geo.lat, geo.lng
 
     candidates = dedupe_agent.prefilter_candidates(
         new_req=extracted,
         new_lat=pin_lat,
         new_lng=pin_lng,
-        new_ward=None,
+        new_ward=ward_id,
         existing_requests=existing
     )
     decision = dedupe_agent.evaluate(payload.text, extracted, candidates)
@@ -174,6 +200,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         pack_id=payload.scenario_id,
         type=extracted.type,
         place_text=extracted.place_text or "Riverbend Area",
+        ward_id=ward_id,
         lat=pin_lat,
         lng=pin_lng,
         people_count=extracted.people.count or 1,
@@ -181,7 +208,8 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         hazard=extracted.hazard,
         status=RequestStatus.NEW,
         flags=flags,
-        raw_text=report_text,
+        raw_text=citizen_text or report_text,
+        summary=machine_summary,
         ai_translation=trans_res.text_en,
         translations=trans_res.translations,
         translation_confidence=trans_res.confidence,
@@ -227,6 +255,19 @@ def submit_report(payload: ReportSubmitRequest):
     except Exception:
         storage_service.release_idempotent(payload.idempotency_key)
         raise
+
+
+def _resolve_ward_id(place_text: Optional[str], report_text: str) -> Optional[str]:
+    """Match 'Ward 7 Temple Road' to the gazetteer ward, including Hindi वार्ड."""
+    import re
+    blob = f"{place_text or ''} {report_text or ''}"
+    numbered = re.search(r"(?:ward|वार्ड)\s*(\d+)", blob, flags=re.IGNORECASE)
+    if numbered:
+        candidate = f"ward_{int(numbered.group(1))}"
+        if candidate in gazetteer.wards:
+            return candidate
+    geo = gazetteer.lookup(place_text or report_text or "")
+    return geo.ward_id
 
 
 def _replay_idempotent(key: Optional[str]) -> Optional[ReportSubmitResponse]:
