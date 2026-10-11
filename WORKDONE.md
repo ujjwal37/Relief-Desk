@@ -882,3 +882,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 152 passed, 1 skipped. `node scripts/check-i18n.mjs` — 532 keys. `npx ng build web` succeeded. Benchmark spec 1 passed. `python bench/run_bench.py --split test --seed 42` on the frozen 168: rule type 67.3%, ward 100.0%, duplicate F1 62.7%, vulnerable F1 58.5%. Keyword baseline type 16.3%, ward 13.3%. Gemini measured false, reason no_api_key, model gemini-3.8-flash, n=168.
 - Notes / risks / not done: Type is still under the 90% target. The 32 type misses on this split are mostly the rule reading rescue when the label says medical (10), food (8), shelter (6), or info (5). Those counts were not used to change the rules. Gemini accuracy is not a number until a key is present.
 - Next (suggested task id): GM-04
+
+### 2026-10-12 06:45 IST — GM-04 — Cursor
+- What changed: Candidate retrieval can call gemini-embedding-001 with task SEMANTIC_SIMILARITY and 768 dimensions, then keep neighbours in the same district and the last 6 hours. Cosine under 0.80 is dropped. The Gemini judge returns duplicate, update, or distinct plus evidence. A missing key, a missing SDK, or a failed embed call uses the existing lexical match and does not invent a vector. Splitting a cluster clears merged_into so undo puts the second report back, and both the merge and the split are audit entries.
+- Files: services/api/app/llm/embeddings.py, services/api/app/agents/dedupe.py, services/api/app/tools/storage.py, services/api/tests/test_embedding_dedupe.py, TASKS.md
+- How verified: `pytest tests` — 158 passed, 1 skipped. `node scripts/check-i18n.mjs` — 532 keys. `npx ng build web` succeeded. Benchmark was not re-run; last held-out type 67.3%, ward 100.0%, duplicate F1 62.7%. Gemini on that split is still unmeasured (no API key).
+- Notes / risks / not done: Embeddings are mocked in tests. google-genai is not installed in this environment, so a live embed call would also fall back until the SDK is pinned. 768-d vectors are L2-normalized, which the embeddings page requires for this model below 3072 dimensions.
+- Next (suggested task id): GM-05

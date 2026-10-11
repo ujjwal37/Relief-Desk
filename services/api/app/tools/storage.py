@@ -246,12 +246,20 @@ class StorageService:
         cluster.undone = True
         cluster.updated_at = datetime.now(timezone.utc).isoformat()
 
-        # Detach cluster_id from requests
+        # Detach the cluster and release a folded report so undo puts it back on the board.
+        member_ids = set(cluster.request_ids)
         for r_id in cluster.request_ids:
-            if r_id in self._requests:
-                r = self._requests[r_id]
-                r.cluster_id = None
-                r.updated_at = datetime.now(timezone.utc).isoformat()
+            if r_id not in self._requests:
+                continue
+            req = self._requests[r_id]
+            req.cluster_id = None
+            if req.merged_into in member_ids:
+                parent = self._requests.get(req.merged_into)
+                if parent and (parent.merged_count or 1) > 1:
+                    parent.merged_count = (parent.merged_count or 1) - 1
+                req.merged_into = None
+                req.merged_count = 1
+            req.updated_at = datetime.now(timezone.utc).isoformat()
 
         self.record_audit(
             actor=actor,

@@ -150,6 +150,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | GM-01 | Gemini, cache, or fallback on every report | C | DONE | RT-24 | A real key calls Gemini. No key stores provider=fallback. Cards show Gemini, Recorded Gemini run, or Offline fallback |
 | GM-02 | Structured intake: type, ward, people, hoax | C | DONE | GM-01 | Hinglish and Tamil samples keep the original text. Spam stays under Needs help |
 | GM-03 | Frozen split and Gemini versus keyword baseline | C | DONE | GM-02 | 444 labelled reports. Test ids stay MSG-0073 to MSG-0240. Held-out type 67.3%, ward 100%. Gemini not measured without a key |
+| GM-04 | Embedding retrieval and a Gemini duplicate judge | C | DONE | GM-03 | Same district and time window. Judge says duplicate, update, or distinct. Lexical fallback when AI is off. Merge and undo are audited |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

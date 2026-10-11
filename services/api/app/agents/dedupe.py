@@ -10,7 +10,9 @@ from app.models.schemas import (
 )
 from app.models.firestore_models import StoredRequest, StoredReport
 from app.tools.geo import haversine_distance
+from app.tools.gazetteer import gazetteer
 from app.llm.client import llm_client
+from app.llm.embeddings import cosine, embed_texts, l2_normalize
 
 logger = logging.getLogger("relief_desk.dedupe_agent")
 
@@ -40,8 +42,10 @@ Output ONLY a JSON object strictly matching this schema:
 
 
 class DedupeAgent:
-    def __init__(self, client=None):
+    def __init__(self, client=None, embedder=None):
         self.client = client or llm_client
+        self.embedder = embedder or embed_texts
+        self._embed_scores: dict = {}
 
     def prefilter_candidates(
         self,
@@ -53,7 +57,13 @@ class DedupeAgent:
         max_distance_km: float = 1.5,
         max_time_hours: float = 6.0,
     ) -> List[StoredRequest]:
-        """Deterministic pre-filter by geo-proximity, timestamp, and incident type."""
+        """Embedding neighbours in the same district, or the lexical geo window when AI is off."""
+        embedded = self._embedding_candidates(
+            new_req, new_ward, existing_requests, max_time_hours=max_time_hours
+        )
+        if embedded is not None:
+            return embedded
+        self._embed_scores = {}
         candidates = []
         now = datetime.now(timezone.utc)
 
@@ -89,6 +99,71 @@ class DedupeAgent:
                 candidates.append(req)
 
         return candidates[:12]
+
+    def _district(self, ward_id: Optional[str]) -> Optional[str]:
+        ward = gazetteer.wards.get(ward_id or "")
+        if not ward:
+            return None
+        return ward.get("district")
+
+    def _within_hours(self, req: StoredRequest, max_time_hours: float) -> bool:
+        try:
+            created = datetime.fromisoformat(req.created_at)
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            hours = (datetime.now(timezone.utc) - created).total_seconds() / 3600.0
+            return hours <= max_time_hours
+        except Exception:
+            return True
+
+    def _embedding_candidates(
+        self,
+        new_req: ExtractedRequest,
+        new_ward: Optional[str],
+        existing_requests: List[StoredRequest],
+        max_time_hours: float = 6.0,
+    ) -> Optional[List[StoredRequest]]:
+        """Same district and time window, ranked by gemini-embedding-001. None means use lexical retrieval."""
+        query = (new_req.original_text or new_req.place_text or "").strip()
+        if not query:
+            return None
+        district = self._district(new_ward or new_req.ward_id)
+        pool = []
+        for req in existing_requests:
+            if req.merged_into or not self._within_hours(req, max_time_hours):
+                continue
+            other = self._district(req.ward_id)
+            if district and other and district != other:
+                continue
+            if district and not other:
+                continue
+            pool.append(req)
+        if not pool:
+            probe = self.embedder([query])
+            if not probe:
+                return None
+            self._embed_scores = {}
+            return []
+        texts = [query] + [f"{req.place_text or ''} {req.raw_text or ''}".strip() for req in pool]
+        try:
+            vectors = self.embedder(texts)
+        except Exception:
+            logger.info("Embedding retrieval failed, using lexical candidates")
+            return None
+        if not vectors or len(vectors) != len(texts):
+            return None
+        query_vec = l2_normalize(list(vectors[0]))
+        ranked = []
+        self._embed_scores = {}
+        for req, raw in zip(pool, vectors[1:]):
+            if raw is None:
+                return None
+            score = cosine(query_vec, l2_normalize(list(raw)))
+            if score >= 0.80:
+                ranked.append((score, req))
+                self._embed_scores[req.id] = round(score, 3)
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        return [req for _, req in ranked[:12]]
 
     def evaluate(
         self,
@@ -162,6 +237,7 @@ class DedupeAgent:
                 evidence.append("Follow-up status message from same location")
 
             evidence.append(f"Matches candidate {target.id} location '{target.place_text}'")
+            evidence.extend(self._embed_evidence(target.id))
             return DedupeDecision(
                 decision=DedupeDecisionType.UPDATE,
                 target_request_id=target.id,
@@ -201,6 +277,7 @@ class DedupeAgent:
             f"Same landmark and location: '{best_candidate.place_text}'",
             f"Both reports describe {best_candidate.type.value} situation",
         ]
+        evidence.extend(self._embed_evidence(best_candidate.id))
         return DedupeDecision(
             decision=DedupeDecisionType.DUPLICATE,
             target_request_id=best_candidate.id,
@@ -305,8 +382,14 @@ class DedupeAgent:
         phrases.sort(key=len, reverse=True)
         return phrases
 
+    def _embed_evidence(self, request_id: Optional[str]) -> List[str]:
+        score = self._embed_scores.get(request_id or "")
+        if score is None:
+            return []
+        return [f"gemini-embedding-001 SEMANTIC_SIMILARITY 768d cosine {score}"]
+
     def _ask_gemini(self, raw_text: str, new_req: ExtractedRequest, candidates: List[StoredRequest]) -> Optional[DedupeDecision]:
-        """Ask Gemini to compare the report. None means use the deterministic decision."""
+        """Ask Gemini to judge duplicate, update, or distinct. None means use the lexical decision."""
         if not candidates or not getattr(self.client, "gemini_live", lambda: False)():
             return None
         summary = [
@@ -322,24 +405,58 @@ class DedupeAgent:
             f"<report>\n{raw_text}\n</report>\n"
             f"Extracted place: {new_req.place_text}\n"
             f"Extracted people: {new_req.people.count}\n"
-            f"Candidates:\n{json.dumps(summary)}"
+            f"Candidates:\n{json.dumps(summary)}\n"
+            'Reply with JSON {"relation":"duplicate"|"update"|"distinct","target_request_id":"id or null","evidence":["..."]}'
         )
         try:
             raw = self.client.generate_content(
                 system_instruction=SYSTEM_DEDUPE_PROMPT,
                 user_prompt=user,
             )
-            clean = raw.strip().removeprefix("```json").removesuffix("```").strip()
-            decision = DedupeDecision(**json.loads(clean))
+            decision = self._decision_from_judge(raw, new_req)
         except Exception as exc:
             logger.info("Dedupe Gemini comparison failed, using rules: %s", exc)
+            return None
+        if decision is None:
             return None
         allowed = {candidate.id for candidate in candidates}
         if decision.target_request_id and decision.target_request_id not in allowed:
             return None
         if decision.decision != DedupeDecisionType.NEW and not decision.target_request_id:
             return None
+        decision.evidence.extend(self._embed_evidence(decision.target_request_id))
         return decision
+
+    def _decision_from_judge(self, raw: str, new_req: ExtractedRequest) -> Optional[DedupeDecision]:
+        clean = raw.strip()
+        if clean.startswith("```json"):
+            clean = clean[7:]
+        elif clean.startswith("```"):
+            clean = clean[3:]
+        if clean.endswith("```"):
+            clean = clean[:-3]
+        payload = json.loads(clean.strip())
+        relation = str(payload.get("relation") or payload.get("decision") or "").lower()
+        mapped = {
+            "duplicate": DedupeDecisionType.DUPLICATE,
+            "update": DedupeDecisionType.UPDATE,
+            "distinct": DedupeDecisionType.NEW,
+            "new": DedupeDecisionType.NEW,
+            "conflict": DedupeDecisionType.CONFLICT,
+        }.get(relation)
+        if mapped is None:
+            return None
+        evidence = [str(item) for item in payload.get("evidence") or []]
+        changed = payload.get("changed_fields") or {}
+        if mapped == DedupeDecisionType.UPDATE and not changed:
+            changed = {"people": {"to": new_req.people.count}}
+        return DedupeDecision(
+            decision=mapped,
+            target_request_id=payload.get("target_request_id"),
+            changed_fields=changed,
+            evidence=evidence or ["Gemini judge compared the two reports."],
+            confidence=float(payload.get("confidence") or 0.8),
+        )
 
 
 dedupe_agent = DedupeAgent()

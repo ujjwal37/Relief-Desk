@@ -1,0 +1,57 @@
+"""Text embeddings for duplicate retrieval.
+
+gemini-embedding-001, task SEMANTIC_SIMILARITY, 768 dimensions.
+https://ai.google.dev/gemini-api/docs/embeddings
+Vectors shorter than 3072 are normalized here, which that page requires for this model.
+When the key is missing, callers use the lexical fallback instead of a fake vector.
+"""
+import math
+from typing import List, Optional
+
+from app.config import settings
+from app.llm.client import llm_client
+
+DIM = 768
+
+
+def l2_normalize(values: List[float]) -> List[float]:
+    norm = math.sqrt(sum(item * item for item in values))
+    if norm == 0:
+        return list(values)
+    return [item / norm for item in values]
+
+
+def cosine(left: List[float], right: List[float]) -> float:
+    return sum(a * b for a, b in zip(left, right))
+
+
+def embed_texts(texts: List[str]) -> Optional[List[List[float]]]:
+    """768-d unit vectors, or None when Gemini cannot be called."""
+    if not texts or not llm_client.gemini_live():
+        return None
+    try:
+        from google import genai
+        from google.genai import types
+    except ImportError:
+        return None
+    try:
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        result = client.models.embed_content(
+            model=settings.GEMINI_EMBED_MODEL,
+            contents=list(texts),
+            config=types.EmbedContentConfig(
+                task_type=settings.GEMINI_EMBED_TASK,
+                output_dimensionality=settings.GEMINI_EMBED_DIM,
+            ),
+        )
+    except Exception:
+        return None
+    vectors: List[List[float]] = []
+    for embedding in getattr(result, "embeddings", None) or []:
+        values = list(getattr(embedding, "values", None) or [])
+        if len(values) != settings.GEMINI_EMBED_DIM:
+            return None
+        vectors.append(l2_normalize(values))
+    if len(vectors) != len(texts):
+        return None
+    return vectors
