@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { ApiClientService } from '@rd/shared';
+import { MapProviderService } from '../../../core/maps/map-provider.service';
 import { CoordinatorAlertsComponent } from './coordinator-alerts.component';
 
 describe('CoordinatorAlertsComponent', () => {
@@ -43,7 +44,7 @@ describe('CoordinatorAlertsComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [CoordinatorAlertsComponent],
-      providers: [{ provide: ApiClientService, useValue: api }],
+      providers: [{ provide: ApiClientService, useValue: api }, { provide: MapProviderService, useValue: { decide: () => Promise.resolve('svg'), authFailed: false } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CoordinatorAlertsComponent);
