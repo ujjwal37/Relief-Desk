@@ -104,3 +104,4 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 - TODO/BLOCKED (not started): public layout + tab bar, report chat + voice overlay, confirm, status, nearby, coordinator dashboard + tour, alerts, accuracy report, states
 - T-UI-01 and UX2 tasks superseded by T-UX-03
 - [x] T-UX-03 coordinator dashboard (briefing, sticky approve bar, tour, theme/language menu, shared band counts), public layout + tab bar, report chat, review, status, nearby, alerts, accuracy report, DEMO_MODE-gated demo entry. Unit tests: web 40 + shared 8 green. Not done: undo-after-approve toast (no un-approve API), photo attach in composer, separate public Home tab screen (landing is home), coordinator detail slide-over close control below 1280px.
+- [x] P0 public entry: Home screen, My requests, Find my request, 4-tab bar on all public pages, request ID copy/share on status.
