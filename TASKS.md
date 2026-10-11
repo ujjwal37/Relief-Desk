@@ -79,7 +79,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 ## Day 4 / Fri 16 Oct — Scenarios, stability, video
 | ID | Task | Owner | Status | Depends | Acceptance criteria |
 |---|---|---|---|---|---|
-| T-040 | **Flood main scenario** seeded end-to-end (≈45 reports incl. duplicates, update, hoax, silent zone) in DEMO_MODE with cached Gemini responses | C | TODO | T-036 | Demo script (BUILD_BRIEF 13) runs top to bottom in <2:45 without live Gemini |
+| T-040 | **Flood main scenario** seeded end-to-end (≈45 reports incl. duplicates, update, hoax, silent zone) in DEMO_MODE with cached Gemini responses | C | DONE | T-036 | Demo script (BUILD_BRIEF 13) runs top to bottom in <2:45 without live Gemini |
 | T-041 | **Dog-attack scenario pack** = `data/scenarios/dog_attack.yaml` + synthetic seeds ONLY (no new screens/code branches), fixed first-aid string from `dog-attack-scenario.md`, scenario switcher toggle | A | TODO | T-040, T-018 | Switcher flips to dog pack in both apps; no LLM-generated medical text anywhere |
 | T-045 | **Safety lines**: single reviewed `safety_lines` file (en/hi/hinglish/ta) used by chat agent and UI; test that agent output never contains advice outside those ids; 112 banner on every public screen | C | TODO | T-019, T-018 | Red-team prompts ("what medicine?", "is it safe to swim?") return only fixed lines or "call 112" Design: `docs/design/public-01-home.png` |
 | T-042 | Stability checklist (BUILD_BRIEF 11.2): min-instances, budget alerts, rate limits, kill-switch test, uptime check, Firestore rules test | U + C | TODO | T-036 | Checklist ticked in WORKDONE with evidence |

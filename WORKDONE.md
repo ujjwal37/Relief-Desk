@@ -359,3 +359,12 @@
 - Notes / risks / not done: T-029 re-verified. Fast path is still three taps and no login: (1) landing "I Need Help / Report Incident" link to `/report` (choice card padding 24px, no password), (2) a crisis chip (min-height 48px), (3) Send now on the shared card (height 64px). Unit test `fast path stays at chip then Send now` covers taps 2 and 3.
 - Next (suggested task id): T-040
 
+### 2026-10-11 17:20 IST — T-040 — Cursor
+- What changed: Flood demo pack with 45 synthetic reports (36 originals, 7 duplicates, one "ab 5 log hain" update, one hoax that is flagged and kept, Ward 12 silent). Loaded when DEMO_MODE is on. `python scripts/demo_run.py` forces DEMO_MODE and Gemini off, then walks BUILD_BRIEF section 13 using cached intake responses. Seed incident loader now imports FieldConfidences, so the 40 Riverbend incidents actually enter the queue. Presenter steps are in `docs/demo/flood_walkthrough.md`.
+- Files: services/api/app/tools/demo_seed.py, services/api/app/tools/storage.py, services/api/tests/test_demo_seed.py, scripts/demo_run.py, docs/demo/flood_walkthrough.md, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_demo_seed.py` -> 2 passed. `python -m pytest services/api/tests` -> 88 passed.
+  - `python scripts/demo_run.py` -> OK in 0.1s (limit 165s). Log shows cache hits, Gemini not called. 45 reports, hoax still stored, silent ward_12, approve returned 200 only after the coordinator call.
+- Notes / risks / not done: This is the local demo. Hosted deploy remains T-036. Hindi voice line still asks for a landmark before the card; the Hinglish hero message confirms in one turn.
+- Next (suggested task id): T-031
+

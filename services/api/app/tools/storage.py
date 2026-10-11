@@ -87,9 +87,10 @@ class StorageService:
         status_token: Optional[str] = None,
         transcript: Optional[str] = None,
         asr_confidence: Optional[float] = None,
+        report_id: Optional[str] = None,
     ) -> StoredReport:
         """Stores incoming report raw immediately so nothing is ever lost."""
-        report_id = f"rep_{uuid.uuid4().hex[:10]}"
+        report_id = report_id or f"rep_{uuid.uuid4().hex[:10]}"
         report = StoredReport(
             id=report_id,
             event_id=event_id,
@@ -449,7 +450,7 @@ class StorageService:
         """Loads seeded flood incidents into storage requests."""
         import os
         import yaml
-        from app.models.schemas import IncidentType, HazardType, VulnerableFlags
+        from app.models.schemas import FieldConfidences, IncidentType, HazardType, VulnerableFlags
         from app.tools.scoring import scoring_engine
 
         if yaml_path is None:
@@ -557,6 +558,9 @@ storage_service = StorageService()
 try:
     storage_service.load_seed_resources()
     storage_service.load_seed_incidents()
+    if settings.DEMO_MODE:
+        from app.tools.demo_seed import load_demo_pack
+        load_demo_pack(storage_service)
 except Exception:
     pass
 
