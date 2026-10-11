@@ -10,13 +10,14 @@
 
   <div class="grid" *ngIf="rows().length">
     <article class="metric" *ngFor="let row of rows()">
-      <h2>{{ row.label }}</h2>
+      <h2>{{ row.label | rdTranslate }}</h2>
+      <p class="means">{{ row.means | rdTranslate }}</p>
       <div class="bars" *ngIf="row.pct; else nums">
         <div class="bar-row"><span>{{ 'bench.ours' | rdTranslate }}</span><div class="track"><b class="ours" [style.width.%]="pct(row.relief)"></b></div><em>{{ row.relief }}</em></div>
-        <div class="bar-row"><span>{{ 'bench.base' | rdTranslate }}</span><div class="track"><b class="base" [style.width.%]="pct(row.baseline)"></b></div><em>{{ row.baseline }}</em></div>
+        <div class="bar-row"><span>{{ row.baselineName | rdTranslate }}</span><div class="track"><b class="base" [style.width.%]="pct(row.baseline)"></b></div><em>{{ row.baseline }}</em></div>
       </div>
       <ng-template #nums>
-        <div class="nums"><div><span>{{ 'bench.ours' | rdTranslate }}</span><b>{{ row.relief }}</b></div><div><span>{{ 'bench.base' | rdTranslate }}</span><b>{{ row.baseline || '–' }}</b></div></div>
+        <div class="nums"><div><span>{{ 'bench.ours' | rdTranslate }}</span><b>{{ row.relief }}</b></div><div><span>{{ row.baselineName | rdTranslate }}</span><b>{{ row.baseline || '–' }}</b></div></div>
       </ng-template>
     </article>
   </div>

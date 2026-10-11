@@ -1,14 +1,38 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApiClientService, RdTranslatePipe } from '@rd/shared';
+import { ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 
 export interface MetricRow {
   key: string;
   label: string;
+  means: string;
   relief: string;
   baseline: string;
+  baselineName: string;
   pct: boolean;
 }
+
+/** Strongest honest results first. Weaker scores stay on the page, lower down. */
+const METRIC_ORDER = [
+  'hoax_catch_rate_pct',
+  'hoax_false_flag_rate_pct',
+  'false_merge_rate_pct',
+  'duplicate_precision_pct',
+  'duplicate_f1_pct',
+  'duplicate_recall_pct',
+  'people_count_exact_pct',
+  'people_count_pm1_pct',
+  'vulnerable_flag_macro_f1_pct',
+  'critical_case_top5_share_pct',
+  'critical_case_top10_share_pct',
+  'critical_case_mean_rank',
+  'duplicate_vs_update_3way_accuracy_pct',
+  'type_accuracy_pct',
+  'place_ward_accuracy_pct',
+  'latency_p50_ms',
+  'latency_p95_ms',
+  'cost_per_1000_msgs_usd',
+];
 
 @Component({
   selector: 'app-coordinator-benchmark',
@@ -20,6 +44,7 @@ export interface MetricRow {
 })
 export class CoordinatorBenchmarkComponent implements OnInit {
   private api = inject(ApiClientService);
+  private lang = inject(LanguageService);
 
   readonly rows = signal<MetricRow[]>([]);
   readonly subtitle = signal('');
@@ -49,29 +74,34 @@ export class CoordinatorBenchmarkComponent implements OnInit {
     const metrics = (payload['metrics'] || {}) as Record<string, Record<string, unknown>>;
     const split = String(payload['split_desc'] || '');
     const seed = String(payload['seed'] ?? '');
-    this.subtitle.set(`${split} · seed ${seed}`);
-    this.rows.set(Object.entries(metrics).map(([key, value]) => ({
-      key,
-      label: this.pretty(key),
-      relief: this.format(value['relief_desk']),
-      baseline: this.format(this.baselineOf(value)),
-      pct: /_pct$/.test(key),
-    })));
+    this.subtitle.set(split ? `${split} · seed ${seed}` : '');
+    const keys = [
+      ...METRIC_ORDER.filter((key) => metrics[key]),
+      ...Object.keys(metrics).filter((key) => !METRIC_ORDER.includes(key)),
+    ];
+    this.rows.set(keys.map((key) => {
+      const value = metrics[key];
+      const baseline = this.baselineOf(value);
+      return {
+        key,
+        label: `bench.m.${key}`,
+        means: `bench.mean.${key}`,
+        relief: this.format(value['relief_desk']),
+        baseline: this.format(baseline.value),
+        baselineName: baseline.name,
+        pct: /_pct$/.test(key),
+      };
+    }));
     const examples = (payload['failure_examples'] || []) as Array<Record<string, unknown>>;
     this.failures.set(examples.map((item) => `${item['message_id']}: ${item['category']}`));
   }
 
-  private pretty(key: string): string {
-    const base = key.replace(/_(pct|ms|usd)$/, '').replace(/_/g, ' ').replace(/\bpm1\b/, '(±1)').replace(/\bf1\b/, 'F1').replace(/\bp(\d+)\b/, 'P$1').replace(/\btop(\d+)\b/, 'top $1');
-    const unit = /_pct$/.test(key) ? ' (%)' : /_ms$/.test(key) ? ' (ms)' : /_usd$/.test(key) ? ' (USD)' : '';
-    return base.charAt(0).toUpperCase() + base.slice(1) + unit;
-  }
-
-  private baselineOf(value: Record<string, unknown>): unknown {
-    return value['baseline_hash']
-      ?? value['baseline_fcfs']
-      ?? value['baseline_keyword']
-      ?? value['baseline'];
+  private baselineOf(value: Record<string, unknown>): { value: unknown; name: string } {
+    this.lang.currentLang();
+    if (value['baseline_fcfs'] != null) return { value: value['baseline_fcfs'], name: 'bench.baseFcfs' };
+    if (value['baseline_keyword'] != null) return { value: value['baseline_keyword'], name: 'bench.baseKeyword' };
+    if (value['baseline_hash'] != null) return { value: value['baseline_hash'], name: 'bench.baseHash' };
+    return { value: value['baseline'], name: 'bench.base' };
   }
 
   private format(value: unknown): string {

@@ -630,3 +630,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: template renders district on each ward cell and on the alert row. No new i18n keys; district names are place names.
 - Notes / risks / not done: The river shape is a decorative stroke, not the real river centreline.
 - Next (suggested task id): FP-16
+
+### 2026-10-11 23:30 IST — FP-16 — Cursor
+- What changed: The accuracy report uses plain names (for example "Urgent cases in the first 5" and "Kind of help") instead of raw metric keys. Each card says what the number means. The comparison label is first-come-first-served, keyword guess, or exact text match, matching the baseline that metric uses. Stronger results are listed first. The page title stays "Accuracy report".
+- Files: coordinator-benchmark component, libs/shared i18n en/hi/hinglish/ta, TASKS.md
+- How verified: `node scripts/check-i18n.mjs` — 488 keys, template lint PASS.
+- Notes / risks / not done: Hindi, Hinglish, and Tamil "what this means" lines are shorter than the English explanations. Type accuracy (51%) and place accuracy (25.5%) stay on the page and are still short of the targets.
+- Next (suggested task id): FP-17
