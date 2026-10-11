@@ -64,24 +64,54 @@ def main():
         lm_alias_hi = lm.get("aliases_hi", [lm_name_en])[0]
         lm_alias_en = lm.get("aliases_en", [lm_name_en])[0]
 
-        if lang == "hi":
-            text = f"{lm_alias_hi} के पास {ppl} लोग फंसे हैं, पानी बढ़ रहा है। "
-            if has_child:
-                text += "बच्चे भी साथ हैं। "
-            if has_elderly:
-                text += "बुजुर्गों को सहायता चाहिए।"
-        elif lang == "hinglish":
-            text = f"{lm_alias_en} ke paas {ppl} log chat par hain pani bohot tezi se badh raha hai. "
-            if has_child:
-                text += "chote bache hain. "
-            if has_elderly:
-                text += "buzurg log hain please jaldi boat bhejo."
+        itype = inc["type"]
+        if itype == "medical":
+            if lang == "hi":
+                text = f"{lm_alias_hi} के पास {ppl} मरीजों को दवाइयों और डॉक्टर की सख्त ज़रूरत है। "
+            elif lang == "hinglish":
+                text = f"{lm_alias_en} ke paas {ppl} log bimar hain oxygen aur dawa urgently chahiye. "
+            else:
+                text = f"{ppl} people need urgent medical supplies and medicine near {lm_alias_en}. "
+        elif itype == "food":
+            if lang == "hi":
+                text = f"{lm_alias_hi} पर {ppl} लोगों के लिए राशन और पीने का पानी खत्म हो गया है। "
+            elif lang == "hinglish":
+                text = f"{lm_alias_en} me {ppl} log bhookhe hain ration aur drinking water packets bhejo. "
+            else:
+                text = f"{ppl} people stranded without food packets and water near {lm_alias_en}. "
+        elif itype == "shelter":
+            if lang == "hi":
+                text = f"{lm_alias_hi} के {ppl} लोगों का घर डूब गया है, राहत शिविर में जगह चाहिए। "
+            elif lang == "hinglish":
+                text = f"{lm_alias_en} paas {ppl} log beghar hain temporary shelter aur tarpaulin chahiye. "
+            else:
+                text = f"{ppl} people need emergency shelter near {lm_alias_en}, ground floor submerged. "
+        elif itype == "animal_attack":
+            if lang == "hi":
+                text = f"{lm_alias_hi} के पास {ppl} लोगों को आवारा कुत्तों ने काट लिया है, एंटी-रेबीज इंजेक्शन चाहिए। "
+            elif lang == "hinglish":
+                text = f"{lm_alias_en} ke paas aggressive dogs ne {ppl} logo ko bite kiya hai hospital le jao. "
+            else:
+                text = f"Aggressive pack of dogs attacked {ppl} people near {lm_alias_en}, rabies vaccine needed. "
+        elif itype == "info":
+            if lang == "hi":
+                text = f"{lm_alias_hi} के पास पानी 3 फीट भर गया है, रास्ता बंद है।"
+            elif lang == "hinglish":
+                text = f"{lm_alias_en} road is blocked with 3 feet waterlogging, traffic stopped."
+            else:
+                text = f"Water level 3 feet and road blocked near {lm_alias_en}."
         else:
-            text = f"{ppl} people stranded near {lm_alias_en}, water rising rapidly. "
-            if has_child:
-                text += "Children present. "
-            if has_elderly:
-                text += "Need immediate rescue for elderly."
+            if lang == "hi":
+                text = f"{lm_alias_hi} के पास {ppl} लोग फंसे हैं, पानी बढ़ रहा है। "
+            elif lang == "hinglish":
+                text = f"{lm_alias_en} ke paas {ppl} log chat par hain pani bohot tezi se badh raha hai jaldi boat bhejo. "
+            else:
+                text = f"{ppl} people stranded near {lm_alias_en}, water rising rapidly, rescue boat needed. "
+
+        if has_child:
+            text += "बच्चे भी साथ हैं। " if lang == "hi" else ("chote bache hain. " if lang == "hinglish" else "Children present. ")
+        if has_elderly:
+            text += "बुजुर्गों को सहायता चाहिए।" if lang == "hi" else ("buzurg log hain. " if lang == "hinglish" else "Elderly need assistance.")
 
         make_msg(text, lang, "single_incident", {
             "incident_id": inc["id"],

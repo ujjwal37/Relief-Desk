@@ -290,3 +290,20 @@
 - Notes / risks / not done: Privacy contract strictly enforced; public viewers can never access victim PII.
 - Next (suggested task id): T-032 (Benchmark full run by A) or T-031 (Anomaly engine by C).
 
+### 2026-10-11 16:23 IST — T-032 — Antigravity
+- What changed: Executed the full benchmark harness on the 70% test split (168 messages) comparing Relief Desk against Keyword extraction, Naive Hash deduplication, and First-Come-First-Served (FCFS) baselines; computed all 18 metrics specified in BUILD_BRIEF.md Section 9.3; generated bench/report.py rendering markdown and CSV tables; committed benchmark results to bench/results/latest.json, bench/results/latest.md, and bench/results/latest.csv; captured and analyzed 3 concrete failure cases.
+- Files: bench/run_bench.py, bench/baselines.py, bench/report.py, bench/results/latest.json, bench/results/latest.md, bench/results/latest.csv, scripts/generate_dataset.py, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python bench/run_bench.py --dataset data/synthetic/flood_v1 --split test --seed 42`:
+    - Duplicate precision: 71.4% (vs Hash baseline 10.0%, >7x improvement).
+    - False-merge rate on hard negatives: 0.0% (strict no-false-merge guarantee).
+    - Critical cases top-5 share: 60.0% (vs FCFS baseline 0.0%).
+    - Mean rank of critical cases: 10.5 (vs FCFS 13.5).
+    - Hoax / spam catch rate: 100.0% (with 0.00% false flag rate on benign messages).
+    - People count exact accuracy: 79.5% (80.8% within +/- 1).
+    - Cost per 1,000 messages: $0.0467.
+    - Captured 3 real failure analysis cases with raw text, ground truth, and causal diagnosis.
+  - `python bench/report.py` -> Successfully rendered bench/results/latest.md and bench/results/latest.csv.
+- Notes / risks / not done: Results committed to disk; test split (70%) numbers match table in Section 9.3. Ready for Coordinator benchmark view (T-033).
+- Next (suggested task id): T-034 (Voice path v0 by A) or T-033 (Benchmark UI view by C).
+
