@@ -108,16 +108,22 @@ class Gazetteer:
         for entry in self._alias_index:
             alias = entry["alias"]
             # 1. Exact or substring match in cleaned or raw text
-            if alias in raw_lower or alias in cleaned:
+            if len(alias) >= 4 and (alias in raw_lower or alias in cleaned):
                 score = 0.95
-            elif cleaned and cleaned in alias:
+            elif cleaned and len(cleaned) >= 4 and cleaned in alias:
                 score = 0.85
             else:
                 # 2. Fuzzy similarity ratio
                 ratio = difflib.SequenceMatcher(None, cleaned, alias).ratio()
                 score = round(ratio, 3)
 
-            if score > highest_score:
+            longer = (
+                best_match is not None
+                and score == highest_score
+                and score >= 0.90
+                and len(alias) > len(best_match["alias"])
+            )
+            if score > highest_score or longer:
                 highest_score = score
                 best_match = entry
 
@@ -144,6 +150,25 @@ class Gazetteer:
             confidence=round(highest_score, 2),
             is_low_confidence=True
         )
+
+    def resolve_ward(self, place_text: Optional[str], report_text: str) -> Optional[str]:
+        """Prefer a numbered ward, then the landmark named in the full report.
+
+        The extracted place is often the clause after 'near' and drops the landmark.
+        """
+        blob = f"{place_text or ''} {report_text or ''}"
+        numbered = re.search(r"(?:ward|वार्ड)\s*(\d+)", blob, flags=re.IGNORECASE)
+        if numbered:
+            candidate = f"ward_{int(numbered.group(1))}"
+            if candidate in self.wards:
+                return candidate
+        for query in (report_text, place_text):
+            if not query or not str(query).strip():
+                continue
+            geo = self.lookup(query)
+            if geo.ward_id and not geo.is_low_confidence:
+                return geo.ward_id
+        return None
 
 
 gazetteer = Gazetteer()

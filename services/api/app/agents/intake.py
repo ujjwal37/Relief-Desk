@@ -1,9 +1,9 @@
 import json
 import logging
 from typing import Optional
-from app.models.schemas import ExtractedRequest, HazardType
+from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.llm.client import llm_client
-from app.tools.nlu_rules import extract_place, hazard_name, people_count, vulnerable_flags
+from app.tools.nlu_rules import extract_place, hazard_name, infer_incident_type, people_count, vulnerable_flags
 
 logger = logging.getLogger("relief_desk.intake_agent")
 
@@ -118,6 +118,9 @@ def _repair_with_rules(extracted: ExtractedRequest, raw_text: str) -> ExtractedR
     for name, present in flags.items():
         if present:
             setattr(extracted.vulnerable, name, True)
+    kind = infer_incident_type(raw_text)
+    if kind:
+        extracted.type = IncidentType(kind)
     hazard = hazard_name(raw_text)
     if hazard and extracted.hazard.value in ("none", "unknown"):
         extracted.hazard = HazardType(hazard)

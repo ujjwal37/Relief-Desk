@@ -113,6 +113,46 @@ def people_count(text: str) -> Optional[int]:
     return None
 
 
+def infer_incident_type(text: str) -> Optional[str]:
+    """Read the kind of help from the words, not from a place name such as 'shelter' or 'hospital'.
+
+    Returns None when the text has no strong cue, so a model answer can stand.
+    """
+    if not text:
+        return None
+    lower = text.lower()
+
+    def has_latin(*words: str) -> bool:
+        return any(re.search(rf"(?<![a-z]){re.escape(word)}(?![a-z])", lower) for word in words)
+
+    def has_phrase(*phrases: str) -> bool:
+        return any(phrase in text or phrase in lower for phrase in phrases)
+
+    if has_latin("dog", "kutta", "kutte", "rabies", "kaat") or has_phrase("काट", "कुत्ता"):
+        return "animal_attack"
+    if has_latin("ration", "bhook", "bhookh", "khana", "packets") or has_phrase(
+        "राशन", "भूख", "खाना", "पीने का पानी", "drinking water", "पैकेट"
+    ):
+        return "food"
+    if has_latin("bimar", "bimaar", "dawa", "dawai", "oxygen", "insulin", "doctor", "medicine", "medical") or has_phrase(
+        "बीमार", "दवा", "ऑक्सीजन", "इंसुलिन", "डॉक्टर", "दवाइ"
+    ):
+        return "medical"
+    if has_latin("bachao", "rescue", "stranded", "fanse", "rooftop") or has_phrase(
+        "chat par", "chhat par", "छत", "फंसे", "फंस", "fas gaye",
+        "boat bhejo", "boat needed", "rescue boat", "send a boat", "boat chahiye",
+    ):
+        return "rescue"
+    if has_latin("beghar", "tarpaulin") or has_phrase(
+        "जगह चाहिए", "jagah chahiye", "घर डूब", "ghar doob", "roof collapsed",
+        "emergency shelter", "need shelter", "temporary shelter", "आश्रय", "बेघर",
+    ):
+        return "shelter"
+    if has_phrase("waterlogging", "traffic stopped", "road is blocked", "road blocked", "रास्ता बंद"):
+        return "info"
+    return None
+
+
 def hazard_name(text: str) -> Optional[str]:
     lower = text.lower()
     if any(w in lower for w in ("paani", "pani", "पानी", "water rising", "water", "बाढ़", "flood")):

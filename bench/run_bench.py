@@ -4,7 +4,6 @@ import json
 import math
 import os
 import random
-import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -24,6 +23,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "services" / "api"))
 
 from app.agents.intake import intake_agent
 from app.agents.dedupe import dedupe_agent
+from app.tools.gazetteer import gazetteer
 from app.tools.scoring import scoring_engine
 from app.tools.geo import grid_cell_id
 from app.models.firestore_models import StoredRequest, RequestStatus
@@ -189,19 +189,11 @@ def run_benchmark(
             if kw_ext["type"] == gt_type:
                 kw_type_correct += 1
 
-        # (b) Ward place accuracy
+        # (b) Ward place accuracy. Score the gazetteer ward, not the literal string "ward N".
         if gt_ward:
             ward_total += 1
-            # Check if extracted place text matches or contains ward/landmark
-            rd_ward_inferred = None
-            if extracted.place_text:
-                wm = re.search(r"ward\s*(\d+)", extracted.place_text.lower())
-                if wm:
-                    rd_ward_inferred = f"ward_{wm.group(1)}"
-            if rd_ward_inferred == gt_ward or (extracted.place_text and gt_ward.replace("_", " ") in extracted.place_text.lower()):
-                rd_ward_correct += 1
-            elif extracted.place_text and any(alias in extracted.place_text.lower() for alias in ["ghat", "colony", "school", "nagar", "market"]):
-                # Landmark resolved to correct ward
+            rd_ward_inferred = gazetteer.resolve_ward(extracted.place_text, raw_text)
+            if rd_ward_inferred == gt_ward:
                 rd_ward_correct += 1
 
             if kw_ext["ward_id"] == gt_ward:

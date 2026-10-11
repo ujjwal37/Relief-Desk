@@ -1,19 +1,19 @@
 Metric,Relief Desk,Baseline,Target
-type_accuracy_pct,51.0,16.3,>= 90%
-place_ward_accuracy_pct,25.5,13.3,>= 85%
+type_accuracy_pct,67.3,16.3,>= 90%
+place_ward_accuracy_pct,100.0,13.3,>= 85%
 people_count_exact_pct,79.5,65.4,Reported
 people_count_pm1_pct,80.8,71.8,Reported
-vulnerable_flag_macro_f1_pct,60.0,39.4,Reported
-duplicate_precision_pct,92.6,10.0,Beat hash clearly
-duplicate_recall_pct,55.6,4.4,Beat hash clearly
-duplicate_f1_pct,69.4,6.2,Beat hash clearly
-duplicate_vs_update_3way_accuracy_pct,65.3,N/A (cannot detect updates),Reported
+vulnerable_flag_macro_f1_pct,58.5,39.4,Reported
+duplicate_precision_pct,95.5,10.0,Beat hash clearly
+duplicate_recall_pct,46.7,4.4,Beat hash clearly
+duplicate_f1_pct,62.7,6.2,Beat hash clearly
+duplicate_vs_update_3way_accuracy_pct,61.2,N/A (cannot detect updates),Reported
 false_merge_rate_pct,0.0,N/A,As low as possible
 critical_case_top5_share_pct,60.0,N/A,Clearly above FCFS
 critical_case_top10_share_pct,60.0,20.0,Clearly above FCFS
-critical_case_mean_rank,11.3,13.5,Lower is better
+critical_case_mean_rank,11.0,13.5,Lower is better
 hoax_catch_rate_pct,100.0,0.0%,Reported
 hoax_false_flag_rate_pct,0.0,0.0%,Reported
-latency_p50_ms,0.4,< 1 ms,Reported
-latency_p95_ms,0.5,< 1 ms,Reported
+latency_p50_ms,0.7,< 1 ms,Reported
+latency_p95_ms,18.2,< 1 ms,Reported
 cost_per_1000_msgs_usd,$0.0465,N/A,Reported

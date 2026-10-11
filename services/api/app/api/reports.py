@@ -285,15 +285,7 @@ def submit_report(payload: ReportSubmitRequest):
 
 def _resolve_ward_id(place_text: Optional[str], report_text: str) -> Optional[str]:
     """Match 'Ward 7 Temple Road' to the gazetteer ward, including Hindi वार्ड."""
-    import re
-    blob = f"{place_text or ''} {report_text or ''}"
-    numbered = re.search(r"(?:ward|वार्ड)\s*(\d+)", blob, flags=re.IGNORECASE)
-    if numbered:
-        candidate = f"ward_{int(numbered.group(1))}"
-        if candidate in gazetteer.wards:
-            return candidate
-    geo = gazetteer.lookup(place_text or report_text or "")
-    return geo.ward_id
+    return gazetteer.resolve_ward(place_text, report_text)
 
 
 def _replay_idempotent(key: Optional[str]) -> Optional[ReportSubmitResponse]:
