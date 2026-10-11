@@ -339,6 +339,23 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.selectedRequestId()).toBe('INC-001');
   });
 
+  it('says there is no nearby team instead of an hours-long ETA', () => {
+    const far: MatchProposal = {
+      ...mockProposal,
+      eta_minutes: 5995,
+      no_nearby: true,
+      breakdown: { ...mockProposal.breakdown, distance_km: 1998 },
+    };
+    expect(component.etaText(far)).toBe('No nearby team');
+    expect(component.etaText(far)).not.toContain('5995');
+    const near: MatchProposal = {
+      ...mockProposal,
+      eta_minutes: 4,
+      breakdown: { ...mockProposal.breakdown, distance_km: 1.2 },
+    };
+    expect(component.etaText(near)).toBe('about 4 min');
+  });
+
   it('reloads the queue when the demo phone submits a report', () => {
     apiClientSpy.getRequests.calls.reset();
     component.handleDemoMessage({

@@ -292,6 +292,7 @@
     "assigned": "सौंपा मामला",
     "simulated": "नकली",
     "etaMin": "लगभग {n} मिनट",
+    "noNearbyTeam": "पास में कोई टीम नहीं",
     "updateLocation": "स्थान बदलें",
     "lat": "अक्षांश",
     "lng": "देशांतर",

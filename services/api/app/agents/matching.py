@@ -39,6 +39,7 @@ class MatchProposal(BaseModel):
     fallback_label: Optional[str] = None
     simulated: bool = False
     eta_minutes: Optional[int] = None
+    no_nearby: bool = False
     wait_minutes: Optional[int] = None
     wait_team_name: Optional[str] = None
 
@@ -148,7 +149,8 @@ class MatchingAgent:
                     is_fallback=is_fallback,
                     fallback_label=fallback_label if is_fallback else None,
                     simulated=bool(getattr(res, "simulated", False)),
-                    eta_minutes=max(1, round((breakdown.distance_km / 20.0) * 60)),
+                    eta_minutes=eta_for_distance(breakdown.distance_km),
+                    no_nearby=breakdown.distance_km > NEARBY_KM,
                     wait_minutes=wait_minutes if is_fallback else None,
                     wait_team_name=wait_team_name if is_fallback else None,
                 )
@@ -162,8 +164,19 @@ class MatchingAgent:
         return proposals
 
 
-# A team inside this radius is close enough to send. Past it, the ETA is the real wait.
+# Quote a minute ETA only inside this radius. Farther than this, say there is no nearby team.
+NEARBY_KM = 30.0
+# A team inside this radius is close enough to prefer over a farther cluster.
 PRACTICAL_KM = 40.0
+
+
+def eta_for_distance(distance_km: float) -> Optional[int]:
+    """Straight-line minutes at 20 km/h. None when the team is too far to quote."""
+    if distance_km > NEARBY_KM:
+        return None
+    return max(1, round((distance_km / 20.0) * 60))
+
+
 # How much farther than the nearest team we still offer as an alternative.
 NEAR_BAND_KM = 15.0
 
@@ -220,6 +233,8 @@ def _nearest_finish(request: StoredRequest, resources: List[StoredResource]):
         return haversine_distance(request.lat, request.lng, res.lat, res.lng)
 
     nearest = min(busy, key=distance)
+    if distance(nearest) > NEARBY_KM:
+        return None, None
     return _finish_minutes(nearest), nearest.name
 
 

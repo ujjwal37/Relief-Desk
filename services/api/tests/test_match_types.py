@@ -34,7 +34,10 @@ def test_rescue_uses_labelled_shelter_only_when_boats_are_busy():
     try:
         for boat in storage_service.list_resources(kind=ResourceKind.BOAT):
             boat.status = ResourceStatus.BUSY
-        proposals = matching_agent.find_matches(_rescue("req_type_fallback"), top_n=3, save_to_storage=False)
+        req = _rescue("req_type_fallback")
+        req.lat = 9.436
+        req.lng = 76.398
+        proposals = matching_agent.find_matches(req, top_n=3, save_to_storage=False)
         assert proposals
         assert proposals[0].is_fallback is True
         assert proposals[0].resource_kind == ResourceKind.SHELTER

@@ -784,3 +784,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --include='**/coordinator-alerts.component.spec.ts'` — 4 passed.
 - Notes / risks / not done: The map key still uses the plain words Resource gap for the symbol.
 - Next (suggested task id): RT-15
+
+### 2026-10-12 04:25 IST — RT-15 — Cursor
+- What changed: Each district now has a boat, a medical team and a food team within 30 km of its wards and of the rescue, medical, food and animal cases there. A match farther than 30 km no longer shows a minute ETA such as 223 or 5,995. The case card says No nearby team. A wait until a busy team finishes is quoted only when that team is inside 30 km.
+- Files: data/synthetic/flood_v1/resources.yaml, services/api/app/agents/matching.py, services/api/tests/test_match_eta.py, services/api/tests/test_match_types.py, coordinator command component, coord.noNearbyTeam in en/hi/hinglish/ta, TASKS.md
+- How verified: `pytest tests/test_match_eta.py tests/test_match_types.py tests/test_matches_api.py tests/test_resources_matching.py tests/test_anomaly.py` — 20 passed. `npx ng test web --include='**/coordinator-command.component.spec.ts'` — 18 passed. `node scripts/check-i18n.mjs` — 515 keys.
+- Notes / risks / not done: A case outside Kerala still lists the nearest cluster, with the minute figure hidden. Shelters are not in every district; a shelter case there also says No nearby team.
+- Next (suggested task id): RT-16

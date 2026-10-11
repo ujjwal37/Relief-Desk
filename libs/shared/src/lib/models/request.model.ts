@@ -215,6 +215,7 @@ export interface MatchProposal {
   fallback_label?: string | null;
   simulated?: boolean;
   eta_minutes?: number | null;
+  no_nearby?: boolean;
   wait_minutes?: number | null;
   wait_team_name?: string | null;
   overcommit_warning: boolean;

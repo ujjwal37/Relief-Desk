@@ -16,24 +16,24 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-BOAT-02
-  name: Motorized Rescue Boat
-  name_hi: मोटर चालित बचाव नाव
+  name: Ernakulam Rescue Boat
+  name_hi: एर्नाकुलम बचाव नाव
   kind: boat
-  ward_id: ward_3
-  lat: 9.434
-  lng: 76.402
+  ward_id: ward_4
+  lat: 10.08
+  lng: 76.45
   capacity_total: 10
   capacity_remaining: 10
   status: available
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-BOAT-03
-  name: Inflatable Flood Raft
-  name_hi: इन्फ्लेटेबल बचाव राफ्ट
+  name: Thrissur Flood Raft
+  name_hi: त्रिशूर बाढ़ राफ्ट
   kind: boat
-  ward_id: ward_1
-  lat: 9.47
-  lng: 76.39
+  ward_id: ward_8
+  lat: 10.34
+  lng: 76.24
   capacity_total: 6
   capacity_remaining: 6
   status: available
@@ -112,12 +112,12 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-MED-03
-  name: Champakulam Primary Health First Aid Post
-  name_hi: गांधी नगर प्राथमिक स्वास्थ्य प्राथमिक उपचार केंद्र
+  name: Mala Relief Clinic
+  name_hi: माला राहत चिकित्सालय
   kind: medical
-  ward_id: ward_2
-  lat: 9.416
-  lng: 76.411
+  ward_id: ward_8
+  lat: 10.34
+  lng: 76.24
   capacity_total: 25
   capacity_remaining: 25
   status: available
@@ -137,25 +137,61 @@ resources:
   event_id: event_kerala_flood
 - id: RES-FOOD-01
   name: Aluva Central Ration & Food Packet Hub
-  name_hi: पुराना बाज़ार केंद्रीय राशन व खाद्य पैकेट हब
+  name_hi: आलुवा केंद्रीय राशन व खाद्य पैकेट हब
   kind: food
   ward_id: ward_4
-  lat: 10.1076
-  lng: 76.3516
+  lat: 10.09
+  lng: 76.42
   capacity_total: 500
   capacity_remaining: 500
   status: available
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-FOOD-02
-  name: Anthikad Community Kitchen
-  name_hi: सुभाष नगर सामुदायिक रसोई
+  name: Thrissur Community Kitchen
+  name_hi: त्रिशूर सामुदायिक रसोई
   kind: food
-  ward_id: ward_9
-  lat: 10.466
-  lng: 76.13
+  ward_id: ward_8
+  lat: 10.34
+  lng: 76.24
   capacity_total: 300
   capacity_remaining: 300
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-FOOD-03
+  name: Nedumudi Food Packet Hub
+  name_hi: नेदुमुडी खाद्य पैकेट हब
+  kind: food
+  ward_id: ward_3
+  lat: 9.44
+  lng: 76.40
+  capacity_total: 400
+  capacity_remaining: 400
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-FOOD-04
+  name: Kalpetta Community Kitchen
+  name_hi: कल्पेट्टा सामुदायिक रसोई
+  kind: food
+  ward_id: ward_12
+  lat: 11.57
+  lng: 76.09
+  capacity_total: 250
+  capacity_remaining: 250
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-MED-05
+  name: Vythiri Relief Clinic
+  name_hi: व्यथिरी राहत चिकित्सालय
+  kind: medical
+  ward_id: ward_11
+  lat: 11.57
+  lng: 76.09
+  capacity_total: 16
+  capacity_remaining: 16
   status: available
   synthetic: true
   event_id: event_kerala_flood

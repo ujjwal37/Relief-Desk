@@ -292,6 +292,7 @@
     "assigned": "Assigned case",
     "simulated": "Simulated",
     "etaMin": "about {n} min",
+    "noNearbyTeam": "No nearby team",
     "updateLocation": "Update location",
     "lat": "Latitude",
     "lng": "Longitude",

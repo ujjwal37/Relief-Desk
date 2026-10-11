@@ -237,6 +237,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   etaMinutes(km: number): number {
     return Math.max(1, Math.round((km / 20) * 60));
   }
+  etaText(prop: MatchProposal): string {
+    this.langService.currentLang();
+    const km = prop.breakdown?.distance_km ?? 0;
+    const minutes = prop.eta_minutes ?? this.etaMinutes(km);
+    if (prop.no_nearby || km > 30 || minutes > 90) {
+      return this.langService.translate('coord.noNearbyTeam');
+    }
+    return this.langService.translate('coord.etaMin').replace('{n}', String(minutes));
+  }
   assignedTeam(req: StoredRequest): StoredResource | undefined {
     return this.resources().find((team) => team.id === req.assigned_resource_id);
   }
@@ -295,8 +304,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   tr(key: string, n: number): string { this.langService.currentLang(); return this.langService.translate(key).replace('{n}', String(n)); }
   waitLabel(prop: MatchProposal): string {
     this.langService.currentLang();
+    const minutes = prop.wait_minutes || 0;
+    if (minutes > 90) return this.langService.translate('coord.noNearbyTeam');
     return this.langService.translate('coord.estimatedWait')
-      .replace('{n}', String(prop.wait_minutes || 0))
+      .replace('{n}', String(minutes))
       .replace('{team}', prop.wait_team_name || '');
   }
   toggleSection(s: 'why' | 'reports'): void { this.openSection.set(this.openSection() === s ? null : s); }
