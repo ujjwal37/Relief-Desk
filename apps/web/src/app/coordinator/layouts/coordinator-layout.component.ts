@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AuthService, LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, SettingsButtonComponent, ThemeMode, ThemeService } from '@rd/shared';
+import { AuthService, LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, ThemeMode, ThemeService } from '@rd/shared';
 import { ScenarioService } from '../../core/services/scenario.service';
 import { CoordUiService } from '../../core/services/coord-ui.service';
 import { TourComponent } from '../../core/components/tour.component';
@@ -8,7 +8,7 @@ import { TourComponent } from '../../core/components/tour.component';
 @Component({
   selector: 'app-coordinator-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, RdTranslatePipe, TourComponent, SettingsButtonComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, RdTranslatePipe, TourComponent],
   templateUrl: './coordinator-layout.component.html',
   styleUrl: './coordinator-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
