@@ -405,3 +405,12 @@
 - Notes / risks / not done: The reviewed line already lived in `data/safety_lines.json` as `dog_bite_first_aid`. `dog-attack-scenario.md` is not in the repo. Flood seeds stay in `flood_v1`; the loader reads `data/synthetic/<scenario id>/seeds.yaml` for any other pack.
 - Next (suggested task id): T-025
 
+### 2026-10-11 17:39 IST — T-025 — Cursor
+- What changed: Coordinator command map and the public nearby map go through `rd-map-provider`. `GET /api/config/maps` reads `GOOGLE_MAPS_API_KEY` from the API environment. A real key loads the Google Maps JavaScript API and drops request, resource, and area-cell pins. `replace-me`, a missing key, a script error, or `navigator.onLine === false` keeps the existing SVG. The key is not written into Angular source or git.
+- Files: services/api/app/api/config_router.py, services/api/tests/test_maps_config.py, apps/web/src/app/core/maps/map-provider.service.ts, apps/web/src/app/core/maps/map-provider.component.ts, apps/web/src/app/core/maps/map-provider.component.spec.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.html, apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts, apps/web/src/app/public/pages/nearby/nearby.component.ts, apps/web/src/app/public/pages/nearby/nearby.component.html, apps/web/src/app/public/pages/nearby/nearby.component.spec.ts, libs/shared/src/lib/services/api-client.service.ts, .env.example, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_maps_config.py` -> 2 passed. Placeholder key returns enabled false and a null key.
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include=**/map-provider.component.spec.ts --include=**/nearby.component.spec.ts --include=**/coordinator-command.component.spec.ts` -> 13 passed. Offline skips the config call and still shows the SVG.
+- Notes / risks / not done: Live Google tiles were not opened. That needs a referrer-restricted browser key in `GOOGLE_MAPS_API_KEY` from Ujjwal. Until then every screen uses the SVG. T-025 stays DONE.
+- Next (suggested task id): T-054
+

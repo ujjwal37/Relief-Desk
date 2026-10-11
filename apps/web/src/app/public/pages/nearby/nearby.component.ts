@@ -1,12 +1,13 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ApiClientService, PublicCell, PublicAlert } from '@rd/shared';
+import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 
 @Component({
   selector: 'app-nearby',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, MapProviderComponent],
   templateUrl: './nearby.component.html',
   styleUrls: ['./nearby.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -17,6 +18,14 @@ export class NearbyComponent implements OnInit {
 
   cells = signal<PublicCell[]>([]);
   alerts = signal<PublicAlert[]>([]);
+  readonly mapPins = computed<MapPin[]>(() =>
+    this.cells().map((cell) => ({
+      id: cell.cell_id,
+      lat: cell.center_lat,
+      lng: cell.center_lng,
+      title: cell.ward,
+    })),
+  );
   selectedCell = signal<PublicCell | null>(null);
   isLoading = signal(true);
   distanceFilter = signal('3 km');
@@ -54,6 +63,13 @@ export class NearbyComponent implements OnInit {
 
   selectCell(cell: PublicCell): void {
     this.selectedCell.set(cell);
+  }
+
+  onMapPin(id: string): void {
+    const cell = this.cells().find((item) => item.cell_id === id);
+    if (cell) {
+      this.selectCell(cell);
+    }
   }
 
   navigateTo(path: string): void {

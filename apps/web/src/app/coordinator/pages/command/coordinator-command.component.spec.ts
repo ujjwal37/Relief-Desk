@@ -132,9 +132,11 @@ describe('CoordinatorCommandComponent', () => {
       'rejectMatch',
       'splitCluster',
       'getScenarios',
+      'getMapsConfig',
     ]);
 
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
+    apiClientSpy.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
     apiClientSpy.getScenarios.and.returnValue(of([
       { id: 'flood', title: 'Urban Flood Relief', description: '', incident_types: ['rescue'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: [] },
       { id: 'dog_attack', title: 'Dog attack', description: '', incident_types: ['animal_attack'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: ['dog_bite_first_aid'] },

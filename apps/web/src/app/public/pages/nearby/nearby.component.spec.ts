@@ -64,7 +64,8 @@ describe('NearbyComponent', () => {
   ];
 
   beforeEach(async () => {
-    apiSpy = jasmine.createSpyObj('ApiClientService', ['getPublicCells', 'getPublicAlerts']);
+    apiSpy = jasmine.createSpyObj('ApiClientService', ['getPublicCells', 'getPublicAlerts', 'getMapsConfig']);
+    apiSpy.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
     apiSpy.getPublicCells.and.returnValue(of(mockCellsResponse));
     apiSpy.getPublicAlerts.and.returnValue(of(mockAlerts));
 

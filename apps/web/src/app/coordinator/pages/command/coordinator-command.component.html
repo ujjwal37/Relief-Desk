@@ -266,6 +266,7 @@
         </div>
 
         <!-- Riverbend SVG Map -->
+        <rd-map-provider [pins]="mapPins()" (pinSelect)="selectRequest($event)">
         <svg viewBox="0 0 608 550" class="riverbend-svg-map">
           <defs>
             <radialGradient id="hrRed">
@@ -397,6 +398,7 @@
             </g>
           }
         </svg>
+        </rd-map-provider>
 
         <!-- Map Bottom Legend -->
         <div class="map-overlay-bottom">

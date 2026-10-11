@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ScenarioService } from '../../../core/services/scenario.service';
+import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import {
   ApiClientService,
   MatchProposal,
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-coordinator-command',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MapProviderComponent],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +37,24 @@ export class CoordinatorCommandComponent implements OnInit {
   readonly selectedRequestId = signal<string>('INC-001');
   readonly matches = signal<MatchProposal[]>([]);
   readonly resources = signal<StoredResource[]>([]);
+  readonly mapPins = computed<MapPin[]>(() => {
+    const pins: MapPin[] = [];
+    for (const req of this.requests()) {
+      if (req.lat == null || req.lng == null) {
+        continue;
+      }
+      pins.push({
+        id: req.id,
+        lat: req.lat,
+        lng: req.lng,
+        title: req.place_text || req.id,
+      });
+    }
+    for (const res of this.resources()) {
+      pins.push({ id: res.id, lat: res.lat, lng: res.lng, title: res.name });
+    }
+    return pins;
+  });
   readonly filterType = signal<string>('all');
   readonly searchQuery = signal<string>('');
   readonly activeScenario = this.scenarioService.activeId;

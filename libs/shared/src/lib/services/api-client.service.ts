@@ -101,6 +101,10 @@ export class ApiClientService {
     return this.http.get<any>('/api/coordinator/verify', this.getAuthHeaders());
   }
 
+  getMapsConfig(): Observable<{ enabled: boolean; apiKey: string | null }> {
+    return this.http.get<{ enabled: boolean; apiKey: string | null }>('/api/config/maps');
+  }
+
   getRequests(sort = 'urgency', packId?: string): Observable<StoredRequest[]> {
     const pack = packId ? `&pack_id=${encodeURIComponent(packId)}` : '';
     return this.http.get<StoredRequest[]>(`/api/requests?sort=${sort}${pack}`, this.getAuthHeaders());
