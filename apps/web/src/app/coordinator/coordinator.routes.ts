@@ -25,6 +25,10 @@ export const COORDINATOR_ROUTES: Routes = [
         path: 'alerts',
         loadComponent: () => import('./pages/alerts/coordinator-alerts.component').then(m => m.CoordinatorAlertsComponent),
       },
+      {
+        path: 'benchmark',
+        loadComponent: () => import('./pages/benchmark/coordinator-benchmark.component').then(m => m.CoordinatorBenchmarkComponent),
+      },
     ],
   },
 ];

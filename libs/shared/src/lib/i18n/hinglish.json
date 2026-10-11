@@ -70,6 +70,10 @@
     "viewMap": "Map par dekhein",
     "empty": "Abhi koi alert nahi."
   },
+  "benchmark": {
+    "nav": "Benchmark",
+    "title": "Benchmark: Relief Desk vs pehle aane wale"
+  },
   "auth": {
     "loginTitle": "Coordinator Portal",
     "subtitle": "Authorized Responders aur Triage Leads",

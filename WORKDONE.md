@@ -378,3 +378,12 @@
 - Notes / risks / not done: News-signal card is stretch S-001 and is not on this screen.
 - Next (suggested task id): T-033
 
+### 2026-10-11 17:27 IST — T-033 — Cursor
+- What changed: Coordinator benchmark page at `/coordinator/benchmark` reads `GET /api/benchmark/latest`, which returns `bench/results/latest.json` unchanged. The table prints Relief Desk and baseline figures from that file, including duplicate recall. The line "Synthetic data, our own labels" is on the page.
+- Files: services/api/app/api/benchmark.py, services/api/app/main.py, services/api/tests/test_benchmark_api.py, apps/web/src/app/coordinator/pages/benchmark/*, apps/web/src/app/coordinator/coordinator.routes.ts, apps/web/src/app/coordinator/layouts/coordinator-layout.component.html, libs/shared/src/lib/services/api-client.service.ts, libs/shared/src/lib/i18n/*.json, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_benchmark_api.py` -> 1 passed. Response body equals the committed JSON. Unsigned request is 401.
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include=**/coordinator-benchmark.component.spec.ts` -> 1 passed (71.4, 11.1, 10.5, 0.0, $0.0467, and the synthetic-data line).
+- Notes / risks / not done: Numeric cells use one decimal place, matching the current results file.
+- Next (suggested task id): T-045
+

@@ -12,6 +12,7 @@
       <rd-language-switcher></rd-language-switcher>
       <a routerLink="/coordinator/command" class="nav-btn">{{ 'queue.title' | rdTranslate }}</a>
       <a routerLink="/coordinator/alerts" class="nav-btn">{{ 'alerts.title' | rdTranslate }}</a>
+      <a routerLink="/coordinator/benchmark" class="nav-btn">{{ 'benchmark.nav' | rdTranslate }}</a>
       <span class="demo-user">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</span>
       <button type="button" class="nav-btn" (click)="logout()">{{ 'nav.logout' | rdTranslate }}</button>
     </div>

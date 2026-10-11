@@ -70,6 +70,10 @@
     "viewMap": "View on map",
     "empty": "No alerts right now."
   },
+  "benchmark": {
+    "nav": "Benchmark",
+    "title": "Benchmark: Relief Desk vs first-come-first-served"
+  },
   "auth": {
     "loginTitle": "Coordinator Portal",
     "subtitle": "Authorized Responders and Triage Leads",

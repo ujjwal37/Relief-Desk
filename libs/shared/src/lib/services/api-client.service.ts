@@ -154,6 +154,10 @@ export class ApiClientService {
     return this.http.get<AnomalyAlert[]>('/api/alerts', this.getAuthHeaders());
   }
 
+  getBenchmark(): Observable<Record<string, unknown>> {
+    return this.http.get<Record<string, unknown>>('/api/benchmark/latest', this.getAuthHeaders());
+  }
+
   acknowledgeAlert(id: string): Observable<AnomalyAlert> {
     return this.http.post<AnomalyAlert>(`/api/alerts/${id}/acknowledge`, {}, this.getAuthHeaders());
   }

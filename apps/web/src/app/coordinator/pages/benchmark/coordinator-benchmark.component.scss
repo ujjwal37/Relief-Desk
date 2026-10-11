@@ -1,0 +1,72 @@
+.bench-page {
+  min-height: calc(100vh - 88px);
+  padding: 16px;
+  background: #070a13;
+  color: #f1f5fb;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  padding: 16px 20px;
+}
+
+.glow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+h1, h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.sub {
+  margin: 4px 0 0;
+  color: #76829a;
+  font-size: 13px;
+}
+
+.synthetic {
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+th {
+  color: #76829a;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.ours {
+  color: #8b8cf8;
+  font-weight: 750;
+}
+
+.failures p {
+  margin: 6px 0 0;
+  color: #aab4c8;
+  font-size: 13px;
+}

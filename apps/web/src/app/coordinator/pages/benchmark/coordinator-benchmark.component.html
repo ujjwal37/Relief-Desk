@@ -1,0 +1,35 @@
+<div class="bench-page">
+  <header class="card glow">
+    <div>
+      <h1>{{ 'benchmark.title' | rdTranslate }}</h1>
+      <p class="sub">{{ subtitle() }}</p>
+    </div>
+    <p class="synthetic">Synthetic data, our own labels</p>
+  </header>
+
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+
+  <div class="table-card card">
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Relief Desk</th>
+          <th>Baseline</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows()">
+          <td>{{ row.label }}</td>
+          <td class="ours">{{ row.relief }}</td>
+          <td>{{ row.baseline }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="card failures" *ngIf="failures().length">
+    <h2>Failure examples</h2>
+    <p *ngFor="let line of failures()">{{ line }}</p>
+  </section>
+</div>
