@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { ApiClientService, ReportStatusResponse } from '@rd/shared';
+import { ApiClientService, ReportStatusResponse, RdTranslatePipe } from '@rd/shared';
 
 @Component({
   selector: 'app-status',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, RdTranslatePipe],
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,6 +22,7 @@ export class StatusComponent implements OnInit {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   statusData = signal<ReportStatusResponse | null>(null);
+  copied = signal(false);
 
   ngOnInit(): void {
     // Check route query parameters or localStorage for last report ID
@@ -80,6 +81,13 @@ export class StatusComponent implements OnInit {
     const id = this.reportIdInput();
     const tok = this.tokenInput();
     this.fetchStatus(id, tok || undefined);
+  }
+
+  copyId(id: string): void {
+    navigator.clipboard?.writeText(id).then(() => {
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 1500);
+    });
   }
 
   navigateTo(path: string): void {
