@@ -175,7 +175,13 @@
     "noReports": "No reports in",
     "reports": "reports",
     "free": "Free",
-    "busy": "Busy"
+    "busy": "Busy",
+    "reasonSpike": "{place}: {n} reports in {window} (baseline {base})",
+    "reasonSilent": "{place}: 0 reports in {window}, neighbours rising. Possible outage.",
+    "reasonGapNone": "No {kind} team free. {n} cases are still waiting.",
+    "reasonGapDemand": "{kind} demand {demand}, only {free} free",
+    "reasonConflict": "\"{left}\" vs \"{right}\" in {place}",
+    "reasonStale": "{n} requests unconfirmed for {mins} min → needs recheck"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -356,7 +362,8 @@
     "reportDetails": "Report details",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
     "estimatedWait": "Estimated wait {n} min until {team} finishes",
-    "backToList": "Back to cases"
+    "backToList": "Back to cases",
+    "fallbackSummary": "Urgent assistance requested at this location."
   },
   "tour": {
     "next": "Next",
@@ -415,7 +422,32 @@
     "beAware": "Be aware",
     "activeReports": "active reports",
     "offer": "Offer help",
-    "synthetic": "Synthetic scenario inspired by Kerala floods"
+    "synthetic": "Synthetic scenario inspired by Kerala floods",
+    "bucket2": "Last 2 hours",
+    "bucket3": "Last 3 hours",
+    "card": {
+      "alt_01": {
+        "title": "Dog attack alert · Anthikad, Thrissur",
+        "desc": "3 reports in 2 h. Avoid walking alone near Anthikad lanes after dark.",
+        "ago": "25 min ago"
+      },
+      "alt_02": {
+        "title": "Flooded lanes · Chalakudy and Aluva",
+        "desc": "Temple Road closed. Use the school road to reach the shelter.",
+        "ago": "1 h ago"
+      },
+      "alt_03": {
+        "title": "Community food relief active · Ward 2",
+        "desc": "12 households near you need food kits. Coordinators confirm first.",
+        "ago": "2 h ago"
+      }
+    },
+    "hazard": {
+      "cell_1031_7633_w7": "Water rising, Temple Road submerged",
+      "cell_1011_7635_w4": "Waterlogging 2-3 feet",
+      "cell_1047_7613_w9": "Aggressive dogs spotted near Anthikad lanes",
+      "cell_0942_7641_w2": "Drinking water shortage, community kitchen operational"
+    }
   },
   "bench": {
     "title2": "Accuracy report",

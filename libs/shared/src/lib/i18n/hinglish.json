@@ -175,7 +175,13 @@
     "noReports": "Koi report nahi, pichhle",
     "reports": "reports",
     "free": "Khaali",
-    "busy": "Vyast"
+    "busy": "Vyast",
+    "reasonSpike": "{place}: {window} mein {n} reports (aadhar {base})",
+    "reasonSilent": "{place}: {window} mein 0 reports, aas-paas badh rahi hain. Shayad network band hai.",
+    "reasonGapNone": "Koi {kind} team free nahi. {n} cases abhi bhi intezaar mein hain.",
+    "reasonGapDemand": "{kind} maang {demand}, sirf {free} free",
+    "reasonConflict": "{place} mein \"{left}\" aur \"{right}\" alag baat",
+    "reasonStale": "{n} requests {mins} min se bina confirm ke hain, phir jaanchein"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -231,15 +237,15 @@
     "close": "Ho gaya"
   },
   "coord": {
-    "cases": "Cases",
-    "alerts": "Alerts",
-    "accuracy": "Accuracy report",
+    "cases": "Maamle",
+    "alerts": "Chetavani",
+    "accuracy": "Kitna sahi hai",
     "search": "Cases khojein",
     "tour": "Tour lein",
     "live": "Live",
     "menu": "Account menu",
     "scenario": "Scenario",
-    "signOut": "Sign out",
+    "signOut": "Bahar niklein",
     "weights": "Priority weights",
     "band": {
       "critical": "Abhi madad chahiye",
@@ -262,7 +268,7 @@
     "teamsLead": "Har boat, medical, khana aur ashray team.",
     "allTypes": "Sab type",
     "allStatuses": "Sab status",
-    "filterType": "Type",
+    "filterType": "Tarah",
     "filterArea": "Ilaaka",
     "filterTime": "Samay",
     "allAreas": "Sab ilaake",
@@ -281,12 +287,12 @@
     "updatedMin": "{n} min pehle",
     "updatedHour": "{n} ghante pehle",
     "staleTeam": "Location 20 min se purani",
-    "assigned": "Assigned case",
+    "assigned": "Saunpa hua case",
     "simulated": "Nakli",
     "etaMin": "lagbhag {n} min",
     "updateLocation": "Location badlein",
-    "lat": "Latitude",
-    "lng": "Longitude",
+    "lat": "Uttar-dakshin",
+    "lng": "Poorv-paschim",
     "saveLocation": "Location save karein",
     "savedLocation": "Location save ho gayi.",
     "kind": {
@@ -339,12 +345,12 @@
     "youDecide": "Faisla aapka hai. Aapke approve karne tak kuch nahi bheja jata.",
     "approve": "Approve karein aur bhejein",
     "change": "Badlein",
-    "reject": "Reject",
+    "reject": "Mana karein",
     "people": "log",
     "noSelection": "List se koi case chunein.",
-    "showOriginal": "Original dikhayein",
-    "showTranslation": "Translation dikhayein",
-    "lowTrans": "Translation jaanchein",
+    "showOriginal": "Asli shabd dikhayein",
+    "showTranslation": "Anuvad dikhayein",
+    "lowTrans": "Anuvad jaanchein",
     "overcommit": "Is team mein logon se kam seats hain. Doosri team par vichar karein.",
     "chooseTeam": "Doosri team chunein",
     "review": "Galat ho sakta hai: jaanchein",
@@ -356,7 +362,8 @@
     "reportDetails": "Report details",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
     "estimatedWait": "Andaza {n} min, jab tak {team} free na ho",
-    "backToList": "Cases par wapas"
+    "backToList": "Cases par wapas",
+    "fallbackSummary": "Is jagah par turant madad maangi gayi hai."
   },
   "tour": {
     "next": "Aage",
@@ -415,7 +422,32 @@
     "beAware": "Satark rahein",
     "activeReports": "active reports",
     "offer": "Madad ki peshkash",
-    "synthetic": "Synthetic scenario inspired by Kerala floods"
+    "synthetic": "Synthetic scenario inspired by Kerala floods",
+    "bucket2": "Pichle 2 ghante",
+    "bucket3": "Pichle 3 ghante",
+    "card": {
+      "alt_01": {
+        "title": "Kutte ka hamla · Anthikad, Thrissur",
+        "desc": "2 ghante mein 3 reports. Andhere ke baad Anthikad ki galiyon mein akele mat chalein.",
+        "ago": "25 min pehle"
+      },
+      "alt_02": {
+        "title": "Doobi galiyaan · Chalakudy aur Aluva",
+        "desc": "Temple Road band hai. Shelter tak school road se jayein.",
+        "ago": "1 ghanta pehle"
+      },
+      "alt_03": {
+        "title": "Khana raahat chal rahi hai · Ward 2",
+        "desc": "Aas-paas 12 ghar ko khane ki kit chahiye. Pehle coordinator confirm karta hai.",
+        "ago": "2 ghante pehle"
+      }
+    },
+    "hazard": {
+      "cell_1031_7633_w7": "Paani badh raha hai, Temple Road doobi hai",
+      "cell_1011_7635_w4": "2-3 foot paani bhara hai",
+      "cell_1047_7613_w9": "Anthikad ki galiyon mein aakramak kutte",
+      "cell_0942_7641_w2": "Peene ke paani ki kami, community kitchen chal rahi hai"
+    }
   },
   "bench": {
     "title2": "Accuracy report",

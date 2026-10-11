@@ -291,6 +291,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         onCleanup(() => clearTimeout(id));
       }
     });
+    effect(() => {
+      const ui = this.langService.currentLang();
+      const mapped = ui === 'ta' ? 'ta' : ui === 'en' ? 'en' : 'hi';
+      this.selectedTranslationLang.set(mapped);
+    });
   }
 
   ngOnInit(): void {
@@ -747,11 +752,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
 
   getTranslationText(req: StoredRequest | undefined): string {
-    if (!req) return 'Urgent assistance requested at this location.';
-    const lang = this.selectedTranslationLang();
-    if (req.translations && req.translations[lang]) {
-      return req.translations[lang];
-    }
-    return req.ai_translation || req.place_text || 'Urgent assistance requested at this location.';
+    const fallback = this.langService.translate('coord.fallbackSummary');
+    if (!req) return fallback;
+    const ui = this.langService.currentLang();
+    const map = req.translations || {};
+    if (ui === 'hinglish' && map['hinglish']) return map['hinglish'];
+    const lang = ui === 'hinglish' ? 'hi' : this.selectedTranslationLang();
+    if (map[lang]) return map[lang];
+    return req.ai_translation || req.urgency_reason || req.place_text || fallback;
   }
 }

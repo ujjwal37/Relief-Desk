@@ -115,6 +115,41 @@ export class CoordinatorAlertsComponent implements OnInit {
     return s?.at ? this.latlng(s) : { lat: 10.50, lng: 76.30 };
   });
 
+  titleOf(alert: AnomalyAlert): string {
+    this.lang.currentLang();
+    const key = `alerts.k.${alert.kind}`;
+    const text = this.lang.translate(key);
+    return text === key ? alert.title : text;
+  }
+
+  /** Localise a known English reason. Unknown wording stays as stored. */
+  reasonOf(alert: AnomalyAlert): string {
+    this.lang.currentLang();
+    const reason = alert.reason || '';
+    const fill = (key: string, parts: Record<string, string>): string => {
+      const template = this.lang.translate(key);
+      if (template === key) return reason;
+      return Object.entries(parts).reduce((text, [name, value]) => text.replace(`{${name}}`, value), template);
+    };
+    const spike = /^(.+?): (\d+) reports in (.+?) \(baseline ([^)]+)\)/.exec(reason);
+    if (alert.kind === 'spike' && spike) {
+      return fill('alerts.reasonSpike', { place: spike[1], n: spike[2], window: spike[3], base: spike[4] });
+    }
+    const silent = /^(.+?): 0 reports in ([^,]+)/.exec(reason);
+    if (alert.kind === 'silent_zone' && silent) {
+      return fill('alerts.reasonSilent', { place: silent[1], window: silent[2].trim() });
+    }
+    const gapNone = /^No (\w+) team free\. (\d+) cases are still waiting\./.exec(reason);
+    if (gapNone) return fill('alerts.reasonGapNone', { kind: gapNone[1], n: gapNone[2] });
+    const gap = /^(\w+) demand (\d+), only (\d+) free/.exec(reason);
+    if (gap) return fill('alerts.reasonGapDemand', { kind: gap[1], demand: gap[2], free: gap[3] });
+    const conflict = /^"(.+?)" vs "(.+?)" in (.+)$/.exec(reason);
+    if (conflict) return fill('alerts.reasonConflict', { left: conflict[1], right: conflict[2], place: conflict[3] });
+    const stale = /^(\d+) requests unconfirmed for (\d+) min/.exec(reason);
+    if (stale) return fill('alerts.reasonStale', { n: stale[1], mins: stale[2] });
+    return reason;
+  }
+
   ageText(alert: AnomalyAlert): string {
     const stamp = alert.detected_at;
     if (!stamp) return alert.age_label;

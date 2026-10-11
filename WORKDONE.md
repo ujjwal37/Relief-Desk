@@ -644,3 +644,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs` — 489 keys, template lint PASS. Sheet opens only from a tap when the viewport is narrow; the first loaded case does not open it.
 - Notes / risks / not done: Not yet checked in a real 390x844 browser. That check is part of the Playwright pass.
 - Next (suggested task id): FP-18
+
+### 2026-10-12 00:05 IST — FP-18 — Cursor
+- What changed: Case titles and the "what people said" line follow the selected language, using the stored translation (Hinglish uses a Hinglish line when one exists, otherwise Hindi). Show original still shows the raw report. Alert reasons for spikes, silent zones, resource gaps, conflicts, and stale requests use the same facts in the selected language. Nearby cards, time buckets, and known hazards do too. Hinglish labels for type, assigned case, latitude, and longitude are no longer English words.
+- Files: coordinator command and alerts pages, nearby page, i18n en/hi/hinglish/ta, TASKS.md
+- How verified: `node scripts/check-i18n.mjs` — 511 keys, template lint PASS. English alert reasons still contain "14 reports in 20 min" and "0 reports in 3 h" so the existing alerts spec keeps its wording.
+- Notes / risks / not done: A reason the app does not recognise stays in the stored English sentence. Stored translations are still en/hi/ta unless a hinglish field is present.
+- Next (suggested task id): FP-19

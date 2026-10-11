@@ -34,17 +34,17 @@
 
   @if (selectedCell(); as c) {
     <section class="cell-card" aria-live="polite">
-      <div class="cell-row"><h2>{{ c.ward }}</h2><span class="sev" [class]="'sev ' + c.severity_band">{{ c.severity_band }}</span></div>
-      <p class="cell-sub">{{ c.total_reports }} {{ 'nearby.activeReports' | rdTranslate }} · {{ c.time_bucket }}</p>
-      @if (c.active_hazard) { <p class="hazard">⚠ {{ c.active_hazard }}</p> }
+      <div class="cell-row"><h2>{{ c.ward }}</h2><span class="sev" [class]="'sev ' + c.severity_band">{{ ('coord.band.' + c.severity_band) | rdTranslate }}</span></div>
+      <p class="cell-sub">{{ c.total_reports }} {{ 'nearby.activeReports' | rdTranslate }} · {{ bucketLabel(c.time_bucket) }}</p>
+      @if (c.active_hazard) { <p class="hazard">⚠ {{ hazardLabel(c) }}</p> }
     </section>
   }
 
   <h2 class="section">{{ 'nearby.beAware' | rdTranslate }}</h2>
   @for (a of alerts(); track a.id) {
     <article class="alert" [class]="'alert ' + a.severity">
-      <div class="a-row"><b>{{ a.title }}</b><span>{{ a.time_ago }}</span></div>
-      <p>{{ a.description }}</p>
+      <div class="a-row"><b>{{ alertTitle(a) }}</b><span>{{ alertWhen(a) }}</span></div>
+      <p>{{ alertBody(a) }}</p>
     </article>
   } @empty {
     @if (!isLoading()) { <p class="none">{{ 'coord.empty' | rdTranslate }}</p> }

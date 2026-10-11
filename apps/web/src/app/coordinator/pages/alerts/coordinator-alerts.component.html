@@ -25,7 +25,7 @@
         <span class="kind"><ng-container *ngTemplateOutlet="icon; context: { $implicit: it.kind, s: 15 }"></ng-container>{{ 'alerts.k.' + it.kind | rdTranslate }}</span>
         <span class="age" [attr.title]="it.alert.detected_at || ''">{{ ageText(it.alert) }}</span>
       </div>
-      <p class="reason">{{ it.alert.reason }}</p>
+      <p class="reason">{{ reasonOf(it.alert) }}</p>
       <p class="where" *ngIf="it.ward">{{ it.ward.name }} · {{ it.ward.district }}</p>
       <p class="where off" *ngIf="!it.at">{{ 'alerts.noPin' | rdTranslate }}</p>
       <div class="actions">
@@ -74,7 +74,7 @@
           <!-- alert pins -->
           <ng-container *ngFor="let it of items()">
             <g *ngIf="it.at" class="pin" [class]="'pin k-' + it.kind" [class.on]="selectedId() === it.alert.id" [class.dim]="selected() && selectedId() !== it.alert.id"
-              (click)="select(it.alert)" tabindex="0" (keydown.enter)="select(it.alert)" role="button" [attr.aria-label]="it.n + ', ' + it.alert.title">
+              (click)="select(it.alert)" tabindex="0" (keydown.enter)="select(it.alert)" role="button" [attr.aria-label]="it.n + ', ' + titleOf(it.alert)">
               <circle *ngIf="it.kind === 'spike' && selectedId() === it.alert.id" class="pulse" [attr.cx]="it.at.x" [attr.cy]="it.at.y - 14" r="22"></circle>
               <path [attr.d]="'M' + it.at.x + ' ' + (it.at.y + 8) + ' l-12 -17 a15 15 0 1 1 24 0 z'" class="drop"></path>
               <text [attr.x]="it.at.x" [attr.y]="it.at.y - 9" class="pn">{{ it.n }}</text>
@@ -113,7 +113,7 @@
       <span class="dnum">{{ s.n }}</span>
       <div>
         <b>{{ 'alerts.k.' + s.kind | rdTranslate }}<ng-container *ngIf="s.ward"> · {{ s.ward.name }}</ng-container></b>
-        <p>{{ s.alert.reason }}</p>
+        <p>{{ reasonOf(s.alert) }}</p>
       </div>
     </div>
   </section>

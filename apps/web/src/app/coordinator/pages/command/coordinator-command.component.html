@@ -67,7 +67,7 @@
               <app-sev-chip [band]="bandOf(req.urgency_score)" />
               <span class="prio">{{ 'coord.priority' | rdTranslate }} <b>{{ Math.round(req.urgency_score) }}</b></span>
             </span>
-            <span class="title">{{ req.ai_translation || req.urgency_reason || req.place_text || req.id }}</span>
+            <span class="title">{{ getTranslationText(req) }}</span>
             <span class="meta" [attr.title]="fullStamp(req.created_at)">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text || '' }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
             <span class="tags">
               @if ((req.merged_count || 1) > 1) { <span class="tag">{{ tr('coord.sameIncident', req.merged_count || 1) }}</span> }
@@ -145,7 +145,7 @@
             <app-sev-chip [band]="bandOf(req.urgency_score)" />
             <span class="id" [attr.title]="fullStamp(req.updated_at) || fullStamp(req.created_at)">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
           </div>
-          <h2>{{ req.ai_translation || req.urgency_reason || req.place_text }}</h2>
+          <h2>{{ getTranslationText(req) }}</h2>
           <p class="place">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text }} · {{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</p>
 
           <div class="said">
