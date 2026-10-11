@@ -431,3 +431,12 @@
 - Notes / risks / not done: Before -> after on the test split (seed 42, 168 messages). Duplicate precision 71.4% -> 92.9%. Duplicate recall 11.1% -> 57.8%. False-merge rate 0.0% -> 0.0%. Critical-case mean rank 10.5 -> 9.3 (lower is better). Hash baseline recall stays 4.4%.
 - Next (suggested task id): T-043
 
+### 2026-10-11 18:00 IST — T-043 — Cursor
+- What changed: Language chips, the 112 controls, public nav, report send/mic/SMS, status search, coordinator login fields, alert chips, and queue filters are at least 48px tall. Muted gray labels on dark surfaces moved to `#e2e8f0`. Hindi and Tamil strings wrap instead of clipping. Public nav and the emergency bar wrap when the language name is long.
+- Files: libs/shared/src/lib/components/language-switcher.component.ts, apps/web/src/styles.scss, apps/web/src/app/public/layouts/public-layout.component.scss, apps/web/src/app/public/pages/report/report.component.scss, apps/web/src/app/public/pages/status/status.component.scss, apps/web/src/app/public/components/confirmation-card/confirmation-card.component.scss, apps/web/src/app/landing/landing.component.scss, apps/web/src/app/core/components/scenario-switcher.component.ts, apps/web/src/app/coordinator/pages/login/coordinator-login.component.scss, apps/web/src/app/coordinator/pages/alerts/coordinator-alerts.component.scss, apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss, apps/web/src/app/a11y-tap.spec.ts, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include=**/a11y-tap.spec.ts` -> 3 passed.
+  - Browser at http://127.0.0.1:4200/: Hindi landing had no clipped text and no control under 48px. Tamil `/report` and Tamil `/coordinator/login` had the same result after the input and back-link fixes.
+- Notes / risks / not done: Hinglish uses Latin letters, so it follows the English layout. Voice is still the synthetic transcript catalog.
+- Next (suggested task id): checks
+

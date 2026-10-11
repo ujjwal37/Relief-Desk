@@ -17,16 +17,21 @@
 
     .emergency-bar {
       background: #dc2626;
-      padding: 6px 14px;
-      font-size: 0.8rem;
+      padding: 8px 14px;
+      font-size: 0.85rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
 
       .call-pill {
         background: white;
-        color: #dc2626;
-        padding: 2px 8px;
+        color: #b91c1c;
+        padding: 8px 12px;
+        min-height: 48px;
+        display: inline-flex;
+        align-items: center;
         border-radius: 999px;
         font-weight: 800;
         text-decoration: none;
@@ -38,6 +43,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
 
       .nav-brand {
         display: flex;
@@ -47,20 +54,25 @@
         text-decoration: none;
         font-weight: 700;
         font-size: 1.1rem;
+        min-height: 48px;
       }
 
       .nav-links {
         display: flex;
-        gap: 12px;
+        flex-wrap: wrap;
+        gap: 8px;
 
         .nav-link {
-          color: #94a3b8;
+          color: #e2e8f0;
           text-decoration: none;
-          font-size: 0.875rem;
-          font-weight: 500;
+          font-size: 0.95rem;
+          font-weight: 650;
+          min-height: 48px;
+          display: inline-flex;
+          align-items: center;
 
           &:hover {
-            color: #14b8a6;
+            color: #5eead4;
           }
         }
       }

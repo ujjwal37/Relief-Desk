@@ -45,7 +45,8 @@
 
     .search-input {
       flex: 1;
-      height: 44px;
+      min-height: 48px;
+      height: 48px;
       padding: 0 14px;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -60,7 +61,8 @@
     }
 
     .track-btn {
-      height: 44px;
+      min-height: 48px;
+      height: 48px;
       padding: 0 16px;
       border-radius: 12px;
       background: linear-gradient(135deg, #2dd4bf, #14b8a6);

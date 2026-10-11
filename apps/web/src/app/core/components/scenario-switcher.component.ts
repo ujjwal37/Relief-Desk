@@ -21,13 +21,13 @@ import { ScenarioService } from '../services/scenario.service';
   styles: [`
     .scenario-switch { display: inline-flex; gap: 4px; flex-wrap: wrap; }
     button {
-      min-height: 40px;
+      min-height: 48px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.16);
       background: transparent;
-      color: #e2e8f0;
+      color: #f8fafc;
       font-weight: 700;
-      padding: 4px 12px;
+      padding: 8px 12px;
       cursor: pointer;
     }
     button.on { background: #0f6b5a; color: white; border-color: #14b8a6; }

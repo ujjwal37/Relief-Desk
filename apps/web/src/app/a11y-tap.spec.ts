@@ -1,0 +1,59 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { LandingComponent } from './landing/landing.component';
+import { PublicLayoutComponent } from './public/layouts/public-layout.component';
+import { LanguageSwitcherComponent } from '@rd/shared';
+import { of } from 'rxjs';
+import { ApiClientService } from '@rd/shared';
+
+describe('tap targets and language layouts', () => {
+  it('language chips are at least 48px tall', async () => {
+    await TestBed.configureTestingModule({
+      imports: [LanguageSwitcherComponent],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(LanguageSwitcherComponent);
+    fixture.detectChanges();
+    const buttons = fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
+    expect(buttons.length).toBe(4);
+    buttons.forEach((button) => {
+      expect(button.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
+    });
+  });
+
+  it('landing call control is at least 48px and Hindi text is not clipped', async () => {
+    await TestBed.configureTestingModule({
+      imports: [LandingComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
+    const fixture: ComponentFixture<LandingComponent> = TestBed.createComponent(LandingComponent);
+    fixture.detectChanges();
+    const call = fixture.nativeElement.querySelector('.call-112-btn') as HTMLElement;
+    expect(call.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
+    const lang = fixture.nativeElement.querySelectorAll('.lang-chip')[1] as HTMLButtonElement;
+    lang.click();
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text.length).toBeGreaterThan(10);
+    expect(call.scrollWidth).toBeLessThanOrEqual(call.clientWidth + 1);
+  });
+
+  it('public nav links stay at least 48px in Tamil', async () => {
+    await TestBed.configureTestingModule({
+      imports: [PublicLayoutComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ApiClientService, useValue: { getScenarios: () => of([]) } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(PublicLayoutComponent);
+    fixture.detectChanges();
+    const tamil = fixture.nativeElement.querySelectorAll('.lang-chip')[3] as HTMLButtonElement;
+    tamil.click();
+    fixture.detectChanges();
+    const links = fixture.nativeElement.querySelectorAll('.nav-link') as NodeListOf<HTMLElement>;
+    expect(links.length).toBeGreaterThan(0);
+    links.forEach((link) => {
+      expect(link.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
+    });
+  });
+});

@@ -34,10 +34,12 @@ import { LanguageService, SUPPORTED_LANGUAGES, SupportedLang } from '../services
     .lang-chip {
       background: transparent;
       border: none;
-      color: #94a3b8;
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 3px 9px;
+      color: #e2e8f0;
+      font-size: 0.85rem;
+      font-weight: 700;
+      min-height: 48px;
+      min-width: 48px;
+      padding: 8px 12px;
       border-radius: 9999px;
       cursor: pointer;
       transition: all 0.15s ease-in-out;
