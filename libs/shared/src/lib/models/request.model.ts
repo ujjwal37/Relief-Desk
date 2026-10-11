@@ -161,6 +161,8 @@ export interface StoredRequest {
   flags?: string[];
   raw_text?: string | null;
   ai_translation?: string | null;
+  /** "gemini" when a live model produced the reading, otherwise "offline_fallback". */
+  ai_source?: 'gemini' | 'offline_fallback';
   translations?: { [lang: string]: string };
   translation_confidence?: number;
   assigned_resource_id?: string | null;

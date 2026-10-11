@@ -144,6 +144,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | RT-19 | Tamil seed lines are Tamil sentences | C | DONE | RT-18 | INC-005 names the Aluva clock tower in Tamil; no pasted English words |
 | RT-20 | Dashboard map shows Kerala districts | C | DONE | RT-19 | Bounds fit open cases; labels Alappuzha, Ernakulam, Thrissur, Wayanad; no river stroke |
 | RT-21 | Mobile header stays on two rows | C | DONE | RT-20 | Logo and avatar on one row, tabs on the next; Accuracy report stays inside the header |
+| RT-22 | Live path calls Gemini when a key is set | C | DONE | RT-21 | Demo mode stays on recorded replies; the case AI reading shows Gemini or Offline fallback |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

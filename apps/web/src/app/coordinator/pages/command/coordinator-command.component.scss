@@ -58,6 +58,9 @@ h2 { margin:8px 0 4px; font-size:22px; line-height:1.2; font-weight:800; letter-
 .acc-b { padding:0 2px 12px; } .bd { display:grid; grid-template-columns:96px 1fr 56px; gap:8px; align-items:center; font-size:13px; margin:6px 0; em { font-style:normal; text-align:right; color:var(--text-2); } }
 .bar { height:8px; background:var(--surface-2); border-radius:4px; overflow:hidden; b { display:block; height:100%; background:var(--brand); border-radius:4px; } }
 .expl { font-size:14px; line-height:1.45; color:var(--text-2); margin:8px 0; } .conf { display:flex; gap:12px; font-size:13px; color:var(--text-2); }
+.ai-read { display:flex; align-items:center; gap:8px; margin:8px 0 0; }
+.ai-src { font-size:12px; font-weight:700; border-radius:999px; padding:2px 8px; background:var(--surface); color:var(--text-2); }
+.ai-src.live { color:var(--text); }
 .actionbar { flex:none; border-top:1px solid var(--border); background:var(--surface); padding:10px 16px 14px; position:relative; box-shadow:0 -6px 14px rgba(15,23,42,.06); }
 .decide { margin:0 0 8px; font-size:13px; color:var(--text-2); font-weight:600; }
 .btns { display:grid; grid-template-columns:1fr auto auto; gap:8px; }

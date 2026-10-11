@@ -339,6 +339,23 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.selectedRequestId()).toBe('INC-001');
   });
 
+  it('shows Gemini or Offline fallback on the AI reading', () => {
+    const rows = component.requests().map((row) => ({ ...row }));
+    rows[0] = { ...rows[0], ai_source: 'gemini' };
+    rows[1] = { ...rows[1], ai_source: 'offline_fallback' };
+    component.requests.set(rows);
+    component.selectRequest('INC-001');
+    fixture.detectChanges();
+    const gemini = fixture.nativeElement.textContent as string;
+    expect(gemini).toContain('AI reading');
+    expect(gemini).toContain('Gemini');
+    component.selectRequest('INC-002');
+    fixture.detectChanges();
+    const offline = fixture.nativeElement.textContent as string;
+    expect(offline).toContain('Offline fallback');
+    expect(offline).not.toContain('Gemini');
+  });
+
   it('says there is no nearby team instead of an hours-long ETA', () => {
     const far: MatchProposal = {
       ...mockProposal,

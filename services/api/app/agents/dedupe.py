@@ -97,6 +97,9 @@ class DedupeAgent:
         candidates: List[StoredRequest],
     ) -> DedupeDecision:
         """Evaluates whether the incoming report is a new request, duplicate, or fact update."""
+        live = self._ask_gemini(raw_text, new_req, candidates)
+        if live is not None:
+            return live
         if not candidates:
             return DedupeDecision(
                 decision=DedupeDecisionType.NEW,
@@ -300,6 +303,42 @@ class DedupeAgent:
                     phrases.append(phrase)
         phrases.sort(key=len, reverse=True)
         return phrases
+
+    def _ask_gemini(self, raw_text: str, new_req: ExtractedRequest, candidates: List[StoredRequest]) -> Optional[DedupeDecision]:
+        """Ask Gemini to compare the report. None means use the deterministic decision."""
+        if not candidates or not getattr(self.client, "gemini_live", lambda: False)():
+            return None
+        summary = [
+            {
+                "id": candidate.id,
+                "place": candidate.place_text,
+                "people_count": candidate.people_count,
+                "type": str(candidate.type),
+            }
+            for candidate in candidates
+        ]
+        user = (
+            f"<report>\n{raw_text}\n</report>\n"
+            f"Extracted place: {new_req.place_text}\n"
+            f"Extracted people: {new_req.people.count}\n"
+            f"Candidates:\n{json.dumps(summary)}"
+        )
+        try:
+            raw = self.client.generate_content(
+                system_instruction=SYSTEM_DEDUPE_PROMPT,
+                user_prompt=user,
+            )
+            clean = raw.strip().removeprefix("```json").removesuffix("```").strip()
+            decision = DedupeDecision(**json.loads(clean))
+        except Exception as exc:
+            logger.info("Dedupe Gemini comparison failed, using rules: %s", exc)
+            return None
+        allowed = {candidate.id for candidate in candidates}
+        if decision.target_request_id and decision.target_request_id not in allowed:
+            return None
+        if decision.decision != DedupeDecisionType.NEW and not decision.target_request_id:
+            return None
+        return decision
 
 
 dedupe_agent = DedupeAgent()

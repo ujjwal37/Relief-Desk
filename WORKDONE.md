@@ -833,3 +833,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --include='**/coordinator-layout.component.spec.ts'` — 4 passed.
 - Notes / risks / not done: Between 760px and 900px the search field still sits on the first row between the logo and the avatar.
 - Next (suggested task id): RT-22
+
+### 2026-10-12 05:35 IST — RT-22 — Cursor
+- What changed: When DEMO_MODE is off, GEMINI_ENABLED is true, and GEMINI_API_KEY is a real key, intake, chat intake, dedupe comparison, translation, and the match explainer call Gemini. A timeout, an error, a placeholder key, or demo mode keeps the deterministic or cached reply. The case stores ai_source and the AI reading line shows Gemini or Offline fallback. README says how to run live versus the recorded demo. No key is committed.
+- Files: services/api/app/llm/client.py, services/api/app/agents/dedupe.py, services/api/app/agents/explainer.py, services/api/app/agents path via intake, services/api/app/tools/translation.py, services/api/app/api/reports.py, services/api/app/models/firestore_models.py, services/api/tests/test_gemini_live.py, coordinator command html/scss/spec, request.model.ts, i18n en/hi/hinglish/ta, README.md, TASKS.md
+- How verified: `pytest tests/test_gemini_live.py tests/test_explainer.py tests/test_intake.py tests/test_chat_intake.py` — 28 passed. `npx ng test web --include='**/coordinator-command.component.spec.ts'` — 20 passed. `node scripts/check-i18n.mjs` — 522 keys.
+- Notes / risks / not done: CI never calls Gemini; the live client is mocked. A recorded cache hit keeps the source stored with that reply. Chat intake uses the same intake parse, not a second model call.
+- Next (suggested task id): RT-23

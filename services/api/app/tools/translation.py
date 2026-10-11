@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 
-from app.config import settings
 from app.llm.client import llm_client
 
 logger = logging.getLogger("relief_desk.translation")
@@ -114,7 +113,7 @@ class TranslationService:
             return res
 
         # 3. If Gemini is enabled, execute live translation
-        if settings.GEMINI_ENABLED and settings.GEMINI_API_KEY:
+        if llm_client.gemini_live():
             try:
                 prompt = f"""You are a crisis translation engine for disaster dispatchers.
 Translate the following emergency report into English (text_en), Hindi (text_hi in Devanagari script), and Tamil (text_ta).

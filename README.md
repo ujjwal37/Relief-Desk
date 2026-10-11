@@ -75,6 +75,20 @@ python scripts/reset_demo
 ```
 `ng build` without `web` fails because the Angular workspace has two projects. Use `npx ng build web`.
 
+### Live Gemini versus the recorded demo
+
+`DEMO_MODE=true` (the default in `.env.example`) never calls Gemini. Intake, the chat that feeds intake, dedupe comparison, and the match explainer use cached or deterministic replies. CI and the recorded demo stay on this path.
+
+To call Gemini, set these only in `.env`. Do not commit a key:
+
+```
+DEMO_MODE=false
+GEMINI_ENABLED=true
+GEMINI_API_KEY=your-key
+```
+
+A timeout, an error, a placeholder key (`replace-me`), or `GEMINI_ENABLED=false` uses the same deterministic replies. The case AI reading shows Gemini or Offline fallback for the path that produced it.
+
 ## Deploy
 See `deploy/cloudrun.md` (Cloud Run + Firebase Hosting/Auth + Firestore).
 

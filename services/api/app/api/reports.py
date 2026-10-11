@@ -17,6 +17,7 @@ from app.tools.request_contract import canonical_request_dict
 from app.tools.nlu_rules import extract_place, vulnerable_flags
 from app.tools.trust import detect_hoax_or_flood
 from app.tools.gazetteer import gazetteer
+from app.llm.client import llm_client
 
 router = APIRouter(prefix="/api", tags=["Reports & Intake"])
 
@@ -139,6 +140,8 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
 
     # 3. Extract, then overlay the confirmed card. Chat and form share one canonical shape.
     extracted = intake_agent.parse_report(report_text, language_hint=payload.lang)
+    # Capture this before translation or the explainer overwrites the client flag.
+    ai_source = llm_client.last_source if llm_client.last_source == "gemini" else "offline_fallback"
     machine_summary = None
     if payload.structured:
         facts = payload.structured
@@ -220,6 +223,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         raw_text=citizen_text or report_text,
         summary=machine_summary,
         ai_translation=trans_res.text_en,
+        ai_source=ai_source,
         translations=trans_res.translations,
         translation_confidence=trans_res.confidence,
     )

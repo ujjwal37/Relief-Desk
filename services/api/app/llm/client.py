@@ -17,10 +17,19 @@ class LLMClient:
     def __init__(self):
         self.call_count = 0
         self.daily_cap = settings.GEMINI_DAILY_CALL_CAP
+        self.last_source = "offline_fallback"
         self._memory_cache: Dict[str, str] = {}
+        self._memory_source: Dict[str, str] = {}
 
     def _hash_key(self, prompt: str) -> str:
         return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+
+    def gemini_live(self) -> bool:
+        """True only when this process should call Gemini. Demo mode stays on recorded replies."""
+        key = (settings.GEMINI_API_KEY or "").strip()
+        if settings.DEMO_MODE or not settings.GEMINI_ENABLED:
+            return False
+        return bool(key) and key not in ("replace-me", "synthetic-demo-gemini-key")
 
     def get_cached(self, key: str) -> Optional[str]:
         if key in self._memory_cache:
@@ -32,17 +41,24 @@ class LLMClient:
                     data = json.load(f)
                     val = data.get("response")
                     self._memory_cache[key] = val
+                    self._memory_source[key] = data.get("source") or "offline_fallback"
                     return val
             except Exception as e:
                 logger.warning("Error reading cache file %s: %s", cache_file, e)
         return None
 
-    def set_cached(self, key: str, response: str) -> None:
+    def set_cached(self, key: str, response: str, source: str = "offline_fallback") -> None:
         self._memory_cache[key] = response
+        self._memory_source[key] = source
         cache_file = CACHE_DIR / f"{key}.json"
         try:
             with open(cache_file, "w", encoding="utf-8") as f:
-                json.dump({"key": key, "response": response}, f, ensure_ascii=False, indent=2)
+                json.dump(
+                    {"key": key, "response": response, "source": source},
+                    f,
+                    ensure_ascii=False,
+                    indent=2,
+                )
         except Exception as e:
             logger.warning("Error writing cache file %s: %s", cache_file, e)
 
@@ -64,63 +80,102 @@ class LLMClient:
             if validator:
                 try:
                     validator(cached)
+                    self.last_source = self._memory_source.get(cache_key, "offline_fallback")
                     return cached
                 except Exception:
                     logger.warning("Cached entry invalid according to validator, refreshing...")
             else:
+                self.last_source = self._memory_source.get(cache_key, "offline_fallback")
                 return cached
 
-        # 2. Check kill switch or budget cap
-        if not settings.GEMINI_ENABLED or settings.DEMO_MODE:
-            logger.info("Gemini kill-switch is active or DEMO_MODE=True. Using deterministic fallback.")
+        # 2. Recorded demo, kill switch, or no key: never call Gemini.
+        if not self.gemini_live():
+            logger.info("Using recorded or deterministic fallback (demo mode, kill switch, or no key).")
             response = self._deterministic_fallback(user_prompt)
-            self.set_cached(cache_key, response)
+            self.last_source = "offline_fallback"
+            self.set_cached(cache_key, response, source="offline_fallback")
             return response
 
         if self.call_count >= self.daily_cap:
             logger.warning("Gemini daily call cap reached (%d). Falling back to deterministic mode.", self.daily_cap)
             response = self._deterministic_fallback(user_prompt)
-            self.set_cached(cache_key, response)
+            self.last_source = "offline_fallback"
+            self.set_cached(cache_key, response, source="offline_fallback")
             return response
 
-        # 3. Call Gemini if API key configured and not dummy
-        api_key = settings.GEMINI_API_KEY
-        if api_key and api_key not in ("replace-me", "synthetic-demo-gemini-key"):
-            try:
-                import google.genai as genai  # type: ignore
-                client = genai.Client(api_key=api_key)
-                current_prompt = user_prompt
-                attempts = 0
-                while attempts <= max_retries:
-                    self.call_count += 1
-                    attempts += 1
-                    response_obj = client.models.generate_content(
-                        model=settings.GEMINI_MODEL,
-                        contents=current_prompt,
-                        config={"system_instruction": system_instruction, "temperature": 0.1}
-                    )
-                    text = response_obj.text or ""
-                    if validator:
-                        try:
-                            validator(text)
-                            self.set_cached(cache_key, text)
-                            return text
-                        except Exception as val_err:
-                            logger.warning("Validation attempt %d failed: %s", attempts, val_err)
-                            current_prompt = (
-                                f"{user_prompt}\n\nPREVIOUS OUTPUT WAS INVALID JSON OR FAILED VALIDATION:\n"
-                                f"{str(val_err)}\nEnsure output strictly adheres to the requested JSON schema."
-                            )
-                    else:
-                        self.set_cached(cache_key, text)
+        try:
+            current_prompt = user_prompt
+            attempts = 0
+            while attempts <= max_retries:
+                self.call_count += 1
+                attempts += 1
+                text = self._call_gemini(system_instruction, current_prompt)
+                if validator:
+                    try:
+                        validator(text)
+                        self.last_source = "gemini"
+                        self.set_cached(cache_key, text, source="gemini")
                         return text
-            except Exception as e:
-                logger.error("Live Gemini call failed (%s). Falling back to deterministic response.", e)
+                    except Exception as val_err:
+                        logger.warning("Validation attempt %d failed: %s", attempts, val_err)
+                        current_prompt = (
+                            f"{user_prompt}\n\nPREVIOUS OUTPUT WAS INVALID JSON OR FAILED VALIDATION:\n"
+                            f"{str(val_err)}\nEnsure output strictly adheres to the requested JSON schema."
+                        )
+                else:
+                    self.last_source = "gemini"
+                    self.set_cached(cache_key, text, source="gemini")
+                    return text
+        except Exception as e:
+            logger.error("Live Gemini call failed (%s). Falling back to deterministic response.", e)
 
-        # Fallback
         response = self._deterministic_fallback(user_prompt)
-        self.set_cached(cache_key, response)
+        self.last_source = "offline_fallback"
+        self.set_cached(cache_key, response, source="offline_fallback")
         return response
+
+    def _call_gemini(self, system_instruction: str, user_prompt: str, timeout_s: float = 12.0) -> str:
+        """One live generate call. Raises on timeout, missing SDK, or an empty reply."""
+        from concurrent.futures import ThreadPoolExecutor
+        from concurrent.futures import TimeoutError as FuturesTimeout
+
+        def _run() -> str:
+            import google.genai as genai  # type: ignore
+
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            response_obj = client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=user_prompt,
+                config={"system_instruction": system_instruction, "temperature": 0.1},
+            )
+            return response_obj.text or ""
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(_run)
+            try:
+                text = future.result(timeout=timeout_s)
+            except FuturesTimeout as exc:
+                raise TimeoutError("Gemini timed out") from exc
+        if not text.strip():
+            raise RuntimeError("Gemini returned an empty reply")
+        return text
+
+    def generate(self, prompt: str, system_instruction: str = "") -> str:
+        return self.generate_content(system_instruction=system_instruction, user_prompt=prompt)
+
+    def generate_json(self, prompt: str, system_instruction: str = "") -> Dict[str, Any]:
+        raw = self.generate(prompt, system_instruction=system_instruction)
+        clean = raw.strip()
+        if clean.startswith("```json"):
+            clean = clean[7:]
+        elif clean.startswith("```"):
+            clean = clean[3:]
+        if clean.endswith("```"):
+            clean = clean[:-3]
+        parsed = json.loads(clean.strip())
+        if not isinstance(parsed, dict):
+            raise ValueError("Gemini JSON was not an object")
+        return parsed
 
     def _deterministic_fallback(self, prompt: str) -> str:
         """Deterministic natural-language rule-based extraction for offline & demo resilience."""

@@ -157,6 +157,10 @@
               <button type="button" class="link" (click)="showOriginal.set(!showOriginal())">{{ (showOriginal() ? 'coord.showTranslation' : 'coord.showOriginal') | rdTranslate }}</button>
             </div>
             <p class="quote">“{{ showOriginal() ? (req.raw_text || req.place_text) : getTranslationText(req) }}”</p>
+            <p class="ai-read">
+              <span class="cap">{{ 'coord.aiReading' | rdTranslate }}</span>
+              <span class="ai-src" [class.live]="req.ai_source === 'gemini'">{{ (req.ai_source === 'gemini' ? 'coord.aiGemini' : 'coord.aiOffline') | rdTranslate }}</span>
+            </p>
             @if ((req.merged_count || 1) > 1) { <p class="more">{{ tr('coord.moreReports', (req.merged_count || 1) - 1) }}</p> }
           </div>
 
