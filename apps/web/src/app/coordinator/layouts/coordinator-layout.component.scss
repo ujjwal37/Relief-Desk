@@ -6,6 +6,8 @@
 .tabs { display:flex; gap:4px; height:100%; }
 .tabs a { display:inline-flex; align-items:center; gap:6px; padding:0 12px; height:100%; color:var(--text-2); text-decoration:none; font-weight:600; font-size:15px; border-bottom:3px solid transparent; white-space:nowrap; }
 .tabs a:hover { color:var(--text); } .tabs a.on { color:var(--brand); border-bottom-color:var(--brand); }
+.tabs.wrap { flex-wrap:wrap; height:auto; overflow:visible; }
+.top-nav:has(.tabs.wrap) { height:auto; min-height:56px; flex-wrap:wrap; align-items:center; }
 .count { background:var(--sos); color:#fff; border-radius:999px; padding:1px 7px; font-size:13px; font-weight:700; }
 .search { flex:1; max-width:340px; position:relative; display:flex; align-items:center; margin-left:auto; color:var(--muted); }
 .search svg { position:absolute; left:12px; }
@@ -33,9 +35,9 @@ h3 { margin:12px 0 6px; font-size:13px; font-weight:700; color:var(--text-2); te
 @media (max-width: 1100px) { .tour-btn, .live { display:none; } .search { max-width:200px; } }
 @media (max-width: 900px) {
   .coordinator-shell, .coord-column { max-width:100%; overflow-x:hidden; }
-  .top-nav { gap:8px; padding:0 8px; min-width:0; }
-  .tabs { flex:1; min-width:0; overflow-x:auto; }
-  .tabs a { flex:none; padding:0 8px; font-size:14px; }
+  .top-nav { height:auto; min-height:56px; flex-wrap:wrap; gap:8px; padding:4px 8px; min-width:0; }
+  .tabs { flex:1 1 100%; min-width:0; height:auto; overflow:visible; flex-wrap:wrap; }
+  .tabs a { flex:none; height:40px; padding:0 8px; font-size:14px; }
   .right { flex:none; }
   .dashboard-body { overflow:auto; overflow-x:hidden; }
 }

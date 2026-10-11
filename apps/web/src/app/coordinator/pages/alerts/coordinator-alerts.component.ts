@@ -59,15 +59,39 @@ function clip(poly: Pt[], p: Pt, q: Pt): Pt[] {
   return out;
 }
 
-const CELLS = WARDS.map((w) => {
+const RAW_CELLS = WARDS.map((w) => {
   const p = proj(w.lat, w.lng);
   let poly: Pt[] = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: H }, { x: 0, y: H }];
   for (const o of WARDS) {
     if (o !== w) poly = clip(poly, p, proj(o.lat, o.lng));
   }
-  const lines = w.name.length > 12 ? [w.name.slice(0, w.name.lastIndexOf(' ', 12) > 0 ? w.name.lastIndexOf(' ', 12) : 12), w.name.slice(w.name.lastIndexOf(' ', 12) > 0 ? w.name.lastIndexOf(' ', 12) + 1 : 12)] : [w.name];
+  const lines = [w.name];
   return { ward: w, c: p, d: poly.map((v) => `${v.x.toFixed(1)},${v.y.toFixed(1)}`).join(' '), lines };
 });
+
+function withLabelOffsets<T extends { c: Pt }>(cells: T[]): (T & { lx: number; ly: number })[] {
+  const placed: Pt[] = [];
+  return cells.map((cell) => {
+    let dx = 0;
+    let dy = 18;
+    for (let n = 0; n < 8; n++) {
+      const x = cell.c.x + dx;
+      const y = cell.c.y + dy;
+      const hit = placed.some((p) => Math.hypot(p.x - x, p.y - y) < 34);
+      if (!hit) {
+        dx = x - cell.c.x;
+        dy = y - cell.c.y;
+        break;
+      }
+      dx = (n % 2 === 0 ? 1 : -1) * (40 + n * 6);
+      dy = 18 + (n + 1) * 16;
+    }
+    placed.push({ x: cell.c.x + dx, y: cell.c.y + dy });
+    return { ...cell, lx: cell.c.x + dx, ly: cell.c.y + dy };
+  });
+}
+
+const CELLS = withLabelOffsets(RAW_CELLS);
 
 @Component({
   selector: 'app-coordinator-alerts',
@@ -84,6 +108,7 @@ export class CoordinatorAlertsComponent implements OnInit {
   readonly W = W;
   readonly H = H;
   readonly cells = CELLS;
+  readonly spikeRadius = 28;
   readonly landmarks = LANDMARKS.map((l) => ({ ...l, ...proj(l.lat, l.lng) }));
   readonly kinds: Kind[] = ['spike', 'silent_zone', 'resource_gap', 'conflict'];
   readonly alerts = signal<AnomalyAlert[]>([]);

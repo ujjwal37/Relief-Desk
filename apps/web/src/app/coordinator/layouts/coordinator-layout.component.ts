@@ -26,6 +26,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   readonly wideEnough = signal(true);
   readonly showPhone = computed(() => this.demoOn() && this.wideEnough());
   readonly menuOpen = signal(false);
+  readonly compactNav = signal(false);
   readonly langs = SUPPORTED_LANGUAGES;
   readonly themes: { m: ThemeMode; k: string }[] = [
     { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' }, { m: 'system', k: 'settings.themeSystem' },
@@ -45,6 +46,16 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.stopQuery = () => sub.unsubscribe();
     this.scenarioService.ensureLoaded();
     this.ui.loadAlerts();
+    this.syncCompactNav();
+  }
+
+  syncCompactNav(): void {
+    this.compactNav.set(window.innerWidth <= 900);
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.syncCompactNav();
   }
 
   ngOnDestroy(): void {

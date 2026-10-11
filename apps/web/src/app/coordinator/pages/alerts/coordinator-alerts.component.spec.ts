@@ -51,6 +51,25 @@ describe('CoordinatorAlertsComponent', () => {
     fixture.detectChanges();
   });
 
+  it('marks a spike with a small circle and keeps close place labels apart', () => {
+    const cells = fixture.componentInstance.cells.filter((c) => ['ward_1', 'ward_2', 'ward_3'].includes(c.ward.id));
+    for (let i = 0; i < cells.length; i++) {
+      for (let j = i + 1; j < cells.length; j++) {
+        const gap = Math.hypot(cells[i].lx - cells[j].lx, cells[i].ly - cells[j].ly);
+        expect(gap).toBeGreaterThan(30);
+      }
+    }
+    fixture.componentInstance.selectedId.set(null);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.wname .dist').length).toBe(0);
+    fixture.componentInstance.selectedId.set('spike-ward-7');
+    fixture.detectChanges();
+    const mark = fixture.nativeElement.querySelector('circle.spike-mark') as SVGCircleElement;
+    expect(mark).toBeTruthy();
+    expect(Number(mark.getAttribute('r'))).toBe(28);
+    expect(fixture.nativeElement.querySelector('polygon.ward.spike')).toBeNull();
+  });
+
   it('shows the seeded spike and silent zone with their reasons', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Report spike');

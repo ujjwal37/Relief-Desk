@@ -3,7 +3,8 @@ button { font-family:var(--rd-font-family); }
 .cmd { height:100%; display:flex; flex-direction:column; position:relative; }
 .briefing { flex:none; height:40px; display:flex; align-items:center; gap:10px; padding:0 16px; background:var(--brand-tint); color:var(--text); border-bottom:1px solid var(--border);
   svg { color:var(--brand); flex:none; } p { margin:0; flex:1; font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  button { border:0; background:transparent; color:var(--brand); font-weight:700; font-size:14px; min-height:44px; padding:0 8px; cursor:pointer; } }
+  button { border:0; background:transparent; color:var(--brand); font-weight:700; font-size:14px; min-height:44px; padding:0 8px; cursor:pointer; }
+  &.wrap { height:auto; min-height:40px; align-items:flex-start; padding:8px 12px; p { white-space:normal; overflow:visible; text-overflow:unset; } } }
 .grid { flex:1; min-height:0; display:grid; grid-template-columns:400px minmax(0,1fr) 420px; gap:12px; padding:12px; }
 .cases, .detail, .map-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--e1); min-height:0; }
 .cases { display:flex; flex-direction:column; overflow:hidden; }
@@ -85,6 +86,7 @@ h2 { margin:8px 0 4px; font-size:22px; line-height:1.2; font-weight:800; letter-
 .sheet-back { display:inline-flex; align-items:center; min-height:44px; margin:0 0 8px; padding:0 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); font-size:15px; font-weight:700; cursor:pointer; }
 
 @media (max-width: 900px) {
+  .briefing { height:auto; min-height:40px; align-items:flex-start; padding:8px 12px; p { white-space:normal; overflow:visible; text-overflow:unset; } }
   :host { height:auto; max-width:100%; overflow-x:hidden; }
   .cmd { height:auto; max-width:100%; overflow-x:hidden; }
   .pane-toggle { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:8px 8px 0; flex:none;

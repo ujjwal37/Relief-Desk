@@ -53,6 +53,18 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     expect(fixture.nativeElement.querySelector('.demo-phone')).toBeNull();
   });
 
+  it('wraps the tab row on a phone so Accuracy report stays visible', async () => {
+    const fixture = await setup(null, true);
+    spyOnProperty(window, 'innerWidth', 'get').and.returnValue(390);
+    fixture.componentInstance.syncCompactNav();
+    fixture.detectChanges();
+    const nav = fixture.nativeElement.querySelector('nav.tabs') as HTMLElement;
+    expect(nav.classList.contains('wrap')).toBeTrue();
+    expect(getComputedStyle(nav).flexWrap).toBe('wrap');
+    expect(getComputedStyle(nav).overflow).not.toBe('auto');
+    expect(nav.textContent).toContain('Accuracy report');
+  });
+
   it('hides the phone frame when demo mode is off', async () => {
     const fixture = await setup(null, true);
     expect(fixture.nativeElement.querySelector('.demo-phone')).toBeNull();

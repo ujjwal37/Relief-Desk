@@ -735,3 +735,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_seed_translations.py` — 2 passed.
 - Notes / risks / not done: Tamil lines are a short sentence around the English place name, not a full retelling of every detail.
 - Next (suggested task id): RT-10
+
+### 2026-10-12 03:15 IST — RT-10 — Cursor
+- What changed: On a narrow screen the briefing wraps onto more than one line, and the coordinator tabs wrap so Accuracy report is not clipped. Alert place labels are pushed apart, the district shows only for the selected place, and a spike is a small circle instead of the whole map cell.
+- Files: coordinator command, layout and alerts components, their specs, TASKS.md
+- How verified: `npx ng test web --include` for the command, layout and alerts specs — 23 passed after the district assertion was corrected, then alerts spec 2 passed.
+- Notes / risks / not done: Landmark names sit above the point. Two labels can still be close if many places share one corner of the map.
+- Next (suggested task id): RT-11

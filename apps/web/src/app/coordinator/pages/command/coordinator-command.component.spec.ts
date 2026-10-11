@@ -224,6 +224,15 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.teamsFree()).toEqual({ free: 2, total: 4 });
   });
 
+  it('wraps the briefing on a narrow screen', () => {
+    component.narrow.set(true);
+    fixture.detectChanges();
+    const banner = fixture.nativeElement.querySelector('.briefing') as HTMLElement;
+    const line = banner.querySelector('p') as HTMLElement;
+    expect(banner.classList.contains('wrap')).toBeTrue();
+    expect(getComputedStyle(line).whiteSpace).toBe('normal');
+  });
+
   it('tab counts follow the type, area and time filters, and areas use place names', () => {
     expect(component.counts().total).toBe(2);
     component.setFilterType('medical');

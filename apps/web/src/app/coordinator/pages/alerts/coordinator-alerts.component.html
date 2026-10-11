@@ -48,18 +48,19 @@
           <g *ngFor="let c of cells">
             <polygon [attr.points]="c.d" class="ward"
               [class.dim]="selected() && selectedWard() !== c.ward.id"
-              [class.spike]="selected()?.kind === 'spike' && selectedWard() === c.ward.id"
               [class.silent]="selected()?.kind === 'silent_zone' && selectedWard() === c.ward.id"
               [class.conf]="selected()?.kind === 'conflict' && selectedWard() === c.ward.id"></polygon>
-            <text [attr.x]="c.c.x" [attr.y]="c.c.y + 26" class="wname" [class.dim]="selected() && selectedWard() !== c.ward.id">
-              <tspan *ngFor="let l of c.lines; let li = index" [attr.x]="c.c.x" [attr.dy]="li ? 15 : 0">{{ l }}</tspan>
-              <tspan [attr.x]="c.c.x" dy="14" class="dist">{{ c.ward.district }}</tspan>
+            <circle *ngIf="selected()?.kind === 'spike' && selectedWard() === c.ward.id" class="spike-mark"
+              [attr.cx]="c.c.x" [attr.cy]="c.c.y" [attr.r]="spikeRadius"></circle>
+            <text [attr.x]="c.lx" [attr.y]="c.ly" class="wname" [class.dim]="selected() && selectedWard() !== c.ward.id">
+              <tspan *ngFor="let l of c.lines; let li = index" [attr.x]="c.lx" [attr.dy]="li ? 15 : 0">{{ l }}</tspan>
+              <tspan *ngIf="selectedWard() === c.ward.id" [attr.x]="c.lx" dy="14" class="dist">{{ c.ward.district }}</tspan>
             </text>
           </g>
 
           <g *ngFor="let l of landmarks" class="lm" [class.dim]="selected()">
             <rect [attr.x]="l.x - 4" [attr.y]="l.y - 4" width="8" height="8" rx="2"></rect>
-            <text [attr.x]="l.x + 8" [attr.y]="l.y + 4">{{ l.name }}</text>
+            <text [attr.x]="l.x + 8" [attr.y]="l.y - 14">{{ l.name }}</text>
           </g>
 
           <!-- resource pins when the gap is selected -->
