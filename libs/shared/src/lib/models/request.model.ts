@@ -272,6 +272,7 @@ export interface AnomalyAlert {
   ward_id?: string | null;
   severity: string;
   age_label: string;
+  detected_at?: string | null;
   acknowledged: boolean;
 }
 

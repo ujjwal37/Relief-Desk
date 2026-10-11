@@ -9,6 +9,8 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { HostListener, effect } from '@angular/core';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { SevChipComponent } from '../../../core/components/sev-chip.component';
@@ -67,8 +69,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return pins;
   });
   readonly filterType = signal<string>('all');
+  readonly areaFilter = signal<string>('all');
+  readonly timeFilter = signal<'all' | 'hour' | 'today'>('all');
   readonly searchQuery = this.ui.searchQuery;
   readonly bandFilter = signal<'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'>('all');
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private writingFilters = false;
+  private filterSub: Subscription | null = null;
   readonly freshIds = signal<Set<string>>(new Set());
   private queueWatermark = '';
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -127,6 +135,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (bf === 'now') list = list.filter((r) => urgencyBand(r.urgency_score) === 'critical');
       if (bf === 'soon') list = list.filter((r) => urgencyBand(r.urgency_score) === 'high');
       if (bf === 'review') list = list.filter((r) => needsReview(r));
+    }
+    const area = this.areaFilter();
+    if (area !== 'all') list = list.filter((r) => r.ward_id === area);
+    const time = this.timeFilter();
+    if (time !== 'all') {
+      const start = time === 'hour' ? Date.now() - 60 * 60 * 1000 : new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+      list = list.filter((r) => !!r.created_at && new Date(r.created_at).getTime() >= start);
     }
 
     if (query) {
@@ -197,14 +212,26 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return r.status === 'completed' || r.status === 'resolved' || r.status === 'closed';
   }
   fitPct(p: MatchProposal): number { return Math.round(p.score); }
-  ageLabel(r: StoredRequest): string {
-    if (!r.created_at) return '';
-    const m = Math.max(0, Math.round((Date.now() - new Date(r.created_at).getTime()) / 60000));
-    return m < 60 ? `${m} min` : `${Math.round(m / 60)} h`;
+  ageLabel(r: StoredRequest): string { return this.agoPhrase(r.created_at, 'reported'); }
+  updatedLabel(r: StoredRequest): string { return this.agoPhrase(r.updated_at, 'updated'); }
+  fullStamp(iso?: string | null): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleString();
   }
+  private agoPhrase(iso: string | undefined, kind: 'reported' | 'updated'): string {
+    if (!iso) return '';
+    const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    const hour = m >= 60;
+    const key = kind === 'reported'
+      ? (hour ? 'coord.reportedHour' : 'coord.reportedMin')
+      : (hour ? 'coord.caseUpdatedHour' : 'coord.caseUpdatedMin');
+    return this.langService.translate(key).replace('{n}', String(hour ? Math.round(m / 60) : m));
+  }
+  readonly areas = computed(() => [...new Set(this.requests().map((r) => r.ward_id).filter((w): w is string => !!w))].sort());
   tr(key: string, n: number): string { this.langService.currentLang(); return this.langService.translate(key).replace('{n}', String(n)); }
   toggleSection(s: 'why' | 'reports'): void { this.openSection.set(this.openSection() === s ? null : s); }
-  setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void { this.bandFilter.set(f); }
+  setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void { this.bandFilter.set(f); this.writeFilters(); }
   pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); }
   closeWeights(): void { this.ui.weightsOpen.set(false); }
 
@@ -241,11 +268,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.loadResources();
     this.loadWeights();
     this.startQueuePoll();
+    this.readFilters();
     window.addEventListener('message', this.handleDemoMessage);
     document.addEventListener('visibilitychange', this.onQueueVisibility);
   }
 
   ngOnDestroy(): void {
+    this.filterSub?.unsubscribe();
     this.stopQueuePoll();
     window.removeEventListener('message', this.handleDemoMessage);
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
@@ -362,6 +391,53 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   setFilterType(type: string): void {
     this.filterType.set(type);
+    this.writeFilters();
+  }
+
+  setArea(area: string): void {
+    this.areaFilter.set(area);
+    this.writeFilters();
+  }
+
+  setTime(time: string): void {
+    if (time === 'hour' || time === 'today' || time === 'all') this.timeFilter.set(time);
+    this.writeFilters();
+  }
+
+  clearFilters(): void {
+    this.bandFilter.set('all');
+    this.filterType.set('all');
+    this.areaFilter.set('all');
+    this.timeFilter.set('all');
+    this.writeFilters();
+  }
+
+  private readFilters(): void {
+    this.filterSub = this.route.queryParamMap.subscribe((params) => {
+      if (this.writingFilters) return;
+      const status = params.get('status');
+      if (status === 'now' || status === 'soon' || status === 'review' || status === 'dispatched' || status === 'completed' || status === 'all') {
+        this.bandFilter.set(status);
+      }
+      const type = params.get('type');
+      if (type) this.filterType.set(type);
+      this.areaFilter.set(params.get('area') || 'all');
+      const time = params.get('time');
+      if (time === 'hour' || time === 'today' || time === 'all') this.timeFilter.set(time);
+    });
+  }
+
+  private writeFilters(): void {
+    this.writingFilters = true;
+    const q = {
+      status: this.bandFilter() === 'all' ? null : this.bandFilter(),
+      type: this.filterType() === 'all' ? null : this.filterType(),
+      area: this.areaFilter() === 'all' ? null : this.areaFilter(),
+      time: this.timeFilter() === 'all' ? null : this.timeFilter(),
+    };
+    void this.router.navigate([], { relativeTo: this.route, queryParams: q, queryParamsHandling: 'merge', replaceUrl: true }).finally(() => {
+      this.writingFilters = false;
+    });
   }
 
   onSearchInput(event: Event): void {

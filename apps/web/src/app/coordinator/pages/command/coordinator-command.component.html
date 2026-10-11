@@ -29,6 +29,29 @@
         <button type="button" [class.on]="bandFilter() === 'dispatched'" (click)="setBandFilter('dispatched')">{{ 'coord.filterDispatched' | rdTranslate }} {{ counts().dispatched }}</button>
         <button type="button" [class.on]="bandFilter() === 'completed'" (click)="setBandFilter('completed')">{{ 'coord.filterCompleted' | rdTranslate }} {{ counts().completed }}</button>
       </div>
+      <div class="filters extra">
+        <label>{{ 'coord.filterType' | rdTranslate }}
+          <select [ngModel]="filterType()" (ngModelChange)="setFilterType($event)">
+            <option value="all">{{ 'coord.allTypes' | rdTranslate }}</option>
+            @for (t of ['rescue', 'medical', 'food', 'shelter']; track t) {
+              <option [value]="t">{{ ('incidentType.' + t) | rdTranslate }}</option>
+            }
+          </select>
+        </label>
+        <label>{{ 'coord.filterArea' | rdTranslate }}
+          <select [ngModel]="areaFilter()" (ngModelChange)="setArea($event)">
+            <option value="all">{{ 'coord.allAreas' | rdTranslate }}</option>
+            @for (w of areas(); track w) { <option [value]="w">{{ w.replace('_', ' ') }}</option> }
+          </select>
+        </label>
+        <label>{{ 'coord.filterTime' | rdTranslate }}
+          <select [ngModel]="timeFilter()" (ngModelChange)="setTime($event)">
+            <option value="all">{{ 'coord.timeAll' | rdTranslate }}</option>
+            <option value="hour">{{ 'coord.timeHour' | rdTranslate }}</option>
+            <option value="today">{{ 'coord.timeToday' | rdTranslate }}</option>
+          </select>
+        </label>
+      </div>
       <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {
           <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id)">
@@ -37,7 +60,7 @@
               <span class="prio">{{ 'coord.priority' | rdTranslate }} <b>{{ Math.round(req.urgency_score) }}</b></span>
             </span>
             <span class="title">{{ req.ai_translation || req.urgency_reason || req.place_text || req.id }}</span>
-            <span class="meta">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text || 'Riverbend' }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}</span>
+            <span class="meta" [attr.title]="fullStamp(req.created_at)">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text || '' }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
             <span class="tags">
               @if ((req.merged_count || 1) > 1) { <span class="tag">{{ tr('coord.sameIncident', req.merged_count || 1) }}</span> }
               <span class="tag">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
@@ -48,7 +71,7 @@
             </span>
           </button>
         } @empty {
-          <p class="empty">{{ 'coord.empty' | rdTranslate }}</p>
+          <p class="empty">{{ 'coord.noFilterMatch' | rdTranslate }} <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button></p>
         }
       </div>
     </section>
@@ -105,7 +128,7 @@
         <div class="detail-scroll">
           <div class="d-head">
             <app-sev-chip [band]="bandOf(req.urgency_score)" />
-            <span class="id">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}</span>
+            <span class="id" [attr.title]="fullStamp(req.updated_at) || fullStamp(req.created_at)">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
           </div>
           <h2>{{ req.ai_translation || req.urgency_reason || req.place_text }}</h2>
           <p class="place">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text }} · {{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</p>

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AnomalyAlert, ApiClientService, RdTranslatePipe } from '@rd/shared';
+import { AnomalyAlert, ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 
 type Kind = 'spike' | 'silent_zone' | 'resource_gap' | 'conflict' | 'stale';
@@ -79,6 +79,7 @@ const CELLS = WARDS.map((w) => {
 })
 export class CoordinatorAlertsComponent implements OnInit {
   private api = inject(ApiClientService);
+  private lang = inject(LanguageService);
 
   readonly W = W;
   readonly H = H;
@@ -113,6 +114,15 @@ export class CoordinatorAlertsComponent implements OnInit {
     const s = this.selected();
     return s?.at ? this.latlng(s) : { lat: 26.852, lng: 80.945 };
   });
+
+  ageText(alert: AnomalyAlert): string {
+    const stamp = alert.detected_at;
+    if (!stamp) return alert.age_label;
+    const m = Math.max(0, Math.round((Date.now() - new Date(stamp).getTime()) / 60000));
+    const key = m < 60 ? 'coord.updatedMin' : 'coord.updatedHour';
+    const n = m < 60 ? m : Math.round(m / 60);
+    return this.lang.translate(key).replace('{n}', String(n));
+  }
 
   ngOnInit(): void {
     this.reload();

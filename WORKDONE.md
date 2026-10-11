@@ -588,3 +588,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: pytest tests/test_resources_matching.py tests/test_matches_api.py tests/test_match_types.py 11 passed. Teams and command specs 14 passed. check-i18n 421 keys.
 - Notes / risks / not done: The move is four steps, three seconds apart, in the API process. It is not a road route. Google distance is not called.
 - Next (suggested task id): FP-11
+
+### 2026-10-11 21:45 IST — FP-11 — Cursor
+- What changed: Case filters for status, type, area and time are written into the URL and restored from it. Rows and the detail pane show reported and updated times, with the full date on hover. An empty filter shows "No cases match these filters" and a clear control. Alert ages come from a real timestamp instead of a fixed "4 min ago" string.
+- Files: coordinator command page, alerts page, alerts API, anomaly model, i18n, TASKS.md
+- How verified: command and alerts specs 14 passed. check-i18n 434 keys.
+- Notes / risks / not done: Area is the ward id until the Kerala pack adds districts. Time "last hour" hides the seeded cases because they are older than an hour.
+- Next (suggested task id): FP-12

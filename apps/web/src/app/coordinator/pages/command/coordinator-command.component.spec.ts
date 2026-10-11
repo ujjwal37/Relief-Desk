@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { CoordinatorCommandComponent } from './coordinator-command.component';
 import { ApiClientService, StoredRequest, MatchProposal, StoredResource, UrgencyWeights } from '@rd/shared';
@@ -152,7 +153,7 @@ describe('CoordinatorCommandComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [CoordinatorCommandComponent],
-      providers: [{ provide: ApiClientService, useValue: apiClientSpy }],
+      providers: [provideRouter([]), { provide: ApiClientService, useValue: apiClientSpy }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CoordinatorCommandComponent);
@@ -202,6 +203,17 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.teamsFree().free).toBe(1);
     expect(component.counts().completed).toBe(1);
     expect(component.counts().critical).toBe(1);
+  });
+
+  it('keeps type, area and time filters and can clear them', () => {
+    component.setFilterType('medical');
+    component.setArea('ward_4');
+    expect(component.filteredRequests().map((r) => r.id)).toEqual(['INC-002']);
+    component.setTime('hour');
+    expect(component.filteredRequests().length).toBe(0);
+    component.clearFilters();
+    expect(component.filteredRequests().length).toBe(2);
+    expect(component.timeFilter()).toBe('all');
   });
 
   it('should split cluster and reload requests when undo merge is clicked', () => {

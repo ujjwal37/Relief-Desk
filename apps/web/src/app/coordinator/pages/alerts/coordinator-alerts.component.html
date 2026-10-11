@@ -23,7 +23,7 @@
       <div class="row-head">
         <span class="num" aria-hidden="true">{{ it.n }}</span>
         <span class="kind"><ng-container *ngTemplateOutlet="icon; context: { $implicit: it.kind, s: 15 }"></ng-container>{{ 'alerts.k.' + it.kind | rdTranslate }}</span>
-        <span class="age">{{ it.alert.age_label }}</span>
+        <span class="age" [attr.title]="it.alert.detected_at || ''">{{ ageText(it.alert) }}</span>
       </div>
       <p class="reason">{{ it.alert.reason }}</p>
       <p class="where" *ngIf="it.ward">{{ it.ward.name }}</p>

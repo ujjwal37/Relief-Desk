@@ -18,6 +18,7 @@ class AnomalyAlert(BaseModel):
     ward_id: Optional[str] = None
     severity: str = "high"
     age_label: str = "just now"
+    detected_at: Optional[str] = None
     acknowledged: bool = False
 
 
