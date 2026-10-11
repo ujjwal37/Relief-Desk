@@ -109,7 +109,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | FP-05 | Rescue matches boat/rescue, not shelter, unless labelled fallback | C | DONE | – | Pytest; benchmark not worse |
 | FP-06 | Honest status timeline, local time, short ID | C | DONE | – | Timeline matches real status |
 | FP-07 | Chat fully localized | C | DONE | – | No raw keys in chips, prompts, or review |
-| FP-08 | Dispatched and Completed lifecycle | C | TODO | FP-05 | Approve leaves the active queue; complete frees capacity |
+| FP-08 | Dispatched and Completed lifecycle | C | DONE | FP-05 | Approve leaves the active queue; complete frees capacity |
 | FP-09 | Teams view | C | TODO | FP-08 | All resources listed; typed map pins |
 | FP-10 | Team location and simulated movement | C | TODO | FP-09 | Manual update; simulated path labelled |
 | FP-11 | Filters in the URL and timestamps | C | TODO | FP-02 | Status, type, area, time persist; empty state |

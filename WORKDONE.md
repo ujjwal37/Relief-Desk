@@ -561,9 +561,16 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - Notes / risks / not done: The demo id R-0412 still shows a sample on-the-way timeline. Completed status is wired when FP-08 marks a case completed.
 - Next (suggested task id): FP-07
 
-### 2026-10-11 21:15 IST — FP-07 — Cursor
+### 2026-10-11 21:25 IST — FP-07 — Cursor
 - What changed: A chosen language is kept for the whole chat, so Hindi prompts stay Hindi after an English chip. The closing line no longer pastes the pipe summary or raw keys. Chips and quick replies send the translated sentence. Review shows translated incident type and hazard, and the auto-detected place follows the language.
 - Files: services/api/app/agents/chat_intake.py, services/api/tests/test_chat_intake.py, apps/web report page, confirmation card, libs/shared/src/lib/i18n/*.json, TASKS.md
 - How verified: pytest tests/test_chat_intake.py 6 passed. ng test web confirmation-card and report specs 7 passed. check-i18n 383 keys.
 - Notes / risks / not done: The machine summary stored on the request can still contain a hazard key; the review headline shows the citizen's words. Hinglish "chhat" typo is FP-19.
 - Next (suggested task id): FP-08
+
+### 2026-10-11 21:30 IST — FP-08 — Cursor
+- What changed: Approve sets the case to dispatched, takes it out of the active queue, and marks the team busy so Teams free drops. Dispatched and Completed tabs show counts. Mark arrived and Mark completed are coordinator actions. Completing releases the reserved seats and sets the team available again. Each status change is audited with who and when. The citizen status page already treats dispatched and completed.
+- Files: services/api/app/models/firestore_models.py, services/api/app/tools/storage.py, services/api/app/api/matches.py, services/api/tests/test_resources_matching.py, coordinator command page, api client, request model, i18n, TASKS.md
+- How verified: pytest tests/test_resources_matching.py tests/test_matches_api.py tests/test_public_api.py 14 passed. Coordinator spec 12 passed. check-i18n 389 keys.
+- Notes / risks / not done: There is no separate public link for a team to confirm. The coordinator marks arrived and completed on their behalf.
+- Next (suggested task id): FP-09

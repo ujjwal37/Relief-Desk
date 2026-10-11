@@ -129,6 +129,8 @@ describe('CoordinatorCommandComponent', () => {
       'getUrgencyWeights',
       'updateUrgencyWeights',
       'approveMatch',
+      'markArrived',
+      'completeRequest',
       'rejectMatch',
       'splitCluster',
       'getScenarios',
@@ -182,7 +184,24 @@ describe('CoordinatorCommandComponent', () => {
     expect(apiClientSpy.approveMatch).toHaveBeenCalledWith('match_001', false);
     expect(component.actionToast()?.text).toContain('Dispatch Approved');
     const updated = component.requests().find((r) => r.id === 'INC-001');
-    expect(updated?.status).toBe('approved');
+    expect(updated?.status).toBe('dispatched');
+    expect(component.filteredRequests().some((r) => r.id === 'INC-001')).toBeFalse();
+    expect(component.counts().dispatched).toBe(1);
+    expect(component.teamsFree().free).toBe(0);
+    component.setBandFilter('dispatched');
+    expect(component.filteredRequests().map((r) => r.id)).toEqual(['INC-001']);
+  });
+
+  it('should complete a dispatched case and free the team', () => {
+    component.approveMatch(mockProposal);
+    apiClientSpy.completeRequest.and.returnValue(of({ ...mockRequests[0], status: 'completed' }));
+    const dispatched = component.requests().find((r) => r.id === 'INC-001')!;
+    component.markCompleted(dispatched);
+    expect(apiClientSpy.completeRequest).toHaveBeenCalledWith('INC-001');
+    expect(component.requests().find((r) => r.id === 'INC-001')?.status).toBe('completed');
+    expect(component.teamsFree().free).toBe(1);
+    expect(component.counts().completed).toBe(1);
+    expect(component.counts().critical).toBe(1);
   });
 
   it('should split cluster and reload requests when undo merge is clicked', () => {

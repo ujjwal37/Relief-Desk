@@ -127,6 +127,14 @@ export class ApiClientService {
     );
   }
 
+  markArrived(id: string): Observable<StoredRequest> {
+    return this.http.post<StoredRequest>(`/api/requests/${id}/arrived`, {}, this.getAuthHeaders());
+  }
+
+  completeRequest(id: string): Observable<StoredRequest> {
+    return this.http.post<StoredRequest>(`/api/requests/${id}/complete`, {}, this.getAuthHeaders());
+  }
+
   rejectMatch(id: string, reason: string): Observable<any> {
     return this.http.post<any>(
       `/api/matches/${id}/reject`,

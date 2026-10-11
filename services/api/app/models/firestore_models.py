@@ -18,8 +18,10 @@ class RequestStatus(str, Enum):
     NEEDS_RECHECK = "needs_recheck"
     MATCHED = "matched"
     APPROVED = "approved"
+    DISPATCHED = "dispatched"
     IN_PROGRESS = "in_progress"
     RESOLVED = "resolved"
+    COMPLETED = "completed"
     CLOSED = "closed"
 
 
@@ -68,6 +70,8 @@ class StoredRequest(BaseModel):
     translation_confidence: float = 1.0
     merged_count: int = 1
     update_count: int = 0
+    assigned_resource_id: Optional[str] = None
+    reserved_people: Optional[int] = None
     version: int = 1
     synthetic: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

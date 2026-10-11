@@ -26,6 +26,8 @@
         <button type="button" class="f-now" [class.on]="bandFilter() === 'now'" (click)="setBandFilter('now')">{{ 'coord.filterNow' | rdTranslate }} {{ counts().critical }}</button>
         <button type="button" [class.on]="bandFilter() === 'soon'" (click)="setBandFilter('soon')">{{ 'coord.filterSoon' | rdTranslate }} {{ counts().high }}</button>
         <button type="button" [class.on]="bandFilter() === 'review'" (click)="setBandFilter('review')">{{ 'coord.filterReview' | rdTranslate }} {{ counts().review }}</button>
+        <button type="button" [class.on]="bandFilter() === 'dispatched'" (click)="setBandFilter('dispatched')">{{ 'coord.filterDispatched' | rdTranslate }} {{ counts().dispatched }}</button>
+        <button type="button" [class.on]="bandFilter() === 'completed'" (click)="setBandFilter('completed')">{{ 'coord.filterCompleted' | rdTranslate }} {{ counts().completed }}</button>
       </div>
       <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {
@@ -40,7 +42,8 @@
               @if ((req.merged_count || 1) > 1) { <span class="tag">{{ tr('coord.sameIncident', req.merged_count || 1) }}</span> }
               <span class="tag">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
               @if (isReview(req)) { <span class="tag warn">{{ 'coord.review' | rdTranslate }}</span> }
-              @if (req.status === 'approved') { <span class="tag ok">✓</span> }
+              @if (isDispatched(req)) { <span class="tag ok">{{ 'coord.filterDispatched' | rdTranslate }}</span> }
+              @if (isCompleted(req)) { <span class="tag ok">{{ 'coord.filterCompleted' | rdTranslate }}</span> }
               @if (freshIds().has(req.id)) { <span class="tag new">{{ 'coord.newJustNow' | rdTranslate }}</span> }
             </span>
           </button>
@@ -167,7 +170,16 @@
               }
             </div>
           }
-          @if (activeProposal(); as prop) {
+          @if (isCompleted(req)) {
+            <p class="decide">{{ 'coord.completedNote' | rdTranslate }}</p>
+          } @else if (isDispatched(req)) {
+            <div class="btns">
+              @if (req.status !== 'in_progress') {
+                <button type="button" class="btn-sec" (click)="markArrived(req)">{{ 'coord.markArrived' | rdTranslate }}</button>
+              }
+              <button type="button" class="btn-approve" (click)="markCompleted(req)">{{ 'coord.markCompleted' | rdTranslate }}</button>
+            </div>
+          } @else if (activeProposal(); as prop) {
             <div class="btns">
               <button type="button" class="btn-approve" (click)="approveMatch(prop)">{{ 'coord.approve' | rdTranslate }}</button>
               <button type="button" class="btn-sec" (click)="changeOpen.set(!changeOpen())" [attr.aria-expanded]="changeOpen()">{{ 'coord.change' | rdTranslate }}</button>

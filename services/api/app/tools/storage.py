@@ -449,9 +449,19 @@ class StorageService:
         self._matches[match_id] = match
 
         if req:
-            req.status = RequestStatus.APPROVED
+            before_req = req.model_dump()
+            req.status = RequestStatus.DISPATCHED
+            req.assigned_resource_id = match.resource_id
+            req.reserved_people = people_needed
             req.updated_at = datetime.now(timezone.utc).isoformat()
             self._requests[req.id] = req
+            self.record_audit(
+                actor=approved_by,
+                action="status_change",
+                target=req.id,
+                before=before_req,
+                after=req.model_dump(),
+            )
 
         self.record_audit(
             actor=approved_by,
@@ -461,6 +471,54 @@ class StorageService:
             after=match.model_dump(),
         )
         return match
+
+    def mark_arrived(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
+        """Coordinator marks the team on scene. Audited. Does not change capacity."""
+        req = self._requests.get(request_id)
+        if not req:
+            raise ValueError(f"Request {request_id} not found")
+        if req.status not in (RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS):
+            raise ValueError(f"Request {request_id} is not dispatched")
+        before = req.model_dump()
+        req.status = RequestStatus.IN_PROGRESS
+        req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._requests[req.id] = req
+        self.record_audit(actor=actor, action="status_change", target=req.id, before=before, after=req.model_dump())
+        return req
+
+    def complete_request(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
+        """Marks the case completed and releases the reserved seats back to the team."""
+        req = self._requests.get(request_id)
+        if not req:
+            raise ValueError(f"Request {request_id} not found")
+        if req.status in (RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED):
+            return req
+        if req.status not in (RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS):
+            raise ValueError(f"Request {request_id} is not dispatched")
+
+        before = req.model_dump()
+        resource_id = req.assigned_resource_id
+        amount = req.reserved_people or req.people_count or 1
+        req.status = RequestStatus.COMPLETED
+        req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._requests[req.id] = req
+        self.record_audit(actor=actor, action="status_change", target=req.id, before=before, after=req.model_dump())
+
+        if resource_id and resource_id in self._resources:
+            self.release_capacity(resource_id, amount, actor=actor)
+            still_out = any(
+                other.assigned_resource_id == resource_id
+                and other.id != req.id
+                and other.status in (RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS)
+                for other in self._requests.values()
+            )
+            res = self._resources[resource_id]
+            if still_out and res.capacity_remaining > 0:
+                res.status = ResourceStatus.BUSY
+            elif res.capacity_remaining <= 0:
+                res.status = ResourceStatus.DEPLETED
+            self._resources[resource_id] = res
+        return req
 
     def reject_match(
         self, match_id: str, reason: str, actor: str = "coordinator"

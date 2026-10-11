@@ -68,7 +68,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
   readonly filterType = signal<string>('all');
   readonly searchQuery = this.ui.searchQuery;
-  readonly bandFilter = signal<'all' | 'now' | 'soon' | 'review'>('all');
+  readonly bandFilter = signal<'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'>('all');
   readonly freshIds = signal<Set<string>>(new Set());
   private queueWatermark = '';
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -118,9 +118,16 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       list = list.filter((r) => r.type === type);
     }
     const bf = this.bandFilter();
-    if (bf === 'now') list = list.filter((r) => urgencyBand(r.urgency_score) === 'critical');
-    if (bf === 'soon') list = list.filter((r) => urgencyBand(r.urgency_score) === 'high');
-    if (bf === 'review') list = list.filter((r) => needsReview(r));
+    if (bf === 'dispatched') {
+      list = list.filter((r) => this.isDispatched(r));
+    } else if (bf === 'completed') {
+      list = list.filter((r) => this.isCompleted(r));
+    } else {
+      list = list.filter((r) => !this.isDispatched(r) && !this.isCompleted(r));
+      if (bf === 'now') list = list.filter((r) => urgencyBand(r.urgency_score) === 'critical');
+      if (bf === 'soon') list = list.filter((r) => urgencyBand(r.urgency_score) === 'high');
+      if (bf === 'review') list = list.filter((r) => needsReview(r));
+    }
 
     if (query) {
       list = list.filter(
@@ -134,12 +141,17 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return list;
   });
 
-  readonly counts = computed(() => bandCounts(this.requests()));
+  readonly activeRequests = computed(() => this.requests().filter((r) => !this.isDispatched(r) && !this.isCompleted(r)));
+  readonly counts = computed(() => ({
+    ...bandCounts(this.activeRequests()),
+    dispatched: this.requests().filter((r) => this.isDispatched(r)).length,
+    completed: this.requests().filter((r) => this.isCompleted(r)).length,
+  }));
   readonly criticalCount = computed<number>(() => this.counts().critical);
   readonly teamsFree = computed(() => {
     const teams = this.resources().filter((r) => r.kind === 'boat' || r.kind === 'medical');
     const pool = teams.length ? teams : this.resources();
-    return { free: pool.filter((r) => r.capacity_remaining > 0).length, total: pool.length };
+    return { free: pool.filter((r) => r.status === 'available' && r.capacity_remaining > 0).length, total: pool.length };
   });
   readonly quietCount = computed(() => this.ui.alerts().filter((a) => a.kind === 'silent_zone').length);
   readonly briefing = computed(() => {
@@ -169,6 +181,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   bandOf(score: number): 'critical' | 'high' | 'medium' | 'low' { return urgencyBand(score); }
   isReview(r: StoredRequest): boolean { return needsReview(r); }
+  isDispatched(r: StoredRequest): boolean {
+    return r.status === 'approved' || r.status === 'dispatched' || r.status === 'in_progress';
+  }
+  isCompleted(r: StoredRequest): boolean {
+    return r.status === 'completed' || r.status === 'resolved' || r.status === 'closed';
+  }
   fitPct(p: MatchProposal): number { return Math.round(p.score); }
   ageLabel(r: StoredRequest): string {
     if (!r.created_at) return '';
@@ -177,7 +195,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
   tr(key: string, n: number): string { this.langService.currentLang(); return this.langService.translate(key).replace('{n}', String(n)); }
   toggleSection(s: 'why' | 'reports'): void { this.openSection.set(this.openSection() === s ? null : s); }
-  setBandFilter(f: 'all' | 'now' | 'soon' | 'review'): void { this.bandFilter.set(f); }
+  setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void { this.bandFilter.set(f); }
   pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); }
   closeWeights(): void { this.ui.weightsOpen.set(false); }
 
@@ -392,17 +410,20 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         });
 
         // Update local request status
+        const target = this.requests().find((r) => r.id === prop.request_id);
+        const people = target?.people_count || 1;
         const updatedList = this.requests().map((r) =>
-          r.id === prop.request_id ? { ...r, status: 'approved' as const } : r
+          r.id === prop.request_id
+            ? { ...r, status: 'dispatched' as const, assigned_resource_id: prop.resource_id, reserved_people: people }
+            : r
         );
         this.requests.set(updatedList);
 
-        // Update capacity locally
-        const updatedResources = this.resources().map((res) =>
-          res.id === prop.resource_id
-            ? { ...res, capacity_remaining: Math.max(0, res.capacity_remaining - (this.selectedRequest()?.people_count || 1)) }
-            : res
-        );
+        const updatedResources = this.resources().map((res) => {
+          if (res.id !== prop.resource_id) return res;
+          const left = Math.max(0, res.capacity_remaining - people);
+          return { ...res, capacity_remaining: left, status: (left > 0 ? 'busy' : 'depleted') as StoredResource['status'] };
+        });
         this.resources.set(updatedResources);
 
         // Reload matches for updated state
@@ -418,6 +439,32 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
             type: 'warning',
           });
         }
+      },
+    });
+  }
+
+  markArrived(req: StoredRequest): void {
+    this.apiClient.markArrived(req.id).subscribe({
+      next: () => {
+        this.requests.set(this.requests().map((r) => (r.id === req.id ? { ...r, status: 'in_progress' as const } : r)));
+        this.actionToast.set({ text: this.langService.translate('coord.arrivedNote'), type: 'success' });
+      },
+    });
+  }
+
+  markCompleted(req: StoredRequest): void {
+    this.apiClient.completeRequest(req.id).subscribe({
+      next: () => {
+        const people = req.reserved_people || req.people_count || 1;
+        this.requests.set(this.requests().map((r) => (r.id === req.id ? { ...r, status: 'completed' as const } : r)));
+        if (req.assigned_resource_id) {
+          this.resources.set(this.resources().map((res) => {
+            if (res.id !== req.assigned_resource_id) return res;
+            const left = Math.min(res.capacity_total, res.capacity_remaining + people);
+            return { ...res, capacity_remaining: left, status: 'available' as const };
+          }));
+        }
+        this.actionToast.set({ text: this.langService.translate('coord.completedNote'), type: 'success' });
       },
     });
   }
