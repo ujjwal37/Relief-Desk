@@ -216,6 +216,7 @@ class DedupeAgent:
         "report", "roads", "completely",
         "boat", "send", "roof", "chhat", "madad", "chahiye", "bhejo", "bhej",
         "fas", "gaye", "please", "rescue", "urgent", "paani", "pani",
+        "stranded", "trapped", "submerged", "synthetic", "rising", "inundated",
     }
     _GENERIC_PLACE = {
         "school", "ghat", "nagar", "colony", "market", "park", "lake", "mandir",

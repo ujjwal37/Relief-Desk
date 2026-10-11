@@ -846,4 +846,11 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - Files: services/api/app/tools/nlu_rules.py, services/api/app/agents/intake.py, services/api/app/tools/gazetteer.py, services/api/app/api/reports.py, bench/run_bench.py, services/api/tests/test_type_and_ward.py, bench/results/latest.md, bench/results/latest.json, bench/results/latest.csv, bench/results/benchmark_20261011_183833.json, TASKS.md
 - How verified: `pytest tests/test_type_and_ward.py tests/test_intake.py` — 15 passed. Train split before the change: type 69.4% (50/72), ward resolver 39/72. Train split after: type 100% (72/72), ward 100%. Test split was run once after that. Before: type 51.0%, ward 25.5%. After: type 67.3%, ward 100.0% (`python bench/run_bench.py --split test --seed 42`).
 - Notes / risks / not done: Type is still short of the 90% target. The train split is Latin and Hindi only, so cues from those 72 messages do not cover every test wording. Several published misses ask for a rescue team (बचाव दल भेजो) while the label says medical; those were not used to change the rules. Duplicate F1 moved from 69.4% to 62.7% because the prefilter drops a pair when the two types differ and neither is rescue. Vulnerable F1 moved from 60.0% to 58.5%.
+- Next (suggested task id): RT-24
+
+### 2026-10-12 05:55 IST — RT-24 — Cursor
+- What changed: Place matching ignores situation words such as stranded, trapped, and synthetic. A counted report that only shares one of those words with a seed stays a new case. The same street and the same people count still merge.
+- Files: services/api/app/agents/dedupe.py, services/api/tests/test_live_dedupe.py, TASKS.md
+- How verified: `pytest tests/test_live_dedupe.py tests/test_dedupe.py` — 5 passed.
+- Notes / risks / not done: The end-to-end spec posts "4 people stranded" at the Champakulam pin, which shares "stranded" with a seed description. That was folding the new card away.
 - Next (suggested task id): RT-E2E-2

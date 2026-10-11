@@ -53,3 +53,32 @@ def test_reworded_hinglish_pair_merges_and_the_card_says_two_reports():
 
     label = json.loads(EN.read_text(encoding="utf-8"))["coord"]["sameIncident"].replace("{n}", "2")
     assert "2 reports" in label
+
+
+def test_a_counted_report_does_not_merge_just_because_both_say_stranded():
+    token = f"E2Edesk{uuid.uuid4().hex[:6]}"
+    created = client.post(
+        "/api/reports",
+        json={
+            "text": f"4 people stranded, need a boat. Synthetic report {token}.",
+            "raw_text": f"4 people stranded, need a boat. Synthetic report {token}.",
+            "lang": "en",
+            "channel": "text",
+            "location_pin": {"lat": 9.416, "lng": 76.411},
+            "idempotency_key": f"e2e-shape-{token}",
+            "structured": {
+                "incident_type": "rescue",
+                "place_text": token,
+                "people_count": 4,
+                "hazard": "water_rising",
+                "vulnerable": {"child": True},
+                "summary": token,
+            },
+        },
+    )
+    assert created.status_code == 200, created.text
+    assert created.json()["dedupe_decision"] == "new"
+    listed = client.get("/api/requests", headers=AUTH)
+    cards = [row for row in listed.json() if token in (row.get("place_text") or "") or token in (row.get("raw_text") or "")]
+    assert len(cards) == 1
+    assert cards[0]["id"] != "INC-003"
