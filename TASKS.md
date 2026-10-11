@@ -98,3 +98,8 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | T-052 | Repo hygiene: gitleaks on full history, grep for other project names, LICENSE, tag `v1.0-submission` | U | TODO | T-051 | Scans clean; deployed revision = tag |
 | T-053 | Final video upload, description ≤1,024 chars, theme dropdown, submit on portal; save confirmation | U | TODO | T-050, T-052 | Confirmation saved in WORKDONE |
 | – | 18 Oct: buffer only (deadline 11:59 PM IST) | U | – | – | – |
+
+## T-UX-03 UX3 uplift (branch ux-uplift)
+- DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
+- TODO/BLOCKED (not started): public layout + tab bar, report chat + voice overlay, confirm, status, nearby, coordinator dashboard + tour, alerts, accuracy report, states
+- T-UI-01 and UX2 tasks superseded by T-UX-03

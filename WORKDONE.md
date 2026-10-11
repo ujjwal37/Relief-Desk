@@ -508,3 +508,6 @@ Demo coordinator: `demo-coordinator@reliefdesk.internal` / `RiverbendRelief2026!
 
 Stretch S-001, S-002, and S-003 are still TODO in TASKS.md and were not part of this local pass.
 
+
+## 2026-10-11 UX3 uplift, part 1 (branch ux-uplift)
+Changed: apps/web/src/theme.scss (tokens), libs/shared (ThemeService, CallPill, QuietFooter, SettingsButton, 4-language i18n keys), landing, coordinator login. Checked: check-i18n pass, ng build shared and web pass, Playwright 390x844/1440x900/1280x720, min font 13px, tap targets >= 44px, 0 console errors. Not done: remaining screens (see TASKS.md). Screenshots: C:\Users\aggar\uxshots.
