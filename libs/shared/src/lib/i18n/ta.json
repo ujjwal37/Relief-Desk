@@ -54,7 +54,8 @@
     "chipAnimal": "விலங்கு தாக்குதல் அல்லது கடி",
     "chipHurt": "யாரோ காயம் அல்லது நோய்",
     "chipOther": "வேறு ஏதாவது",
-    "composer": "எழுதவும் அல்லது மைக்கை அழுத்தவும்"
+    "composer": "எழுதவும் அல்லது மைக்கை அழுத்தவும்",
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
   },
   "report": {
     "title": "அவசர பேரிடர் அறிக்கை",
@@ -99,7 +100,7 @@
     "saidElderly": "எங்களுடன் ஒரு முதியவர் இருக்கிறார்",
     "saidSick": "இங்கே ஒருவர் உடல்நலம் சரியில்லை",
     "saidNone": "குழந்தை, முதியவர் அல்லது நோயாளி யாரும் இல்லை",
-    "autoPlace": "வார்டு 7 · தானாக கண்டறியப்பட்டது"
+    "autoPlace": "சாலக்குடி · தானாக கண்டறியப்பட்டது"
   },
   "confirm": {
     "title": "நாங்கள் புரிந்துகொண்ட விவரங்கள்",
@@ -169,7 +170,7 @@
     },
     "key": "குறியீடு",
     "noPin": "ஒரு இடத்துடன் தொடர்பில்லை",
-    "mapAria": "எச்சரிக்கை குறிகளுடன் ரிவர்பெண்ட் வார்டு வரைபடம்",
+    "mapAria": "எச்சரிக்கை குறிகளுடன் கேரள வார்டு வரைபடம்",
     "river": "ஆறு",
     "noReports": "அறிக்கை இல்லை, கடந்த",
     "reports": "அறிக்கைகள்",
@@ -288,7 +289,12 @@
     "lng": "தீர்க்கரேகை",
     "saveLocation": "இடத்தை சேமி",
     "savedLocation": "இடம் சேமிக்கப்பட்டது.",
-    "kind": { "boat": "படகு", "medical": "மருத்துவம்", "food": "உணவு", "shelter": "தங்குமிடம்" },
+    "kind": {
+      "boat": "படகு",
+      "medical": "மருத்துவம்",
+      "food": "உணவு",
+      "shelter": "தங்குமிடம்"
+    },
     "resStatus": {
       "available": "காலி",
       "dispatched": "அனுப்பப்பட்டது",
@@ -347,7 +353,8 @@
     "mapKey": "வரைபட விளக்கம்",
     "demoPhone": "டெமோ தொலைபேசி",
     "dismissTour": "தவிர்",
-    "reportDetails": "அறிக்கை விவரங்கள்"
+    "reportDetails": "அறிக்கை விவரங்கள்",
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
   },
   "tour": {
     "next": "அடுத்து",
@@ -406,7 +413,7 @@
     "beAware": "எச்சரிக்கையாக இருங்கள்",
     "activeReports": "செயலில் உள்ள அறிக்கைகள்",
     "offer": "உதவி வழங்கு",
-    "synthetic": "செயற்கை டெமோ தரவு"
+    "synthetic": "Synthetic scenario inspired by Kerala floods"
   },
   "bench": {
     "title2": "துல்லிய அறிக்கை",

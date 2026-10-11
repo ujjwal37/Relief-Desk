@@ -5,7 +5,7 @@ from app.models.schemas import IncidentType, HazardType
 
 def test_report_stored_raw_immediately():
     storage = StorageService()
-    raw = "Riverbend Gandhi school ke paas 4 log chat par hain"
+    raw = "Kerala Gandhi school ke paas 4 log chat par hain"
     report = storage.save_report_raw(
         raw_text=raw,
         channel="text",

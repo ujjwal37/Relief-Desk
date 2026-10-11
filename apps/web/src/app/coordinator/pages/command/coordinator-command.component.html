@@ -20,6 +20,7 @@
       <div class="cases-head">
         <h1 id="cases-h">{{ 'coord.cases' | rdTranslate }}</h1>
         <span class="sort">{{ 'coord.sorted' | rdTranslate }}</span>
+        <p class="scenario">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
       </div>
       <div class="filters" role="group">
         <button type="button" [class.on]="bandFilter() === 'all'" (click)="setBandFilter('all')">{{ 'coord.filterAll' | rdTranslate }} {{ counts().total }}</button>

@@ -27,7 +27,7 @@ class RequestStatus(str, Enum):
 
 class StoredReport(BaseModel):
     id: str
-    event_id: str = "event_riverbend_flood"
+    event_id: str = "event_kerala_flood"
     pack_id: str = "flood"
     channel: str = "text"  # "text" | "voice"
     lang: str = "en"
@@ -45,7 +45,7 @@ class StoredReport(BaseModel):
 
 class StoredRequest(BaseModel):
     id: str
-    event_id: str = "event_riverbend_flood"
+    event_id: str = "event_kerala_flood"
     pack_id: str = "flood"
     type: IncidentType = IncidentType.OTHER
     place_text: Optional[str] = None
@@ -120,7 +120,7 @@ class ResourceStatus(str, Enum):
 
 class StoredResource(BaseModel):
     id: str
-    event_id: str = "event_riverbend_flood"
+    event_id: str = "event_kerala_flood"
     pack_id: str = "flood"
     kind: ResourceKind
     name: str

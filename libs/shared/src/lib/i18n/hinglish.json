@@ -54,7 +54,8 @@
     "chipAnimal": "Janwar ka hamla ya kaatna",
     "chipHurt": "Koi ghayal ya beemar hai",
     "chipOther": "Kuch aur",
-    "composer": "Likhein ya mic dabayein"
+    "composer": "Likhein ya mic dabayein",
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
   },
   "report": {
     "title": "Emergency Crisis Report",
@@ -99,7 +100,7 @@
     "saidElderly": "Hamare saath ek bujurg hain",
     "saidSick": "Yahan koi bimaar hai",
     "saidNone": "Bachche, bujurg ya bimaar koi nahi",
-    "autoPlace": "Ward 7 · apne aap pehchana"
+    "autoPlace": "Chalakudy · apne aap pehchana"
   },
   "confirm": {
     "title": "Humne Ye Samjha",
@@ -169,7 +170,7 @@
     },
     "key": "Sanket",
     "noPin": "Kisi ek jagah se juda nahi",
-    "mapAria": "Riverbend ke wards ka naksha, alert pins ke saath",
+    "mapAria": "Kerala ke wards ka naksha, alert pins ke saath",
     "river": "Nadi",
     "noReports": "Koi report nahi, pichhle",
     "reports": "reports",
@@ -288,7 +289,12 @@
     "lng": "Longitude",
     "saveLocation": "Location save karein",
     "savedLocation": "Location save ho gayi.",
-    "kind": { "boat": "Naav", "medical": "Ilaaj", "food": "Khana", "shelter": "Ashray" },
+    "kind": {
+      "boat": "Naav",
+      "medical": "Ilaaj",
+      "food": "Khana",
+      "shelter": "Ashray"
+    },
     "resStatus": {
       "available": "Khali",
       "dispatched": "Bhej di",
@@ -347,7 +353,8 @@
     "mapKey": "Map key",
     "demoPhone": "Demo phone",
     "dismissTour": "Tour chhodein",
-    "reportDetails": "Report details"
+    "reportDetails": "Report details",
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
   },
   "tour": {
     "next": "Aage",
@@ -406,7 +413,7 @@
     "beAware": "Satark rahein",
     "activeReports": "active reports",
     "offer": "Madad ki peshkash",
-    "synthetic": "Synthetic demo data"
+    "synthetic": "Synthetic scenario inspired by Kerala floods"
   },
   "bench": {
     "title2": "Accuracy report",

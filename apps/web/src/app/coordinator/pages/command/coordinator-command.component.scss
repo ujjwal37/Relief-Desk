@@ -7,7 +7,7 @@ button { font-family:var(--rd-font-family); }
 .grid { flex:1; min-height:0; display:grid; grid-template-columns:400px minmax(0,1fr) 420px; gap:12px; padding:12px; }
 .cases, .detail, .map-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--e1); min-height:0; }
 .cases { display:flex; flex-direction:column; overflow:hidden; }
-.cases-head { display:flex; align-items:baseline; justify-content:space-between; padding:14px 14px 4px; h1 { margin:0; font-size:20px; font-weight:800; letter-spacing:-.01em; } .sort { font-size:13px; color:var(--text-2); } }
+.cases-head { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; padding:14px 14px 4px; h1 { margin:0; font-size:20px; font-weight:800; letter-spacing:-.01em; } .sort { font-size:13px; color:var(--text-2); } .scenario { flex-basis:100%; margin:4px 0 0; font-size:13px; font-weight:700; color:var(--brand); } }
 .filters { display:flex; flex-wrap:wrap; gap:6px; padding:8px 14px 10px; border-bottom:1px solid var(--border);
   button { min-height:40px; padding:0 10px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-2); font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
   button.on { background:var(--brand); border-color:var(--brand); color:var(--on-brand); } button.f-now.on { background:var(--sev-crit); border-color:var(--sev-crit); color:#fff; } }

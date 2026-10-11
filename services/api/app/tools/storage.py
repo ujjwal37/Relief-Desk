@@ -85,7 +85,7 @@ class StorageService:
         lang: str = "en",
         source_id: str = "anon",
         trust_level: str = "anonymous",
-        event_id: str = "event_riverbend_flood",
+        event_id: str = "event_kerala_flood",
         pack_id: str = "flood",
         flags: Optional[List[str]] = None,
         status_token: Optional[str] = None,
@@ -285,7 +285,7 @@ class StorageService:
         return self._resources.get(resource_id)
 
     def list_resources(
-        self, kind: Optional[ResourceKind] = None, event_id: str = "event_riverbend_flood"
+        self, kind: Optional[ResourceKind] = None, event_id: str = "event_kerala_flood"
     ) -> List[StoredResource]:
         res_list = [r for r in self._resources.values() if r.event_id == event_id]
         if kind:
@@ -442,7 +442,7 @@ class StorageService:
         for item in data.get("resources", []):
             res = StoredResource(
                 id=item["id"],
-                event_id=item.get("event_id", data.get("event_id", "event_riverbend_flood")),
+                event_id=item.get("event_id", data.get("event_id", "event_kerala_flood")),
                 pack_id=item.get("pack_id", data.get("scenario_pack", "flood")),
                 kind=ResourceKind(item["kind"]),
                 name=item["name"],
@@ -679,8 +679,8 @@ class StorageService:
                     type=IncidentType(item.get("type", "rescue")),
                     place_text=item.get("description", ""),
                     ward_id=item.get("ward_id"),
-                    lat=float(item.get("lat", 26.85)),
-                    lng=float(item.get("lng", 80.94)),
+                    lat=float(item.get("lat", 10.50)),
+                    lng=float(item.get("lng", 76.30)),
                     people_count=int(item.get("people", 1)),
                     vulnerable=vuln,
                     hazard=HazardType(item.get("hazard", "unknown")),

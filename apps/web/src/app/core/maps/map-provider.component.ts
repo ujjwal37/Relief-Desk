@@ -28,7 +28,7 @@ export interface MapPin {
   imports: [CommonModule],
   template: `
     @if (mode === 'google') {
-      <div #canvas class="rd-google-map" role="application" aria-label="Riverbend map"></div>
+      <div #canvas class="rd-google-map" role="application" aria-label="Relief map"></div>
     } @else {
       <ng-content></ng-content>
     }
@@ -44,7 +44,7 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   private cdr = inject(ChangeDetectorRef);
 
   @Input() pins: MapPin[] = [];
-  @Input() center: { lat: number; lng: number } = { lat: 26.852, lng: 80.925 };
+  @Input() center: { lat: number; lng: number } = { lat: 10.50, lng: 76.30 };
   @Output() pinSelect = new EventEmitter<string>();
 
   @ViewChild('canvas') canvas?: ElementRef<HTMLDivElement>;

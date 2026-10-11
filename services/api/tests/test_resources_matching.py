@@ -29,8 +29,8 @@ def test_match_score_breakdown_and_hard_constraints():
     req = StoredRequest(
         id="req_rescue_test",
         type=IncidentType.RESCUE,
-        lat=26.853,
-        lng=80.940,
+        lat=9.430,
+        lng=76.398,
         people_count=8,
         hazard=HazardType.WATER_RISING,
         urgency_score=90.0,

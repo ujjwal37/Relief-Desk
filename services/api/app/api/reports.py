@@ -171,8 +171,8 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
 
     # 4. Deduplication against active requests
     existing = storage_service.list_requests()
-    pin_lat = payload.location_pin.get("lat") if payload.location_pin else 26.85
-    pin_lng = payload.location_pin.get("lng") if payload.location_pin else 80.93
+    pin_lat = payload.location_pin.get("lat") if payload.location_pin else 9.498
+    pin_lng = payload.location_pin.get("lng") if payload.location_pin else 76.339
     ward_id = _resolve_ward_id(extracted.place_text, report_text)
     geo = gazetteer.lookup(extracted.place_text or report_text or "")
     if not payload.location_pin and geo.lat is not None and geo.lng is not None and not geo.is_low_confidence:
@@ -196,10 +196,10 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     req_id = f"req_{uuid.uuid4().hex[:10]}"
     req_obj = StoredRequest(
         id=req_id,
-        event_id="event_riverbend_flood",
+        event_id="event_kerala_flood",
         pack_id=payload.scenario_id,
         type=extracted.type,
-        place_text=extracted.place_text or "Riverbend Area",
+        place_text=extracted.place_text or "Alappuzha",
         ward_id=ward_id,
         lat=pin_lat,
         lng=pin_lng,

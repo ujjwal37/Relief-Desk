@@ -43,7 +43,7 @@ def test_hindi_voice_note_pipeline():
     assert data["report_id"]
     assert data["request_id"]
     assert data["transcript"] is not None
-    assert "शिव मंदिर" in data["transcript"]
+    assert "महादेव मंदिर" in data["transcript"]
     assert "वार्ड 7" in data["transcript"]
     assert data["asr_confidence"] == 0.94
 
@@ -77,7 +77,7 @@ def test_hinglish_medical_voice_note_pipeline():
     assert response.status_code == 200
     data = response.json()
 
-    assert "Clock Tower" in data["transcript"]
+    assert "Aluva Bus Stand" in data["transcript"]
     assert data["asr_confidence"] == 0.91
 
     stored_req = storage_service.get_request(data["request_id"])

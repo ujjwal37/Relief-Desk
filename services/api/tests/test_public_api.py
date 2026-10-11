@@ -72,7 +72,7 @@ def test_public_cells_privacy_contract():
 
 
 def test_public_cells_bbox_filter():
-    response = client.get("/api/public/cells?bbox=80.90,26.83,80.96,26.88")
+    response = client.get("/api/public/cells?bbox=76.00,9.30,76.70,11.70")
     assert response.status_code == 200
     data = response.json()
     assert len(data["cells"]) > 0

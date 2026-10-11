@@ -3,18 +3,18 @@ import { CommonModule } from '@angular/common';
 import { ApiClientService, LanguageService, RdTranslatePipe, StoredResource } from '@rd/shared';
 
 const AREAS: Record<string, string> = {
-  ward_1: 'Sangam Vihar',
-  ward_2: 'Gandhi Nagar',
-  ward_3: 'Riverfront Ghat',
-  ward_4: 'Old Bazaar',
-  ward_5: 'Shanti Nagar',
-  ward_6: 'Civil Lines',
-  ward_7: 'Industrial Area',
-  ward_8: 'Green Park',
-  ward_9: 'Subhash Nagar',
-  ward_10: 'Model Town',
-  ward_11: 'Transport Nagar',
-  ward_12: 'Lake View',
+  ward_1: 'Kainakary',
+  ward_2: 'Champakulam',
+  ward_3: 'Nedumudi',
+  ward_4: 'Aluva',
+  ward_5: 'Varapuzha',
+  ward_6: 'Kothamangalam',
+  ward_7: 'Chalakudy',
+  ward_8: 'Mala',
+  ward_9: 'Anthikad',
+  ward_10: 'Meppadi',
+  ward_11: 'Vythiri',
+  ward_12: 'Kalpetta',
 };
 
 @Component({

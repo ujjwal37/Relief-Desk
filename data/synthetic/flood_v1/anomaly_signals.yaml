@@ -1,6 +1,6 @@
 version: 1
 # Measurements the anomaly engine evaluates. Alerts appear only when a rule fires.
-# Synthetic Riverbend figures for the flood demo.
+# Synthetic figures for the Kerala flood demo. People and counts are fictional.
 signals:
   - kind: spike
     ward_id: ward_7
@@ -20,7 +20,7 @@ signals:
     free: 2
   - kind: conflict
     ward_name: Ward 4
-    statement_a: Canal Road open
+    statement_a: Temple Road open
     statement_b: blocked
   - kind: stale
     count: 4

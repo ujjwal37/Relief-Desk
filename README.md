@@ -9,7 +9,7 @@ Live demo: `<URL to add>` | Demo video: `<link to add>` | Coordinator demo login
 
 ## Demo
 One PWA, two roles. Open the live URL: **"I need help / report"** needs no login. **"I'm a coordinator"** goes to `/coordinator/login`.
-Demo coordinator (synthetic, demo-only): email `demo-coordinator@reliefdesk.internal` / password `RiverbendRelief2026!` (created by `scripts/seed.py`).
+Demo coordinator (synthetic, demo-only): email `demo-coordinator@reliefdesk.internal` / password `KeralaRelief2026!` (created by `scripts/seed.py`).
 Side-by-side demo mode: add `?demo=1` on desktop.
 
 ## The problem

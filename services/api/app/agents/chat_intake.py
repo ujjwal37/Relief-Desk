@@ -171,7 +171,7 @@ class ChatIntakeAgent:
         if extracted_turn.place_text:
             current.place_text = extracted_turn.place_text
         elif location_pin and not current.place_text:
-            current.place_text = f"Pin ({location_pin.get('lat', 26.85):.4f}, {location_pin.get('lng', 80.93):.4f})"
+            current.place_text = f"Pin ({location_pin.get('lat', 9.498):.4f}, {location_pin.get('lng', 76.339):.4f})"
 
         if extracted_turn.people.count is not None:
             current.people = extracted_turn.people
@@ -215,7 +215,7 @@ class ChatIntakeAgent:
             summary_text = " | ".join(summary_parts)
             card = ConfirmationCardData(
                 incident_type=current.type.value,
-                place_text=current.place_text or "Riverbend Ward 2",
+                place_text=current.place_text or "Champakulam",
                 people_count=current.people.count or 1,
                 vulnerable=current.vulnerable.model_dump(),
                 hazard=current.hazard.value,

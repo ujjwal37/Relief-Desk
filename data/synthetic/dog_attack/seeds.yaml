@@ -4,8 +4,8 @@ incidents:
 - id: DOG-001
   type: animal_attack
   ward_id: ward_2
-  lat: 26.852
-  lng: 80.926
+  lat: 9.422
+  lng: 76.411
   people: 1
   vulnerable:
     child: true
@@ -14,17 +14,20 @@ incidents:
     pregnant: false
     medical_need: true
   hazard: injury
-  description: Synthetic. A child near Gandhi High School needs transport after a dog bite. No dosing.
+  description: Synthetic. A child near Champakulam School needs transport after a
+    dog bite. No dosing.
   sample_reports:
   - lang: en
-    text: Synthetic report. A child near Gandhi High School was bitten. Please send transport to the hospital.
+    text: Synthetic report. A child near Champakulam School was bitten. Please send
+      transport to the hospital.
   - lang: hi
-    text: काल्पनिक रिपोर्ट। गांधी हाई स्कूल के पास एक बच्चे को कुत्ते ने काटा है। अस्पताल तक ले जाने की गाड़ी चाहिए।
+    text: काल्पनिक रिपोर्ट। गांधी हाई स्कूल के पास एक बच्चे को कुत्ते ने काटा है।
+      अस्पताल तक ले जाने की गाड़ी चाहिए।
 - id: DOG-002
   type: animal_attack
   ward_id: ward_6
-  lat: 26.849
-  lng: 80.955
+  lat: 10.065
+  lng: 76.628
   people: 2
   vulnerable:
     child: false
@@ -33,15 +36,17 @@ incidents:
     pregnant: false
     medical_need: true
   hazard: injury
-  description: Synthetic. Two people in Civil Lines need a ride to hospital after a dog bite.
+  description: Synthetic. Two people in Kothamangalam need a ride to hospital after
+    a dog bite.
   sample_reports:
   - lang: hinglish
-    text: Synthetic. Civil Lines me 2 log hain, ek buzurg, kutte ne kaata. Hospital le jao. Dawa mat batao.
+    text: Synthetic. Kothamangalam me 2 log hain, ek buzurg, kutte ne kaata. Hospital
+      le jao. Dawa mat batao.
 - id: DOG-003
   type: info
   ward_id: ward_4
-  lat: 26.858
-  lng: 80.948
+  lat: 10.1076
+  lng: 76.3516
   people: 0
   vulnerable:
     child: false
@@ -53,7 +58,8 @@ incidents:
   description: Synthetic sighting only. No one was hurt.
   sample_reports:
   - lang: en
-    text: Synthetic. A dog was seen near Old Bazaar. Nobody is hurt. Sharing so coordinators know.
+    text: Synthetic. A dog was seen near Aluva. Nobody is hurt. Sharing so coordinators
+      know.
 - id: DOG-004
   type: animal_attack
   ward_id: ward_8
@@ -67,7 +73,7 @@ incidents:
     pregnant: false
     medical_need: true
   hazard: injury
-  description: Duplicate wording of the Green Park bite, second caller.
+  description: Duplicate wording of the Mala bite, second caller.
   sample_reports:
   - lang: en
-    text: Synthetic duplicate. Same Green Park lane bite, one adult needs hospital transport.
+    text: Synthetic duplicate. Same Mala lane bite, one adult needs hospital transport.

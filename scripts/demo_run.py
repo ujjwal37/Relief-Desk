@@ -83,7 +83,7 @@ def main() -> int:
         "scenario_id": "flood",
         "channel": "text",
         "source_id": "demo_run_phone",
-        "location_pin": {"lat": 26.852, "lng": 80.925},
+        "location_pin": {"lat": 9.498, "lng": 76.339},
         "structured": {
             "incident_type": hing_card["incident_type"],
             "place_text": hing_card["place_text"],

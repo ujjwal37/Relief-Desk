@@ -22,7 +22,7 @@ def test_detect_language():
     assert translation_service.detect_language("ghar me paani aa gaya hai") == "hinglish"
 
     # English
-    assert translation_service.detect_language("Water entering first floor near Ram Ghat. Urgent boat needed.") == "en"
+    assert translation_service.detect_language("Water entering first floor near Nedumudi Boat Jetty. Urgent boat needed.") == "en"
     assert translation_service.detect_language("Rescue required at Main Market") == "en"
 
 

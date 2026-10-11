@@ -60,7 +60,7 @@ def main():
         has_child = inc["vulnerable"].get("child", False)
         has_elderly = inc["vulnerable"].get("elderly", False)
 
-        lm_name_en = lm.get("name", "Riverbend Area")
+        lm_name_en = lm.get("name", "Kerala Area")
         lm_alias_hi = lm.get("aliases_hi", [lm_name_en])[0]
         lm_alias_en = lm.get("aliases_en", [lm_name_en])[0]
 
@@ -191,8 +191,8 @@ def main():
 
     # 5. Hoax / Spam (~20)
     hoax_templates = [
-        "NASA alert! Riverbend dam broken, share this message to 15 groups immediately to activate army!",
-        "100% verified news: call 9876543210 for free government helicopter rescue anywhere in UP!",
+        "NASA alert! Kerala dam broken, share this message to 15 groups immediately to activate army!",
+        "100% verified news: call 9876543210 for free government helicopter rescue anywhere in Kerala!",
         "Special disaster relief lottery: send 500 rupees to receive emergency relief kit.",
         "Breaking: crocodile spotted on main road forward fast to warn everybody!",
     ]

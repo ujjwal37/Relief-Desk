@@ -153,7 +153,7 @@ Return strictly JSON matching this schema:
             except Exception as e:
                 logger.warning("Gemini live translation failed, using deterministic fallback: %s", e)
 
-        # 4. Deterministic fallback translation for synthetic Riverbend phrases
+        # 4. Deterministic fallback translation for synthetic Kerala phrases
         res = self._deterministic_fallback(clean_text, lang)
         self._save_cache(cache_key, res)
         return res

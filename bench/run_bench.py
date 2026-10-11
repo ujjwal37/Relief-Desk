@@ -249,8 +249,8 @@ def run_benchmark(
         is_gt_hard_neg = label_type == "not_duplicate"
         is_gt_hoax = label_type in ("hoax", "spam")
 
-        pin_lat = gt.get("lat", 26.852)
-        pin_lng = gt.get("lng", 80.931)
+        pin_lat = gt.get("lat", 10.308)
+        pin_lng = gt.get("lng", 76.331)
 
         candidates = dedupe_agent.prefilter_candidates(
             new_req=extracted,
@@ -321,7 +321,7 @@ def run_benchmark(
         req_obj = StoredRequest(
             id=f"req_{m_id}",
             type=extracted.type,
-            place_text=extracted.place_text or "Riverbend Ward",
+            place_text=extracted.place_text or "Chalakudy",
             ward_id=gt_ward,
             lat=pin_lat,
             lng=pin_lng,

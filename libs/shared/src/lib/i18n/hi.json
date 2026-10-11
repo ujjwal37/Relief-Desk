@@ -54,7 +54,8 @@
     "chipAnimal": "जानवर का हमला या काटना",
     "chipHurt": "कोई घायल या बीमार है",
     "chipOther": "कुछ और",
-    "composer": "लिखें या माइक दबाएं"
+    "composer": "लिखें या माइक दबाएं",
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
   },
   "report": {
     "title": "आपातकालीन संकट रिपोर्ट",
@@ -99,7 +100,7 @@
     "saidElderly": "हमारे साथ एक बुजुर्ग हैं",
     "saidSick": "यहाँ कोई बीमार है",
     "saidNone": "बच्चे, बुजुर्ग या बीमार कोई नहीं",
-    "autoPlace": "वार्ड 7 · अपने आप पहचाना"
+    "autoPlace": "चालाकुडी · अपने आप पहचाना"
   },
   "confirm": {
     "title": "हमारी समझ के अनुसार विवरण",
@@ -169,7 +170,7 @@
     },
     "key": "संकेत",
     "noPin": "किसी एक जगह से जुड़ा नहीं",
-    "mapAria": "अलर्ट पिन के साथ रिवरबेंड वार्ड का नक्शा",
+    "mapAria": "अलर्ट पिन के साथ केरल वार्ड का नक्शा",
     "river": "नदी",
     "noReports": "कोई रिपोर्ट नहीं, पिछले",
     "reports": "रिपोर्ट",
@@ -288,7 +289,12 @@
     "lng": "देशांतर",
     "saveLocation": "स्थान सहेजें",
     "savedLocation": "स्थान सहेजा गया।",
-    "kind": { "boat": "नाव", "medical": "चिकित्सा", "food": "भोजन", "shelter": "आश्रय" },
+    "kind": {
+      "boat": "नाव",
+      "medical": "चिकित्सा",
+      "food": "भोजन",
+      "shelter": "आश्रय"
+    },
     "resStatus": {
       "available": "खाली",
       "dispatched": "भेजी गई",
@@ -347,7 +353,8 @@
     "mapKey": "नक्शे की कुंजी",
     "demoPhone": "डेमो फ़ोन",
     "dismissTour": "टूर छोड़ें",
-    "reportDetails": "रिपोर्ट विवरण"
+    "reportDetails": "रिपोर्ट विवरण",
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
   },
   "tour": {
     "next": "आगे",
@@ -406,7 +413,7 @@
     "beAware": "सतर्क रहें",
     "activeReports": "सक्रिय रिपोर्ट",
     "offer": "मदद की पेशकश",
-    "synthetic": "कृत्रिम डेमो डेटा"
+    "synthetic": "Synthetic scenario inspired by Kerala floods"
   },
   "bench": {
     "title2": "सटीकता रिपोर्ट",

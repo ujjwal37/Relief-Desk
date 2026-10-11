@@ -1,7 +1,7 @@
 """
 Generator script for synthetic seeds (T-009)
 Generates data/synthetic/flood_v1/seeds.yaml with:
-- Fictional city: Riverbend
+- Fictional city: Kerala
 - 12 wards
 - 60 landmarks with Hindi & Latin aliases
 - 40 ground-truth flood incidents
@@ -10,9 +10,13 @@ import yaml
 from pathlib import Path
 
 def generate_seeds():
+    raise SystemExit(
+        "Retired. The flood pack is data/synthetic/flood_v1/seeds.yaml "
+        "(Synthetic scenario inspired by Kerala floods)."
+    )
     city = {
-        "name": "Riverbend",
-        "state": "Uttar Pradesh",
+        "name": "Kerala",
+        "state": "Kerala",
         "center": {"lat": 26.8500, "lng": 80.9400},
         "bbox": {
             "min_lat": 26.7800,
@@ -75,7 +79,7 @@ def generate_seeds():
 
         # Ward 6: Civil Lines
         ("LM-26", "District Collectorate Civil Lines", "ward_6", 26.8650, 80.9350, "community_hall", ["जिला कलेक्ट्रेट सिविल लाइन्स", "कलेक्ट्रेट ऑफिस"], ["district collectorate civil lines", "collectorate office"]),
-        ("LM-27", "Civil Hospital Riverbend", "ward_6", 26.8670, 80.9380, "hospital", ["सिविल हॉस्पिटल रिवरबेंड", "सरकारी सिविल अस्पताल"], ["civil hospital riverbend", "civil hospital"]),
+        ("LM-27", "Civil Hospital Kerala", "ward_6", 26.8670, 80.9380, "hospital", ["सिविल हॉस्पिटल केरल", "सरकारी सिविल अस्पताल"], ["civil hospital riverbend", "civil hospital"]),
         ("LM-28", "Civil Lines Metro Station", "ward_6", 26.8635, 80.9330, "metro_station", ["सिविल लाइन्स मेट्रो स्टेशन"], ["civil lines metro station", "civil lines metro"]),
         ("LM-29", "St. Mary Convent High School", "ward_6", 26.8690, 80.9360, "school", ["सेंट मैरी कॉन्वेंट हाई स्कूल", "सेंट मैरी स्कूल"], ["st mary convent high school", "st mary school"]),
         ("LM-30", "Civil Lines Police Headquarters", "ward_6", 26.8640, 80.9395, "police_station", ["सिविल लाइन्स पुलिस मुख्यालय"], ["civil lines police headquarters", "civil lines police station"]),
@@ -730,10 +734,10 @@ def generate_seeds():
             "hazard": "none",
             "urgency_band": "medium",
             "reported_at": "2026-10-12T15:15:00Z",
-            "description": "Civil Lines Metro station inquiry regarding operational status of trains towards East Riverbend.",
+            "description": "Civil Lines Metro station inquiry regarding operational status of trains towards East Kerala.",
             "sample_reports": [
                 {"lang": "hi", "text": "क्या सिविल लाइन्स मेट्रो स्टेशन से ट्रेनें चल रही हैं या ट्रैक पर पानी है? कृपया जानकारी दें।"},
-                {"lang": "hinglish", "text": "Civil lines metro station se metro service functional hai kya East Riverbend side?"},
+                {"lang": "hinglish", "text": "Civil lines metro station se metro service functional hai kya East Kerala side?"},
                 {"lang": "en", "text": "Seeking information regarding Metro operations from Civil Lines station."}
             ]
         },

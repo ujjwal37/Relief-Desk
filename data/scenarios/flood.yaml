@@ -1,6 +1,6 @@
 id: flood
 title: Urban Flood Relief
-description: Flooding incident response in Riverbend city (water rising, marooned civilians, food and medical assistance)
+description: Synthetic scenario inspired by Kerala floods. Water rising, people stranded, food and medical assistance. People in the reports are fictional.
 incident_types:
   - rescue
   - food

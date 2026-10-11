@@ -9,7 +9,7 @@ from app.tools.geo import grid_cell_id
 
 logger = logging.getLogger("relief_desk.gazetteer")
 
-GAZETTEER_FILE = Path(__file__).resolve().parents[4] / "data" / "gazetteer" / "riverbend_gazetteer.json"
+GAZETTEER_FILE = Path(__file__).resolve().parents[4] / "data" / "gazetteer" / "kerala_gazetteer.json"
 
 
 class GazetteerMatch(BaseModel):
@@ -28,7 +28,7 @@ class GazetteerMatch(BaseModel):
 class Gazetteer:
     def __init__(self, data_path: Optional[Path] = None):
         self.data_path = data_path or GAZETTEER_FILE
-        self.city: str = "Riverbend"
+        self.city: str = "Kerala"
         self.wards: Dict[str, Dict[str, Any]] = {}
         self.landmarks: List[Dict[str, Any]] = []
         self._alias_index: List[Dict[str, Any]] = []
@@ -42,7 +42,7 @@ class Gazetteer:
         with open(self.data_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        self.city = data.get("city", "Riverbend")
+        self.city = data.get("city", "Kerala")
         self.wards = {w["id"]: w for w in data.get("wards", [])}
         self.landmarks = data.get("landmarks", [])
 
@@ -71,8 +71,8 @@ class Gazetteer:
                 "landmark_id": None,
                 "name": ward["name_en"],
                 "ward_id": ward["id"],
-                "lat": 26.85,
-                "lng": 80.93,
+                "lat": ward.get("lat", 10.50),
+                "lng": ward.get("lng", 76.30),
             }
             self._alias_index.append({**entry_base, "alias": ward["name_en"].lower()})
             self._alias_index.append({**entry_base, "alias": f"ward {ward['number']}"})

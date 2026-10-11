@@ -1,773 +1,770 @@
 version: 1.0.0
 scenario_pack: flood
 city:
-  name: Riverbend
-  state: Uttar Pradesh
+  name: Kerala
+  state: Kerala
+  label: Synthetic scenario inspired by Kerala floods
   center:
-    lat: 26.85
-    lng: 80.94
+    lat: 10.5
+    lng: 76.3
   bbox:
-    min_lat: 26.78
-    max_lat: 26.92
-    min_lng: 80.88
-    max_lng: 81.01
+    min_lat: 9.3611
+    max_lat: 11.664
+    min_lng: 75.9823
+    max_lng: 76.6837
 wards:
 - id: ward_1
   number: 1
-  name_en: Sangam Vihar
-  name_hi: संगम विहार
+  name_en: Kainakary
+  name_hi: काइनकरी
+  district: Alappuzha
+  lat: 9.47
+  lng: 76.39
 - id: ward_2
   number: 2
-  name_en: Gandhi Nagar
-  name_hi: गांधी नगर
+  name_en: Champakulam
+  name_hi: चम्पाकुलाम
+  district: Alappuzha
+  lat: 9.416
+  lng: 76.411
 - id: ward_3
   number: 3
-  name_en: Riverfront Ghat
-  name_hi: रिवरफ्रंट घाट
+  name_en: Nedumudi
+  name_hi: नेदुमुडी
+  district: Alappuzha
+  lat: 9.43
+  lng: 76.398
 - id: ward_4
   number: 4
-  name_en: Old Bazaar
-  name_hi: पुराना बाज़ार
+  name_en: Aluva
+  name_hi: आलुवा
+  district: Ernakulam
+  lat: 10.1076
+  lng: 76.3516
 - id: ward_5
   number: 5
-  name_en: Shanti Nagar
-  name_hi: शांति नगर
+  name_en: Varapuzha
+  name_hi: वरप्पुषा
+  district: Ernakulam
+  lat: 10.078
+  lng: 76.268
 - id: ward_6
   number: 6
-  name_en: Civil Lines
-  name_hi: सिविल लाइन्स
+  name_en: Kothamangalam
+  name_hi: कोथमंगलम
+  district: Ernakulam
+  lat: 10.065
+  lng: 76.628
 - id: ward_7
   number: 7
-  name_en: Industrial Area Phase 1
-  name_hi: इंडस्ट्रियल एरिया फेज़ 1
+  name_en: Chalakudy
+  name_hi: चालाकुडी
+  district: Thrissur
+  lat: 10.308
+  lng: 76.331
 - id: ward_8
   number: 8
-  name_en: Green Park Colony
-  name_hi: ग्रीन पार्क कॉलोनी
+  name_en: Mala
+  name_hi: माला
+  district: Thrissur
+  lat: 10.241
+  lng: 76.267
 - id: ward_9
   number: 9
-  name_en: Subhash Nagar
-  name_hi: सुभाष नगर
+  name_en: Anthikad
+  name_hi: अंतिक्काड
+  district: Thrissur
+  lat: 10.466
+  lng: 76.13
 - id: ward_10
   number: 10
-  name_en: Model Town
-  name_hi: मॉडल टाउन
+  name_en: Meppadi
+  name_hi: मेप्पाडी
+  district: Wayanad
+  lat: 11.557
+  lng: 76.14
 - id: ward_11
   number: 11
-  name_en: Transport Nagar
-  name_hi: ट्रांसपोर्ट नगर
+  name_en: Vythiri
+  name_hi: वित्तूरि
+  district: Wayanad
+  lat: 11.55
+  lng: 76.038
 - id: ward_12
   number: 12
-  name_en: Lake View Enclave
-  name_hi: लेक व्यू एन्क्लेव
+  name_en: Kalpetta
+  name_hi: कल्पेट्टा
+  district: Wayanad
+  lat: 11.608
+  lng: 76.082
 landmarks:
 - id: LM-01
-  name: Sangam Primary School
+  name: Kainakary LP School
   ward_id: ward_1
-  lat: 26.845
-  lng: 80.932
+  lat: 9.476
+  lng: 76.39
   category: school
   aliases_hi:
-  - संगम प्राइमरी स्कूल
-  - संगम स्कूल
+  - काइनकरी LP School
   aliases_en:
-  - sangam primary school
-  - sangam school
+  - kainakary lp school
+  - kainakarylpschool
 - id: LM-02
-  name: Mata Mandir Sangam Vihar
+  name: Kainakary Boat Jetty
   ward_id: ward_1
-  lat: 26.8465
-  lng: 80.934
+  lat: 9.47185
+  lng: 76.39571
   category: temple
   aliases_hi:
-  - माता मंदिर संगम विहार
-  - माता मंदिर
+  - काइनकरी Boat Jetty
   aliases_en:
-  - mata mandir sangam vihar
-  - mata mandir sangam
+  - kainakary boat jetty
+  - kainakaryboatjetty
 - id: LM-03
-  name: Sangam Community Hall
+  name: Kainakary Church
   ward_id: ward_1
-  lat: 26.848
-  lng: 80.931
+  lat: 9.46515
+  lng: 76.39353
   category: community_hall
   aliases_hi:
-  - संगम कम्युनिटी हॉल
-  - संगम बारात घर
+  - काइनकरी Church
   aliases_en:
-  - sangam community hall
-  - sangam barat ghar
+  - kainakary church
+  - kainakarychurch
 - id: LM-04
-  name: Sangam Vihar Health Centre
+  name: Kainakary Relief Camp
   ward_id: ward_1
-  lat: 26.8435
-  lng: 80.9355
+  lat: 9.46515
+  lng: 76.38647
   category: hospital
   aliases_hi:
-  - संगम विहार स्वास्थ्य केंद्र
-  - संगम डिस्पेंसरी
+  - काइनकरी Relief Camp
   aliases_en:
-  - sangam health centre
-  - sangam dispensary
+  - kainakary relief camp
+  - kainakaryreliefcamp
 - id: LM-05
-  name: Sangam Police Chowki
+  name: Kainakary Health Centre
   ward_id: ward_1
-  lat: 26.849
-  lng: 80.933
+  lat: 9.47185
+  lng: 76.38429
   category: police_station
   aliases_hi:
-  - संगम पुलिस चौकी
+  - काइनकरी Health Centre
   aliases_en:
-  - sangam police chowki
-  - sangam chowki
+  - kainakary health centre
+  - kainakaryhealthcentre
 - id: LM-06
-  name: Gandhi High School
+  name: Champakulam School
   ward_id: ward_2
-  lat: 26.852
-  lng: 80.925
+  lat: 9.422
+  lng: 76.411
   category: school
   aliases_hi:
-  - गांधी हाई स्कूल
-  - गांधी स्कूल
-  - गांधी विद्यालय
+  - चम्पाकुलाम स्कूल
   aliases_en:
-  - gandhi high school
-  - gandhi school
-  - gandhi vidyalaya
+  - champakulam school
+  - champakulamschool
 - id: LM-07
-  name: Gandhi Nagar Main Market
+  name: Champakulam Church
   ward_id: ward_2
-  lat: 26.854
-  lng: 80.928
+  lat: 9.41785
+  lng: 76.41671
   category: market
   aliases_hi:
-  - गांधी नगर मुख्य बाज़ार
-  - गांधी नगर मार्केट
+  - चम्पाकुलाम Church
   aliases_en:
-  - gandhi nagar main market
-  - gandhi nagar bazaar
+  - champakulam church
+  - champakulamchurch
 - id: LM-08
-  name: Shri Ram Mandir Gandhi Nagar
+  name: Champakulam Boat Jetty
   ward_id: ward_2
-  lat: 26.851
-  lng: 80.923
+  lat: 9.41115
+  lng: 76.41453
   category: temple
   aliases_hi:
-  - श्री राम मंदिर गांधी नगर
-  - राम मंदिर
+  - चम्पाकुलाम Boat Jetty
   aliases_en:
-  - ram mandir gandhi nagar
-  - shri ram mandir
+  - champakulam boat jetty
+  - champakulamboatjetty
 - id: LM-09
-  name: Gandhi Nagar Urban Shelter
+  name: Champakulam Market
   ward_id: ward_2
-  lat: 26.856
-  lng: 80.927
+  lat: 9.41115
+  lng: 76.40747
   category: shelter
   aliases_hi:
-  - गांधी नगर रैन बसेरा
-  - गांधी नगर शेल्टर
+  - चम्पाकुलाम Market
   aliases_en:
-  - gandhi nagar shelter
-  - gandhi nagar rain basera
+  - champakulam market
+  - champakulammarket
 - id: LM-10
-  name: Gandhi Nagar Metro Station
+  name: Champakulam Shelter
   ward_id: ward_2
-  lat: 26.8505
-  lng: 80.9295
+  lat: 9.41785
+  lng: 76.40529
   category: metro_station
   aliases_hi:
-  - गांधी नगर मेट्रो स्टेशन
-  - गांधी नगर मेट्रो
+  - चम्पाकुलाम Shelter
   aliases_en:
-  - gandhi nagar metro station
-  - gandhi nagar metro
+  - champakulam shelter
+  - champakulamshelter
 - id: LM-11
-  name: Ram Ghat Riverfront
+  name: Nedumudi Boat Jetty
   ward_id: ward_3
-  lat: 26.839
-  lng: 80.941
+  lat: 9.436
+  lng: 76.398
   category: ghat
   aliases_hi:
-  - राम घाट रिवरफ्रंट
-  - राम घाट
+  - नेदुमुडी Boat Jetty
   aliases_en:
-  - ram ghat riverfront
-  - ram ghat
+  - nedumudi boat jetty
+  - nedumudiboatjetty
 - id: LM-12
-  name: Hanuman Setu Bridge
+  name: Nedumudi Bridge
   ward_id: ward_3
-  lat: 26.841
-  lng: 80.944
+  lat: 9.43185
+  lng: 76.40371
   category: bridge
   aliases_hi:
-  - हनुमान सेतु पुल
-  - हनुमान सेतु ब्रिज
+  - नेदुमुडी Bridge
   aliases_en:
-  - hanuman setu bridge
-  - hanuman bridge
+  - nedumudi bridge
+  - nedumudibridge
 - id: LM-13
-  name: Riverfront Boat Club
+  name: Nedumudi School
   ward_id: ward_3
-  lat: 26.837
-  lng: 80.939
+  lat: 9.42515
+  lng: 76.40153
   category: shelter
   aliases_hi:
-  - रिवरफ्रंट बोट क्लब
-  - बोट क्लब घाट
+  - नेदुमुडी School
   aliases_en:
-  - riverfront boat club
-  - boat club
+  - nedumudi school
+  - nedumudischool
 - id: LM-14
-  name: Ganga Darshan Viewpoint
+  name: Nedumudi Relief Camp
   ward_id: ward_3
-  lat: 26.842
-  lng: 80.946
+  lat: 9.42515
+  lng: 76.39447
   category: ghat
   aliases_hi:
-  - गंगा दर्शन व्यूप्वाइंट
-  - गंगा दर्शन घाट
+  - नेदुमुडी Relief Camp
   aliases_en:
-  - ganga darshan viewpoint
-  - ganga darshan ghat
+  - nedumudi relief camp
+  - nedumudireliefcamp
 - id: LM-15
-  name: Riverfront Disaster Relief Post
+  name: Nedumudi Church
   ward_id: ward_3
-  lat: 26.838
-  lng: 80.943
+  lat: 9.43185
+  lng: 76.39229
   category: shelter
   aliases_hi:
-  - रिवरफ्रंट राहत केंद्र
-  - फ्लड रिलीफ पोस्ट
+  - नेदुमुडी Church
   aliases_en:
-  - riverfront relief post
-  - flood relief center
+  - nedumudi church
+  - nedumudichurch
 - id: LM-16
-  name: Ghanta Ghar Clock Tower
+  name: Aluva Manappuram
   ward_id: ward_4
-  lat: 26.861
-  lng: 80.915
+  lat: 10.1136
+  lng: 76.3516
   category: market
   aliases_hi:
-  - घंटा घर क्लॉक टॉवर
-  - घंटा घर
+  - आलुवा Manappuram
   aliases_en:
-  - ghanta ghar clock tower
-  - clock tower old bazaar
+  - aluva manappuram
+  - aluvamanappuram
 - id: LM-17
-  name: Jama Masjid Old Bazaar
+  name: Aluva School
   ward_id: ward_4
-  lat: 26.863
-  lng: 80.917
+  lat: 10.10945
+  lng: 76.35731
   category: mosque
   aliases_hi:
-  - जामा मस्जिद पुराना बाज़ार
-  - बड़ी जामा मस्जिद
+  - आलुवा School
   aliases_en:
-  - jama masjid old bazaar
-  - jama masjid
+  - aluva school
+  - aluvaschool
 - id: LM-18
-  name: Old Bazaar Govt Dispensary
+  name: Little Flower Hospital
   ward_id: ward_4
-  lat: 26.859
-  lng: 80.913
+  lat: 10.10275
+  lng: 76.35513
   category: hospital
   aliases_hi:
-  - पुराना बाज़ार सरकारी डिस्पेंसरी
+  - लिटिल फ्लावर अस्पताल
   aliases_en:
-  - old bazaar govt dispensary
-  - bazaar dispensary
+  - little flower hospital
+  - littleflowerhospital
 - id: LM-19
-  name: Kotwali City Police Station
+  name: Aluva Bus Stand
   ward_id: ward_4
-  lat: 26.8625
-  lng: 80.914
+  lat: 10.10275
+  lng: 76.34807
   category: police_station
   aliases_hi:
-  - कोतवाली सिटी थाना
-  - कोतवाली पुलिस
+  - आलुवा Bus Stand
   aliases_en:
-  - kotwali city police station
-  - kotwali thana
+  - aluva bus stand
+  - aluvabusstand
 - id: LM-20
-  name: Sarafa Cloth Market
+  name: Aluva Relief Camp
   ward_id: ward_4
-  lat: 26.8605
-  lng: 80.9185
+  lat: 10.10945
+  lng: 76.34589
   category: market
   aliases_hi:
-  - सराफा कपड़ा बाज़ार
-  - सराफा मार्केट
+  - आलुवा Relief Camp
   aliases_en:
-  - sarafa cloth market
-  - sarafa bazaar
+  - aluva relief camp
+  - aluvareliefcamp
 - id: LM-21
-  name: Shanti Nagar Public Library
+  name: Varapuzha Bridge
   ward_id: ward_5
-  lat: 26.848
-  lng: 80.952
+  lat: 10.084
+  lng: 76.268
   category: community_hall
   aliases_hi:
-  - शांति नगर पब्लिक लाइब्रेरी
-  - शांति नगर पुस्तकालय
+  - वरप्पुषा Bridge
   aliases_en:
-  - shanti nagar public library
-  - shanti nagar library
+  - varapuzha bridge
+  - varapuzhabridge
 - id: LM-22
-  name: St. Jude Mission Hospital
+  name: Varapuzha School
   ward_id: ward_5
-  lat: 26.85
-  lng: 80.955
+  lat: 10.07985
+  lng: 76.27371
   category: hospital
   aliases_hi:
-  - सेंट ज्यूड मिशन हॉस्पिटल
-  - सेंट ज्यूड अस्पताल
+  - वरप्पुषा School
   aliases_en:
-  - st jude mission hospital
-  - st jude hospital
+  - varapuzha school
+  - varapuzhaschool
 - id: LM-23
-  name: Shanti Nagar Senior Secondary School
+  name: Varapuzha Church
   ward_id: ward_5
-  lat: 26.846
-  lng: 80.951
+  lat: 10.07315
+  lng: 76.27153
   category: school
   aliases_hi:
-  - शांति नगर सीनियर सेकेंडरी स्कूल
+  - वरप्पुषा Church
   aliases_en:
-  - shanti nagar senior secondary school
-  - shanti nagar school
+  - varapuzha church
+  - varapuzhachurch
 - id: LM-24
-  name: Guru Nanak Gurudwara Shanti Nagar
+  name: Varapuzha Health Centre
   ward_id: ward_5
-  lat: 26.8515
-  lng: 80.9535
+  lat: 10.07315
+  lng: 76.26447
   category: temple
   aliases_hi:
-  - गुरु नानक गुरुद्वारा शांति नगर
-  - शांति नगर गुरुद्वारा
+  - वरप्पुषा Health Centre
   aliases_en:
-  - guru nanak gurudwara shanti nagar
-  - shanti nagar gurudwara
+  - varapuzha health centre
+  - varapuzhahealthcentre
 - id: LM-25
-  name: Shanti Nagar Park Ground
+  name: Varapuzha Shelter
   ward_id: ward_5
-  lat: 26.849
-  lng: 80.957
+  lat: 10.07985
+  lng: 76.26229
   category: shelter
   aliases_hi:
-  - शांति नगर पार्क ग्राउंड
-  - शांति पार्क
+  - वरप्पुषा Shelter
   aliases_en:
-  - shanti nagar park ground
-  - shanti park
+  - varapuzha shelter
+  - varapuzhashelter
 - id: LM-26
-  name: District Collectorate Civil Lines
+  name: Kothamangalam Bus Stand
   ward_id: ward_6
-  lat: 26.865
-  lng: 80.935
+  lat: 10.071
+  lng: 76.628
   category: community_hall
   aliases_hi:
-  - जिला कलेक्ट्रेट सिविल लाइन्स
-  - कलेक्ट्रेट ऑफिस
+  - कोथमंगलम Bus Stand
   aliases_en:
-  - district collectorate civil lines
-  - collectorate office
+  - kothamangalam bus stand
+  - kothamangalambusstand
 - id: LM-27
-  name: Civil Hospital Riverbend
+  name: Taluk Hospital Kothamangalam
   ward_id: ward_6
-  lat: 26.867
-  lng: 80.938
+  lat: 10.06685
+  lng: 76.63371
   category: hospital
   aliases_hi:
-  - सिविल हॉस्पिटल रिवरबेंड
-  - सरकारी सिविल अस्पताल
+  - Taluk Hospital Kothamangalam
   aliases_en:
-  - civil hospital riverbend
-  - civil hospital
+  - taluk hospital kothamangalam
+  - talukhospitalkothamangalam
 - id: LM-28
-  name: Civil Lines Metro Station
+  name: Kothamangalam School
   ward_id: ward_6
-  lat: 26.8635
-  lng: 80.933
+  lat: 10.06015
+  lng: 76.63153
   category: metro_station
   aliases_hi:
-  - सिविल लाइन्स मेट्रो स्टेशन
+  - कोथमंगलम School
   aliases_en:
-  - civil lines metro station
-  - civil lines metro
+  - kothamangalam school
+  - kothamangalamschool
 - id: LM-29
-  name: St. Mary Convent High School
+  name: Kothamangalam Shelter
   ward_id: ward_6
-  lat: 26.869
-  lng: 80.936
+  lat: 10.06015
+  lng: 76.62447
   category: school
   aliases_hi:
-  - सेंट मैरी कॉन्वेंट हाई स्कूल
-  - सेंट मैरी स्कूल
+  - कोथमंगलम Shelter
   aliases_en:
-  - st mary convent high school
-  - st mary school
+  - kothamangalam shelter
+  - kothamangalamshelter
 - id: LM-30
-  name: Civil Lines Police Headquarters
+  name: Kothamangalam Market
   ward_id: ward_6
-  lat: 26.864
-  lng: 80.9395
+  lat: 10.06685
+  lng: 76.62229
   category: police_station
   aliases_hi:
-  - सिविल लाइन्स पुलिस मुख्यालय
+  - कोथमंगलम Market
   aliases_en:
-  - civil lines police headquarters
-  - civil lines police station
+  - kothamangalam market
+  - kothamangalammarket
 - id: LM-31
-  name: Thermal Power Plant Colony Gate
+  name: Temple Road
   ward_id: ward_7
-  lat: 26.825
-  lng: 80.965
+  lat: 10.314
+  lng: 76.331
   category: shelter
   aliases_hi:
-  - थर्मल पावर प्लांट कॉलोनी गेट
+  - मंदिर रोड
   aliases_en:
-  - thermal power plant colony gate
-  - power plant gate
+  - temple road
+  - templeroad
 - id: LM-32
-  name: Labor Welfare Hospital
+  name: Chalakudy Mahadeva Temple
   ward_id: ward_7
-  lat: 26.828
-  lng: 80.968
+  lat: 10.30985
+  lng: 76.33671
   category: hospital
   aliases_hi:
-  - श्रम कल्याण अस्पताल
-  - लेबर हॉस्पिटल
+  - चालाकुडी Mahadeva Temple
   aliases_en:
-  - labor welfare hospital
-  - esi hospital
+  - chalakudy mahadeva temple
+  - chalakudymahadevatemple
 - id: LM-33
-  name: Industrial Workers Community Hall
+  name: Chalakudy School
   ward_id: ward_7
-  lat: 26.823
-  lng: 80.962
+  lat: 10.30315
+  lng: 76.33453
   category: community_hall
   aliases_hi:
-  - मजदूर कल्याण भवन
-  - इंडस्ट्रियल कम्युनिटी हॉल
+  - चालाकुडी School
   aliases_en:
-  - industrial workers community hall
-  - mazdoor kalyan bhavan
+  - chalakudy school
+  - chalakudyschool
 - id: LM-34
-  name: Railway Freight Yard Phase 1
+  name: Chalakudy River Jetty
   ward_id: ward_7
-  lat: 26.821
-  lng: 80.97
+  lat: 10.30315
+  lng: 76.32747
   category: shelter
   aliases_hi:
-  - रेलवे फ्रेट यार्ड फेज़ 1
+  - चालाकुडी River Jetty
   aliases_en:
-  - railway freight yard phase 1
-  - railway goods yard
+  - chalakudy river jetty
+  - chalakudyriverjetty
 - id: LM-35
-  name: Industrial Phase 1 Police Outpost
+  name: Chalakudy Relief Camp
   ward_id: ward_7
-  lat: 26.8265
-  lng: 80.964
+  lat: 10.30985
+  lng: 76.32529
   category: police_station
   aliases_hi:
-  - इंडस्ट्रियल फेज़ 1 पुलिस चौकी
+  - चालाकुडी Relief Camp
   aliases_en:
-  - industrial phase 1 police outpost
-  - phase 1 police chowki
+  - chalakudy relief camp
+  - chalakudyreliefcamp
 - id: LM-36
-  name: Green Park Stadium Gate 3
+  name: Mala Panchayat Office
   ward_id: ward_8
-  lat: 26.872
-  lng: 80.948
+  lat: 10.247
+  lng: 76.267
   category: shelter
   aliases_hi:
-  - ग्रीन पार्क स्टेडियम गेट 3
-  - ग्रीन पार्क स्टेडियम
+  - माला Panchayat Office
   aliases_en:
-  - green park stadium gate 3
-  - green park stadium
+  - mala panchayat office
+  - malapanchayatoffice
 - id: LM-37
-  name: Saraswati Shishu Mandir Green Park
+  name: Mala School
   ward_id: ward_8
-  lat: 26.874
-  lng: 80.945
+  lat: 10.24285
+  lng: 76.27271
   category: school
   aliases_hi:
-  - सरस्वती शिशु मंदिर ग्रीन पार्क
+  - माला School
   aliases_en:
-  - saraswati shishu mandir green park
-  - shishu mandir green park
+  - mala school
+  - malaschool
 - id: LM-38
-  name: Green Park Community Health Centre
+  name: Mala Church
   ward_id: ward_8
-  lat: 26.871
-  lng: 80.951
+  lat: 10.23615
+  lng: 76.27053
   category: hospital
   aliases_hi:
-  - ग्रीन पार्क सामुदायिक स्वास्थ्य केंद्र
+  - माला Church
   aliases_en:
-  - green park chc
-  - green park health centre
+  - mala church
+  - malachurch
 - id: LM-39
-  name: Green Park Shopping Complex
+  name: Mala Health Centre
   ward_id: ward_8
-  lat: 26.8755
-  lng: 80.949
+  lat: 10.23615
+  lng: 76.26347
   category: market
   aliases_hi:
-  - ग्रीन पार्क शॉपिंग कॉम्प्लेक्स
-  - ग्रीन पार्क मार्केट
+  - माला Health Centre
   aliases_en:
-  - green park shopping complex
-  - green park market
+  - mala health centre
+  - malahealthcentre
 - id: LM-40
-  name: Shiv Mandir Green Park
+  name: Mala Boat Jetty
   ward_id: ward_8
-  lat: 26.87
-  lng: 80.9465
+  lat: 10.24285
+  lng: 76.26129
   category: temple
   aliases_hi:
-  - शिव मंदिर ग्रीन पार्क
+  - माला Boat Jetty
   aliases_en:
-  - shiv mandir green park
-  - green park shiv temple
+  - mala boat jetty
+  - malaboatjetty
 - id: LM-41
-  name: Subhash Chowk Traffic Roundabout
+  name: Anthikad School
   ward_id: ward_9
-  lat: 26.858
-  lng: 80.975
+  lat: 10.472
+  lng: 76.13
   category: market
   aliases_hi:
-  - सुभाष चौक चौराहा
-  - सुभाष चौक
+  - अंतिक्काड School
   aliases_en:
-  - subhash chowk traffic roundabout
-  - subhash chowk
+  - anthikad school
+  - anthikadschool
 - id: LM-42
-  name: Netaji Subhash Govt Inter College
+  name: Anthikad Church
   ward_id: ward_9
-  lat: 26.86
-  lng: 80.978
+  lat: 10.46785
+  lng: 76.13571
   category: school
   aliases_hi:
-  - नेताजी सुभाष सरकारी इंटर कॉलेज
-  - सुभाष कॉलेज
+  - अंतिक्काड Church
   aliases_en:
-  - netaji subhash govt inter college
-  - subhash inter college
+  - anthikad church
+  - anthikadchurch
 - id: LM-43
-  name: Subhash Nagar Rotary Eye Clinic
+  name: Anthikad Bridge
   ward_id: ward_9
-  lat: 26.856
-  lng: 80.972
+  lat: 10.46115
+  lng: 76.13353
   category: hospital
   aliases_hi:
-  - सुभाष नगर रोटरी आई क्लिनिक
+  - अंतिक्काड Bridge
   aliases_en:
-  - subhash nagar rotary eye clinic
-  - subhash clinic
+  - anthikad bridge
+  - anthikadbridge
 - id: LM-44
-  name: Subhash Nagar Barat Ghar
+  name: Anthikad Relief Camp
   ward_id: ward_9
-  lat: 26.8615
-  lng: 80.974
+  lat: 10.46115
+  lng: 76.12647
   category: community_hall
   aliases_hi:
-  - सुभाष नगर बारात घर
+  - अंतिक्काड Relief Camp
   aliases_en:
-  - subhash nagar barat ghar
-  - subhash community hall
+  - anthikad relief camp
+  - anthikadreliefcamp
 - id: LM-45
-  name: Subhash Nagar Police Station
+  name: Anthikad Health Centre
   ward_id: ward_9
-  lat: 26.859
-  lng: 80.9795
+  lat: 10.46785
+  lng: 76.12429
   category: police_station
   aliases_hi:
-  - सुभाष नगर पुलिस थाना
+  - अंतिक्काड Health Centre
   aliases_en:
-  - subhash nagar police station
-  - subhash nagar thana
+  - anthikad health centre
+  - anthikadhealthcentre
 - id: LM-46
-  name: Model Town Central Park
+  name: Puthumala
   ward_id: ward_10
-  lat: 26.878
-  lng: 80.922
+  lat: 11.563
+  lng: 76.14
   category: shelter
   aliases_hi:
-  - मॉडल टाउन सेंट्रल पार्क
+  - पुथुमला
   aliases_en:
-  - model town central park
-  - model town park
+  - puthumala
+  - puthumala
 - id: LM-47
-  name: Model Town Modern Academy
+  name: Meppadi School
   ward_id: ward_10
-  lat: 26.88
-  lng: 80.925
+  lat: 11.55885
+  lng: 76.14571
   category: school
   aliases_hi:
-  - मॉडल टाउन मॉडर्न एकेडमी
-  - मॉडर्न एकेडमी
+  - मेप्पाडी School
   aliases_en:
-  - model town modern academy
-  - modern academy
+  - meppadi school
+  - meppadischool
 - id: LM-48
-  name: Apex Multispeciality Hospital
+  name: DM WIMS Hospital
   ward_id: ward_10
-  lat: 26.876
-  lng: 80.92
+  lat: 11.55215
+  lng: 76.14353
   category: hospital
   aliases_hi:
-  - एपेक्स मल्टीस्पेशलिटी अस्पताल
-  - एपेक्स हॉस्पिटल
+  - डीएम विम्स अस्पताल
   aliases_en:
-  - apex multispeciality hospital
-  - apex hospital
+  - dm wims hospital
+  - dmwimshospital
 - id: LM-49
-  name: Model Town Main Market
+  name: Meppadi Town
   ward_id: ward_10
-  lat: 26.882
-  lng: 80.924
+  lat: 11.55215
+  lng: 76.13647
   category: market
   aliases_hi:
-  - मॉडल टाउन मुख्य बाज़ार
-  - मॉडल टाउन मार्केट
+  - मेप्पाडी Town
   aliases_en:
-  - model town main market
-  - model town market
+  - meppadi town
+  - meppaditown
 - id: LM-50
-  name: Arya Samaj Mandir Model Town
+  name: Meppadi Relief Camp
   ward_id: ward_10
-  lat: 26.8795
-  lng: 80.9265
+  lat: 11.55885
+  lng: 76.13429
   category: temple
   aliases_hi:
-  - आर्य समाज मंदिर मॉडल टाउन
+  - मेप्पाडी Relief Camp
   aliases_en:
-  - arya samaj mandir model town
-  - arya samaj temple
+  - meppadi relief camp
+  - meppadireliefcamp
 - id: LM-51
-  name: Interstate Bus Terminal ISBT
+  name: Vythiri School
   ward_id: ward_11
-  lat: 26.832
-  lng: 80.905
+  lat: 11.556
+  lng: 76.038
   category: shelter
   aliases_hi:
-  - अंतरराज्यीय बस टर्मिनल आईएसबीटी
-  - बस स्टैंड
+  - वित्तूरि School
   aliases_en:
-  - interstate bus terminal isbt
-  - isbt bus terminal
-  - bus stand
+  - vythiri school
+  - vythirischool
 - id: LM-52
-  name: Transport Nagar Flyover
+  name: Vythiri Bridge
   ward_id: ward_11
-  lat: 26.834
-  lng: 80.908
+  lat: 11.55185
+  lng: 76.04371
   category: bridge
   aliases_hi:
-  - ट्रांसपोर्ट नगर फ्लाईववर
+  - वित्तूरि Bridge
   aliases_en:
-  - transport nagar flyover
-  - transport bridge
+  - vythiri bridge
+  - vythiribridge
 - id: LM-53
-  name: Transport Nagar Truck Union Bhawan
+  name: Vythiri Health Centre
   ward_id: ward_11
-  lat: 26.83
-  lng: 80.902
+  lat: 11.54515
+  lng: 76.04153
   category: community_hall
   aliases_hi:
-  - ट्रक यूनियन भवन
+  - वित्तूरि Health Centre
   aliases_en:
-  - transport nagar truck union bhawan
-  - truck union
+  - vythiri health centre
+  - vythirihealthcentre
 - id: LM-54
-  name: Highway Trauma Care Centre
+  name: Vythiri Shelter
   ward_id: ward_11
-  lat: 26.836
-  lng: 80.906
+  lat: 11.54515
+  lng: 76.03447
   category: hospital
   aliases_hi:
-  - हाईवे ट्रॉमा केयर सेंटर
-  - ट्रॉमा सेंटर
+  - वित्तूरि Shelter
   aliases_en:
-  - highway trauma care centre
-  - trauma centre
+  - vythiri shelter
+  - vythirishelter
 - id: LM-55
-  name: Transport Nagar Police Station
+  name: Vythiri Market
   ward_id: ward_11
-  lat: 26.8315
-  lng: 80.9095
+  lat: 11.55185
+  lng: 76.03229
   category: police_station
   aliases_hi:
-  - ट्रांसपोर्ट नगर पुलिस थाना
+  - वित्तूरि Market
   aliases_en:
-  - transport nagar police station
-  - transport nagar thana
+  - vythiri market
+  - vythirimarket
 - id: LM-56
-  name: Moti Jheel Lake Promenade
+  name: Kalpetta Bus Stand
   ward_id: ward_12
-  lat: 26.889
-  lng: 80.962
+  lat: 11.614
+  lng: 76.082
   category: ghat
   aliases_hi:
-  - मोती झील प्रोमेनेड
-  - मोती झील
+  - कल्पेट्टा Bus Stand
   aliases_en:
-  - moti jheel lake promenade
-  - moti jheel
+  - kalpetta bus stand
+  - kalpettabusstand
 - id: LM-57
-  name: Lake View Govt High School
+  name: Kalpetta District Hospital
   ward_id: ward_12
-  lat: 26.891
-  lng: 80.965
+  lat: 11.60985
+  lng: 76.08771
   category: school
   aliases_hi:
-  - लेक व्यू सरकारी हाई स्कूल
+  - कल्पेट्टा District Hospital
   aliases_en:
-  - lake view govt high school
-  - lake view school
+  - kalpetta district hospital
+  - kalpettadistricthospital
 - id: LM-58
-  name: Lake View Community Shelter
+  name: Kalpetta School
   ward_id: ward_12
-  lat: 26.887
-  lng: 80.959
+  lat: 11.60315
+  lng: 76.08553
   category: shelter
   aliases_hi:
-  - लेक व्यू कम्युनिटी शेल्टर
+  - कल्पेट्टा School
   aliases_en:
-  - lake view community shelter
-  - lake view shelter
+  - kalpetta school
+  - kalpettaschool
 - id: LM-59
-  name: Moti Jheel Health Wellness Clinic
+  name: Kalpetta Shelter
   ward_id: ward_12
-  lat: 26.893
-  lng: 80.963
+  lat: 11.60315
+  lng: 76.07847
   category: hospital
   aliases_hi:
-  - मोती झील वेलनेस क्लिनिक
+  - कल्पेट्टा Shelter
   aliases_en:
-  - moti jheel health wellness clinic
-  - moti jheel clinic
+  - kalpetta shelter
+  - kalpettashelter
 - id: LM-60
-  name: Lake View Police Post
+  name: Kalpetta Town
   ward_id: ward_12
-  lat: 26.8885
-  lng: 80.9665
+  lat: 11.60985
+  lng: 76.07629
   category: police_station
   aliases_hi:
-  - लेक व्यू पुलिस चौकी
+  - कल्पेट्टा Town
   aliases_en:
-  - lake view police post
-  - moti jheel chowki
+  - kalpetta town
+  - kalpettatown
 incidents:
 - id: INC-001
   type: rescue
   ward_id: ward_3
   landmark_id: LM-11
-  lat: 26.8392
-  lng: 80.9415
+  lat: 9.436
+  lng: 76.398
   people: 8
   vulnerable:
     child: true
@@ -778,24 +775,24 @@ incidents:
   hazard: water_rising
   urgency_band: critical
   reported_at: '2026-10-12T07:15:00Z'
-  description: Rising water reaching second floor of residential house near Ram Ghat.
-    3 children and 2 elderly family members trapped on terrace.
+  description: Rising water reaching second floor of residential house near Nedumudi Boat Jetty. 3 children
+    and 2 elderly family members trapped on terrace.
   sample_reports:
   - lang: hi
-    text: राम घाट के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें
-      3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!
+    text: नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे
+      और 2 बुजुर्ग हैं। तुरंत नाव भेजो!
   - lang: hinglish
-    text: Ram ghat ke pass paani 1st floor tak chad gaya hai, chhat par 8 log fase
-      hain, bachhe aur bujurg sath hain please rescue boat bhejo.
+    text: Nedumudi Boat Jetty ke pass paani 1st floor tak chad gaya hai, chhat par 8 log fase hain, bachhe
+      aur bujurg sath hain please rescue boat bhejo.
   - lang: en
-    text: Flood water entering 1st floor near Ram Ghat. 8 people including 3 children
-      and 2 elderly stranded on rooftop, urgent boat needed.
+    text: Flood water entering 1st floor near Nedumudi Boat Jetty. 8 people including 3 children and 2
+      elderly stranded on rooftop, urgent boat needed.
 - id: INC-002
   type: medical
   ward_id: ward_1
   landmark_id: LM-01
-  lat: 26.8452
-  lng: 80.9325
+  lat: 9.476
+  lng: 76.39
   people: 3
   vulnerable:
     child: false
@@ -806,24 +803,24 @@ incidents:
   hazard: stranded
   urgency_band: critical
   reported_at: '2026-10-12T07:25:00Z'
-  description: Diabetic elderly patient suffering acute insulin shock, house marooned
-    with chest-deep water outside Sangam Primary School.
+  description: Diabetic elderly patient suffering acute insulin shock, house marooned with chest-deep
+    water outside Kainakary LP School.
   sample_reports:
   - lang: hi
-    text: संगम प्राइमरी स्कूल के पास बुजुर्ग पिता को इंसुलिन का दौरा पड़ रहा है। बाहर
-      सीने तक पानी है, एम्बुलेंस नहीं आ सकती।
+    text: काइनकरी LP School के पास बुजुर्ग पिता को इंसुलिन का दौरा पड़ रहा है। बाहर सीने तक पानी है, एम्बुलेंस
+      नहीं आ सकती।
   - lang: hinglish
-    text: Sangam school ke paas father diabetic hain aur behosh ho rahe hain, bahar
-      chest deep pani hai rescue chahiye.
+    text: Kainakary LP School ke paas father diabetic hain aur behosh ho rahe hain, bahar chest deep pani
+      hai rescue chahiye.
   - lang: en
-    text: Elderly father having severe diabetic emergency near Sangam Primary School,
-      house surrounded by chest-deep flood water.
+    text: Elderly father having severe diabetic emergency near Kainakary LP School, house surrounded by
+      chest-deep flood water.
 - id: INC-003
   type: medical
   ward_id: ward_2
   landmark_id: LM-06
-  lat: 26.8523
-  lng: 80.9253
+  lat: 9.422
+  lng: 76.411
   people: 4
   vulnerable:
     child: false
@@ -834,24 +831,24 @@ incidents:
   hazard: stranded
   urgency_band: critical
   reported_at: '2026-10-12T07:40:00Z'
-  description: Pregnant woman in active labor stranded on upper floor behind Gandhi
-    High School, road submerged under 4 feet water.
+  description: Pregnant woman in active labor stranded on upper floor behind Champakulam School, road
+    submerged under 4 feet water.
   sample_reports:
   - lang: hi
-    text: गांधी हाई स्कूल के पीछे मेरी पत्नी लेबर पेन में हैं, सड़क पर 4 फुट पानी
-      है, तुरंत बोट या मेडिकल हेल्प चाहिए!
+    text: चम्पाकुलाम School के पीछे मेरी पत्नी लेबर पेन में हैं, सड़क पर 4 फुट पानी है, तुरंत बोट या मेडिकल
+      हेल्प चाहिए!
   - lang: hinglish
-    text: Gandhi high school ke peeche pregnant lady ko labor pain start ho gaya hai,
-      road par 4 feet paani hai rescue team bhejo.
+    text: Champakulam School ke peeche pregnant lady ko labor pain start ho gaya hai, road par 4 feet
+      paani hai rescue team bhejo.
   - lang: en
-    text: Pregnant woman in full labor trapped behind Gandhi High School, road inundated
-      with 4ft water. Urgent medical boat.
+    text: Pregnant woman in full labor trapped behind Champakulam School, road inundated with 4ft water.
+      Urgent medical boat.
 - id: INC-004
   type: rescue
   ward_id: ward_12
   landmark_id: LM-56
-  lat: 26.8894
-  lng: 80.9625
+  lat: 11.614
+  lng: 76.082
   people: 12
   vulnerable:
     child: true
@@ -862,24 +859,24 @@ incidents:
   hazard: water_rising
   urgency_band: critical
   reported_at: '2026-10-12T08:00:00Z'
-  description: Lake overflowed into ground floor apartment near Moti Jheel Promenade;
-    1 wheelchair-bound person and 4 children trapped.
+  description: Lake overflowed into ground floor apartment near Kalpetta Promenade; 1 wheelchair-bound
+    person and 4 children trapped.
   sample_reports:
   - lang: hi
-    text: मोती झील का पानी घरों में घुस गया है। 12 लोग फंसे हैं, एक दिव्यांग व्यक्ति
-      व्हीलचेयर पर है और 4 बच्चे हैं।
+    text: कल्पेट्टा Bus Stand का पानी घरों में घुस गया है। 12 लोग फंसे हैं, एक दिव्यांग व्यक्ति व्हीलचेयर
+      पर है और 4 बच्चे हैं।
   - lang: hinglish
-    text: Moti jheel ka bandh toot gaya, Lake view me 12 log fase hain, ek disabled
-      bhai hain wheelchair par. Jaldi bacha lo.
+    text: Kalpetta ka bandh toot gaya, Kalpetta me 12 log fase hain, ek disabled bhai hain wheelchair
+      par. Jaldi bacha lo.
   - lang: en
-    text: Lake embankment breached near Moti Jheel. 12 people stranded including 1
-      wheelchair user and 4 small kids. Water rising rapidly.
+    text: Lake embankment breached near Kalpetta. 12 people stranded including 1 wheelchair user and 4
+      small kids. Water rising rapidly.
 - id: INC-005
   type: rescue
   ward_id: ward_4
   landmark_id: LM-16
-  lat: 26.8612
-  lng: 80.9155
+  lat: 10.1136
+  lng: 76.3516
   people: 6
   vulnerable:
     child: true
@@ -890,23 +887,22 @@ incidents:
   hazard: water_rising
   urgency_band: critical
   reported_at: '2026-10-12T08:15:00Z'
-  description: Partial wall collapse near Ghanta Ghar in Old Bazaar, water gushing
-    inside residential lane with strong current.
+  description: Partial wall collapse near Ghanta Ghar in Aluva, water gushing inside residential lane
+    with strong current.
   sample_reports:
   - lang: hi
-    text: घंटा घर के पास मकान की पिछली दीवार गिर गई है, तेज बहाव में 6 लोग छत पर हैं।
+    text: आलुवा Manappuram के पास मकान की पिछली दीवार गिर गई है, तेज बहाव में 6 लोग छत पर हैं।
   - lang: hinglish
-    text: Ghanta ghar old bazaar me diwar gir gayi hai, pani tez hai 6 log fase hain
-      terrace pe.
+    text: Ghanta ghar Aluva me diwar gir gayi hai, pani tez hai 6 log fase hain terrace pe.
   - lang: en
-    text: Wall collapsed near Clock Tower old bazaar due to rushing flood water, 6
-      people clinging to roof terrace.
+    text: Wall collapsed near Clock Tower Aluva due to rushing flood water, 6 people clinging to roof
+      terrace.
 - id: INC-006
   type: medical
   ward_id: ward_7
   landmark_id: LM-31
-  lat: 26.8255
-  lng: 80.9655
+  lat: 10.314
+  lng: 76.331
   people: 2
   vulnerable:
     child: false
@@ -917,24 +913,24 @@ incidents:
   hazard: injury
   urgency_band: critical
   reported_at: '2026-10-12T08:30:00Z'
-  description: Electric shock and deep laceration from floating debris near Thermal
-    Power Colony Gate, heavy bleeding.
+  description: Electric shock and deep laceration from floating debris near Thermal Power Colony Gate,
+    heavy bleeding.
   sample_reports:
   - lang: hi
-    text: पावर प्लांट कॉलोनी गेट के पास एक युवक को करंट और लोहे की चादर से गहरा कट
-      लगा है, खून बहुत बह रहा है!
+    text: पावर प्लांट कॉलोनी गेट के पास एक युवक को करंट और लोहे की चादर से गहरा कट लगा है, खून बहुत बह
+      रहा है!
   - lang: hinglish
-    text: Thermal power plant gate ke paas injury hui hai, heavy bleeding ho rahi
-      hai boat ambulance urgently chahiye.
+    text: Thermal Temple Road ke paas injury hui hai, heavy bleeding ho rahi hai boat ambulance urgently
+      chahiye.
   - lang: en
-    text: Severe laceration and electrical shock near Power Plant Gate, severe bleeding,
-      urgent paramedic boat.
+    text: Severe laceration and electrical shock near Power Plant Gate, severe bleeding, urgent paramedic
+      boat.
 - id: INC-007
   type: rescue
   ward_id: ward_3
   landmark_id: LM-12
-  lat: 26.8415
-  lng: 80.9442
+  lat: 9.43185
+  lng: 76.40371
   people: 5
   vulnerable:
     child: true
@@ -945,24 +941,22 @@ incidents:
   hazard: water_rising
   urgency_band: critical
   reported_at: '2026-10-12T08:45:00Z'
-  description: Slum cluster beneath Hanuman Setu Bridge submerged, 5 people clinging
-    to bridge pillars in strong river current.
+  description: Slum cluster beneath Nedumudi Bridge submerged, 5 people clinging to bridge pillars in
+    strong river current.
   sample_reports:
   - lang: hi
-    text: हनुमान सेतु पुल के नीचे 5 लोग खंभे से लटके हुए हैं, पानी बहुत तेज है, तुरंत
-      मोटर बोट भेजो!
+    text: नेदुमुडी Bridge के नीचे 5 लोग खंभे से लटके हुए हैं, पानी बहुत तेज है, तुरंत मोटर बोट भेजो!
   - lang: hinglish
-    text: Hanuman setu ke neeche 5 log pillar pakad ke khade hain, paani bohot fast
-      hai please save them.
+    text: Hanuman setu ke neeche 5 log pillar pakad ke khade hain, paani bohot fast hai please save them.
   - lang: en
-    text: 5 people trapped on Hanuman Setu bridge pillars, flood current violent,
-      urgent motorized rescue boat.
+    text: 5 people trapped on Hanuman Setu bridge pillars, flood current violent, urgent motorized rescue
+      boat.
 - id: INC-008
   type: medical
   ward_id: ward_5
   landmark_id: LM-22
-  lat: 26.8502
-  lng: 80.9554
+  lat: 10.07985
+  lng: 76.27371
   people: 7
   vulnerable:
     child: true
@@ -973,24 +967,21 @@ incidents:
   hazard: stranded
   urgency_band: critical
   reported_at: '2026-10-12T09:00:00Z'
-  description: Oxygen cylinder running out for elderly asthma patient stranded 200m
-    from St. Jude Hospital, approach road cut off.
+  description: Oxygen cylinder running out for elderly asthma patient stranded 200m from St. Jude Hospital,
+    approach road cut off.
   sample_reports:
   - lang: hi
-    text: सेंट ज्यूड अस्पताल के पास घर में बुजुर्ग मरीज का ऑक्सीजन सिलेंडर खत्म होने
-      वाला है, सड़क डूबी है!
+    text: वरप्पुषा School के पास घर में बुजुर्ग मरीज का ऑक्सीजन सिलेंडर खत्म होने वाला है, सड़क डूबी है!
   - lang: hinglish
-    text: St Jude hospital ke paas oxygen cylinder khatam ho raha hai 1 ghante me,
-      road par paani hai.
+    text: St Jude hospital ke paas oxygen cylinder khatam ho raha hai 1 ghante me, road par paani hai.
   - lang: en
-    text: Oxygen running out in 1 hour for critical respiratory patient stranded near
-      St. Jude Hospital.
+    text: Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.
 - id: INC-009
   type: rescue
   ward_id: ward_11
   landmark_id: LM-51
-  lat: 26.8324
-  lng: 80.9055
+  lat: 11.556
+  lng: 76.038
   people: 15
   vulnerable:
     child: true
@@ -1001,24 +992,23 @@ incidents:
   hazard: stranded
   urgency_band: critical
   reported_at: '2026-10-12T09:15:00Z'
-  description: Stranded intercity bus submerged up to windows near ISBT terminal,
-    15 passengers on bus roof with water still rising.
+  description: Stranded intercity bus submerged up to windows near ISBT terminal, 15 passengers on bus
+    roof with water still rising.
   sample_reports:
   - lang: hi
-    text: आईएसबीटी बस स्टैंड के पास बस की छत पर 15 यात्री बैठे हैं, बस आधी डूब चुकी
-      है!
+    text: आईएसबीटी वित्तूरि School के पास बस की छत पर 15 यात्री बैठे हैं, बस आधी डूब चुकी है!
   - lang: hinglish
-    text: ISBT bus terminal pe bus ki chhat par 15 passengers baithe hain, paani window
-      se upar hai rescue chahiye.
+    text: ISBT bus terminal pe bus ki chhat par 15 passengers baithe hain, paani window se upar hai rescue
+      chahiye.
   - lang: en
-    text: Submerged bus near ISBT Bus Terminal, 15 passengers stranded on roof with
-      water rising to roof level.
+    text: Submerged bus near ISBT Bus Terminal, 15 passengers stranded on roof with water rising to roof
+      level.
 - id: INC-010
   type: rescue
   ward_id: ward_8
   landmark_id: LM-36
-  lat: 26.8725
-  lng: 80.9485
+  lat: 10.247
+  lng: 76.267
   people: 9
   vulnerable:
     child: true
@@ -1029,24 +1019,21 @@ incidents:
   hazard: water_rising
   urgency_band: critical
   reported_at: '2026-10-12T09:30:00Z'
-  description: Low-lying residential row behind Green Park Stadium submerged to 6
-    feet, family stranded on rooftop shade.
+  description: Low-lying residential row behind Mala School submerged to 6 feet, family stranded on rooftop
+    shade.
   sample_reports:
   - lang: hi
-    text: ग्रीन पार्क स्टेडियम के पीछे 9 लोग टिन शेड पर बैठे हैं, नीचे 6 फुट पानी
-      भर गया है।
+    text: माला Panchayat Office के पीछे 9 लोग टिन शेड पर बैठे हैं, नीचे 6 फुट पानी भर गया है।
   - lang: hinglish
-    text: Green park stadium ke peeche 9 log tin shed par baithe hain, 6 feet water,
-      bachhe ro rahe hain.
+    text: Mala School ke peeche 9 log tin shed par baithe hain, 6 feet water, bachhe ro rahe hain.
   - lang: en
-    text: Family of 9 stranded on tin roof behind Green Park Stadium, water level
-      at 6 feet and rising.
+    text: Family of 9 stranded on tin roof behind Mala School, water level at 6 feet and rising.
 - id: INC-011
   type: food
   ward_id: ward_2
   landmark_id: LM-07
-  lat: 26.8542
-  lng: 80.9284
+  lat: 9.41785
+  lng: 76.41671
   people: 18
   vulnerable:
     child: true
@@ -1057,24 +1044,24 @@ incidents:
   hazard: stranded
   urgency_band: high
   reported_at: '2026-10-12T09:45:00Z'
-  description: Group of 18 shopkeepers and residents marooned on first floor above
-    Gandhi Nagar Market, zero drinking water for 24 hours.
+  description: Group of 18 shopkeepers and residents marooned on first floor above Champakulam Market,
+    zero drinking water for 24 hours.
   sample_reports:
   - lang: hi
-    text: गांधी नगर मार्केट की पहली मंजिल पर 18 लोग फंसे हैं, पीने का पानी खत्म हो
-      गया है, बच्चे प्यासे हैं।
+    text: चम्पाकुलाम Church की पहली मंजिल पर 18 लोग फंसे हैं, पीने का पानी खत्म हो गया है, बच्चे प्यासे
+      हैं।
   - lang: hinglish
-    text: Gandhi nagar market me 18 log hain, 24 ghante se drinking water aur khana
-      nahi hai, please relief packet bhejo.
+    text: Champakulam Market me 18 log hain, 24 ghante se drinking water aur khana nahi hai, please relief
+      packet bhejo.
   - lang: en
-    text: 18 people stranded on 1st floor of Gandhi Nagar market with no drinking
-      water or food for 24 hours.
+    text: 18 people stranded on 1st floor of Champakulam market with no drinking water or food for 24
+      hours.
 - id: INC-012
   type: medical
   ward_id: ward_9
   landmark_id: LM-41
-  lat: 26.8584
-  lng: 80.9753
+  lat: 10.472
+  lng: 76.13
   people: 4
   vulnerable:
     child: false
@@ -1085,24 +1072,24 @@ incidents:
   hazard: stranded
   urgency_band: high
   reported_at: '2026-10-12T10:00:00Z'
-  description: Elderly cardiac patient requires daily blood pressure and heart medication,
-    stranded in home near Subhash Chowk.
+  description: Elderly cardiac patient requires daily blood pressure and heart medication, stranded in
+    home near Anthikad Bridge.
   sample_reports:
   - lang: hi
-    text: सुभाष चौक के पास बुजुर्ग माताजी को बीपी और दिल की दवाइयां चाहिए, पानी के
-      कारण घर से निकलना मुमकिन नहीं।
+    text: अंतिक्काड School के पास बुजुर्ग माताजी को बीपी और दिल की दवाइयां चाहिए, पानी के कारण घर से निकलना
+      मुमकिन नहीं।
   - lang: hinglish
-    text: Subhash chowk ke paas heart patient hain, dawa khatam ho gayi hai waterlogging
-      ki wajah se pharmacy band hai.
+    text: Anthikad Bridge ke paas heart patient hain, dawa khatam ho gayi hai waterlogging ki wajah se
+      pharmacy band hai.
   - lang: en
-    text: Cardiac medication needed urgently for elderly patient near Subhash Chowk,
-      stranded due to street flooding.
+    text: Cardiac medication needed urgently for elderly patient near Anthikad Bridge, stranded due to
+      street flooding.
 - id: INC-013
   type: shelter
   ward_id: ward_1
   landmark_id: LM-02
-  lat: 26.8468
-  lng: 80.9344
+  lat: 9.47185
+  lng: 76.39571
   people: 22
   vulnerable:
     child: true
@@ -1113,24 +1100,24 @@ incidents:
   hazard: stranded
   urgency_band: high
   reported_at: '2026-10-12T10:15:00Z'
-  description: Kachha houses inundated in Sangam Vihar, 22 displaced residents sheltered
-    in Mata Mandir veranda with rising flood waters.
+  description: Kachha houses inundated in Kainakary, 22 displaced residents sheltered in Mata Mandir veranda
+    with rising flood waters.
   sample_reports:
   - lang: hi
-    text: माता मंदिर संगम विहार के बरामदे में 22 बेघर लोग बैठे हैं, मंदिर के आंगन
-      में भी पानी आने लगा है, शेल्टर शिफ्ट करें।
+    text: काइनकरी Boat Jetty के बरामदे में 22 बेघर लोग बैठे हैं, मंदिर के आंगन में भी पानी आने लगा है,
+      शेल्टर शिफ्ट करें।
   - lang: hinglish
-    text: Mata mandir sangam vihar me 22 log temporary sharan liye hain, courtyard
-      me pani badh raha hai evacuation chahiye.
+    text: Kainakary Church vihar me 22 log temporary sharan liye hain, courtyard me pani badh raha hai
+      evacuation chahiye.
   - lang: en
-    text: 22 displaced flood victims sheltered in Mata Mandir veranda, compound starting
-      to flood, need shelter transfer.
+    text: 22 displaced flood victims sheltered in Mata Mandir veranda, compound starting to flood, need
+      shelter transfer.
 - id: INC-014
   type: rescue
   ward_id: ward_6
   landmark_id: LM-29
-  lat: 26.8692
-  lng: 80.9365
+  lat: 10.06015
+  lng: 76.62447
   people: 5
   vulnerable:
     child: true
@@ -1141,24 +1128,21 @@ incidents:
   hazard: water_rising
   urgency_band: high
   reported_at: '2026-10-12T10:30:00Z'
-  description: Caretaker quarters near St. Mary Convent School submerged up to 4 feet;
-    pregnant caretaker and 2 children stranded.
+  description: Caretaker quarters near St. Mary Convent School submerged up to 4 feet; pregnant caretaker
+    and 2 children stranded.
   sample_reports:
   - lang: hi
-    text: सेंट मैरी स्कूल के पास केयरटेकर क्वार्टर में 4 फुट पानी है, गर्भवती महिला
-      और 2 बच्चे फंसे हैं।
+    text: कोथमंगलम Shelter के पास केयरटेकर क्वार्टर में 4 फुट पानी है, गर्भवती महिला और 2 बच्चे फंसे हैं।
   - lang: hinglish
-    text: St Mary school ke caretaker house me paani ghus gaya hai, pregnant lady
-      hai boat se nikalo.
+    text: St Mary school ke caretaker house me paani ghus gaya hai, pregnant lady hai boat se nikalo.
   - lang: en
-    text: Quarters flooded near St. Mary Convent, pregnant mother and 2 children require
-      boat evacuation.
+    text: Quarters flooded near St. Mary Convent, pregnant mother and 2 children require boat evacuation.
 - id: INC-015
   type: food
   ward_id: ward_10
   landmark_id: LM-46
-  lat: 26.8782
-  lng: 80.9224
+  lat: 11.563
+  lng: 76.14
   people: 14
   vulnerable:
     child: true
@@ -1169,24 +1153,22 @@ incidents:
   hazard: stranded
   urgency_band: high
   reported_at: '2026-10-12T10:45:00Z'
-  description: Apartment ground floor flooded around Model Town Central Park, 14 residents
-    trapped without electricity and potable water.
+  description: Apartment ground floor flooded around Puthumala, 14 residents trapped without electricity
+    and potable water.
   sample_reports:
   - lang: hi
-    text: मॉडल टाउन सेंट्रल पार्क के पास अपार्टमेंट में 14 लोग फंसे हैं, बिजली और
-      पीने का पानी नहीं है।
+    text: पुथुमला के पास अपार्टमेंट में 14 लोग फंसे हैं, बिजली और पीने का पानी नहीं है।
   - lang: hinglish
-    text: Model town park ke bagal wali building me 14 log hain, no power, drinking
-      water bottles and dry rations needed.
+    text: Meppadi park ke bagal wali building me 14 log hain, no power, drinking water bottles and dry
+      rations needed.
   - lang: en
-    text: 14 residents marooned in apartment near Model Town Central Park, food packets
-      and potable water urgently requested.
+    text: 14 residents marooned in apartment near Puthumala, food packets and potable water urgently requested.
 - id: INC-016
   type: rescue
   ward_id: ward_7
   landmark_id: LM-33
-  lat: 26.8234
-  lng: 80.9625
+  lat: 10.30315
+  lng: 76.33453
   people: 11
   vulnerable:
     child: false
@@ -1197,24 +1179,23 @@ incidents:
   hazard: water_rising
   urgency_band: high
   reported_at: '2026-10-12T11:00:00Z'
-  description: Factory workers stranded in dormitory behind Industrial Community Hall,
-    industrial drain overflowed with foul contaminated water.
+  description: Factory workers stranded in dormitory behind Industrial Community Hall, industrial drain
+    overflowed with foul contaminated water.
   sample_reports:
   - lang: hi
-    text: मजदूर कल्याण भवन के पीछे नाले का केमिकल युक्त पानी 5 फुट भर गया है, 11 मजदूर
-      फंसे हैं।
+    text: चालाकुडी School के पीछे नाले का केमिकल युक्त पानी 5 फुट भर गया है, 11 मजदूर फंसे हैं।
   - lang: hinglish
-    text: Industrial community hall ke peeche nala overflow hua, toxic water hai 11
-      log trapped hain please evacuate.
+    text: Industrial community hall ke peeche nala overflow hua, toxic water hai 11 log trapped hain please
+      evacuate.
   - lang: en
-    text: Contaminated floodwater inundating worker barracks near Industrial Community
-      Hall. 11 workers require rescue.
+    text: Contaminated floodwater inundating worker barracks near Industrial Community Hall. 11 workers
+      require rescue.
 - id: INC-017
   type: food
   ward_id: ward_4
   landmark_id: LM-17
-  lat: 26.8632
-  lng: 80.9174
+  lat: 10.10945
+  lng: 76.35731
   people: 30
   vulnerable:
     child: true
@@ -1225,24 +1206,23 @@ incidents:
   hazard: stranded
   urgency_band: high
   reported_at: '2026-10-12T11:15:00Z'
-  description: Community kitchen in Old Bazaar flooded; 30 displaced shop workers
-    and families taking shelter in Jama Masjid complex need food rations.
+  description: Community kitchen in Aluva flooded; 30 displaced shop workers and families taking shelter
+    in Jama Masjid complex need food rations.
   sample_reports:
   - lang: hi
-    text: जामा मस्जिद पुराना बाज़ार में 30 लोग शरण लिए हुए हैं, खाना-पीना खत्म हो
-      गया है, राशन पैकेट भिजवाएं।
+    text: आलुवा School में 30 लोग शरण लिए हुए हैं, खाना-पीना खत्म हो गया है, राशन पैकेट भिजवाएं।
   - lang: hinglish
-    text: Jama masjid old bazaar me 30 log hain jinme bachhe aur bujurg hain, food
-      and water supply immediately needed.
+    text: Jama masjid Aluva me 30 log hain jinme bachhe aur bujurg hain, food and water supply immediately
+      needed.
   - lang: en
-    text: 30 displaced flood victims sheltered in Jama Masjid complex in Old Bazaar
-      require immediate dry food rations.
+    text: 30 displaced flood victims sheltered in Jama Masjid complex in Aluva require immediate dry food
+      rations.
 - id: INC-018
   type: medical
   ward_id: ward_11
   landmark_id: LM-53
-  lat: 26.8304
-  lng: 80.9025
+  lat: 11.54515
+  lng: 76.04153
   people: 3
   vulnerable:
     child: false
@@ -1253,24 +1233,23 @@ incidents:
   hazard: injury
   urgency_band: high
   reported_at: '2026-10-12T11:30:00Z'
-  description: Mechanic suffered compound leg fracture from slipping in flood current
-    outside Truck Union Bhawan, road inaccessible by car.
+  description: Mechanic suffered compound leg fracture from slipping in flood current outside Truck Union
+    Bhawan, road inaccessible by car.
   sample_reports:
   - lang: hi
-    text: ट्रक यूनियन भवन के पास पानी में फिसलने से मैकेनिक का पैर टूट गया है, हड्डी
-      बाहर आ गई है, फर्स्ट एड और बोट चाहिए।
+    text: वित्तूरि Health Centre के पास पानी में फिसलने से मैकेनिक का पैर टूट गया है, हड्डी बाहर आ गई
+      है, फर्स्ट एड और बोट चाहिए।
   - lang: hinglish
-    text: Truck union ke paas leg fracture hua hai bahut dard me hai, road doobi hai
-      ambulance boat bhejiye.
+    text: Truck union ke paas leg fracture hua hai bahut dard me hai, road doobi hai ambulance boat bhejiye.
   - lang: en
-    text: Compound leg fracture outside Truck Union Bhawan, patient in severe shock,
-      urgent boat transport to hospital.
+    text: Compound leg fracture outside Truck Union Bhawan, patient in severe shock, urgent boat transport
+      to hospital.
 - id: INC-019
   type: rescue
   ward_id: ward_5
   landmark_id: LM-23
-  lat: 26.8464
-  lng: 80.9515
+  lat: 10.07315
+  lng: 76.27153
   people: 8
   vulnerable:
     child: true
@@ -1281,24 +1260,22 @@ incidents:
   hazard: water_rising
   urgency_band: high
   reported_at: '2026-10-12T11:45:00Z'
-  description: School staff family and children stranded in residential quarters behind
-    Shanti Nagar School, ground floor inundated.
+  description: School staff family and children stranded in residential quarters behind Varapuzha School,
+    ground floor inundated.
   sample_reports:
   - lang: hi
-    text: शांति नगर स्कूल के स्टाफ क्वार्टर में पानी घुस गया है, 8 लोग जिनमें 5 बच्चे
-      हैं छत पर हैं।
+    text: वरप्पुषा स्कूल के स्टाफ क्वार्टर में पानी घुस गया है, 8 लोग जिनमें 5 बच्चे हैं छत पर हैं।
   - lang: hinglish
-    text: Shanti nagar school quarters me paani ghus gaya hai, 8 people with 5 children
-      stranded on roof.
+    text: Varapuzha school quarters me paani ghus gaya hai, 8 people with 5 children stranded on roof.
   - lang: en
-    text: Staff residential quarters flooded behind Shanti Nagar School, 8 people
-      including 5 children need rescue.
+    text: Staff residential quarters flooded behind Varapuzha School, 8 people including 5 children need
+      rescue.
 - id: INC-020
   type: food
   ward_id: ward_12
   landmark_id: LM-57
-  lat: 26.8912
-  lng: 80.9654
+  lat: 11.60985
+  lng: 76.08771
   people: 25
   vulnerable:
     child: true
@@ -1309,24 +1286,22 @@ incidents:
   hazard: stranded
   urgency_band: high
   reported_at: '2026-10-12T12:00:00Z'
-  description: 25 villagers taking refuge on upper terrace of Lake View Govt School,
-    water surrounding building, milk and baby food needed.
+  description: 25 villagers taking refuge on upper terrace of Kalpetta School, water surrounding building,
+    milk and baby food needed.
   sample_reports:
   - lang: hi
-    text: लेक व्यू सरकारी स्कूल की छत पर 25 लोग हैं, छोटे बच्चों के लिए दूध और पीने
-      का पानी नहीं है।
+    text: लेक व्यू सरकारी स्कूल की छत पर 25 लोग हैं, छोटे बच्चों के लिए दूध और पीने का पानी नहीं है।
   - lang: hinglish
-    text: Lake view govt school terrace pe 25 people marooned hain, baby food and
-      drinking water packet urgently needed.
+    text: Kalpetta School terrace pe 25 people marooned hain, baby food and drinking water packet urgently
+      needed.
   - lang: en
-    text: 25 flood refugees on terrace of Lake View High School, acute shortage of
-      baby food and drinking water.
+    text: 25 flood refugees on terrace of Kalpetta School, acute shortage of baby food and drinking water.
 - id: INC-021
   type: medical
   ward_id: ward_8
   landmark_id: LM-38
-  lat: 26.8714
-  lng: 80.9513
+  lat: 10.23615
+  lng: 76.27053
   people: 2
   vulnerable:
     child: true
@@ -1337,24 +1312,23 @@ incidents:
   hazard: injury
   urgency_band: high
   reported_at: '2026-10-12T12:15:00Z'
-  description: Child developed 104F fever and convulsions in flooded alley 300m from
-    Green Park CHC, road impassable.
+  description: Child developed 104F fever and convulsions in flooded alley 300m from Mala Health Centre,
+    road impassable.
   sample_reports:
   - lang: hi
-    text: ग्रीन पार्क अस्पताल के पास 4 साल के बच्चे को 104 बुखार और झटके आ रहे हैं,
-      गली में कमर तक पानी है।
+    text: ग्रीन पार्क अस्पताल के पास 4 साल के बच्चे को 104 बुखार और झटके आ रहे हैं, गली में कमर तक पानी
+      है।
   - lang: hinglish
-    text: Green park chc ke paas kid has 104 fever and seizures, waist deep water
-      please send medical boat.
+    text: Mala Health Centre ke paas kid has 104 fever and seizures, waist deep water please send medical
+      boat.
   - lang: en
-    text: High fever and seizure emergency for 4yo child near Green Park CHC, street
-      flooded waist-deep.
+    text: High fever and seizure emergency for 4yo child near Mala Health Centre, street flooded waist-deep.
 - id: INC-022
   type: rescue
   ward_id: ward_9
   landmark_id: LM-42
-  lat: 26.8603
-  lng: 80.9784
+  lat: 10.46785
+  lng: 76.13571
   people: 7
   vulnerable:
     child: true
@@ -1365,24 +1339,23 @@ incidents:
   hazard: water_rising
   urgency_band: high
   reported_at: '2026-10-12T12:30:00Z'
-  description: Water overflowing from Subhash canal into residential block near Netaji
-    Subhash College, water rising 3 inches per hour.
+  description: Water overflowing from Anthikad into residential block near Netaji Anthikad School, water
+    rising 3 inches per hour.
   sample_reports:
   - lang: hi
-    text: सुभाष कॉलेज के पास नहर का पानी घरों में आ रहा है, हर घंटे पानी बढ़ रहा है,
-      7 लोग फंसे हैं।
+    text: अंतिक्काड Church के पास नहर का पानी घरों में आ रहा है, हर घंटे पानी बढ़ रहा है, 7 लोग फंसे हैं।
   - lang: hinglish
-    text: Subhash inter college ke pass canal overflow ho gaya, water is rising 3
-      inches per hr, 7 people need rescue.
+    text: Anthikad School ke pass canal overflow ho gaya, water is rising 3 inches per hr, 7 people need
+      rescue.
   - lang: en
-    text: Canal overflow inundating houses near Subhash College, water rising rapidly,
-      7 residents need evacuation.
+    text: Canal overflow inundating houses near Anthikad School, water rising rapidly, 7 residents need
+      evacuation.
 - id: INC-023
   type: shelter
   ward_id: ward_6
   landmark_id: LM-26
-  lat: 26.8653
-  lng: 80.9354
+  lat: 10.071
+  lng: 76.628
   people: 16
   vulnerable:
     child: true
@@ -1393,24 +1366,24 @@ incidents:
   hazard: stranded
   urgency_band: high
   reported_at: '2026-10-12T12:45:00Z'
-  description: Shanties flooded behind Collectorate compound, 16 residents sheltering
-    under plastic tarpaulins in strong rain.
+  description: Shanties flooded behind Collectorate compound, 16 residents sheltering under plastic tarpaulins
+    in strong rain.
   sample_reports:
   - lang: hi
-    text: कलेक्ट्रेट ऑफिस के पीछे झुग्गियां डूब गईं, 16 लोग बारिश में भीग रहे हैं,
-      तिरपाल और शेल्टर चाहिए।
+    text: कोथमंगलम Bus Stand के पीछे झुग्गियां डूब गईं, 16 लोग बारिश में भीग रहे हैं, तिरपाल और शेल्टर
+      चाहिए।
   - lang: hinglish
-    text: Collectorate civil lines ke peeche slums flooded, 16 people without roof
-      in rain, need shelter transfer.
+    text: Collectorate Kothamangalam ke peeche slums flooded, 16 people without roof in rain, need shelter
+      transfer.
   - lang: en
-    text: Slum shanties flooded behind Collectorate in Civil Lines, 16 displaced people
-      need immediate shelter.
+    text: Slum shanties flooded behind Collectorate in Kothamangalam, 16 displaced people need immediate
+      shelter.
 - id: INC-024
   type: food
   ward_id: ward_3
   landmark_id: LM-13
-  lat: 26.8374
-  lng: 80.9395
+  lat: 9.42515
+  lng: 76.40153
   people: 20
   vulnerable:
     child: false
@@ -1421,24 +1394,20 @@ incidents:
   hazard: stranded
   urgency_band: high
   reported_at: '2026-10-12T13:00:00Z'
-  description: 20 boatmen and community workers marooned at Riverfront Boat Club jetty,
-    food packets needed.
+  description: 20 boatmen and community workers marooned at Nedumudi School jetty, food packets needed.
   sample_reports:
   - lang: hi
-    text: बोट क्लब घाट पर 20 नाविक और कर्मचारी फंसे हैं, खाना खत्म हो गया है, भोजन
-      पैकेट भिजवाएं।
+    text: नेदुमुडी School पर 20 नाविक और कर्मचारी फंसे हैं, खाना खत्म हो गया है, भोजन पैकेट भिजवाएं।
   - lang: hinglish
-    text: Riverfront boat club jetty pe 20 log cut off hain, no cooked food available
-      since morning.
+    text: Nedumudi School jetty pe 20 log cut off hain, no cooked food available since morning.
   - lang: en
-    text: 20 boat operators and volunteers cut off at Riverfront Boat Club jetty require
-      cooked food packets.
+    text: 20 boat operators and volunteers cut off at Nedumudi School jetty require cooked food packets.
 - id: INC-025
   type: food
   ward_id: ward_2
   landmark_id: LM-08
-  lat: 26.8512
-  lng: 80.9234
+  lat: 9.41115
+  lng: 76.41453
   people: 6
   vulnerable:
     child: false
@@ -1449,24 +1418,23 @@ incidents:
   hazard: stranded
   urgency_band: medium
   reported_at: '2026-10-12T13:15:00Z'
-  description: Safe on first floor near Ram Mandir Gandhi Nagar, but water 2ft on
-    road, grocery stores shut, food supplies low.
+  description: Safe on first floor near Ram Mandir Champakulam, but water 2ft on road, grocery stores
+    shut, food supplies low.
   sample_reports:
   - lang: hi
-    text: गांधी नगर राम मंदिर के पास पहली मंजिल पर सुरक्षित हैं लेकिन नीचे 2 फुट पानी
-      है, घर में राशन कम है।
+    text: चम्पाकुलाम चम्पाकुलाम Boat Jetty के पास पहली मंजिल पर सुरक्षित हैं लेकिन नीचे 2 फुट पानी है,
+      घर में राशन कम है।
   - lang: hinglish
-    text: Ram mandir gandhi nagar ke paas safe on 1st floor, road has 2ft water, ration
-      needed in next 24 hours.
+    text: Ram mandir Champakulam ke paas safe on 1st floor, road has 2ft water, ration needed in next
+      24 hours.
   - lang: en
-    text: Family safe on upper floor near Ram Mandir Gandhi Nagar, road flooded 2ft,
-      dry rations requested.
+    text: Family safe on upper floor near Ram Mandir Champakulam, road flooded 2ft, dry rations requested.
 - id: INC-026
   type: shelter
   ward_id: ward_8
   landmark_id: LM-39
-  lat: 26.8757
-  lng: 80.9493
+  lat: 10.23615
+  lng: 76.26347
   people: 8
   vulnerable:
     child: true
@@ -1477,24 +1445,22 @@ incidents:
   hazard: none
   urgency_band: medium
   reported_at: '2026-10-12T13:30:00Z'
-  description: Ground floor water seepage in basement shops near Green Park Shopping
-    Complex, shop owners need dry storage.
+  description: Ground floor water seepage in basement shops near Mala Health Centre, shop owners need
+    dry storage.
   sample_reports:
   - lang: hi
-    text: ग्रीन पार्क मार्केट में बेसमेंट दुकानों में पानी टपक रहा है, सामान बचाने
-      के लिए शेल्टर या तिरपाल चाहिए।
+    text: माला Health Centre में बेसमेंट दुकानों में पानी टपक रहा है, सामान बचाने के लिए शेल्टर या तिरपाल
+      चाहिए।
   - lang: hinglish
-    text: Green park shopping complex basement seepage, need tarpaulin sheets and
-      dry space to keep inventory.
+    text: Mala shopping complex basement seepage, need tarpaulin sheets and dry space to keep inventory.
   - lang: en
-    text: Basement seepage near Green Park Shopping Complex, traders require tarpaulin
-      and dry storage space.
+    text: Basement seepage near Mala Health Centre, traders require tarpaulin and dry storage space.
 - id: INC-027
   type: info
   ward_id: ward_11
   landmark_id: LM-52
-  lat: 26.8342
-  lng: 80.9083
+  lat: 11.55185
+  lng: 76.04371
   people: 1
   vulnerable:
     child: false
@@ -1505,24 +1471,20 @@ incidents:
   hazard: none
   urgency_band: medium
   reported_at: '2026-10-12T13:45:00Z'
-  description: Inquiry regarding whether Transport Nagar Flyover is open for emergency
-    traffic and light vehicles.
+  description: Inquiry regarding whether Vythiri Bridge is open for emergency traffic and light vehicles.
   sample_reports:
   - lang: hi
-    text: क्या ट्रांसपोर्ट नगर फ्लाईववर चालू है या पानी की वजह से बंद कर दिया गया
-      है? जानकारी चाहिए।
+    text: क्या वित्तूरि Bridge चालू है या पानी की वजह से बंद कर दिया गया है? जानकारी चाहिए।
   - lang: hinglish
-    text: Transport nagar flyover open hai kya ambulance aur private car ke liye?
-      Please clarify.
+    text: Vythiri flyover open hai kya ambulance aur private car ke liye? Please clarify.
   - lang: en
-    text: Requesting confirmation if Transport Nagar Flyover is submerged or accessible
-      for light vehicles.
+    text: Requesting confirmation if Vythiri Bridge is submerged or accessible for light vehicles.
 - id: INC-028
   type: food
   ward_id: ward_5
   landmark_id: LM-24
-  lat: 26.8517
-  lng: 80.9538
+  lat: 10.07315
+  lng: 76.26447
   people: 12
   vulnerable:
     child: false
@@ -1533,24 +1495,23 @@ incidents:
   hazard: stranded
   urgency_band: medium
   reported_at: '2026-10-12T14:00:00Z'
-  description: Langar kitchen at Shanti Nagar Gurudwara running low on flour and cooking
-    gas while feeding 200 neighbors.
+  description: Langar kitchen at Varapuzha Gurudwara running low on flour and cooking gas while feeding
+    200 neighbors.
   sample_reports:
   - lang: hi
-    text: शांति नगर गुरुद्वारा लंगर में आटा और एलपीजी खत्म होने वाली है, आस-पास के
-      200 लोगों को भोजन दे रहे हैं।
+    text: वरप्पुषा Health Centre लंगर में आटा और एलपीजी खत्म होने वाली है, आस-पास के 200 लोगों को भोजन
+      दे रहे हैं।
   - lang: hinglish
-    text: Shanti nagar gurudwara langar kitchen needs wheat flour and gas cylinder
-      refill to continue food distribution.
+    text: Varapuzha gurudwara langar kitchen needs wheat flour and gas cylinder refill to continue food
+      distribution.
   - lang: en
-    text: Community kitchen at Shanti Nagar Gurudwara requires bulk wheat flour and
-      cooking gas supplies.
+    text: Community kitchen at Varapuzha Gurudwara requires bulk wheat flour and cooking gas supplies.
 - id: INC-029
   type: medical
   ward_id: ward_10
   landmark_id: LM-50
-  lat: 26.8797
-  lng: 80.9268
+  lat: 11.55885
+  lng: 76.13429
   people: 2
   vulnerable:
     child: false
@@ -1561,24 +1522,22 @@ incidents:
   hazard: none
   urgency_band: medium
   reported_at: '2026-10-12T14:15:00Z'
-  description: Elderly couple near Arya Samaj Mandir needs routine prescription refill
-    for hypertension and arthritis.
+  description: Elderly couple near Arya Samaj Mandir needs routine prescription refill for hypertension
+    and arthritis.
   sample_reports:
   - lang: hi
-    text: मॉडल टाउन आर्य समाज मंदिर के पास बुजुर्गों की बीपी की दवाई खत्म है, पानी
-      भरा होने से मेडिकल स्टोर बंद है।
+    text: मेप्पाडी आर्य समाज मंदिर के पास बुजुर्गों की बीपी की दवाई खत्म है, पानी भरा होने से मेडिकल स्टोर
+      बंद है।
   - lang: hinglish
-    text: Arya samaj mandir model town ke paas regular BP medicine delivery needed
-      for senior citizen couple.
+    text: Arya samaj mandir Meppadi ke paas regular BP medicine delivery needed for senior citizen couple.
   - lang: en
-    text: Routine medicine delivery requested for elderly couple near Arya Samaj Mandir
-      Model Town.
+    text: Routine medicine delivery requested for elderly couple near Meppadi Relief Camp.
 - id: INC-030
   type: shelter
   ward_id: ward_9
   landmark_id: LM-44
-  lat: 26.8617
-  lng: 80.9743
+  lat: 10.46115
+  lng: 76.12647
   people: 10
   vulnerable:
     child: true
@@ -1589,24 +1548,22 @@ incidents:
   hazard: stranded
   urgency_band: medium
   reported_at: '2026-10-12T14:30:00Z'
-  description: 10 construction workers displaced from temporary sheds near Subhash
-    Nagar Barat Ghar, need blankets and dry shelter.
+  description: 10 construction workers displaced from temporary sheds near Anthikad Relief Camp, need
+    blankets and dry shelter.
   sample_reports:
   - lang: hi
-    text: सुभाष नगर बारात घर के पास मजदूरों की झुग्गियों में पानी भर गया, 10 लोग खुले
-      में हैं, कंबल चाहिए।
+    text: अंतिक्काड Relief Camp के पास मजदूरों की झुग्गियों में पानी भर गया, 10 लोग खुले में हैं, कंबल
+      चाहिए।
   - lang: hinglish
-    text: Subhash barat ghar ke paas 10 construction laborers need dry shelter space
-      and blankets.
+    text: Anthikad Church ke paas 10 construction laborers need dry shelter space and blankets.
   - lang: en
-    text: 10 construction workers need dry shelter and blankets near Subhash Nagar
-      Barat Ghar.
+    text: 10 construction workers need dry shelter and blankets near Anthikad Relief Camp.
 - id: INC-031
   type: food
   ward_id: ward_1
   landmark_id: LM-03
-  lat: 26.8483
-  lng: 80.9314
+  lat: 9.46515
+  lng: 76.39353
   people: 15
   vulnerable:
     child: true
@@ -1617,24 +1574,20 @@ incidents:
   hazard: stranded
   urgency_band: medium
   reported_at: '2026-10-12T14:45:00Z'
-  description: Sangam Community Hall sheltering 15 people, drinking water supply running
-    low, water cans requested.
+  description: Kainakary Church sheltering 15 people, drinking water supply running low, water cans requested.
   sample_reports:
   - lang: hi
-    text: संगम कम्युनिटी हॉल में 15 लोग हैं, पीने के पानी के कैंपर खत्म हो गए हैं,
-      कृपया पानी भिजवाएं।
+    text: काइनकरी Church में 15 लोग हैं, पीने के पानी के कैंपर खत्म हो गए हैं, कृपया पानी भिजवाएं।
   - lang: hinglish
-    text: Sangam community hall has 15 people sheltered, drinking water cans needed
-      by evening.
+    text: Kainakary Church has 15 people sheltered, drinking water cans needed by evening.
   - lang: en
-    text: Drinking water cans needed for 15 sheltered persons at Sangam Community
-      Hall.
+    text: Drinking water cans needed for 15 sheltered persons at Kainakary Church.
 - id: INC-032
   type: rescue
   ward_id: ward_4
   landmark_id: LM-20
-  lat: 26.8608
-  lng: 80.9188
+  lat: 10.10945
+  lng: 76.34589
   people: 3
   vulnerable:
     child: false
@@ -1645,24 +1598,23 @@ incidents:
   hazard: stranded
   urgency_band: medium
   reported_at: '2026-10-12T15:00:00Z'
-  description: 3 shopkeepers safe on mezzanine floor of cloth shop in Sarafa Market,
-    water 2.5 ft in lane, request evacuation when possible.
+  description: 3 shopkeepers safe on mezzanine floor of cloth shop in Sarafa Market, water 2.5 ft in lane,
+    request evacuation when possible.
   sample_reports:
   - lang: hi
-    text: सराफा मार्केट में कपड़े की दुकान के मेज़ानाइन पर 3 लोग सुरक्षित हैं, जब
-      नाव खाली हो तो निकालें।
+    text: आलुवा Relief Camp में कपड़े की दुकान के मेज़ानाइन पर 3 लोग सुरक्षित हैं, जब नाव खाली हो तो निकालें।
   - lang: hinglish
-    text: Sarafa cloth market me 3 shopkeepers mezzanine pe hain, 2.5 ft water, non-urgent
-      boat evacuation requested.
+    text: Sarafa cloth market me 3 shopkeepers mezzanine pe hain, 2.5 ft water, non-urgent boat evacuation
+      requested.
   - lang: en
-    text: 3 shopkeepers stranded on mezzanine in Sarafa cloth market, water 2.5ft,
-      non-critical boat assist requested.
+    text: 3 shopkeepers stranded on mezzanine in Sarafa cloth market, water 2.5ft, non-critical boat assist
+      requested.
 - id: INC-033
   type: info
   ward_id: ward_6
   landmark_id: LM-28
-  lat: 26.8638
-  lng: 80.9333
+  lat: 10.06015
+  lng: 76.63153
   people: 1
   vulnerable:
     child: false
@@ -1673,23 +1625,21 @@ incidents:
   hazard: none
   urgency_band: medium
   reported_at: '2026-10-12T15:15:00Z'
-  description: Civil Lines Metro station inquiry regarding operational status of trains
-    towards East Riverbend.
+  description: Kothamangalam Metro station inquiry regarding operational status of trains towards East
+    Kerala.
   sample_reports:
   - lang: hi
-    text: क्या सिविल लाइन्स मेट्रो स्टेशन से ट्रेनें चल रही हैं या ट्रैक पर पानी है?
-      कृपया जानकारी दें।
+    text: क्या कोथमंगलम School से ट्रेनें चल रही हैं या ट्रैक पर पानी है? कृपया जानकारी दें।
   - lang: hinglish
-    text: Civil lines metro station se metro service functional hai kya East Riverbend
-      side?
+    text: Kothamangalam metro station se metro service functional hai kya East Kerala side?
   - lang: en
-    text: Seeking information regarding Metro operations from Civil Lines station.
+    text: Seeking information regarding Metro operations from Kothamangalam station.
 - id: INC-034
   type: shelter
   ward_id: ward_12
   landmark_id: LM-58
-  lat: 26.8873
-  lng: 80.9593
+  lat: 11.60315
+  lng: 76.08553
   people: 18
   vulnerable:
     child: true
@@ -1700,24 +1650,21 @@ incidents:
   hazard: none
   urgency_band: medium
   reported_at: '2026-10-12T15:30:00Z'
-  description: Lake View Community Shelter capacity reached (50/50), 18 new evacuees
-    outside building need redirection to adjacent shelter.
+  description: Kalpetta School capacity reached (50/50), 18 new evacuees outside building need redirection
+    to adjacent shelter.
   sample_reports:
   - lang: hi
-    text: लेक व्यू शेल्टर पूरा भर गया है, बाहर 18 लोग खड़े हैं, इन्हें किस दूसरे शेल्टर
-      में भेजें?
+    text: लेक व्यू शेल्टर पूरा भर गया है, बाहर 18 लोग खड़े हैं, इन्हें किस दूसरे शेल्टर में भेजें?
   - lang: hinglish
-    text: Lake view community shelter is at max capacity, 18 people waiting outside
-      need redirection info.
+    text: Kalpetta Shelter is at max capacity, 18 people waiting outside need redirection info.
   - lang: en
-    text: Lake View Shelter full, 18 newly arrived evacuees need relocation to secondary
-      facility.
+    text: Kalpetta Shelter full, 18 newly arrived evacuees need relocation to secondary facility.
 - id: INC-035
   type: info
   ward_id: ward_3
   landmark_id: LM-14
-  lat: 26.8423
-  lng: 80.9463
+  lat: 9.42515
+  lng: 76.39447
   people: 1
   vulnerable:
     child: false
@@ -1728,23 +1675,21 @@ incidents:
   hazard: none
   urgency_band: low
   reported_at: '2026-10-12T15:45:00Z'
-  description: Resident reporting current flood gauge level at Ganga Darshan Ghat
-    is 1.2 meters above danger mark.
+  description: Resident reporting current flood gauge level at Ganga Darshan Ghat is 1.2 meters above
+    danger mark.
   sample_reports:
   - lang: hi
-    text: गंगा दर्शन घाट पर जलस्तर खतरे के निशान से 1.2 मीटर ऊपर है, सूचना दर्ज करें।
+    text: नेदुमुडी Relief Camp पर जलस्तर खतरे के निशान से 1.2 मीटर ऊपर है, सूचना दर्ज करें।
   - lang: hinglish
-    text: Water level gauge reading at Ganga Darshan Ghat is 1.2m above red mark,
-      logging status.
+    text: Water level gauge reading at Ganga Darshan Ghat is 1.2m above red mark, logging status.
   - lang: en
-    text: Reporting water level reading at Ganga Darshan Viewpoint as 1.2m over danger
-      mark.
+    text: Reporting water level reading at Nedumudi Relief Camp as 1.2m over danger mark.
 - id: INC-036
   type: info
   ward_id: ward_2
   landmark_id: LM-10
-  lat: 26.8508
-  lng: 80.9298
+  lat: 9.41785
+  lng: 76.40529
   people: 1
   vulnerable:
     child: false
@@ -1755,21 +1700,20 @@ incidents:
   hazard: none
   urgency_band: low
   reported_at: '2026-10-12T16:00:00Z'
-  description: Inquiry whether parking lot at Gandhi Nagar Metro Station is inundated.
+  description: Inquiry whether parking lot at Champakulam Shelter is inundated.
   sample_reports:
   - lang: hi
-    text: गांधी नगर मेट्रो स्टेशन की पार्किंग में पानी भरा है क्या? गाड़ी खड़ी कर
-      सकते हैं?
+    text: चम्पाकुलाम Shelter की पार्किंग में पानी भरा है क्या? गाड़ी खड़ी कर सकते हैं?
   - lang: hinglish
-    text: Is Gandhi nagar metro station parking waterlogged?
+    text: Is Champakulam Market parking waterlogged?
   - lang: en
-    text: Asking if Gandhi Nagar metro parking is flooded or safe for vehicle.
+    text: Asking if Champakulam metro parking is flooded or safe for vehicle.
 - id: INC-037
   type: shelter
   ward_id: ward_8
   landmark_id: LM-40
-  lat: 26.8703
-  lng: 80.9468
+  lat: 10.24285
+  lng: 76.26129
   people: 4
   vulnerable:
     child: false
@@ -1780,23 +1724,20 @@ incidents:
   hazard: none
   urgency_band: low
   reported_at: '2026-10-12T16:15:00Z'
-  description: Volunteers at Shiv Mandir Green Park offer hall space for up to 30
-    flood evacuees if needed.
+  description: Volunteers at Mala Boat Jetty offer hall space for up to 30 flood evacuees if needed.
   sample_reports:
   - lang: hi
-    text: शिव मंदिर ग्रीन पार्क की धर्मशाला में 30 लोगों के रुकने की जगह खाली है,
-      अगर जरूरत हो तो बताएं।
+    text: माला Boat Jetty की धर्मशाला में 30 लोगों के रुकने की जगह खाली है, अगर जरूरत हो तो बताएं।
   - lang: hinglish
-    text: Shiv mandir green park dharamshala has capacity for 30 evacuees, offering
-      space to administration.
+    text: Shiv mandir Mala dharamshala has capacity for 30 evacuees, offering space to administration.
   - lang: en
-    text: Shiv Mandir Green Park committee offering hall space for 30 displaced people.
+    text: Mala Boat Jetty committee offering hall space for 30 displaced people.
 - id: INC-038
   type: info
   ward_id: ward_7
   landmark_id: LM-34
-  lat: 26.8214
-  lng: 80.9704
+  lat: 10.30315
+  lng: 76.32747
   people: 1
   vulnerable:
     child: false
@@ -1807,21 +1748,20 @@ incidents:
   hazard: none
   urgency_band: low
   reported_at: '2026-10-12T16:30:00Z'
-  description: Freight train movement status inquiry around Railway Freight Yard Phase
-    1.
+  description: Freight train movement status inquiry around Chalakudy River Jetty.
   sample_reports:
   - lang: hi
-    text: रेलवे फ्रेट यार्ड फेज़ 1 के ट्रैक पर पानी नहीं है, मालगाड़ी खड़ी है।
+    text: चालाकुडी River Jetty के ट्रैक पर पानी नहीं है, मालगाड़ी खड़ी है।
   - lang: hinglish
     text: Railway freight yard tracks are dry as of 4:30pm.
   - lang: en
-    text: Railway Freight Yard Phase 1 reports tracks are currently dry.
+    text: Chalakudy River Jetty reports tracks are currently dry.
 - id: INC-039
   type: food
   ward_id: ward_10
   landmark_id: LM-49
-  lat: 26.8823
-  lng: 80.9244
+  lat: 11.55215
+  lng: 76.13647
   people: 5
   vulnerable:
     child: false
@@ -1832,23 +1772,21 @@ incidents:
   hazard: none
   urgency_band: low
   reported_at: '2026-10-12T16:45:00Z'
-  description: Model Town grocery merchants association reports adequate wheat, rice
-    and oil in wholesale stock.
+  description: Meppadi grocery merchants association reports adequate wheat, rice and oil in wholesale
+    stock.
   sample_reports:
   - lang: hi
-    text: मॉडल टाउन मुख्य बाज़ार में किराना व्यापारियों के पास पर्याप्त राशन उपलब्ध
-      है।
+    text: मेप्पाडी Town में किराना व्यापारियों के पास पर्याप्त राशन उपलब्ध है।
   - lang: hinglish
-    text: Model town main market has sufficient grocery wholesale stock available.
+    text: Meppadi main market has sufficient grocery wholesale stock available.
   - lang: en
-    text: Model Town market association confirms sufficient grain stocks available
-      for relief procurement.
+    text: Meppadi market association confirms sufficient grain stocks available for relief procurement.
 - id: INC-040
   type: info
   ward_id: ward_12
   landmark_id: LM-60
-  lat: 26.8888
-  lng: 80.9668
+  lat: 11.60985
+  lng: 76.07629
   people: 1
   vulnerable:
     child: false
@@ -1859,15 +1797,11 @@ incidents:
   hazard: none
   urgency_band: low
   reported_at: '2026-10-12T17:00:00Z'
-  description: Lake View Police Post reports perimeter road around Moti Jheel blocked
-    by fallen tree.
+  description: Kalpetta Town reports perimeter road around Kalpetta blocked by fallen tree.
   sample_reports:
   - lang: hi
-    text: लेक व्यू पुलिस चौकी के पास मोती झील की सड़क पर पेड़ गिर गया है, रास्ता बंद
-      है।
+    text: कल्पेट्टा Town के पास कल्पेट्टा Bus Stand की सड़क पर पेड़ गिर गया है, रास्ता बंद है।
   - lang: hinglish
-    text: Tree fallen on road near Lake View police post, blocking vehicle movement
-      around Moti Jheel.
+    text: Tree fallen on road near Kalpetta Town, blocking vehicle movement around Kalpetta.
   - lang: en
-    text: Fallen tree blocking roadway near Lake View Police Post, requires municipal
-      clearance team.
+    text: Fallen tree blocking roadway near Kalpetta Town, requires municipal clearance team.

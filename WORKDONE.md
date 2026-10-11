@@ -602,3 +602,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: pytest tests/test_wait_priority.py tests/test_live_queue.py 2 passed. check-i18n 435 keys.
 - Notes / risks / not done: The chip appears once wait points reach 1, which is after a few minutes, not only after 30 minutes.
 - Next (suggested task id): FP-13
+
+### 2026-10-11 22:20 IST — FP-13 — Cursor
+- What changed: The flood case study now uses the real districts Alappuzha, Ernakulam, Thrissur and Wayanad, with panchayat names (Kainakary, Champakulam, Nedumudi, Aluva, Varapuzha, Kothamangalam, Chalakudy, Mala, Anthikad, Meppadi, Vythiri, Kalpetta), landmarks and coordinates. People, reports and team names stay synthetic. The visible label is "Synthetic scenario inspired by Kerala floods" on the landing page, the coordinator queue and Nearby. Map centre is 10.50, 76.30. The citizen pin fallback is Alappuzha (9.498, 76.339). Demo password is KeralaRelief2026!. Event id is event_kerala_flood. The old gazetteer file is removed.
+- Files: data/synthetic/flood_v1/*, data/gazetteer/kerala_gazetteer.json, data/scenarios/flood.yaml, data/synthetic/dog_attack/*, services/api defaults and public cells, demo seed, alerts map, teams areas, i18n, bench/results, TASKS.md
+- How verified: python scripts/validate_seeds.py (12 wards, 60 landmarks, 40 incidents). pytest tests 110 passed. node scripts/check-i18n.mjs 437 keys. Benchmark test split (168 messages, seed 42): type 51.0% vs keyword 16.3%; place/ward 25.5% vs 13.3%; people exact 79.5%; vulnerable F1 60.0%; duplicate F1 69.4% vs hash 6.2%; false-merge 0%; critical share top-5 60% vs FCFS 0%, top-10 60% vs 20%; mean rank of critical cases 11.3 vs FCFS 13.5; hoax catch 100%; latency p50 0.4 ms.
+- Notes / risks / not done: Historical notes in WORKDONE.md, BUILD_BRIEF.md, AGENTS.md and docs/design still say Riverbend. Type accuracy on this split is 51.0% (was 56.1% on the previous place names). Critical top-5 is 60% (was 80%) and still above first-come-first-served. The old seed generator exits instead of rewriting the pack.
+- Next (suggested task id): no-team-free flow

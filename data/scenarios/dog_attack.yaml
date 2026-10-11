@@ -1,6 +1,6 @@
 id: dog_attack
 title: Dog attack
-description: Synthetic Riverbend pack for animal-attack reports. First aid is the fixed reviewed line only.
+description: Synthetic Kerala pack for animal-attack reports. First aid is the fixed reviewed line only.
 incident_types:
   - animal_attack
   - medical

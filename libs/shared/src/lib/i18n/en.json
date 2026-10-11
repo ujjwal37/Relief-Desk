@@ -54,7 +54,8 @@
     "chipAnimal": "Animal attack or bite",
     "chipHurt": "Someone hurt or sick",
     "chipOther": "Something else",
-    "composer": "Type or tap the mic"
+    "composer": "Type or tap the mic",
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
   },
   "report": {
     "title": "Emergency Crisis Report",
@@ -99,7 +100,7 @@
     "saidElderly": "There is an elderly person with us",
     "saidSick": "Someone here is sick",
     "saidNone": "No children, elderly or sick people",
-    "autoPlace": "Ward 7 · Auto-detected"
+    "autoPlace": "Chalakudy · Auto-detected"
   },
   "confirm": {
     "title": "What We Understood",
@@ -169,7 +170,7 @@
     },
     "key": "Key",
     "noPin": "Not tied to one place",
-    "mapAria": "Map of Riverbend wards with alert pins",
+    "mapAria": "Map of Kerala wards with alert pins",
     "river": "River",
     "noReports": "No reports in",
     "reports": "reports",
@@ -288,7 +289,12 @@
     "lng": "Longitude",
     "saveLocation": "Save location",
     "savedLocation": "Location saved.",
-    "kind": { "boat": "Boat", "medical": "Medical", "food": "Food", "shelter": "Shelter" },
+    "kind": {
+      "boat": "Boat",
+      "medical": "Medical",
+      "food": "Food",
+      "shelter": "Shelter"
+    },
     "resStatus": {
       "available": "Available",
       "dispatched": "Dispatched",
@@ -347,7 +353,8 @@
     "mapKey": "Map key",
     "demoPhone": "Demo phone",
     "dismissTour": "Skip tour",
-    "reportDetails": "Report details"
+    "reportDetails": "Report details",
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
   },
   "tour": {
     "next": "Next",
@@ -406,7 +413,7 @@
     "beAware": "Be aware",
     "activeReports": "active reports",
     "offer": "Offer help",
-    "synthetic": "Synthetic demo data"
+    "synthetic": "Synthetic scenario inspired by Kerala floods"
   },
   "bench": {
     "title2": "Accuracy report",

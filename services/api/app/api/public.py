@@ -23,58 +23,58 @@ def public_code_for(report_id: str) -> str:
     digest = int(hashlib.sha256(report_id.encode("utf-8")).hexdigest()[:6], 16)
     return f"RD-{1000 + (digest % 9000)}"
 
-# Canonical synthetic area cells for Riverbend crisis map
+# Canonical synthetic area cells. Places are real Kerala panchayats; the reports are not.
 CANONICAL_CELLS = [
     PublicCell(
-        cell_id="cell_2685_8093_w7",
-        ward="Ward 7 · Riverside & Temple Rd",
-        center_lat=26.8520,
-        center_lng=80.9310,
+        cell_id="cell_1031_7633_w7",
+        ward="Chalakudy · Thrissur",
+        center_lat=10.3080,
+        center_lng=76.3310,
         incident_counts={"rescue": 6, "food": 4, "shelter": 2},
         total_reports=12,
         severity_band="critical",
         time_bucket="Last 2 hours",
-        active_hazard="Water rising, Canal Road submerged",
-        alerts=["Flooded lanes · Ward 7 and Ward 4: Canal Road closed. Use Temple Road."],
+        active_hazard="Water rising, Temple Road submerged",
+        alerts=["Flooded lanes · Chalakudy and Aluva: Temple Road closed. Use the school road."],
         last_updated=datetime.now(timezone.utc).isoformat(),
     ),
     PublicCell(
-        cell_id="cell_2686_8094_w4",
-        ward="Ward 4 · North Ghat",
-        center_lat=26.8610,
-        center_lng=80.9420,
+        cell_id="cell_1011_7635_w4",
+        ward="Aluva · Ernakulam",
+        center_lat=10.1076,
+        center_lng=76.3516,
         incident_counts={"rescue": 4, "medical": 2},
         total_reports=6,
         severity_band="high",
         time_bucket="Last 2 hours",
         active_hazard="Waterlogging 2-3 feet",
-        alerts=["North Ghat embankment warning. Rescue teams deployed."],
+        alerts=["Aluva Manappuram warning. Rescue teams deployed."],
         last_updated=datetime.now(timezone.utc).isoformat(),
     ),
     PublicCell(
-        cell_id="cell_2684_8091_w9",
-        ward="Ward 9 · Mill Colony",
-        center_lat=26.8430,
-        center_lng=80.9180,
+        cell_id="cell_1047_7613_w9",
+        ward="Anthikad · Thrissur",
+        center_lat=10.4660,
+        center_lng=76.1300,
         incident_counts={"animal_attack": 3, "medical": 1},
         total_reports=4,
         severity_band="high",
         time_bucket="Last 2 hours",
-        active_hazard="Pack of aggressive dogs spotted near Mill Colony lanes",
-        alerts=["Dog attack alert · Ward 9: 3 reports in 2 h. Avoid walking alone after dark."],
+        active_hazard="Aggressive dogs spotted near Anthikad lanes",
+        alerts=["Dog attack alert · Anthikad: 3 reports in 2 h. Avoid walking alone after dark."],
         last_updated=datetime.now(timezone.utc).isoformat(),
     ),
     PublicCell(
-        cell_id="cell_2687_8095_w2",
-        ward="Ward 2 · Gandhi Nagar",
-        center_lat=26.8720,
-        center_lng=80.9520,
+        cell_id="cell_0942_7641_w2",
+        ward="Champakulam · Alappuzha",
+        center_lat=9.4160,
+        center_lng=76.4110,
         incident_counts={"food": 8, "shelter": 4},
         total_reports=12,
         severity_band="medium",
         time_bucket="Last 3 hours",
         active_hazard="Drinking water shortage, community kitchen operational",
-        alerts=["12 households near Gandhi High School need dry ration kits."],
+        alerts=["12 households near Champakulam School need dry ration kits."],
         last_updated=datetime.now(timezone.utc).isoformat(),
     ),
 ]
@@ -101,14 +101,14 @@ def get_public_cells(bbox: Optional[str] = Query(None, description="Bounding box
     # 2. Dynamically aggregate active stored requests into coarse grid cells
     active_requests = storage_service.list_requests()
     for req in active_requests:
-        lat = req.lat or 26.85
-        lng = req.lng or 80.93
+        lat = req.lat or 10.50
+        lng = req.lng or 76.30
         # Compute coarse cell id using 500m grid cell tool
         cid = grid_cell_id(lat, lng)
         # Round coordinates to coarse ~500m center grid to prevent exact geolocation leakage
         coarse_lat = round(round(lat / 0.0045) * 0.0045, 4)
         coarse_lng = round(round(lng / 0.0045) * 0.0045, 4)
-        ward_label = req.ward_id or "Riverbend Central"
+        ward_label = req.ward_id or "Kerala"
 
         if cid not in cell_map:
             cell_map[cid] = PublicCell(
@@ -163,20 +163,20 @@ def get_public_alerts():
     return [
         PublicAlert(
             id="alt_01",
-            title="Dog attack alert · Ward 9, Mill Colony",
+            title="Dog attack alert · Anthikad, Thrissur",
             ward="Ward 9",
             time_ago="25 min ago",
             severity="warning",
-            description="3 reports in 2 h. Avoid walking alone near the colony lanes after dark.",
+            description="3 reports in 2 h. Avoid walking alone near Anthikad lanes after dark.",
             icon="dog",
         ),
         PublicAlert(
             id="alt_02",
-            title="Flooded lanes · Ward 7 and Ward 4",
+            title="Flooded lanes · Chalakudy and Aluva",
             ward="Ward 7 & 4",
             time_ago="1 h ago",
             severity="critical",
-            description="Canal Road closed. Use Temple Road to reach the shelter.",
+            description="Temple Road closed. Use the school road to reach the shelter.",
             icon="flood",
         ),
         PublicAlert(

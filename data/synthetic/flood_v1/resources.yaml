@@ -1,153 +1,149 @@
-# Synthetic Resource Seeds for Riverbend (Flood Scenario)
+# Synthetic teams for the Kerala flood scenario. People and team names are fictional.
 version: 1.0.0
 scenario_pack: flood
-event_id: event_riverbend_flood
-
+event_id: event_kerala_flood
 resources:
-  # Boats
-  - id: RES-BOAT-01
-    name: Motorized Rescue Boat #01 (NDRF Unit Alpha)
-    name_hi: मोटर चालित बचाव नाव #01 (एनडीआरएफ अल्फा)
-    kind: boat
-    ward_id: ward_3
-    lat: 26.852
-    lng: 80.941
-    capacity_total: 12
-    capacity_remaining: 12
-    status: available
-    synthetic: true
-
-  - id: RES-BOAT-02
-    name: Motorized Rescue Boat #02 (Civil Defense)
-    name_hi: मोटर चालित बचाव नाव #02 (नागरिक सुरक्षा)
-    kind: boat
-    ward_id: ward_3
-    lat: 26.855
-    lng: 80.938
-    capacity_total: 10
-    capacity_remaining: 10
-    status: available
-    synthetic: true
-
-  - id: RES-BOAT-03
-    name: Inflatable Flood Raft #03 (SDRF Riverbend)
-    name_hi: इन्फ्लेटेबल बचाव राफ्ट #03 (एसडीआरएफ)
-    kind: boat
-    ward_id: ward_1
-    lat: 26.846
-    lng: 80.933
-    capacity_total: 6
-    capacity_remaining: 6
-    status: available
-    synthetic: true
-
-  - id: RES-BOAT-04
-    name: Heavy Duty Evacuation Boat #04
-    name_hi: भारी निकासी नाव #04
-    kind: boat
-    ward_id: ward_12
-    lat: 26.885
-    lng: 80.962
-    capacity_total: 20
-    capacity_remaining: 20
-    status: available
-    synthetic: true
-
-  # Shelters
-  - id: RES-SHELTER-01
-    name: Model Town Government High School Relief Camp
-    name_hi: मॉडल टाउन राजकीय उच्च विद्यालय राहत शिविर
-    kind: shelter
-    ward_id: ward_10
-    lat: 26.872
-    lng: 80.954
-    capacity_total: 150
-    capacity_remaining: 150
-    status: available
-    synthetic: true
-
-  - id: RES-SHELTER-02
-    name: Sangam Vihar Community Relief Centre
-    name_hi: संगम विहार सामुदायिक राहत केंद्र
-    kind: shelter
-    ward_id: ward_1
-    lat: 26.848
-    lng: 80.931
-    capacity_total: 80
-    capacity_remaining: 80
-    status: available
-    synthetic: true
-
-  - id: RES-SHELTER-03
-    name: Civil Lines Indoor Sports Complex Relief Shelter
-    name_hi: सिविल लाइन्स इंडोर स्पोर्ट्स कॉम्प्लेक्स आश्रय स्थल
-    kind: shelter
-    ward_id: ward_6
-    lat: 26.858
-    lng: 80.949
-    capacity_total: 250
-    capacity_remaining: 250
-    status: available
-    synthetic: true
-
-  # Medical
-  - id: RES-MED-01
-    name: Riverbend Civil Hospital Emergency Triage Unit
-    name_hi: रिवरबेंड सिविल अस्पताल आपातकालीन ट्राइएज यूनिट
-    kind: medical
-    ward_id: ward_6
-    lat: 26.861
-    lng: 80.947
-    capacity_total: 45
-    capacity_remaining: 45
-    status: available
-    synthetic: true
-
-  - id: RES-MED-02
-    name: Sangam Vihar Mobile Medical Van (Ambulance #4)
-    name_hi: संगम विहार मोबाइल मेडिकल वैन (एम्बुलेंस #4)
-    kind: medical
-    ward_id: ward_1
-    lat: 26.844
-    lng: 80.935
-    capacity_total: 10
-    capacity_remaining: 10
-    status: available
-    synthetic: true
-
-  - id: RES-MED-03
-    name: Gandhi Nagar Primary Health First Aid Post
-    name_hi: गांधी नगर प्राथमिक स्वास्थ्य प्राथमिक उपचार केंद्र
-    kind: medical
-    ward_id: ward_2
-    lat: 26.841
-    lng: 80.925
-    capacity_total: 25
-    capacity_remaining: 25
-    status: available
-    synthetic: true
-
-  # Food
-  - id: RES-FOOD-01
-    name: Old Bazaar Central Ration & Food Packet Hub
-    name_hi: पुराना बाज़ार केंद्रीय राशन व खाद्य पैकेट हब
-    kind: food
-    ward_id: ward_4
-    lat: 26.849
-    lng: 80.939
-    capacity_total: 500
-    capacity_remaining: 500
-    status: available
-    synthetic: true
-
-  - id: RES-FOOD-02
-    name: Subhash Nagar Community Kitchen
-    name_hi: सुभाष नगर सामुदायिक रसोई
-    kind: food
-    ward_id: ward_9
-    lat: 26.866
-    lng: 80.937
-    capacity_total: 300
-    capacity_remaining: 300
-    status: available
-    synthetic: true
+- id: RES-BOAT-01
+  name: Motorized Rescue Boat
+  name_hi: मोटर चालित बचाव नाव
+  kind: boat
+  ward_id: ward_3
+  lat: 9.43
+  lng: 76.398
+  capacity_total: 12
+  capacity_remaining: 12
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-BOAT-02
+  name: Motorized Rescue Boat
+  name_hi: मोटर चालित बचाव नाव
+  kind: boat
+  ward_id: ward_3
+  lat: 9.434
+  lng: 76.402
+  capacity_total: 10
+  capacity_remaining: 10
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-BOAT-03
+  name: Inflatable Flood Raft
+  name_hi: इन्फ्लेटेबल बचाव राफ्ट
+  kind: boat
+  ward_id: ward_1
+  lat: 9.47
+  lng: 76.39
+  capacity_total: 6
+  capacity_remaining: 6
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-BOAT-04
+  name: Heavy Duty Evacuation Boat
+  name_hi: भारी निकासी नाव
+  kind: boat
+  ward_id: ward_12
+  lat: 11.608
+  lng: 76.082
+  capacity_total: 20
+  capacity_remaining: 20
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-SHELTER-01
+  name: Meppadi Government High School Relief Camp
+  name_hi: मॉडल टाउन राजकीय उच्च विद्यालय राहत शिविर
+  kind: shelter
+  ward_id: ward_10
+  lat: 11.557
+  lng: 76.14
+  capacity_total: 150
+  capacity_remaining: 150
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-SHELTER-02
+  name: Kainakary Community Relief Centre
+  name_hi: संगम विहार सामुदायिक राहत केंद्र
+  kind: shelter
+  ward_id: ward_1
+  lat: 9.474
+  lng: 76.394
+  capacity_total: 80
+  capacity_remaining: 80
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-SHELTER-03
+  name: Kothamangalam Indoor Sports Complex Relief Shelter
+  name_hi: सिविल लाइन्स इंडोर स्पोर्ट्स कॉम्प्लेक्स आश्रय स्थल
+  kind: shelter
+  ward_id: ward_6
+  lat: 10.065
+  lng: 76.628
+  capacity_total: 250
+  capacity_remaining: 250
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-MED-01
+  name: Taluk Hospital Kothamangalam
+  name_hi: तालुक अस्पताल कोथमंगलम
+  kind: medical
+  ward_id: ward_6
+  lat: 10.069
+  lng: 76.632
+  capacity_total: 45
+  capacity_remaining: 45
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-MED-02
+  name: Kainakary Mobile Medical Van (Ambulance
+  name_hi: संगम विहार मोबाइल मेडिकल वैन (एम्बुलेंस
+  kind: medical
+  ward_id: ward_1
+  lat: 9.478
+  lng: 76.398
+  capacity_total: 10
+  capacity_remaining: 10
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-MED-03
+  name: Champakulam Primary Health First Aid Post
+  name_hi: गांधी नगर प्राथमिक स्वास्थ्य प्राथमिक उपचार केंद्र
+  kind: medical
+  ward_id: ward_2
+  lat: 9.416
+  lng: 76.411
+  capacity_total: 25
+  capacity_remaining: 25
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-FOOD-01
+  name: Aluva Central Ration & Food Packet Hub
+  name_hi: पुराना बाज़ार केंद्रीय राशन व खाद्य पैकेट हब
+  kind: food
+  ward_id: ward_4
+  lat: 10.1076
+  lng: 76.3516
+  capacity_total: 500
+  capacity_remaining: 500
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
+- id: RES-FOOD-02
+  name: Anthikad Community Kitchen
+  name_hi: सुभाष नगर सामुदायिक रसोई
+  kind: food
+  ward_id: ward_9
+  lat: 10.466
+  lng: 76.13
+  capacity_total: 300
+  capacity_remaining: 300
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood

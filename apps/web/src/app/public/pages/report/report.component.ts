@@ -77,7 +77,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     { key: 'landing.chipOther', text: 'Something else' },
   ];
   readonly isLoading = signal<boolean>(false);
-  readonly locationPin = signal<{ lat: number; lng: number }>({ lat: 26.852, lng: 80.925 });
+  readonly locationPin = signal<{ lat: number; lng: number }>({ lat: 9.498, lng: 76.339 });
   readonly locationText = signal<string>(AUTO_PLACE);
 
   readonly chatMessages = signal<ChatMessage[]>([]);
@@ -509,7 +509,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.locationPin.set({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
       () => {
-        // Riverbend centroid stays as the synthetic fallback.
+        // Alappuzha stays as the synthetic fallback when the phone has no GPS fix.
       },
       { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 },
     );

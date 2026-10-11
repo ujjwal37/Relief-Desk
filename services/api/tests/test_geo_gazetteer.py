@@ -3,11 +3,10 @@ from app.tools.gazetteer import gazetteer
 
 
 def test_haversine_distance_calculation():
-    # Riverbend ward 1 to ward 2 distance (~0.8 to 1.5 km)
-    dist = haversine_distance(26.845, 80.932, 26.852, 80.925)
-    assert 0.5 < dist < 2.0
-    # Zero distance
-    assert haversine_distance(26.85, 80.92, 26.85, 80.92) == 0.0
+    # Kainakary to Champakulam is a few kilometres.
+    dist = haversine_distance(9.470, 76.390, 9.416, 76.411)
+    assert 4.0 < dist < 10.0
+    assert haversine_distance(10.50, 76.30, 10.50, 76.30) == 0.0
 
 
 def test_grid_cell_id_anonymization():
@@ -18,20 +17,19 @@ def test_grid_cell_id_anonymization():
     assert cell1.startswith("cell_")
 
 
-def test_gandhi_school_ke_paas_resolves_to_seeded_landmark():
-    # Hero acceptance criteria: "Gandhi school ke paas" resolves to seeded landmark
-    match = gazetteer.lookup("Gandhi school ke paas")
+def test_champakulam_school_ke_paas_resolves_to_seeded_landmark():
+    match = gazetteer.lookup("Champakulam school ke paas")
     assert match.is_low_confidence is False
     assert match.landmark_id == "LM-06"
-    assert "Gandhi High School" in match.landmark_name
+    assert "Champakulam School" in match.landmark_name
     assert match.ward_id == "ward_2"
     assert match.lat is not None and match.lng is not None
     assert match.cell_id is not None
     assert match.confidence >= 0.8
 
 
-def test_hindi_script_gandhi_school_resolves():
-    match = gazetteer.lookup("गांधी स्कूल के पीछे")
+def test_hindi_script_champakulam_school_resolves():
+    match = gazetteer.lookup("चम्पाकुलाम स्कूल के पीछे")
     assert match.is_low_confidence is False
     assert match.landmark_id == "LM-06"
     assert match.ward_id == "ward_2"

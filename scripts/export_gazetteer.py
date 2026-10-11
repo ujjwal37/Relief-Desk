@@ -12,10 +12,11 @@ def export_gazetteer():
 
     gazetteer_dir = Path("data/gazetteer")
     gazetteer_dir.mkdir(parents=True, exist_ok=True)
-    out_file = gazetteer_dir / "riverbend_gazetteer.json"
+    out_file = gazetteer_dir / "kerala_gazetteer.json"
 
     export_data = {
         "city": data["city"]["name"],
+        "label": data["city"].get("label", "Synthetic scenario inspired by Kerala floods"),
         "bbox": data["city"]["bbox"],
         "wards": data["wards"],
         "landmarks": data["landmarks"]

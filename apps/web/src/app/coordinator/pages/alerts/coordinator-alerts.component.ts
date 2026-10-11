@@ -15,32 +15,32 @@ export interface MapAlert {
 
 const W = 800;
 const H = 560;
-const LAT_MAX = 26.874;
-const LNG_MIN = 80.92;
-const proj = (lat: number, lng: number): Pt => ({ x: (lng - LNG_MIN) * 12500, y: (LAT_MAX - lat) * 11667 });
+const LAT_MAX = 11.70;
+const LNG_MIN = 75.98;
+const proj = (lat: number, lng: number): Pt => ({ x: (lng - LNG_MIN) * 1100, y: (LAT_MAX - lat) * 230 });
 
-/** Synthetic Riverbend wards (same seeds as the demo data). */
+/** Real Kerala panchayats used by the synthetic flood pack. */
 const WARDS: Ward[] = [
-  { id: 'ward_1', name: 'Sangam Vihar', lat: 26.845, lng: 80.932 },
-  { id: 'ward_2', name: 'Gandhi Nagar', lat: 26.852, lng: 80.925 },
-  { id: 'ward_3', name: 'Riverfront Ghat', lat: 26.839, lng: 80.941 },
-  { id: 'ward_4', name: 'Old Bazaar', lat: 26.858, lng: 80.948 },
-  { id: 'ward_5', name: 'Shanti Nagar', lat: 26.861, lng: 80.936 },
-  { id: 'ward_6', name: 'Civil Lines', lat: 26.849, lng: 80.955 },
-  { id: 'ward_7', name: 'Industrial Area', lat: 26.834, lng: 80.962 },
-  { id: 'ward_8', name: 'Green Park', lat: 26.866, lng: 80.951 },
-  { id: 'ward_9', name: 'Subhash Nagar', lat: 26.842, lng: 80.97 },
-  { id: 'ward_10', name: 'Model Town', lat: 26.87, lng: 80.928 },
-  { id: 'ward_11', name: 'Transport Nagar', lat: 26.828, lng: 80.98 },
-  { id: 'ward_12', name: 'Lake View', lat: 26.869, lng: 80.972 },
+  { id: 'ward_1', name: 'Kainakary', lat: 9.470, lng: 76.390 },
+  { id: 'ward_2', name: 'Champakulam', lat: 9.416, lng: 76.411 },
+  { id: 'ward_3', name: 'Nedumudi', lat: 9.430, lng: 76.398 },
+  { id: 'ward_4', name: 'Aluva', lat: 10.108, lng: 76.352 },
+  { id: 'ward_5', name: 'Varapuzha', lat: 10.078, lng: 76.268 },
+  { id: 'ward_6', name: 'Kothamangalam', lat: 10.065, lng: 76.628 },
+  { id: 'ward_7', name: 'Chalakudy', lat: 10.308, lng: 76.331 },
+  { id: 'ward_8', name: 'Mala', lat: 10.241, lng: 76.267 },
+  { id: 'ward_9', name: 'Anthikad', lat: 10.466, lng: 76.130 },
+  { id: 'ward_10', name: 'Meppadi', lat: 11.557, lng: 76.140 },
+  { id: 'ward_11', name: 'Vythiri', lat: 11.550, lng: 76.038 },
+  { id: 'ward_12', name: 'Kalpetta', lat: 11.608, lng: 76.082 },
 ];
 const LANDMARKS: Landmark[] = [
-  { name: 'Civil Hospital', lat: 26.8535, lng: 80.9425 },
-  { name: 'Ram Ghat', lat: 26.8392, lng: 80.945 },
-  { name: 'Railway station', lat: 26.8465, lng: 80.9625 },
-  { name: 'Relief camp (school)', lat: 26.8635, lng: 80.9415 },
+  { name: 'Little Flower Hospital', lat: 10.108, lng: 76.352 },
+  { name: 'Nedumudi Boat Jetty', lat: 9.430, lng: 76.398 },
+  { name: 'Chalakudy River Jetty', lat: 10.308, lng: 76.331 },
+  { name: 'Kainakary Relief Camp', lat: 9.470, lng: 76.390 },
 ];
-const FALLBACK_MEDICAL: ResPin[] = [{ id: 'm1', name: 'Medical team', lat: 26.8535, lng: 80.9425, free: true }];
+const FALLBACK_MEDICAL: ResPin[] = [{ id: 'm1', name: 'Medical team', lat: 10.108, lng: 76.352, free: true }];
 
 function clip(poly: Pt[], p: Pt, q: Pt): Pt[] {
   // keep points closer to p than to q
@@ -112,7 +112,7 @@ export class CoordinatorAlertsComponent implements OnInit {
   );
   readonly center = computed(() => {
     const s = this.selected();
-    return s?.at ? this.latlng(s) : { lat: 26.852, lng: 80.945 };
+    return s?.at ? this.latlng(s) : { lat: 10.50, lng: 76.30 };
   });
 
   ageText(alert: AnomalyAlert): string {
