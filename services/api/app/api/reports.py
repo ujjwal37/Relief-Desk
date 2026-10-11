@@ -12,6 +12,7 @@ from app.tools.asr import asr_service, VoiceNoteMetadata, ASRResult
 from app.tools.translation import translation_service, TranslationResult
 from app.models.firestore_models import StoredRequest, RequestStatus
 from app.models.schemas import HazardType, IncidentType
+from app.tools.request_contract import canonical_request_dict
 
 router = APIRouter(prefix="/api", tags=["Reports & Intake"])
 
@@ -113,25 +114,31 @@ def submit_report(payload: ReportSubmitRequest):
         asr_confidence=asr_confidence,
     )
 
-    # 3. Extract structured request from text / transcript, then apply confirmed card edits.
+    # 3. Extract, then overlay the confirmed card. Chat and form share one canonical shape.
     extracted = intake_agent.parse_report(report_text, language_hint=payload.lang)
     if payload.structured:
         facts = payload.structured
-        if facts.incident_type:
-            extracted.type = IncidentType(facts.incident_type)
-        if facts.place_text:
-            extracted.place_text = facts.place_text
-        if facts.people_count is not None:
-            extracted.people.count = facts.people_count
-            extracted.people.confidence = 1.0
-        if facts.vulnerable:
-            for flag, value in facts.vulnerable.items():
-                if hasattr(extracted.vulnerable, flag):
-                    setattr(extracted.vulnerable, flag, bool(value))
-        if facts.hazard:
-            extracted.hazard = HazardType(facts.hazard)
+        canon = canonical_request_dict(
+            incident_type=facts.incident_type or extracted.type.value,
+            place_text=facts.place_text if facts.place_text is not None else extracted.place_text,
+            people_count=facts.people_count if facts.people_count is not None else extracted.people.count,
+            vulnerable=facts.vulnerable if facts.vulnerable is not None else extracted.vulnerable.model_dump(),
+            hazard=facts.hazard or extracted.hazard.value,
+            summary=facts.summary or report_text,
+            lang=payload.lang,
+            scenario_id=payload.scenario_id,
+            lat=payload.location_pin.get("lat") if payload.location_pin else None,
+            lng=payload.location_pin.get("lng") if payload.location_pin else None,
+        )
+        extracted.type = IncidentType(canon["type"])
+        extracted.place_text = canon["place_text"]
+        extracted.people.count = canon["people_count"]
+        extracted.people.confidence = 1.0
+        extracted.hazard = HazardType(canon["hazard"])
+        for flag, value in canon["vulnerable"].items():
+            setattr(extracted.vulnerable, flag, value)
         if facts.summary:
-            report_text = facts.summary
+            report_text = canon["summary"]
 
     # 4. Deduplication against active requests
     existing = storage_service.list_requests()

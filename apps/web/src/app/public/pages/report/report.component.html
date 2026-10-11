@@ -9,9 +9,14 @@
       <span class="pin-icon" aria-hidden="true">📍</span>
       <span class="location-text">{{ locationText() }}</span>
     </div>
-    <button type="button" class="mode-toggle-btn" (click)="toggleMode()">
-      {{ mode() === 'chat' ? ('report.formTab' | rdTranslate) : ('report.chatTab' | rdTranslate) }}
-    </button>
+    <div class="mode-switch" role="tablist" aria-label="Report input mode">
+      <button type="button" role="tab" [attr.aria-selected]="mode() === 'chat'" [class.on]="mode() === 'chat'" (click)="mode.set('chat')">
+        {{ 'report.chatTab' | rdTranslate }}
+      </button>
+      <button type="button" role="tab" [attr.aria-selected]="mode() === 'form'" [class.on]="mode() === 'form'" (click)="openForm()">
+        {{ 'report.formTab' | rdTranslate }}
+      </button>
+    </div>
   </div>
 
   <div class="form-container" *ngIf="mode() === 'form'">
@@ -20,17 +25,15 @@
       <p class="form-sub">{{ 'confirm.nothingSent' | rdTranslate }}</p>
     </div>
     <div class="quick-tiles">
-      <button type="button" class="tile" [class.active]="pendingCard()?.incident_type === 'rescue'" (click)="selectFormType('rescue')">
-        Flood rescue
-      </button>
-      <button type="button" class="tile" [class.active]="pendingCard()?.incident_type === 'medical'" (click)="selectFormType('medical')">
-        Medical
-      </button>
-      <button type="button" class="tile" [class.active]="pendingCard()?.incident_type === 'food'" (click)="selectFormType('food')">
-        Food and water
-      </button>
-      <button type="button" class="tile" [class.active]="pendingCard()?.incident_type === 'shelter'" (click)="selectFormType('shelter')">
-        Shelter
+      <button
+        type="button"
+        class="tile"
+        *ngFor="let tile of tiles()"
+        [class.active]="pendingCard()?.incident_type === tile.incident_type"
+        (click)="selectFormType(tile.incident_type)"
+      >
+        <span aria-hidden="true">{{ tileIcon(tile.icon) }}</span>
+        {{ tileLabel(tile) }}
       </button>
     </div>
 

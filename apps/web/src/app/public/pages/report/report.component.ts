@@ -11,6 +11,8 @@ import {
   ReportSubmitResponse,
   ReportSubmitRequest,
   StructuredReportFacts,
+  ScenarioTile,
+  canonicalRequestJson,
 } from '@rd/shared';
 
 import { OfflineSyncService } from '../../../core/services/offline-sync.service';
@@ -56,6 +58,13 @@ export class ReportComponent implements OnInit {
   readonly chatMessages = signal<ChatMessage[]>([]);
   readonly pendingCard = signal<ConfirmationCardData | null>(null);
   readonly submittedResult = signal<ReportSubmitResponse | null>(null);
+  readonly scenarioId = signal('flood');
+  readonly tiles = signal<ScenarioTile[]>([
+    { id: 'trapped_water', label_en: 'Trapped in Water', label_hi: 'पानी में फंसे हैं', incident_type: 'rescue', icon: 'water' },
+    { id: 'medical_urgent', label_en: 'Medical Assistance', label_hi: 'चिकित्सा सहायता', incident_type: 'medical', icon: 'medkit' },
+    { id: 'food_water_needed', label_en: 'Food & Drinking Water', label_hi: 'भोजन और पेयजल', incident_type: 'food', icon: 'nutrition' },
+    { id: 'shelter_needed', label_en: 'Need Shelter', label_hi: 'आश्रय चाहिए', incident_type: 'shelter', icon: 'home' },
+  ]);
 
   ngOnInit(): void {
     this.chatMessages.set([
@@ -67,14 +76,59 @@ export class ReportComponent implements OnInit {
       },
     ]);
     this.tryGeolocation();
+    this.apiClient.getScenario(this.scenarioId()).subscribe({
+      next: (scenario) => {
+        if (scenario?.tiles?.length) {
+          this.tiles.set(scenario.tiles);
+        }
+      },
+      error: () => {
+        // Keep the flood pack fallback so the form still works offline.
+      },
+    });
+  }
+
+  tileLabel(tile: ScenarioTile): string {
+    const lang = this.langService.currentLang();
+    if (lang === 'hi' && tile.label_hi) {
+      return tile.label_hi;
+    }
+    return tile.label_en;
+  }
+
+  tileIcon(icon: string): string {
+    const icons: Record<string, string> = {
+      water: '🌊',
+      medkit: '🚑',
+      nutrition: '🍲',
+      home: '🏠',
+    };
+    return icons[icon] || '•';
+  }
+
+  requestJson(card: ConfirmationCardData): string {
+    return canonicalRequestJson({
+      card,
+      lang: this.langService.currentLang(),
+      locationPin: this.locationPin(),
+      scenarioId: this.scenarioId(),
+    });
   }
 
   toggleMode(): void {
     const next = this.mode() === 'chat' ? 'form' : 'chat';
-    if (next === 'form' && !this.pendingCard()) {
+    if (next === 'form') {
+      this.openForm();
+      return;
+    }
+    this.mode.set('chat');
+  }
+
+  openForm(): void {
+    if (!this.pendingCard()) {
       this.pendingCard.set(this.blankCard());
     }
-    this.mode.set(next);
+    this.mode.set('form');
   }
 
   setQuickChip(text: string): void {
@@ -145,7 +199,7 @@ export class ReportComponent implements OnInit {
       .sendChatTurn({
         session_id: this.sessionId(),
         message: text,
-        scenario_id: 'flood',
+        scenario_id: this.scenarioId(),
         language: this.langService.currentLang(),
         location_pin: this.locationPin(),
       })
@@ -183,21 +237,24 @@ export class ReportComponent implements OnInit {
       return;
     }
 
+    const canonical = JSON.parse(this.requestJson(card)) as {
+      vulnerable: Record<string, boolean>;
+    };
     const facts: StructuredReportFacts = {
       incident_type: card.incident_type,
       place_text: card.place_text,
       people_count: card.people_count,
-      vulnerable: { ...card.vulnerable },
+      vulnerable: { ...canonical.vulnerable },
       hazard: card.hazard,
       summary: card.summary,
     };
 
     const payload: ReportSubmitRequest = {
       text: card.summary,
-      channel: 'text',
+      channel: this.mode() === 'form' ? 'form' : 'text',
       lang: this.langService.currentLang(),
       location_pin: this.locationPin(),
-      scenario_id: 'flood',
+      scenario_id: this.scenarioId(),
       structured: facts,
     };
 

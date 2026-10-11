@@ -99,7 +99,7 @@ export interface StructuredReportFacts {
 
 export interface ReportSubmitRequest {
   text: string;
-  channel?: 'text' | 'voice';
+  channel?: 'text' | 'voice' | 'form';
   lang?: string;
   source_id?: string;
   location_pin?: { lat: number; lng: number };

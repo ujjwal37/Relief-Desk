@@ -350,3 +350,12 @@
 - Notes / risks / not done: Form tiles are still the flood set; scenario-pack tiles and the identical Request JSON contract test are T-038. Offline-sync spec fixture was updated so the suite typechecks against ReportSubmitResponse.
 - Next (suggested task id): T-038
 
+### 2026-10-11 17:12 IST — T-038 — Cursor
+- What changed: Report screen Chat/Form switch keeps the pending card (location pin, people count, vulnerable flags, incident type). Form tiles load from the active scenario pack (`GET /api/scenarios/flood`) with a flood fallback if the API is down. Chat and form both submit through `canonical_request_json` / `buildCanonicalRequest`. Contract test asserts the stored Request JSON is byte-identical excluding ids and timestamps.
+- Files: apps/web/src/app/public/pages/report/*, libs/shared/src/lib/models/request-contract.ts, libs/shared/src/public-api.ts, libs/shared/src/lib/models/request.model.ts, services/api/app/tools/request_contract.py, services/api/app/api/reports.py, services/api/tests/test_request_contract.py, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_request_contract.py services/api/tests/test_confirmation.py` -> 3 passed. Chat and form posts of the same case produced equal Request JSON after dropping id/created_at/updated_at/report_ids.
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include=**/report.component.spec.ts --include=**/confirmation-card.component.spec.ts` -> 7 passed.
+- Notes / risks / not done: T-029 re-verified. Fast path is still three taps and no login: (1) landing "I Need Help / Report Incident" link to `/report` (choice card padding 24px, no password), (2) a crisis chip (min-height 48px), (3) Send now on the shared card (height 64px). Unit test `fast path stays at chip then Send now` covers taps 2 and 3.
+- Next (suggested task id): T-040
+
