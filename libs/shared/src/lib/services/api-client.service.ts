@@ -9,6 +9,7 @@ import {
   UrgencyWeights,
   DedupeDecision,
 } from '../models/request.model';
+import { AuthService } from './auth.service';
 
 export interface HealthResponse {
   status: string;
@@ -31,6 +32,15 @@ export interface ChatTurnPayload {
 })
 export class ApiClientService {
   private http = inject(HttpClient);
+  private authService = inject(AuthService, { optional: true });
+
+  private getAuthHeaders(): { headers?: { [header: string]: string } } {
+    const token = this.authService?.getToken();
+    if (token) {
+      return { headers: { Authorization: `Bearer ${token}` } };
+    }
+    return {};
+  }
 
   getHealth(): Observable<HealthResponse> {
     return this.http.get<HealthResponse>('/healthz');
@@ -53,25 +63,33 @@ export class ApiClientService {
   }
 
   getUrgencyWeights(): Observable<UrgencyWeights> {
-    return this.http.get<UrgencyWeights>('/api/config/weights');
+    return this.http.get<UrgencyWeights>('/api/config/weights', this.getAuthHeaders());
   }
 
   updateUrgencyWeights(weights: UrgencyWeights): Observable<UrgencyWeights> {
-    return this.http.put<UrgencyWeights>('/api/config/weights', weights);
+    return this.http.put<UrgencyWeights>('/api/config/weights', weights, this.getAuthHeaders());
   }
 
   mergeRequests(primaryId: string, secondaryId: string, evidence: string[] = []): Observable<any> {
-    return this.http.post<any>(`/api/requests/${primaryId}/merge`, {
-      secondary_request_id: secondaryId,
-      evidence,
-    });
+    return this.http.post<any>(
+      `/api/requests/${primaryId}/merge`,
+      {
+        secondary_request_id: secondaryId,
+        evidence,
+      },
+      this.getAuthHeaders()
+    );
   }
 
   splitCluster(requestId: string): Observable<any> {
-    return this.http.post<any>(`/api/requests/${requestId}/split`, {});
+    return this.http.post<any>(`/api/requests/${requestId}/split`, {}, this.getAuthHeaders());
   }
 
   getCluster(clusterId: string): Observable<any> {
-    return this.http.get<any>(`/api/clusters/${clusterId}`);
+    return this.http.get<any>(`/api/clusters/${clusterId}`, this.getAuthHeaders());
+  }
+
+  verifyCoordinatorSession(): Observable<any> {
+    return this.http.get<any>('/api/coordinator/verify', this.getAuthHeaders());
   }
 }

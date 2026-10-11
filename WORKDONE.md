@@ -191,3 +191,23 @@
   - `npx ng build web` -> Built successfully and generated standalone report-component lazy bundle.
 - Notes / risks / not done: public chat report path operational end-to-end.
 - Next (suggested task id): T-046 or T-047
+### 2026-10-11 15:10 IST — T-046 — Antigravity
+- What changed: Verified and completed app shell and lazy route architecture in apps/web. Configured LandingComponent at `/` displaying both primary entry choices ("I need help / report" and "I'm a coordinator") with complete EN, HI, Hinglish, and TA localization; ensured public routes (/report, /status, /nearby) load without authentication inside mobile-first PublicLayout; protected coordinator dashboard routes (/coordinator/**) with coordinatorAuthGuard redirecting unauthenticated visitors to /coordinator/login with returnUrl preservation.
+- Files: apps/web/src/app/app.routes.ts, apps/web/src/app/core/guards/coordinator-auth.guard.ts, apps/web/src/app/coordinator/coordinator.routes.ts, apps/web/src/app/app.spec.ts, TASKS.md
+- How verified (commands / screenshots):
+  - `npx ng build web` -> verified build output generates distinct lazy chunks (landing-component, report-component, status-component, nearby-component, coordinator-login-component, coordinator-command-component, public-routes, coordinator-routes).
+  - Angular unit tests in `app.spec.ts` -> verified coordinatorAuthGuard redirects signed-out user to `/coordinator/login` with returnUrl and allows authenticated coordinator through.
+- Notes / risks / not done: App shell and role-based lazy routing fully operational.
+- Next (suggested task id): T-047
+
+### 2026-10-11 15:12 IST — T-047 — Antigravity
+- What changed: Implemented full coordinator authentication pipeline across frontend and backend: created AuthService in libs/shared with reactive signals (currentUser, isAuthenticated, isCoordinator) and local session persistence; built polished CoordinatorLoginComponent with WCAG AA contrast, 112 emergency banner, demo credentials chip, and error alerts; created scripts/seed.py seeding synthetic demo coordinator credentials (`demo-coordinator@reliefdesk.internal` / `RiverbendRelief2026!`) with `coordinator` role claim in data/synthetic/coordinator_credentials.json; documented demo credentials in README.md; implemented backend token verification in services/api/app/api/auth.py and protected coordinator endpoints (/api/coordinator/verify, /api/config/weights, /api/requests/{id}/merge, /api/requests/{id}/split, /api/clusters/{id}) returning HTTP 401 when unauthenticated.
+- Files: libs/shared/src/lib/services/auth.service.ts, libs/shared/src/lib/services/auth.service.spec.ts, libs/shared/src/lib/services/api-client.service.ts, libs/shared/src/public-api.ts, libs/shared/src/lib/i18n/*.json, apps/web/src/app/coordinator/pages/login/**, apps/web/src/app/coordinator/layouts/**, services/api/app/api/auth.py, services/api/app/api/clusters.py, services/api/app/api/config_router.py, services/api/app/config.py, services/api/app/main.py, services/api/tests/test_auth.py, services/api/tests/test_clusters_api.py, services/api/tests/test_scoring.py, scripts/seed.py, README.md, TASKS.md
+- How verified (commands / screenshots):
+  - `python scripts/seed.py` -> seeded synthetic coordinator account in data/synthetic/coordinator_credentials.json.
+  - `python -m pytest services/api/tests` -> 56 passed in 2.16s (including all 8 coordinator auth 401/200 tests).
+  - `Invoke-RestMethod http://127.0.0.1:8000/api/coordinator/verify` -> verified 401 without auth header, 200 with Bearer demo-coordinator-token, and 200 with signed JWT from POST /api/auth/login.
+  - `node scripts/check-i18n.mjs` -> PASSED (all 47 keys verified with 100% parity across 4 languages).
+  - `npx ng build shared` & `npx ng build web` -> compiled successfully without errors.
+- Notes / risks / not done: All Day 0 tasks in TASKS.md are now 100% DONE. Backend server restarted and running on port 8000.
+- Next (suggested task id): Day 1 tasks (T-020, T-021, T-023...)

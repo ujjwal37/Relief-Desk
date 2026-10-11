@@ -29,12 +29,13 @@ def test_merge_split_undo_api_and_audit():
     storage_service.save_request(r2, actor="test")
 
     # 1. Merge requests via POST /api/requests/req_m1/merge
+    auth_headers = {"Authorization": "Bearer demo-coordinator-token"}
     merge_payload = {
         "secondary_request_id": "req_m2",
         "evidence": ["Both reports within 50m of Sangam School", "Identical water_rising hazard"],
         "merged_by": "coordinator_jane"
     }
-    merge_resp = client.post("/api/requests/req_m1/merge", json=merge_payload)
+    merge_resp = client.post("/api/requests/req_m1/merge", json=merge_payload, headers=auth_headers)
     assert merge_resp.status_code == 200
     merge_data = merge_resp.json()
     cluster_id = merge_data["cluster_id"]
@@ -47,14 +48,14 @@ def test_merge_split_undo_api_and_audit():
     assert storage_service.get_request("req_m2").cluster_id == cluster_id
 
     # 2. Get evidence card data via GET /api/clusters/{cluster_id}
-    evidence_resp = client.get(f"/api/clusters/{cluster_id}")
+    evidence_resp = client.get(f"/api/clusters/{cluster_id}", headers=auth_headers)
     assert evidence_resp.status_code == 200
     ev_data = evidence_resp.json()
     assert len(ev_data["evidence"]) == 2
     assert ev_data["undone"] is False
 
     # 3. Split / undo merge via POST /api/requests/req_m1/split
-    split_resp = client.post(f"/api/requests/req_m1/split?actor=coordinator_jane")
+    split_resp = client.post(f"/api/requests/req_m1/split?actor=coordinator_jane", headers=auth_headers)
     assert split_resp.status_code == 200
     split_data = split_resp.json()
     assert split_data["undone"] is True

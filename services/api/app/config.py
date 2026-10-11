@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     # App security & throttling
     API_CORS_ORIGINS: List[str] = ["http://localhost:4200", "http://localhost:8000"]
     SALT_PHONE_HASH: str = "synthetic-salt"
+    JWT_SECRET: str = "relief-desk-coordinator-secret-2026"
+    FIREBASE_AUTH_EMULATOR_HOST: Optional[str] = None
     RATE_LIMIT_REPORTS_PER_HOUR: int = 10
     DEFAULT_LANG: str = "en"
     SUPPORTED_LANGS: List[str] = ["en", "hi", "hinglish", "ta"]

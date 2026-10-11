@@ -48,5 +48,16 @@
     "low": "Low Urgency",
     "approve": "Approve Dispatch",
     "reject": "Reject"
+  },
+  "auth": {
+    "loginTitle": "Coordinator Portal",
+    "subtitle": "Authorized Responders and Triage Leads",
+    "email": "Email Address",
+    "password": "Password",
+    "submit": "Enter Command View",
+    "demoNotice": "Demo Account: Pre-seeded synthetic coordinator credentials",
+    "invalidCredentials": "Invalid email or password",
+    "loginDemo": "Quick Login as Demo Coordinator",
+    "returnHome": "Return to Public Home"
   }
 }

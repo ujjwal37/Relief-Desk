@@ -7,7 +7,7 @@
   "hash_baseline_f1_pct": 0.0,
   "update_accuracy_pct": 100.0,
   "hoax_catch_rate_pct": 100.0,
-  "avg_latency_ms": 0.29,
+  "avg_latency_ms": 0.51,
   "total_time_seconds": 0.01,
-  "created_at": "2026-10-11T09:08:47.526281+00:00"
+  "created_at": "2026-10-11T09:23:28.664759+00:00"
 }

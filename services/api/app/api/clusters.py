@@ -1,8 +1,9 @@
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from app.tools.storage import storage_service
 from app.models.firestore_models import StoredCluster, StoredRequest
+from app.api.auth import get_current_coordinator, CoordinatorUser
 
 router = APIRouter(prefix="/api", tags=["Requests & Clusters"])
 
@@ -29,7 +30,11 @@ class SplitResultResponse(BaseModel):
 
 
 @router.post("/requests/{request_id}/merge", response_model=MergeResultResponse)
-def merge_requests(request_id: str, payload: MergeRequestPayload):
+def merge_requests(
+    request_id: str,
+    payload: MergeRequestPayload,
+    coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
     req_primary = storage_service.get_request(request_id)
     if not req_primary:
         raise HTTPException(
@@ -47,7 +52,7 @@ def merge_requests(request_id: str, payload: MergeRequestPayload):
     cluster = storage_service.create_cluster(
         request_ids=[request_id, payload.secondary_request_id],
         evidence=payload.evidence or ["Manual coordinator merge"],
-        merged_by=payload.merged_by
+        merged_by=payload.merged_by or coordinator.email,
     )
 
     return MergeResultResponse(
@@ -60,7 +65,11 @@ def merge_requests(request_id: str, payload: MergeRequestPayload):
 
 
 @router.post("/requests/{request_id}/split", response_model=SplitResultResponse)
-def split_request_cluster(request_id: str, actor: str = "coordinator"):
+def split_request_cluster(
+    request_id: str,
+    actor: str = "coordinator",
+    coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
     req = storage_service.get_request(request_id)
     if not req:
         raise HTTPException(
@@ -83,7 +92,7 @@ def split_request_cluster(request_id: str, actor: str = "coordinator"):
         )
 
     restored_ids = list(cluster.request_ids)
-    split_cluster = storage_service.split_cluster(cluster_id, actor=actor)
+    split_cluster = storage_service.split_cluster(cluster_id, actor=actor or coordinator.email)
 
     return SplitResultResponse(
         cluster_id=cluster_id,
@@ -94,7 +103,10 @@ def split_request_cluster(request_id: str, actor: str = "coordinator"):
 
 
 @router.get("/clusters/{cluster_id}", response_model=StoredCluster)
-def get_cluster_evidence(cluster_id: str):
+def get_cluster_evidence(
+    cluster_id: str,
+    coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
     cluster = storage_service.get_cluster(cluster_id)
     if not cluster:
         raise HTTPException(

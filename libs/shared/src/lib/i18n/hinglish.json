@@ -48,5 +48,16 @@
     "low": "Low Urgency",
     "approve": "Dispatch Approve Karein",
     "reject": "Reject"
+  },
+  "auth": {
+    "loginTitle": "Coordinator Portal",
+    "subtitle": "Authorized Responders aur Triage Leads",
+    "email": "Email Address",
+    "password": "Password",
+    "submit": "Command View Me Enter Karein",
+    "demoNotice": "Demo Account: Pre-seeded synthetic coordinator credentials",
+    "invalidCredentials": "Galat email ya password",
+    "loginDemo": "Demo Coordinator Se Quick Login",
+    "returnHome": "Public Home Par Wapas Jayein"
   }
 }

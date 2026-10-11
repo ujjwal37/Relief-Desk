@@ -1,31 +1,77 @@
 <div class="login-wrapper">
+  <div class="emergency-alert-banner">
+    <div class="alert-content">
+      <span class="alert-icon">⚠️</span>
+      <span class="alert-text">{{ 'safety.banner' | rdTranslate }}</span>
+      <a href="tel:112" class="call-112-btn">{{ 'safety.call112' | rdTranslate }}</a>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <rd-language-switcher></rd-language-switcher>
+  </div>
+
   <div class="login-card">
     <div class="header">
       <span class="icon">🛡️</span>
-      <h2>Coordinator Portal</h2>
-      <p class="sub">Authorized Responders and Triage Leads</p>
+      <h2>{{ 'auth.loginTitle' | rdTranslate }}</h2>
+      <p class="sub">{{ 'auth.subtitle' | rdTranslate }}</p>
     </div>
 
-    <form class="login-form" (submit)="$event.preventDefault(); loginDemo()">
+    @if (errorMessage()) {
+      <div class="error-banner">
+        <span>⚠️ {{ errorMessage() }}</span>
+      </div>
+    }
+
+    <form class="login-form" (submit)="$event.preventDefault(); onLogin()">
       <div class="field">
-        <label>Email Address</label>
-        <input type="email" value="demo-coordinator@reliefdesk.internal" readonly />
+        <label for="coord-email">{{ 'auth.email' | rdTranslate }}</label>
+        <input
+          id="coord-email"
+          type="email"
+          [value]="email()"
+          (input)="email.set($any($event.target).value)"
+          placeholder="name@reliefdesk.internal"
+          required
+        />
       </div>
 
       <div class="field">
-        <label>Password</label>
-        <input type="password" value="••••••••••••" readonly />
+        <label for="coord-password">{{ 'auth.password' | rdTranslate }}</label>
+        <input
+          id="coord-password"
+          type="password"
+          [value]="password()"
+          (input)="password.set($any($event.target).value)"
+          placeholder="••••••••••••"
+          required
+        />
       </div>
 
-      <div class="demo-notice">
-        <span>🔑 Demo Account: Pre-seeded synthetic coordinator credentials</span>
+      <div class="demo-notice" (click)="useDemoAccount()">
+        <span class="demo-icon">🔑</span>
+        <div class="demo-details">
+          <strong>{{ 'auth.demoNotice' | rdTranslate }}</strong>
+          <code>demo-coordinator&#64;reliefdesk.internal</code>
+        </div>
       </div>
 
-      <button type="submit" class="submit-btn">Enter Command View</button>
+      <button type="submit" class="submit-btn" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <span>Verifying credentials...</span>
+        } @else {
+          <span>{{ 'auth.submit' | rdTranslate }} →</span>
+        }
+      </button>
+
+      <button type="button" class="demo-quick-btn" (click)="useDemoAccount()">
+        ⚡ {{ 'auth.loginDemo' | rdTranslate }}
+      </button>
     </form>
 
     <div class="footer">
-      <a routerLink="/" class="back-link">← Return to Public Home</a>
+      <a routerLink="/" class="back-link">← {{ 'auth.returnHome' | rdTranslate }}</a>
     </div>
   </div>
 </div>

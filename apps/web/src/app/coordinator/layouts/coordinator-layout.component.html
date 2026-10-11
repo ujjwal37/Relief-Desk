@@ -11,8 +11,8 @@
     <div class="right-cluster">
       <rd-language-switcher></rd-language-switcher>
       <span class="live-pill">● LIVE MONITOR</span>
-      <span class="demo-user">demo-coordinator&#64;reliefdesk.internal</span>
-      <a routerLink="/coordinator/login" class="nav-btn">{{ 'nav.logout' | rdTranslate }}</a>
+      <span class="demo-user">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</span>
+      <button type="button" class="nav-btn" (click)="logout()">{{ 'nav.logout' | rdTranslate }}</button>
     </div>
   </header>
 

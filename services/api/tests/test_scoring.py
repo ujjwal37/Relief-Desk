@@ -77,8 +77,9 @@ def test_changing_weights_changes_rank():
 
 
 def test_weights_api_endpoint_and_audit():
+    auth_headers = {"Authorization": "Bearer demo-coordinator-token"}
     # Read current weights
-    get_resp = client.get("/api/config/weights")
+    get_resp = client.get("/api/config/weights", headers=auth_headers)
     assert get_resp.status_code == 200
     data = get_resp.json()
     assert "w_vulnerability" in data
@@ -97,7 +98,7 @@ def test_weights_api_endpoint_and_audit():
         "v_pregnant": 1.3,
         "v_medical": 1.3,
     }
-    put_resp = client.put("/api/config/weights", json=payload)
+    put_resp = client.put("/api/config/weights", json=payload, headers=auth_headers)
     assert put_resp.status_code == 200
     updated = put_resp.json()
     assert updated["w_vulnerability"] == 0.40
