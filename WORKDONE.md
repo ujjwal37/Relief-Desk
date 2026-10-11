@@ -560,3 +560,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: pytest tests/test_public_api.py 6 passed. check-i18n 362 keys.
 - Notes / risks / not done: The demo id R-0412 still shows a sample on-the-way timeline. Completed status is wired when FP-08 marks a case completed.
 - Next (suggested task id): FP-07
+
+### 2026-10-11 21:15 IST — FP-07 — Cursor
+- What changed: A chosen language is kept for the whole chat, so Hindi prompts stay Hindi after an English chip. The closing line no longer pastes the pipe summary or raw keys. Chips and quick replies send the translated sentence. Review shows translated incident type and hazard, and the auto-detected place follows the language.
+- Files: services/api/app/agents/chat_intake.py, services/api/tests/test_chat_intake.py, apps/web report page, confirmation card, libs/shared/src/lib/i18n/*.json, TASKS.md
+- How verified: pytest tests/test_chat_intake.py 6 passed. ng test web confirmation-card and report specs 7 passed. check-i18n 383 keys.
+- Notes / risks / not done: The machine summary stored on the request can still contain a hazard key; the review headline shows the citizen's words. Hinglish "chhat" typo is FP-19.
+- Next (suggested task id): FP-08

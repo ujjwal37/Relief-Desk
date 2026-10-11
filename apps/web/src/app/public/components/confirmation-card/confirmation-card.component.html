@@ -12,9 +12,9 @@
   <div class="rows">
     <div class="kv">
       <span class="k">{{ 'confirm.type' | rdTranslate }}</span>
-      <span class="v" *ngIf="editing() !== 'type'"><span class="type-chip">{{ card.incident_type }}</span></span>
+      <span class="v" *ngIf="editing() !== 'type'"><span class="type-chip">{{ ('incidentType.' + card.incident_type) | rdTranslate }}</span></span>
       <select *ngIf="editing() === 'type'" class="edit-control" [ngModel]="card.incident_type" (ngModelChange)="setType($event)" [attr.aria-label]="'confirm.type' | rdTranslate">
-        <option *ngFor="let t of incidentTypes" [value]="t">{{ t }}</option>
+        <option *ngFor="let t of incidentTypes" [value]="t">{{ ('incidentType.' + t) | rdTranslate }}</option>
       </select>
       <button type="button" class="edit-btn" (click)="startEdit('type')">{{ editing() === 'type' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}</button>
     </div>
@@ -43,7 +43,7 @@
 
     <div class="kv" *ngIf="card.hazard && card.hazard !== 'unknown'">
       <span class="k">{{ 'confirm.hazard' | rdTranslate }}</span>
-      <span class="v hazard">{{ card.hazard }}</span>
+      <span class="v hazard">{{ ('hazardKind.' + card.hazard) | rdTranslate }}</span>
     </div>
 
     <div class="kv">

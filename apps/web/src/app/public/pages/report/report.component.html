@@ -27,7 +27,7 @@
         }
       </div>
       <label class="field"><span>{{ 'confirm.location' | rdTranslate }}</span>
-        <input type="text" [ngModel]="locationText()" (ngModelChange)="updatePlace($event)" /></label>
+        <input type="text" [ngModel]="placeLabel()" (ngModelChange)="updatePlace($event)" /></label>
       <label class="field"><span>{{ 'confirm.people' | rdTranslate }}</span>
         <input type="number" min="0" max="99" [ngModel]="pendingCard()?.people_count" (ngModelChange)="updatePeople($event)" /></label>
       <div class="vuln-row">
@@ -52,10 +52,10 @@
         <section class="empty">
           <div class="spark" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7z"/></svg></div>
           <h2>{{ 'landing.previewTitle' | rdTranslate }}</h2>
-          <p class="where"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>{{ locationText() }}</p>
+          <p class="where"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>{{ placeLabel() }}</p>
           <div class="chips">
             @for (s of suggestions; track s.key) {
-              <button type="button" class="chip" (click)="pickSuggestion(s.text)">{{ s.key | rdTranslate }}</button>
+              <button type="button" class="chip" (click)="pickSuggestion(s.key)">{{ s.key | rdTranslate }}</button>
             }
           </div>
           <button type="button" class="link" (click)="openForm()">{{ 'report.preferForm' | rdTranslate }}</button>

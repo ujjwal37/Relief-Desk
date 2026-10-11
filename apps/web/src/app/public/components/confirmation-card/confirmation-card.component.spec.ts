@@ -62,5 +62,8 @@ describe('ConfirmationCardComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('हमारी समझ');
     expect(text).toContain('अभी भेजें');
+    expect(text).toContain('बचाव');
+    expect(text).toContain('पानी बढ़ रहा है');
+    expect(text).not.toContain('water_rising');
   });
 });

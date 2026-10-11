@@ -90,7 +90,16 @@
     "savedPending": "Saved on this phone, will send when online.",
     "queued": "Queued",
     "placeholder2": "Describe what happened",
-    "qrNone": "None of these"
+    "qrNone": "None of these",
+    "said12": "2 people",
+    "said35": "4 people",
+    "said6": "6 people",
+    "saidNot": "I am not sure how many people",
+    "saidChild": "There is a child with us",
+    "saidElderly": "There is an elderly person with us",
+    "saidSick": "Someone here is sick",
+    "saidNone": "No children, elderly or sick people",
+    "autoPlace": "Ward 7 · Auto-detected"
   },
   "confirm": {
     "title": "What We Understood",
@@ -116,6 +125,22 @@
     "done": "Done",
     "review": "Review",
     "callOutline": "Call 112"
+  },
+  "incidentType": {
+    "rescue": "Rescue",
+    "food": "Food",
+    "medical": "Medical",
+    "shelter": "Shelter",
+    "info": "Information",
+    "animal_attack": "Animal attack",
+    "other": "Other"
+  },
+  "hazardKind": {
+    "water_rising": "Water rising",
+    "stranded": "Stranded",
+    "injury": "Injury",
+    "none": "None",
+    "unknown": "Unknown"
   },
   "queue": {
     "title": "Ranked Priority Queue",

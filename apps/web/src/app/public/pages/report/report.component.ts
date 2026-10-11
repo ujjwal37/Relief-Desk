@@ -31,6 +31,8 @@ export interface ChatMessage {
   quick?: string[];
 }
 
+const AUTO_PLACE = '__auto__';
+
 const EMPTY_VULNERABLE: Record<string, boolean> = {
   child: false,
   elderly: false,
@@ -76,7 +78,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   ];
   readonly isLoading = signal<boolean>(false);
   readonly locationPin = signal<{ lat: number; lng: number }>({ lat: 26.852, lng: 80.925 });
-  readonly locationText = signal<string>('Ward 7 · Auto-detected');
+  readonly locationText = signal<string>(AUTO_PLACE);
 
   readonly chatMessages = signal<ChatMessage[]>([]);
   readonly pendingCard = signal<ConfirmationCardData | null>(null);
@@ -133,15 +135,31 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
-  pickSuggestion(text: string): void {
-    this.userInput.set(text);
+  pickSuggestion(key: string): void {
+    this.userInput.set(this.langService.translate(key));
     this.sendUserMessage();
+  }
+
+  placeLabel(): string {
+    const text = this.locationText();
+    if (!text || text === AUTO_PLACE) return this.langService.translate('report.autoPlace');
+    return text;
   }
 
   useQuick(msgId: string, text: string): void {
     this.chatMessages.update((m) => m.map((x) => (x.id === msgId ? { ...x, quick: undefined } : x)));
-    const spoken: Record<string, string> = { '1-2': '2 people', '3-5': '4 people', '6+': '6 people', '?': 'I am not sure how many people', child: 'There is a child with us', elderly: 'There is an elderly person with us', sick: 'Someone here is sick', none: 'No children, elderly or sick people' };
-    this.userInput.set(spoken[text] || text);
+    const spoken: Record<string, string> = {
+      '1-2': 'report.said12',
+      '3-5': 'report.said35',
+      '6+': 'report.said6',
+      '?': 'report.saidNot',
+      child: 'report.saidChild',
+      elderly: 'report.saidElderly',
+      sick: 'report.saidSick',
+      none: 'report.saidNone',
+    };
+    const key = spoken[text];
+    this.userInput.set(key ? this.langService.translate(key) : text);
     this.sendUserMessage();
   }
 
@@ -419,7 +437,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   private blankCard(): ConfirmationCardData {
     return this.withSummary({
       incident_type: 'rescue',
-      place_text: this.locationText(),
+      place_text: this.placeLabel(),
       people_count: 1,
       vulnerable: { ...EMPTY_VULNERABLE },
       hazard: 'unknown',
@@ -430,20 +448,21 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   private withSummary(card: ConfirmationCardData): ConfirmationCardData {
     const count = card.people_count ?? 0;
+    const type = this.langService.translate(`incidentType.${card.incident_type}`);
     const vulns = Object.entries(card.vulnerable || {})
       .filter(([, on]) => on)
-      .map(([key]) => key);
-    const parts = [`${count} people needing ${card.incident_type}`];
+      .map(([key]) => this.langService.translate(key === 'medical_need' ? 'confirm.medical' : `confirm.${key}`));
+    const parts = [`${count} · ${type}`];
     if (card.place_text) {
-      parts.push(`at ${card.place_text}`);
+      parts.push(card.place_text);
     }
     if (vulns.length) {
-      parts.push(`Vulnerable: ${vulns.join(', ')}`);
+      parts.push(vulns.join(', '));
     }
     if (card.hazard && card.hazard !== 'unknown' && card.hazard !== 'none') {
-      parts.push(`Hazard: ${card.hazard}`);
+      parts.push(this.langService.translate(`hazardKind.${card.hazard}`));
     }
-    return { ...card, summary: parts.join(' | ') };
+    return { ...card, summary: parts.join(' · ') };
   }
 
   citizenWords(): string {

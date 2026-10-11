@@ -31,6 +31,14 @@ _SWIM = re.compile(
     re.IGNORECASE,
 )
 
+# Short close, with no pipe summary and no raw hazard or type keys.
+_READY = {
+    "en": "Details are ready. Review the card below and tap Send.",
+    "hi": "विवरण तैयार है। नीचे दिए कार्ड की जाँच करें और भेजें।",
+    "hinglish": "Details ready hain. Neeche wala card check karke bhej dijiye.",
+    "ta": "விவரங்கள் தயார். கீழே உள்ள அட்டையை பார்த்து அனுப்புங்கள்.",
+}
+
 
 def injection_pattern(message: str) -> bool:
     return _INJECTION.search(message) is not None
@@ -121,7 +129,13 @@ class ChatIntakeAgent:
         state.messages_history.append({"role": "user", "text": user_message})
 
         scenario = scenario_registry.get_scenario(state.scenario_id) or scenario_registry.get_scenario("flood")
-        lang = lang_override or state.language or "en"
+        # The app language wins over a guess from the words, so a Hindi UI
+        # does not flip to English after an English chip.
+        if lang_override:
+            lang = lang_override
+            state.language = lang_override
+        else:
+            lang = state.language or "en"
 
         # 1. Safety guardrail: advice and injection requests return fixed lines only.
         advice = safety_refusal_lines(user_message)
@@ -143,8 +157,8 @@ class ChatIntakeAgent:
         extracted_turn = intake_agent.parse_report(user_message, language_hint=lang)
         current = state.extracted_so_far
 
-        # Detect language
-        if extracted_turn.language:
+        # Detect language only when the client did not choose one.
+        if extracted_turn.language and not lang_override:
             lang = extracted_turn.language.value
             state.language = lang
 
@@ -211,12 +225,7 @@ class ChatIntakeAgent:
             )
             state.confirmation_card = card
 
-            if lang == "hi":
-                bot_msg = f"मैंने विवरण दर्ज कर लिया है: {summary_text}। कृपया नीचे दिए गए कन्फर्मेशन कार्ड की जांच करें और सबमिट करें।"
-            elif lang == "hinglish":
-                bot_msg = f"Maine sab details note kar li hain: {summary_text}. Please check confirmation card below and send."
-            else:
-                bot_msg = f"I have gathered the details: {summary_text}. Please review the confirmation card below and tap Send."
+            bot_msg = _READY.get(lang, _READY["en"])
 
             state.messages_history.append({"role": "assistant", "text": bot_msg})
             return ChatTurnResponse(

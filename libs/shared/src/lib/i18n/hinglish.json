@@ -90,7 +90,16 @@
     "savedPending": "Is phone mein save hua, online aane par bhej denge.",
     "queued": "Queue mein",
     "placeholder2": "Batayein kya hua",
-    "qrNone": "Inmein se koi nahi"
+    "qrNone": "Inmein se koi nahi",
+    "said12": "2 log",
+    "said35": "4 log",
+    "said6": "6 log",
+    "saidNot": "Mujhe nahi pata kitne log hain",
+    "saidChild": "Hamare saath ek bachcha hai",
+    "saidElderly": "Hamare saath ek bujurg hain",
+    "saidSick": "Yahan koi bimaar hai",
+    "saidNone": "Bachche, bujurg ya bimaar koi nahi",
+    "autoPlace": "Ward 7 · apne aap pehchana"
   },
   "confirm": {
     "title": "Humne Ye Samjha",
@@ -116,6 +125,22 @@
     "done": "Ho gaya",
     "review": "Jaanchein",
     "callOutline": "112 par call karein"
+  },
+  "incidentType": {
+    "rescue": "Bachav",
+    "food": "Khana",
+    "medical": "Ilaaj",
+    "shelter": "Ashray",
+    "info": "Jankari",
+    "animal_attack": "Janwar ka hamla",
+    "other": "Kuch aur"
+  },
+  "hazardKind": {
+    "water_rising": "Paani badh raha hai",
+    "stranded": "Phanse hue",
+    "injury": "Chot",
+    "none": "Koi nahi",
+    "unknown": "Pata nahi"
   },
   "queue": {
     "title": "Ranked Priority Queue",

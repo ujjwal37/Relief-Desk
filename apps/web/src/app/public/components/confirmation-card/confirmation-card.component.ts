@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ConfirmationCardData, RdTranslatePipe } from '@rd/shared';
+import { ConfirmationCardData, LanguageService, RdTranslatePipe } from '@rd/shared';
 
 const INCIDENT_TYPES = ['rescue', 'food', 'medical', 'shelter', 'info', 'animal_attack', 'other'];
 const VULNERABLE_KEYS = ['child', 'elderly', 'disabled', 'pregnant', 'medical_need'] as const;
@@ -22,6 +22,7 @@ function cloneCard(card: ConfirmationCardData): ConfirmationCardData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmationCardComponent {
+  private lang = inject(LanguageService);
   @Input() busy = false;
   @Input() quote = '';
   @Input() showActions = true;
@@ -111,21 +112,20 @@ export class ConfirmationCardComponent {
 
   private composeSummary(card: ConfirmationCardData): string {
     const count = card.people_count ?? 0;
+    const type = this.lang.translate(`incidentType.${card.incident_type}`);
     const vulns = Object.entries(card.vulnerable || {})
       .filter(([, on]) => on)
-      .map(([key]) => key.replace('_', ' '));
-    const parts = [
-      `${count} ${count === 1 ? 'person' : 'people'} needing ${card.incident_type}`,
-    ];
+      .map(([key]) => this.lang.translate(key === 'medical_need' ? 'confirm.medical' : `confirm.${key}`));
+    const parts = [`${count} · ${type}`];
     if (card.place_text) {
-      parts.push(`at ${card.place_text}`);
+      parts.push(card.place_text);
     }
     if (vulns.length) {
-      parts.push(`Vulnerable: ${vulns.join(', ')}`);
+      parts.push(vulns.join(', '));
     }
     if (card.hazard && card.hazard !== 'none' && card.hazard !== 'unknown') {
-      parts.push(`Hazard: ${card.hazard}`);
+      parts.push(this.lang.translate(`hazardKind.${card.hazard}`));
     }
-    return parts.join(' | ');
+    return parts.join(' · ');
   }
 }
