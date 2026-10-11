@@ -1,12 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, inject, signal, OnInit, effect, viewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   ApiClientService,
   LanguageService,
   RdTranslatePipe,
   ConfirmationCardData,
+  CallPillComponent,
+  SettingsButtonComponent,
+  SUPPORTED_LANGUAGES,
   ChatTurnResponse,
   ReportSubmitResponse,
   ReportSubmitRequest,
@@ -24,6 +27,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   timestamp: Date;
+  quick?: string[];
 }
 
 const EMPTY_VULNERABLE: Record<string, boolean> = {
@@ -37,12 +41,12 @@ const EMPTY_VULNERABLE: Record<string, boolean> = {
 @Component({
   selector: 'app-report',
   standalone: true,
-  imports: [CommonModule, FormsModule, RdTranslatePipe, ConfirmationCardComponent],
+  imports: [CommonModule, FormsModule, RouterLink, RdTranslatePipe, ConfirmationCardComponent, CallPillComponent, SettingsButtonComponent],
   templateUrl: './report.component.html',
   styleUrl: './report.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ReportComponent implements OnInit {
+export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   private apiClient = inject(ApiClientService);
   private router = inject(Router);
   readonly langService = inject(LanguageService);
@@ -53,6 +57,21 @@ export class ReportComponent implements OnInit {
   readonly mode = signal<'chat' | 'form'>('chat');
   readonly userInput = signal<string>('');
   readonly isRecording = signal<boolean>(false);
+  readonly voiceOpen = signal<boolean>(false);
+  readonly transcript = signal<string>('');
+  readonly slow = signal<boolean>(false);
+  readonly reviewOpen = signal<boolean>(false);
+  readonly kbOffset = signal<number>(0);
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
+  private voiceTimers: ReturnType<typeof setTimeout>[] = [];
+  private threadEnd = viewChild<ElementRef<HTMLElement>>('threadEnd');
+  private lastCount = 0;
+  readonly suggestions = [
+    { key: 'landing.chipFlood', text: 'Flood or water rising' },
+    { key: 'landing.chipAnimal', text: 'Animal attack or bite' },
+    { key: 'landing.chipHurt', text: 'Someone hurt or sick' },
+    { key: 'landing.chipOther', text: 'Something else' },
+  ];
   readonly isLoading = signal<boolean>(false);
   readonly locationPin = signal<{ lat: number; lng: number }>({ lat: 26.852, lng: 80.925 });
   readonly locationText = signal<string>('Ward 7 · Auto-detected');
@@ -86,15 +105,98 @@ export class ReportComponent implements OnInit {
 
   ngOnInit(): void {
     this.scenarioState.ensureLoaded();
-    this.chatMessages.set([
-      {
-        id: 'msg_welcome',
-        role: 'assistant',
-        text: 'Namaste. Describe what happened and what help is needed. You can speak or type in Hindi, Hinglish, English, or Tamil.',
-        timestamp: new Date(),
-      },
-    ]);
+    this.chatMessages.set([]);
     this.tryGeolocation();
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this.onViewport);
+    }
+  }
+
+  private onViewport = (): void => {
+    const vv = window.visualViewport;
+    if (vv) this.kbOffset.set(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+  };
+
+  ngOnDestroy(): void {
+    window.visualViewport?.removeEventListener('resize', this.onViewport);
+    this.voiceTimers.forEach(clearTimeout);
+    if (this.slowTimer) clearTimeout(this.slowTimer);
+  }
+
+  ngAfterViewChecked(): void {
+    const n = this.chatMessages().length + (this.isLoading() ? 1 : 0);
+    if (n !== this.lastCount) {
+      this.lastCount = n;
+      this.threadEnd()?.nativeElement.scrollIntoView?.({ block: 'end' });
+    }
+  }
+
+  pickSuggestion(text: string): void {
+    this.userInput.set(text);
+    this.sendUserMessage();
+  }
+
+  useQuick(msgId: string, text: string): void {
+    this.chatMessages.update((m) => m.map((x) => (x.id === msgId ? { ...x, quick: undefined } : x)));
+    const spoken: Record<string, string> = { '1-2': '2 people', '3-5': '4 people', '6+': '6 people', '?': 'I am not sure how many people', child: 'There is a child with us', elderly: 'There is an elderly person with us', sick: 'Someone here is sick', none: 'No children, elderly or sick people' };
+    this.userInput.set(spoken[text] || text);
+    this.sendUserMessage();
+  }
+
+  private quickFor(resp: ChatTurnResponse): string[] | undefined {
+    if (resp.confirmation_card) return undefined;
+    const first = (resp.missing_fields || [])[0];
+    if (first === 'people_count') return ['1-2', '3-5', '6+', '?'];
+    if (first === 'vulnerable') return ['child', 'elderly', 'sick', 'none'];
+    return undefined;
+  }
+
+  quickLabelKey(text: string): string {
+    return ({ '1-2': 'report.qr12', '3-5': 'report.qr35', '6+': 'report.qr6', '?': 'report.qrNot', child: 'confirm.child', elderly: 'confirm.elderly', sick: 'confirm.medical', none: 'report.qrNone' } as Record<string, string>)[text] || text;
+  }
+
+  onEnter(e: Event): void {
+    if ((e as KeyboardEvent).shiftKey) return;
+    e.preventDefault();
+    this.sendUserMessage();
+  }
+
+  autoGrow(el: HTMLTextAreaElement): void {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 5 * 24 + 24) + 'px';
+  }
+
+  langLabel(): string {
+    const t = this.transcript();
+    if (/[\u0900-\u097F]/.test(t)) return 'हिन्दी';
+    if (/[\u0B80-\u0BFF]/.test(t)) return 'தமிழ்';
+    return SUPPORTED_LANGUAGES.find((l) => l.code === this.langService.currentLang())?.label || 'English';
+  }
+
+  closeVoice(): void {
+    this.voiceTimers.forEach(clearTimeout);
+    this.voiceTimers = [];
+    this.voiceOpen.set(false);
+    this.isRecording.set(false);
+  }
+
+  typeInstead(): void {
+    this.userInput.set(this.transcript());
+    this.closeVoice();
+  }
+
+  finishVoice(): void {
+    const text = this.transcript();
+    this.closeVoice();
+    if (text) {
+      this.userInput.set(text);
+      this.sendUserMessage();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEsc(): void {
+    if (this.voiceOpen()) this.closeVoice();
   }
 
   tileLabel(tile: ScenarioTile): string {
@@ -176,15 +278,19 @@ export class ReportComponent implements OnInit {
   }
 
   toggleVoice(): void {
-    const rec = !this.isRecording();
-    this.isRecording.set(rec);
-    if (rec) {
-      setTimeout(() => {
-        this.userInput.set('नमस्ते, हम वार्ड 7 में शिव मंदिर के पास फंसे हैं। पानी कमर तक आ गया है, घर में 4 लोग हैं, एक छोटा बच्चा और बुजुर्ग दादी हैं। कृपया जल्दी नाव भेजिए।');
-        this.isRecording.set(false);
-        this.sendUserMessage();
-      }, 1200);
+    if (this.voiceOpen()) {
+      this.closeVoice();
+      return;
     }
+    this.voiceOpen.set(true);
+    this.isRecording.set(true);
+    this.transcript.set('');
+    // Simulated live transcript (existing demo behaviour), revealed word by word.
+    const full = 'नमस्ते, हम वार्ड 7 में शिव मंदिर के पास फंसे हैं। पानी कमर तक आ गया है, घर में 4 लोग हैं, एक छोटा बच्चा और बुजुर्ग दादी हैं। कृपया जल्दी नाव भेजिए।';
+    const words = full.split(' ');
+    words.forEach((_, i) => {
+      this.voiceTimers.push(setTimeout(() => this.transcript.set(words.slice(0, i + 1).join(' ')), 350 + i * 180));
+    });
   }
 
   sendUserMessage(): void {
@@ -203,6 +309,9 @@ export class ReportComponent implements OnInit {
     this.chatMessages.update((msgs) => [...msgs, userMsg]);
     this.userInput.set('');
     this.isLoading.set(true);
+    this.slow.set(false);
+    if (this.slowTimer) clearTimeout(this.slowTimer);
+    this.slowTimer = setTimeout(() => this.slow.set(true), 6000);
 
     this.apiClient
       .sendChatTurn({
@@ -215,14 +324,18 @@ export class ReportComponent implements OnInit {
       .subscribe({
         next: (resp: ChatTurnResponse) => {
           this.isLoading.set(false);
+          this.slow.set(false);
+          if (this.slowTimer) clearTimeout(this.slowTimer);
           if (resp.confirmation_card) {
             this.pendingCard.set(resp.confirmation_card);
+            this.reviewOpen.set(true);
           }
           const assistantMsg: ChatMessage = {
             id: `ast_${Date.now()}`,
             role: 'assistant',
             text: resp.bot_message,
             timestamp: new Date(),
+            quick: this.quickFor(resp),
           };
           this.chatMessages.update((msgs) => [...msgs, assistantMsg]);
         },

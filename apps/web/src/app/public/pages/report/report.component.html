@@ -1,133 +1,121 @@
-<div class="report-view">
-  <div class="offline-banner" *ngIf="!offlineSync.isOnline()">
-    <span>{{ 'safety.offlineNotice' | rdTranslate }}</span>
-    <span class="badge" *ngIf="offlineSync.pendingCount() > 0">Queued: {{ offlineSync.pendingCount() }}</span>
-  </div>
-
-  <div class="report-topbar">
-    <div class="location-badge">
-      <span class="pin-icon" aria-hidden="true">📍</span>
-      <span class="location-text">{{ locationText() }}</span>
+<div class="report-view" [style.padding-bottom.px]="kbOffset()">
+  @if (!offlineSync.isOnline()) {
+    <div class="offline-banner" role="status">
+      <span>{{ 'report.offlineBanner' | rdTranslate }}</span>
+      @if (offlineSync.pendingCount() > 0) { <b>{{ 'report.queued' | rdTranslate }}: {{ offlineSync.pendingCount() }}</b> }
     </div>
-    <div class="mode-switch" role="tablist" aria-label="Report input mode">
-      <button type="button" role="tab" [attr.aria-selected]="mode() === 'chat'" [class.on]="mode() === 'chat'" (click)="mode.set('chat')">
-        {{ 'report.chatTab' | rdTranslate }}
-      </button>
-      <button type="button" role="tab" [attr.aria-selected]="mode() === 'form'" [class.on]="mode() === 'form'" (click)="openForm()">
-        {{ 'report.formTab' | rdTranslate }}
-      </button>
-    </div>
-  </div>
+  }
 
-  <div class="form-container" *ngIf="mode() === 'form'">
-    <div class="form-header">
-      <h3>{{ 'report.formTab' | rdTranslate }}</h3>
+  <header class="r-head">
+    <a routerLink="/" class="back" [attr.aria-label]="'report.back' | rdTranslate">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </a>
+    <h1>{{ 'report.title2' | rdTranslate }}</h1>
+    <div class="r-actions"><rd-call-pill /><rd-settings-button /></div>
+  </header>
+
+  @if (mode() === 'form') {
+    <div class="form-container">
       <p class="form-sub">{{ 'confirm.nothingSent' | rdTranslate }}</p>
+      <div class="quick-tiles">
+        @for (tile of tiles(); track tile.id) {
+          <button type="button" class="tile" [class.active]="pendingCard()?.incident_type === tile.incident_type" (click)="selectFormType(tile.incident_type)">
+            <span aria-hidden="true">{{ tileIcon(tile.icon) }}</span> {{ tileLabel(tile) }}
+          </button>
+        }
+      </div>
+      <label class="field"><span>{{ 'confirm.location' | rdTranslate }}</span>
+        <input type="text" [ngModel]="locationText()" (ngModelChange)="updatePlace($event)" /></label>
+      <label class="field"><span>{{ 'confirm.people' | rdTranslate }}</span>
+        <input type="number" min="0" max="99" [ngModel]="pendingCard()?.people_count" (ngModelChange)="updatePeople($event)" /></label>
+      <div class="vuln-row">
+        <button type="button" class="tile" [class.active]="isVulnerableChecked('child')" (click)="toggleFormVulnerable('child')">{{ 'confirm.child' | rdTranslate }}</button>
+        <button type="button" class="tile" [class.active]="isVulnerableChecked('elderly')" (click)="toggleFormVulnerable('elderly')">{{ 'confirm.elderly' | rdTranslate }}</button>
+        <button type="button" class="tile" [class.active]="isVulnerableChecked('pregnant')" (click)="toggleFormVulnerable('pregnant')">{{ 'confirm.pregnant' | rdTranslate }}</button>
+        <button type="button" class="tile" [class.active]="isVulnerableChecked('medical_need')" (click)="toggleFormVulnerable('medical_need')">{{ 'confirm.medical' | rdTranslate }}</button>
+      </div>
+      @if (pendingCard(); as card) {
+        <rd-confirmation-card [card]="card" [busy]="isLoading()" [smsHref]="offlineSync.getPrefilledSmsLink(card.summary)" (cardChange)="onCardEdited($event)" (send)="confirmAndSubmit($event)"></rd-confirmation-card>
+      }
+      <button type="button" class="link" (click)="mode.set('chat')">{{ 'report.chatTab' | rdTranslate }}</button>
     </div>
-    <div class="quick-tiles">
-      <button
-        type="button"
-        class="tile"
-        *ngFor="let tile of tiles()"
-        [class.active]="pendingCard()?.incident_type === tile.incident_type"
-        (click)="selectFormType(tile.incident_type)"
-      >
-        <span aria-hidden="true">{{ tileIcon(tile.icon) }}</span>
-        {{ tileLabel(tile) }}
-      </button>
+  } @else if (pendingCard() && reviewOpen()) {
+    <div class="review-wrap">
+      <rd-confirmation-card [card]="pendingCard()!" [busy]="isLoading()" [smsHref]="offlineSync.getPrefilledSmsLink(pendingCard()!.summary)" (cardChange)="onCardEdited($event)" (send)="confirmAndSubmit($event)"></rd-confirmation-card>
+      <button type="button" class="link back-chat" (click)="reviewOpen.set(false)">{{ 'report.back' | rdTranslate }}</button>
+    </div>
+  } @else {
+    <div class="thread" role="log" aria-live="polite">
+      @if (chatMessages().length === 0) {
+        <section class="empty">
+          <div class="spark" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7z"/></svg></div>
+          <h2>{{ 'landing.previewTitle' | rdTranslate }}</h2>
+          <p class="where"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>{{ locationText() }}</p>
+          <div class="chips">
+            @for (s of suggestions; track s.key) {
+              <button type="button" class="chip" (click)="pickSuggestion(s.text)">{{ s.key | rdTranslate }}</button>
+            }
+          </div>
+          <button type="button" class="link" (click)="openForm()">{{ 'report.preferForm' | rdTranslate }}</button>
+        </section>
+      }
+
+      @for (msg of chatMessages(); track msg.id) {
+        <div class="row" [class.me]="msg.role === 'user'">
+          @if (msg.role === 'assistant') { <span class="av" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7z"/></svg></span> }
+          <div class="msg" [class.user]="msg.role === 'user'">
+            <p>{{ msg.text }}</p>
+            @if (msg.quick?.length) {
+              <div class="quick">
+                @for (q of msg.quick; track q) { <button type="button" class="qr" (click)="useQuick(msg.id, q)">{{ quickLabelKey(q) | rdTranslate }}</button> }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (isLoading()) {
+        <div class="row"><span class="av" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7z"/></svg></span>
+          <div class="msg"><p class="typing"><i></i><i></i><i></i> <span>{{ 'report.understanding' | rdTranslate }}</span></p>
+            @if (slow()) { <p class="slow">{{ 'report.takingLonger' | rdTranslate }}</p> }</div></div>
+      }
+
+      @if (pendingCard() && !reviewOpen()) {
+        <button type="button" class="review-btn" (click)="reviewOpen.set(true)">{{ 'report.reviewSend' | rdTranslate }}</button>
+      }
+      <div #threadEnd></div>
     </div>
 
-    <label class="field">
-      <span>{{ 'confirm.location' | rdTranslate }}</span>
-      <input type="text" [ngModel]="locationText()" (ngModelChange)="updatePlace($event)" />
-    </label>
-    <label class="field">
-      <span>{{ 'confirm.people' | rdTranslate }}</span>
-      <input type="number" min="0" max="99" [ngModel]="pendingCard()?.people_count" (ngModelChange)="updatePeople($event)" />
-    </label>
-    <div class="vuln-row">
-      <button type="button" class="tile" [class.active]="isVulnerableChecked('child')" (click)="toggleFormVulnerable('child')">{{ 'confirm.child' | rdTranslate }}</button>
-      <button type="button" class="tile" [class.active]="isVulnerableChecked('elderly')" (click)="toggleFormVulnerable('elderly')">{{ 'confirm.elderly' | rdTranslate }}</button>
-      <button type="button" class="tile" [class.active]="isVulnerableChecked('pregnant')" (click)="toggleFormVulnerable('pregnant')">{{ 'confirm.pregnant' | rdTranslate }}</button>
-      <button type="button" class="tile" [class.active]="isVulnerableChecked('medical_need')" (click)="toggleFormVulnerable('medical_need')">{{ 'confirm.medical' | rdTranslate }}</button>
+    <div class="composer-wrap">
+      <p class="legal">{{ 'report.noMedical' | rdTranslate }}</p>
+      <form class="composer" (submit)="$event.preventDefault(); sendUserMessage()">
+        <textarea #ta rows="1" [placeholder]="'report.placeholder2' | rdTranslate" [attr.aria-label]="'report.placeholder' | rdTranslate"
+          [ngModel]="userInput()" (ngModelChange)="userInput.set($event)" [ngModelOptions]="{ standalone: true }" (input)="autoGrow(ta)"
+          (keydown.enter)="onEnter($event)"></textarea>
+        @if (userInput().trim()) {
+          <button type="submit" class="send-btn" [disabled]="isLoading()" [attr.aria-label]="'report.sendMsg' | rdTranslate">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        } @else {
+          <button type="button" class="voice-btn" (click)="toggleVoice()" [attr.aria-label]="'report.speak' | rdTranslate">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          </button>
+        }
+      </form>
     </div>
+  }
 
-    <rd-confirmation-card
-      *ngIf="pendingCard() as card"
-      [card]="card"
-      [busy]="isLoading()"
-      (cardChange)="onCardEdited($event)"
-      (send)="confirmAndSubmit($event)"
-    ></rd-confirmation-card>
-  </div>
-
-  <div class="chat-thread" *ngIf="mode() === 'chat'">
-    <div
-      *ngFor="let msg of chatMessages()"
-      class="chat-bubble-row"
-      [class.user-row]="msg.role === 'user'"
-      [class.assistant-row]="msg.role === 'assistant'"
-    >
-      <div class="avatar" *ngIf="msg.role === 'assistant'" aria-hidden="true">RD</div>
-      <div class="bubble" [class.user-bubble]="msg.role === 'user'" [class.assistant-bubble]="msg.role === 'assistant'">
-        <p class="msg-text">{{ msg.text }}</p>
+  @if (voiceOpen()) {
+    <div class="voice" role="dialog" aria-modal="true" [attr.aria-label]="'report.speak' | rdTranslate">
+      <button type="button" class="v-close" (click)="closeVoice()" [attr.aria-label]="'report.close' | rdTranslate">✕</button>
+      <div class="orb" aria-hidden="true"></div>
+      <div class="wave" aria-hidden="true">@for (b of [1,2,3,4,5,6,7,8,9,10,11,12]; track b) { <i [style.animation-delay.ms]="b * 70"></i> }</div>
+      <p class="det">{{ ('report.listeningLang' | rdTranslate).replace('{lang}', langLabel()) }}</p>
+      <p class="tx" aria-live="polite">{{ transcript() }}</p>
+      <div class="v-btns">
+        <button type="button" class="v-sec" (click)="typeInstead()">{{ 'report.type' | rdTranslate }}</button>
+        <button type="button" class="v-done" (click)="finishVoice()">{{ 'report.done' | rdTranslate }}</button>
       </div>
     </div>
-
-    <div class="typing-indicator" *ngIf="isLoading()">Relief Desk is reading the message...</div>
-
-    <div class="quick-chips-row" *ngIf="chatMessages().length <= 2">
-      <button type="button" class="chip" (click)="setQuickChip('Gandhi school ke paas 5 log chat par hain, paani badh raha hai, 2 bache hain')">
-        Flood rescue (Hinglish)
-      </button>
-      <button type="button" class="chip" (click)="setQuickChip('गांधी स्कूल के पास 5 लोग छत पर फंसे हैं, 2 बच्चे हैं')">
-        बाढ़ बचाव (Hindi)
-      </button>
-      <button type="button" class="chip" (click)="setQuickChip('3 people stranded on rooftop, water level rising rapidly')">
-        3 people stranded (English)
-      </button>
-    </div>
-
-    <rd-confirmation-card
-      *ngIf="pendingCard() as card"
-      [card]="card"
-      [busy]="isLoading()"
-      (cardChange)="onCardEdited($event)"
-      (send)="confirmAndSubmit($event)"
-    ></rd-confirmation-card>
-  </div>
-
-  <div class="action-footer" *ngIf="mode() === 'chat'">
-    <div class="input-row">
-      <button
-        type="button"
-        class="voice-btn"
-        [class.recording]="isRecording()"
-        (click)="toggleVoice()"
-        aria-label="Toggle voice input"
-      >
-        {{ isRecording() ? ('report.listening' | rdTranslate) : 'Mic' }}
-      </button>
-      <input
-        type="text"
-        [placeholder]="'report.placeholder' | rdTranslate"
-        [ngModel]="userInput()"
-        (ngModelChange)="userInput.set($event)"
-        (keyup.enter)="sendUserMessage()"
-      />
-      <button
-        type="button"
-        class="send-btn"
-        [disabled]="!userInput().trim() || isLoading()"
-        (click)="sendUserMessage()"
-      >
-        {{ 'report.send' | rdTranslate }}
-      </button>
-    </div>
-
-    <div class="fast-links">
-      <a [href]="offlineSync.getPrefilledSmsLink(userInput() || pendingCard()?.summary || '')" class="sms-btn">Send by SMS</a>
-      <a href="tel:112" class="call112-link">{{ 'safety.call112' | rdTranslate }}</a>
-    </div>
-  </div>
+  }
 </div>
