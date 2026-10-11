@@ -124,6 +124,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | FP-19 | Small fixes: 112 text, chhat, sass @use, reset demo | C | DONE | – | Documented build and reset |
 | FP-E2E | Playwright public and coordinator pass | C | DONE | FP-19 | Desktop 1440x900 and mobile 390x844 both pass: report, offline, status, find, demo login, approve, complete, teams, no boat free, filters, alerts, accuracy, hi/ta, theme |
 | RT-01 | Status lookup requires the matching token | C | DONE | FP-E2E | 401 without the token; demo canned status only for literal demo ids |
+| RT-02 | Tamil people count and vulnerable flags | C | DONE | RT-01 | 5 பேர், Tamil digits, and குழந்தை / elderly / medical |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

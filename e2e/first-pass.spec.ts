@@ -69,10 +69,13 @@ test.describe('public and coordinator demo', () => {
       const reportId = new URL(page.url()).searchParams.get('id') || '';
       const token = new URL(page.url()).searchParams.get('token') || '';
       expect(reportId.length).toBeGreaterThan(3);
+      const publicCode = (await page.locator('.rid').innerText()).trim();
+      expect(publicCode).toMatch(/^RD-/);
       await shot(page, `${viewport.name}-status`);
 
       await page.goto('/');
-      await expect(page.getByText(reportId)).toBeVisible();
+      await expect(page.getByText(publicCode)).toBeVisible();
+      await expect(page.getByText('Sent. A coordinator will review it.')).toBeVisible();
 
       const fresh = await page.context().browser()!.newContext({
         viewport: { width: viewport.width, height: viewport.height },

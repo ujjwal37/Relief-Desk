@@ -679,3 +679,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_public_api.py` — 7 passed.
 - Notes / risks / not done: Reports stored without a status_token cannot be read on this route.
 - Next (suggested task id): RT-02
+
+### 2026-10-12 01:55 IST — RT-02 — Cursor
+- What changed: Intake rules read Tamil counts (Arabic digits, Tamil digits, and number words with பேர்) and flag a child (குழந்தை), an older person (முதிய), and a medical need (ஆக்சிஜன் and related words).
+- Files: services/api/app/tools/nlu_rules.py, services/api/tests/test_intake_nlu.py, TASKS.md
+- How verified: `pytest tests/test_intake_nlu.py` — 5 passed.
+- Notes / risks / not done: Tamil place names are still not parsed by the ward regex, which looks for the English or Hindi word "ward".
+- Next (suggested task id): RT-03

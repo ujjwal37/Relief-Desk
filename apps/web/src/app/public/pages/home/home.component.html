@@ -22,7 +22,7 @@
             @else if (r.state === 'ok') { {{ r.headline }} }
             @else { {{ 'home.cantRefresh' | rdTranslate }} }
           </p>
-          <p class="meta">{{ 'status.requestId' | rdTranslate }} <b>{{ r.req.id }}</b>@if (r.eta) { · {{ r.eta }} }</p>
+          <p class="meta">{{ 'status.requestId' | rdTranslate }} <b>{{ r.code }}</b>@if (r.eta) { · {{ r.eta }} }</p>
         </div>
         <a class="view" routerLink="/status" [queryParams]="{ id: r.req.id, token: r.req.token }">{{ 'home.view' | rdTranslate }}</a>
         <button type="button" class="rm" (click)="remove(r.req.id)" [attr.aria-label]="'home.remove' | rdTranslate">✕</button>

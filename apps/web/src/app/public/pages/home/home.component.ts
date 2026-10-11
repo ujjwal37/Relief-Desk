@@ -1,10 +1,10 @@
 ﻿import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ApiClientService, AuthService, RdTranslatePipe } from '@rd/shared';
+import { ApiClientService, AuthService, LanguageService, RdTranslatePipe } from '@rd/shared';
 import { MyRequestsService, SavedRequest } from '../../../core/services/my-requests.service';
 import { OfflineSyncService } from '../../../core/services/offline-sync.service';
 
-interface Row { req: SavedRequest; state: 'loading' | 'ok' | 'err'; headline: string; eta: string; }
+interface Row { req: SavedRequest; state: 'loading' | 'ok' | 'err'; headline: string; eta: string; code: string; }
 
 @Component({
   selector: 'app-home',
@@ -16,6 +16,7 @@ interface Row { req: SavedRequest; state: 'loading' | 'ok' | 'err'; headline: st
 })
 export class HomeComponent implements OnInit {
   private api = inject(ApiClientService);
+  private lang = inject(LanguageService);
   readonly store = inject(MyRequestsService);
   private auth = inject(AuthService);
   private router = inject(Router);
@@ -30,11 +31,16 @@ export class HomeComponent implements OnInit {
   ngOnInit(): void {
     (this.api as Partial<ApiClientService>).getHealth?.()?.subscribe({ next: (h) => this.demoMode.set(!!h?.demo_mode), error: () => this.demoMode.set(false) });
     const saved = this.store.list().slice(0, 3);
-    this.rows.set(saved.map((req) => ({ req, state: 'loading', headline: '', eta: '' })));
+    this.rows.set(saved.map((req) => ({ req, state: 'loading', headline: '', eta: '', code: '' })));
     saved.forEach((req) => {
       const call = (this.api as Partial<ApiClientService>).getReportStatus?.(req.id, req.token || undefined);
       call?.subscribe({
-        next: (s) => this.patch(req.id, { state: 'ok', headline: s.hero_title, eta: s.eta_display }),
+        next: (s) => this.patch(req.id, {
+          state: 'ok',
+          headline: this.lang.translate(s.hero_title),
+          eta: s.eta_display,
+          code: s.public_code || '',
+        }),
         error: () => this.patch(req.id, { state: 'err' }),
       });
     });
