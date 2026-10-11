@@ -145,9 +145,9 @@ class ScoringEngine:
         )
 
     def compute_match_score(
-        self, req: StoredRequest, res: "StoredResource"
+        self, req: StoredRequest, res: "StoredResource", fallback_ok: bool = False
     ) -> Optional["MatchBreakdown"]:
-        from app.models.firestore_models import ResourceKind, MatchBreakdown
+        from app.models.firestore_models import ResourceKind, ResourceStatus, MatchBreakdown
         from app.models.schemas import IncidentType
         from app.tools.geo import haversine_distance
 
@@ -155,18 +155,26 @@ class ScoringEngine:
         if res.capacity_remaining <= 0:
             return None
 
-        # Hard constraint 2: Compatibility between request incident type and resource kind
-        compat_map = {
-            IncidentType.RESCUE: [ResourceKind.BOAT, ResourceKind.SHELTER],
+        # Primary kinds only. A shelter is not a boat. Fallbacks are explicit.
+        primary = {
+            IncidentType.RESCUE: [ResourceKind.BOAT],
             IncidentType.MEDICAL: [ResourceKind.MEDICAL],
-            IncidentType.FOOD: [ResourceKind.FOOD, ResourceKind.SHELTER],
+            IncidentType.FOOD: [ResourceKind.FOOD],
             IncidentType.SHELTER: [ResourceKind.SHELTER],
             IncidentType.ANIMAL_ATTACK: [ResourceKind.MEDICAL],
             IncidentType.INFO: [ResourceKind.SHELTER, ResourceKind.FOOD],
             IncidentType.OTHER: [ResourceKind.SHELTER, ResourceKind.FOOD, ResourceKind.BOAT],
         }
-        allowed_kinds = compat_map.get(req.type, [ResourceKind.SHELTER, ResourceKind.FOOD])
-        if res.kind not in allowed_kinds:
+        fallback = {
+            IncidentType.RESCUE: [ResourceKind.SHELTER],
+            IncidentType.MEDICAL: [ResourceKind.SHELTER],
+            IncidentType.FOOD: [ResourceKind.SHELTER],
+            IncidentType.SHELTER: [ResourceKind.FOOD],
+        }
+        allowed = fallback.get(req.type, []) if fallback_ok else primary.get(req.type, [])
+        if res.kind not in allowed:
+            return None
+        if res.status not in (ResourceStatus.AVAILABLE,) and not fallback_ok:
             return None
 
         # 1. Distance score (max 30 pts)

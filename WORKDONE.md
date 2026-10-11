@@ -546,3 +546,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: ng test shared 8 passed. pytest tests/test_triage_bands.py passed.
 - Notes / risks / not done: Scores are still computed at ingest until FP-12 recomputes them on read.
 - Next (suggested task id): FP-05
+
+### 2026-10-11 21:12 IST — FP-05 — Cursor
+- What changed: Rescue matches boats only. Medical matches medical, food matches food, shelter matches shelter. A shelter is offered for a rescue only when every boat is busy, and the proposal is labelled coord.noBoatFree. Busy teams are skipped.
+- Files: services/api/app/tools/scoring.py, services/api/app/agents/matching.py, services/api/tests/test_match_types.py, libs/shared models and i18n, coordinator best-team card, TASKS.md
+- How verified: pytest tests/test_match_types.py tests/test_resources_matching.py tests/test_matches_api.py 10 passed. check-i18n 349 keys. Benchmark harness does not call the matcher, so those numbers are unchanged.
+- Notes / risks / not done: The full "estimated wait" and resource-gap alert copy lands with the teams and alerts items.
+- Next (suggested task id): FP-06

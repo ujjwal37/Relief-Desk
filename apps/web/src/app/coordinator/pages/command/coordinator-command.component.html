@@ -121,6 +121,7 @@
                 <span class="fit">{{ tr('coord.fit', fitPct(prop)) }}</span>
               </div>
               <div class="team">{{ prop.resource_name }}</div>
+              @if (prop.is_fallback && prop.fallback_label) { <p class="warnline">{{ prop.fallback_label | rdTranslate }}</p> }
               <div class="facts">{{ prop.breakdown.distance_km }} km · {{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ prop.resource_kind }}</div>
               @if (prop.capacity_remaining < (req.people_count || 1) || prop.overcommit_warning) { <p class="warnline">⚠ {{ 'coord.overcommit' | rdTranslate }}</p> }
             </div>

@@ -202,6 +202,8 @@ export interface MatchProposal {
   explanation?: string;
   explanation_hi?: string;
   state: 'proposed' | 'approved' | 'rejected';
+  is_fallback?: boolean;
+  fallback_label?: string | null;
   overcommit_warning: boolean;
 }
 

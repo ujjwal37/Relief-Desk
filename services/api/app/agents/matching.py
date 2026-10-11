@@ -32,6 +32,8 @@ class MatchProposal(BaseModel):
     explanation_hi: Optional[str] = None
     state: MatchState = MatchState.PROPOSED
     overcommit_warning: bool = False
+    is_fallback: bool = False
+    fallback_label: Optional[str] = None
 
 
 class MatchingAgent:
@@ -57,18 +59,27 @@ class MatchingAgent:
         people_needed = request.people_count if request.people_count else 1
 
         for res in resources:
-            breakdown = scoring_engine.compute_match_score(request, res)
+            breakdown = scoring_engine.compute_match_score(request, res, fallback_ok=False)
             if breakdown is None:
                 continue
+            scored_candidates.append((res, breakdown, False))
 
-            scored_candidates.append((res, breakdown))
+        using_fallback = False
+        if not scored_candidates:
+            using_fallback = True
+            for res in resources:
+                breakdown = scoring_engine.compute_match_score(request, res, fallback_ok=True)
+                if breakdown is None:
+                    continue
+                scored_candidates.append((res, breakdown, True))
 
-        # Sort by total_score descending
+        # Sort by total_score descending. Primary matches never mix with a fallback list.
         scored_candidates.sort(key=lambda item: item[1].total_score, reverse=True)
         top_candidates = scored_candidates[:top_n]
+        fallback_label = _fallback_label(request.type) if using_fallback else None
 
         proposals: List[MatchProposal] = []
-        for res, breakdown in top_candidates:
+        for res, breakdown, is_fallback in top_candidates:
             # Check if there is an existing match in storage
             existing = [
                 m
@@ -120,6 +131,8 @@ class MatchingAgent:
                     explanation_hi=match.explanation_hi,
                     state=match.state,
                     overcommit_warning=is_overcommit,
+                    is_fallback=is_fallback,
+                    fallback_label=fallback_label if is_fallback else None,
                 )
             )
 
@@ -129,6 +142,16 @@ class MatchingAgent:
             request.id,
         )
         return proposals
+
+
+def _fallback_label(incident_type) -> str:
+    from app.models.schemas import IncidentType
+    return {
+        IncidentType.RESCUE: "coord.noBoatFree",
+        IncidentType.MEDICAL: "coord.noMedicalFree",
+        IncidentType.FOOD: "coord.noFoodFree",
+        IncidentType.SHELTER: "coord.noShelterFree",
+    }.get(incident_type, "coord.noTeamFree")
 
 
 matching_agent = MatchingAgent()
