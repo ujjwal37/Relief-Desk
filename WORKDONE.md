@@ -777,3 +777,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 125 passed. `node scripts/check-i18n.mjs` — 513 keys, templates clean. `npx ng build web` — succeeded. `npx playwright test` — desktop 1440×900 passed (19.8s), mobile 390×844 passed (21.4s).
 - Notes / risks / not done: Malayalam was not added. The team page is still open to anyone with the id; it is labelled demo. A simulation step already in flight can write one more point after mark arrived.
 - Next (suggested task id): none
+
+### 2026-10-12 04:15 IST — RT-14 — Cursor
+- What changed: The seeded resource-gap card shows a Sample badge and the title Sample: Resource gap. It is dashed and muted so it is not presented as a live shortage. A live spike keeps the plain kind label.
+- Files: coordinator-alerts component html/ts/scss/spec, alerts.sampleBadge in en/hi/hinglish/ta, TASKS.md
+- How verified: `npx ng test web --include='**/coordinator-alerts.component.spec.ts'` — 4 passed.
+- Notes / risks / not done: The map key still uses the plain words Resource gap for the symbol.
+- Next (suggested task id): RT-15

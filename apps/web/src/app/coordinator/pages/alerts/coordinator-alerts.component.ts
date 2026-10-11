@@ -140,6 +140,10 @@ export class CoordinatorAlertsComponent implements OnInit {
     return s?.at ? this.latlng(s) : { lat: 10.50, lng: 76.30 };
   });
 
+  isSample(alert: AnomalyAlert): boolean {
+    return (alert.reason || '').startsWith('Sample.') || (alert.title || '').startsWith('Sample');
+  }
+
   titleOf(alert: AnomalyAlert): string {
     this.lang.currentLang();
     if ((alert.reason || '').startsWith('Sample.') || (alert.title || '').startsWith('Sample')) {

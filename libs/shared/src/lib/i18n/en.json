@@ -181,6 +181,7 @@
     "reasonGapNone": "No {kind} team free. {n} cases are still waiting.",
     "reasonGapDemand": "{kind} demand {demand}, only {free} free",
     "sampleGap": "Sample: Resource gap",
+    "sampleBadge": "Sample",
     "reasonConflict": "\"{left}\" vs \"{right}\" in {place}",
     "reasonStale": "{n} requests unconfirmed for {mins} min → needs recheck"
   },

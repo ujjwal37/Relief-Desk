@@ -30,6 +30,15 @@ describe('CoordinatorAlertsComponent', () => {
         age_label: '11 min ago',
         acknowledged: false,
       },
+      {
+        id: 'gap-medical',
+        kind: 'resource_gap',
+        title: 'Sample resource gap',
+        reason: 'Sample. Medical demand 6, only 2 free',
+        severity: 'high',
+        age_label: '17 min ago',
+        acknowledged: false,
+      },
     ]));
     api.acknowledgeAlert.and.returnValue(of({
       id: 'spike-ward-7',
@@ -68,6 +77,16 @@ describe('CoordinatorAlertsComponent', () => {
     expect(mark).toBeTruthy();
     expect(Number(mark.getAttribute('r'))).toBe(28);
     expect(fixture.nativeElement.querySelector('polygon.ward.spike')).toBeNull();
+  });
+
+  it('badges the seeded resource gap as a sample and does not style it as live', () => {
+    const card = fixture.nativeElement.querySelector('.alert-row.sample') as HTMLElement;
+    expect(card).toBeTruthy();
+    expect(card.querySelector('.sample-badge')?.textContent).toContain('Sample');
+    expect(card.textContent).toContain('Sample: Resource gap');
+    expect(card.classList.contains('k-resource_gap')).toBeTrue();
+    const live = fixture.nativeElement.querySelector('.alert-row.k-spike') as HTMLElement;
+    expect(live.classList.contains('sample')).toBeFalse();
   });
 
   it('labels a seeded resource gap as a sample', () => {

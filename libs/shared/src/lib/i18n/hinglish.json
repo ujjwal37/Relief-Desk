@@ -181,6 +181,7 @@
     "reasonGapNone": "Koi {kind} team free nahi. {n} cases abhi bhi intezaar mein hain.",
     "reasonGapDemand": "{kind} maang {demand}, sirf {free} free",
     "sampleGap": "Namuna: Sansaadhan ki kami",
+    "sampleBadge": "Namuna",
     "reasonConflict": "{place} mein \"{left}\" aur \"{right}\" alag baat",
     "reasonStale": "{n} requests {mins} min se bina confirm ke hain, phir jaanchein"
   },

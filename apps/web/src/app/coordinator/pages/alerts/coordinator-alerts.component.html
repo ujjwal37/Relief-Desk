@@ -19,10 +19,12 @@
 
     <article class="alert-row" *ngFor="let it of items(); trackBy: trackId"
       [class]="'alert-row k-' + it.kind" [class.selected]="selectedId() === it.alert.id" [class.done]="it.alert.acknowledged"
+      [class.sample]="isSample(it.alert)"
       tabindex="0" (click)="select(it.alert)" (keydown.enter)="select(it.alert)">
       <div class="row-head">
         <span class="num" aria-hidden="true">{{ it.n }}</span>
-        <span class="kind"><ng-container *ngTemplateOutlet="icon; context: { $implicit: it.kind, s: 15 }"></ng-container>{{ 'alerts.k.' + it.kind | rdTranslate }}</span>
+        <span class="kind"><ng-container *ngTemplateOutlet="icon; context: { $implicit: it.kind, s: 15 }"></ng-container>{{ isSample(it.alert) ? titleOf(it.alert) : ('alerts.k.' + it.kind | rdTranslate) }}</span>
+        <span class="sample-badge" *ngIf="isSample(it.alert)">{{ 'alerts.sampleBadge' | rdTranslate }}</span>
         <span class="age" [attr.title]="it.alert.detected_at || ''">{{ ageText(it.alert) }}</span>
       </div>
       <p class="reason">{{ reasonOf(it.alert) }}</p>
@@ -113,7 +115,7 @@
     <div class="detail" *ngIf="selected() as s" aria-live="polite" [class]="'detail k-' + s.kind">
       <span class="dnum">{{ s.n }}</span>
       <div>
-        <b>{{ 'alerts.k.' + s.kind | rdTranslate }}<ng-container *ngIf="s.ward"> · {{ s.ward.name }}</ng-container></b>
+        <b>{{ isSample(s.alert) ? titleOf(s.alert) : ('alerts.k.' + s.kind | rdTranslate) }}<ng-container *ngIf="s.ward"> · {{ s.ward.name }}</ng-container></b>
         <p>{{ reasonOf(s.alert) }}</p>
       </div>
     </div>

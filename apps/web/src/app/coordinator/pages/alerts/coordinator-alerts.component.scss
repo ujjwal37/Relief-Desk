@@ -6,6 +6,8 @@ h1 { margin:4px 0 0; font-size:22px; font-weight:800; } .sub { margin:0 0 4px; c
 .k-spike { --c:var(--sev-crit); --ct:var(--sev-crit-t); } .k-silent_zone { --c:var(--sev-high); --ct:var(--sev-high-t); }
 .k-resource_gap { --c:var(--brand); --ct:var(--brand-tint); } .k-conflict { --c:var(--sev-med); --ct:var(--sev-med-t); } .k-stale { --c:var(--sev-low); --ct:var(--surface-2); }
 .alert-row.selected { outline:2px solid var(--brand); outline-offset:1px; } .alert-row.done { opacity:.65; }
+.alert-row.sample { --c:var(--text-2); --ct:var(--surface-2); border-left-style:dashed; }
+.sample-badge { font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--text-2); background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:2px 8px; }
 .alert-row:focus-visible, .pin:focus-visible { outline:3px solid var(--brand); outline-offset:2px; }
 .row-head { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; }
 .num { display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:var(--c); color:var(--surface); font:800 14px var(--rd-font-family); }
