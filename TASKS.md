@@ -122,6 +122,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | FP-17 | Mobile coordinator layout | C | DONE | FP-08 | No horizontal overflow at 390; case detail sheet |
 | FP-18 | i18n of case content | C | DONE | FP-13 | Translations field shown for the selected language |
 | FP-19 | Small fixes: 112 text, chhat, sass @use, reset demo | C | DONE | – | Documented build and reset |
+| FP-E2E | Playwright public and coordinator pass | C | DONE | FP-19 | Desktop 1440x900 and mobile 390x844 both pass: report, offline, status, find, demo login, approve, complete, teams, no boat free, filters, alerts, accuracy, hi/ta, theme |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

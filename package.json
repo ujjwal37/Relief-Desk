@@ -4,10 +4,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build web",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "check-i18n": "node scripts/check-i18n.mjs"
+    "check-i18n": "node scripts/check-i18n.mjs",
+    "e2e": "playwright test"
   },
   "prettier": {
     "printWidth": 100,
@@ -37,6 +38,7 @@
     "@angular/build": "^20.2.1",
     "@angular/cli": "^20.2.1",
     "@angular/compiler-cli": "^20.2.0",
+    "@playwright/test": "^1.64.0",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.9.0",
     "karma": "~6.4.0",

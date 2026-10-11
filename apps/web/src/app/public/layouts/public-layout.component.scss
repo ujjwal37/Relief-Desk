@@ -1,6 +1,6 @@
 :host { display:block; background:var(--bg); color:var(--text); min-height:100vh; font-family:var(--rd-font-family); font-size:17px; line-height:1.45; }
 .public-shell { min-height:100vh; display:flex; flex-direction:column; max-width:720px; margin:0 auto; position:relative; }
-.app-nav { flex:none; display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:64px; padding:0 16px; position:sticky; top:0; z-index:30; background:var(--bg); }
+.app-nav { flex:none; display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:64px; padding:0 16px; position:sticky; top:0; z-index:80; background:var(--bg); }
 .brand { display:inline-flex; align-items:center; gap:8px; font-weight:800; font-size:20px; color:var(--text); text-decoration:none; min-height:44px; }
 .actions { display:flex; gap:8px; align-items:center; }
 .demo-bar { padding:0 16px 8px; }

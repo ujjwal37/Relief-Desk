@@ -665,3 +665,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng build web` succeeded. `npx ng test web --watch=false --browsers=ChromeHeadless` 47 passed. `npx ng test shared --watch=false --browsers=ChromeHeadless` 8 passed. `pytest tests` from services/api: 116 passed. `node scripts/check-i18n.mjs` was already green on the previous commit.
 - Notes / risks / not done: Sass @use compiled inside the production build with no theme-import warning in that log.
 - Next (suggested task id): Playwright end-to-end
+
+### 2026-10-12 01:15 IST — FP-E2E — Cursor
+- What changed: Playwright covers the public report (online and offline), status by the saved id, find-my-request, demo coordinator login, live queue, approve, dispatched, completed, teams, no-boat-free (nearest alternative and estimated wait), Last hour filter, alerts, accuracy report, Hindi and Tamil, and light/dark. Phone width 390x844 uses the Cases/Map toggle and the case sheet. The settings sheet sits above the public tab bar so Done can be tapped.
+- Files: e2e/first-pass.spec.ts, playwright.config.ts, package.json, package-lock.json, .gitignore, public layout styles, TASKS.md
+- How verified: `npx playwright test` — 2 passed (desktop 1440x900, mobile 390x844). `npx ng build web` succeeded. `node scripts/check-i18n.mjs` — 511 keys, template lint PASS. Pytest was already 116 passed on the previous commit; this change does not touch the API.
+- Notes / risks / not done: Malayalam is not in this pass. The settings sheet is lifted by the public header stacking order; the report page has its own settings button inside a lower layer, and that page was not the one this test opens settings from.
+- Next (suggested task id): none in the first-pass list
