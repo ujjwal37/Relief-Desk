@@ -85,6 +85,8 @@ class StorageService:
         pack_id: str = "flood",
         flags: Optional[List[str]] = None,
         status_token: Optional[str] = None,
+        transcript: Optional[str] = None,
+        asr_confidence: Optional[float] = None,
     ) -> StoredReport:
         """Stores incoming report raw immediately so nothing is ever lost."""
         report_id = f"rep_{uuid.uuid4().hex[:10]}"
@@ -95,6 +97,8 @@ class StorageService:
             channel=channel,
             lang=lang,
             raw_text=raw_text,
+            transcript=transcript,
+            asr_confidence=asr_confidence,
             source_id=source_id,
             trust_level=trust_level,
             flags=flags or [],

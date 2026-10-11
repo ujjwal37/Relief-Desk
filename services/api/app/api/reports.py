@@ -8,6 +8,7 @@ from app.agents.dedupe import dedupe_agent
 from app.tools.storage import storage_service
 from app.tools.scoring import scoring_engine
 from app.tools.ratelimit import rate_limiter
+from app.tools.asr import asr_service, VoiceNoteMetadata, ASRResult
 from app.models.firestore_models import StoredRequest, RequestStatus
 
 router = APIRouter(prefix="/api", tags=["Reports & Intake"])
@@ -22,12 +23,14 @@ class ChatMessageRequest(BaseModel):
 
 
 class ReportSubmitRequest(BaseModel):
-    text: str
+    text: Optional[str] = ""
     channel: str = "text"  # "text" | "voice"
     lang: str = "en"
     source_id: str = "anon_device"
     location_pin: Optional[Dict[str, float]] = None
     scenario_id: str = "flood"
+    voice_note_id: Optional[str] = None
+    audio_base64: Optional[str] = None
 
 
 class ReportSubmitResponse(BaseModel):
@@ -39,6 +42,8 @@ class ReportSubmitResponse(BaseModel):
     dedupe_decision: str
     flags: List[str]
     safety_line: str
+    transcript: Optional[str] = None
+    asr_confidence: Optional[float] = None
 
 
 @router.post("/intake/chat", response_model=ChatTurnResponse)
@@ -52,16 +57,38 @@ def handle_chat_turn(payload: ChatMessageRequest):
     )
 
 
+@router.get("/voice/notes", response_model=List[VoiceNoteMetadata])
+def get_synthetic_voice_notes():
+    """Returns catalog of pre-recorded synthetic voice notes for demo audio submission."""
+    return asr_service.list_voice_notes()
+
+
 @router.post("/reports", response_model=ReportSubmitResponse)
 def submit_report(payload: ReportSubmitRequest):
+    # 0. ASR Audio transcription
+    transcript: Optional[str] = None
+    asr_confidence: Optional[float] = None
+    report_text: str = payload.text or ""
+
+    if payload.channel == "voice" or payload.voice_note_id or payload.audio_base64:
+        asr_res = asr_service.transcribe(
+            voice_note_id=payload.voice_note_id,
+            audio_base64=payload.audio_base64,
+            lang_hint=payload.lang
+        )
+        transcript = asr_res.transcript
+        asr_confidence = asr_res.asr_confidence
+        if not report_text.strip():
+            report_text = transcript
+
     # 1. Rate limiting check (flags only, never deletes)
     is_limited, _ = rate_limiter.check_and_record(payload.source_id)
     flags = ["rate_limited"] if is_limited else []
 
-    # 2. Store raw report immediately with generated status token
+    # 2. Store raw report immediately with generated status token and audio transcript
     status_token = f"tok_{uuid.uuid4().hex[:12]}"
     raw_report = storage_service.save_report_raw(
-        raw_text=payload.text,
+        raw_text=report_text,
         channel=payload.channel,
         lang=payload.lang,
         source_id=payload.source_id,
@@ -69,10 +96,12 @@ def submit_report(payload: ReportSubmitRequest):
         pack_id=payload.scenario_id,
         flags=flags,
         status_token=status_token,
+        transcript=transcript,
+        asr_confidence=asr_confidence,
     )
 
-    # 3. Extract structured request
-    extracted = intake_agent.parse_report(payload.text, language_hint=payload.lang)
+    # 3. Extract structured request from text / transcript
+    extracted = intake_agent.parse_report(report_text, language_hint=payload.lang)
 
     # 4. Deduplication against active requests
     existing = storage_service.list_requests()
@@ -129,5 +158,7 @@ def submit_report(payload: ReportSubmitRequest):
         urgency_score=urgency_res.score,
         dedupe_decision=decision.decision.value,
         flags=flags,
-        safety_line="In an immediate emergency call 112."
+        safety_line="In an immediate emergency call 112.",
+        transcript=transcript,
+        asr_confidence=asr_confidence,
     )

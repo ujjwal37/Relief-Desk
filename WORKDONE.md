@@ -307,3 +307,18 @@
 - Notes / risks / not done: Results committed to disk; test split (70%) numbers match table in Section 9.3. Ready for Coordinator benchmark view (T-033).
 - Next (suggested task id): T-034 (Voice path v0 by A) or T-033 (Benchmark UI view by C).
 
+### 2026-10-11 16:26 IST — T-034 — Antigravity
+- What changed: Implemented synthetic voice path v0 with 8 pre-recorded multilingual synthetic voice notes (Hindi, Hinglish, English, Tamil) and automated speech recognition (ASR) tool pipeline:
+  - Synthetic Data: Created data/synthetic/voice/notes.json with 8 detailed voice notes covering flood rescue, medical emergencies, ration requests, and dog attacks; implemented scripts/generate_voice_audio.py generating valid 16kHz WAV audio files (VN-01.wav through VN-08.wav).
+  - Backend ASR Tool: Created services/api/app/tools/asr.py with ASRService supporting multimodal audio transcription, voice note ID catalog lookup, and acoustic confidence scoring (>= 0.82 to 0.96); updated services/api/app/tools/storage.py to persist transcript and asr_confidence on StoredReport; updated services/api/app/api/reports.py submit_report to transcribe voice reports and pass transcript to intake agent; exposed GET /api/voice/notes.
+  - Public UI: Updated toggleVoice() in apps/web/src/app/public/pages/report/report.component.ts simulating speech recognition using the canonical Hindi voice note (VN-01).
+  - Tests: Created services/api/tests/test_voice_asr.py verifying catalog retrieval, Hindi voice note pipeline (VN-01 -> Hindi transcript -> rescue request with 4 people, child/elderly flags), Hinglish medical note (VN-02 -> medical request with oxygen/medical flags), and base64 audio submission.
+- Files: data/synthetic/voice/notes.json, data/synthetic/voice/*.wav, scripts/generate_voice_audio.py, services/api/app/tools/asr.py, services/api/app/tools/storage.py, services/api/app/api/reports.py, services/api/tests/test_voice_asr.py, apps/web/src/app/public/pages/report/report.component.ts, TASKS.md, WORKDONE.md
+- How verified (commands / screenshots):
+  - `python scripts/generate_voice_audio.py` -> Generated 8 synthetic WAV audio files.
+  - `python -m pytest services/api/tests/test_voice_asr.py` -> 4 passed in 2.52s.
+  - `python -m pytest services/api/tests` -> 76 passed in 4.13s across full test suite.
+  - `npx ng build web` -> Built successfully in 4.7s.
+- Notes / risks / not done: Audio transcription stores full transcript and confidence without modifying raw input; synthetic data only (no real victim audio).
+- Next (suggested task id): T-035 (Translation of free-text reports by A) or T-031 (Anomaly engine by C).
+

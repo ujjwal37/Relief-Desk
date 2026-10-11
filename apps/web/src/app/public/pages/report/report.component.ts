@@ -71,11 +71,12 @@ export class ReportComponent implements OnInit {
     const rec = !this.isRecording();
     this.isRecording.set(rec);
     if (rec) {
-      // Simulate synthetic speech recognition after 1.5 seconds
+      // Simulate synthetic voice note recording (Hero Case VN-01 Hindi)
       setTimeout(() => {
-        this.userInput.set('Gandhi school ke paas 5 log chat par hain, paani badh raha hai');
+        this.userInput.set('नमस्ते, हम वार्ड 7 में शिव मंदिर के पास फंसे हैं। पानी कमर तक आ गया है, घर में 4 लोग हैं, एक छोटा बच्चा और बुजुर्ग दादी हैं। कृपया जल्दी नाव भेजिए।');
         this.isRecording.set(false);
-      }, 1500);
+        this.sendUserMessage();
+      }, 1200);
     }
   }
 

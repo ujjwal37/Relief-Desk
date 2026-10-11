@@ -1,0 +1,90 @@
+[
+  {
+    "id": "VN-01",
+    "name": "Hindi Flood Rescue (Ward 7 Mandir)",
+    "lang": "hi",
+    "duration_sec": 7,
+    "transcript": "नमस्ते, हम वार्ड 7 में शिव मंदिर के पास फंसे हैं। पानी कमर तक आ गया है, घर में 4 लोग हैं, एक छोटा बच्चा और बुजुर्ग दादी हैं। कृपया जल्दी नाव भेजिए।",
+    "asr_confidence": 0.94,
+    "hazard": "water_rising",
+    "people": 4,
+    "vulnerable": {"child": true, "elderly": true, "disabled": false, "pregnant": false, "medical_need": false}
+  },
+  {
+    "id": "VN-02",
+    "name": "Hinglish Medical Urgency (Ward 4 Clock Tower)",
+    "lang": "hinglish",
+    "duration_sec": 8,
+    "transcript": "Hello relief desk, Ward 4 Clock Tower ke peeche paani bahut tezi se badh raha hai. Hamare ghar me 5 log hain, daadi ko asthma hai unhe oxygen cylinder urgently chahiye please help.",
+    "asr_confidence": 0.91,
+    "hazard": "water_rising",
+    "people": 5,
+    "vulnerable": {"child": false, "elderly": true, "disabled": false, "pregnant": false, "medical_need": true}
+  },
+  {
+    "id": "VN-03",
+    "name": "English Stranded Terrace (North Ghat)",
+    "lang": "en",
+    "duration_sec": 6,
+    "transcript": "Emergency report from North Ghat embankment, 6 people stranded on the terrace. Water level rising fast, we need rescue boat immediately.",
+    "asr_confidence": 0.96,
+    "hazard": "water_rising",
+    "people": 6,
+    "vulnerable": {"child": false, "elderly": false, "disabled": false, "pregnant": false, "medical_need": false}
+  },
+  {
+    "id": "VN-04",
+    "name": "Hindi Ration Shortage (Ward 2 Relief Camp)",
+    "lang": "hi",
+    "duration_sec": 7,
+    "transcript": "गांधी स्कूल राहत कैंप वार्ड 2 में 20 परिवारों के लिए पीने का पानी और सूखा राशन खत्म हो गया है, तुरंत सप्लाई भेजिए।",
+    "asr_confidence": 0.93,
+    "hazard": "unknown",
+    "people": 20,
+    "vulnerable": {"child": true, "elderly": true, "disabled": false, "pregnant": false, "medical_need": false}
+  },
+  {
+    "id": "VN-05",
+    "name": "Hinglish Dog Attack (Ward 9 Mill Colony)",
+    "lang": "hinglish",
+    "duration_sec": 6,
+    "transcript": "Ward 9 Mill Colony gali number 4 me aawara kutto ne ek bachhe ko kaat liya hai, bleeding ho rahi hai injection aur ambulance bhejiye.",
+    "asr_confidence": 0.89,
+    "hazard": "injury",
+    "people": 1,
+    "vulnerable": {"child": true, "elderly": false, "disabled": false, "pregnant": false, "medical_need": true}
+  },
+  {
+    "id": "VN-06",
+    "name": "Tamil Riverfront Rescue (Ward 7)",
+    "lang": "ta",
+    "duration_sec": 6,
+    "transcript": "வணக்கம், வார்டு 7 ஆற்றங்கரையில் 3 பேர் சிக்கியுள்ளனர், தயவுசெய்து உடனடியாக படகு அனுப்பவும்.",
+    "asr_confidence": 0.92,
+    "hazard": "water_rising",
+    "people": 3,
+    "vulnerable": {"child": false, "elderly": false, "disabled": false, "pregnant": false, "medical_need": false}
+  },
+  {
+    "id": "VN-07",
+    "name": "Hindi Noisy Transcript (Riverfront Ghat)",
+    "lang": "hi",
+    "duration_sec": 5,
+    "transcript": "वार्ड 3 रिवरफ्रंट के पास 2 लोग फंसे हैं, पानी बहुत ज्यादा है, नाव चाहिए।",
+    "asr_confidence": 0.82,
+    "hazard": "water_rising",
+    "people": 2,
+    "vulnerable": {"child": false, "elderly": false, "disabled": false, "pregnant": false, "medical_need": false}
+  },
+  {
+    "id": "VN-08",
+    "name": "Hinglish Update Count (Ward 7)",
+    "lang": "hinglish",
+    "duration_sec": 5,
+    "transcript": "Update hai, pehle 3 log bole the ab 5 log ho gaye hain paani pehli manzil tak pahunch gaya hai jaldi aao.",
+    "asr_confidence": 0.95,
+    "hazard": "water_rising",
+    "people": 5,
+    "vulnerable": {"child": false, "elderly": false, "disabled": false, "pregnant": false, "medical_need": false}
+  }
+]
