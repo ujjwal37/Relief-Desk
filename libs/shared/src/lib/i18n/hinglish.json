@@ -11,7 +11,12 @@
     "status": "Status Check Karein",
     "nearby": "Aas-paas Ke Incidents",
     "coordinator": "Coordinator Portal",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "help": "Madad",
+    "home2": "Home",
+    "nearby2": "Aas-paas",
+    "status2": "Status",
+    "reportFab": "Report"
   },
   "landing": {
     "title": "Relief Desk",
@@ -60,7 +65,31 @@
     "listening": "Sun rahe hain...",
     "submitting": "Report bheji ja rahi hai...",
     "success": "Report successfully submit ho gayi!",
-    "statusToken": "Aapka Status Tracking Token:"
+    "statusToken": "Aapka Status Tracking Token:",
+    "title2": "Report",
+    "edit": "Badlein",
+    "understanding": "Aapka message samajh rahe hain",
+    "takingLonger": "Time lag raha hai. Aap aise hi bhej sakte hain.",
+    "noMedical": "Main sirf facts ikattha karta hoon. Main medical salah nahi de sakta.",
+    "listeningLang": "Sun rahe hain · {lang} pehchani gayi",
+    "type": "Likhein",
+    "done": "Ho gaya",
+    "language": "Bhasha",
+    "preferForm": "Form chahiye?",
+    "speak": "Bolein",
+    "sendMsg": "Bhejein",
+    "close": "Band karein",
+    "back": "Peeche",
+    "qr12": "1-2 log",
+    "qr35": "3-5 log",
+    "qr6": "6 ya zyada",
+    "qrNot": "Pakka nahi",
+    "reviewSend": "Jaanchein aur bhejein",
+    "sendSms": "SMS se bhejein",
+    "offlineBanner": "Network nahi hai. Is phone mein save hua. Apne aap bheja jayega.",
+    "queued": "Queue mein",
+    "placeholder2": "Batayein kya hua",
+    "qrNone": "Inmein se koi nahi"
   },
   "confirm": {
     "title": "Humne Ye Samjha",
@@ -83,7 +112,9 @@
     "urgencyNote": "Coordinators set karte hain",
     "anonymous": "Anonymous bhejein",
     "anonymousHint": "Phone number public map par nahi dikhega",
-    "done": "Ho gaya"
+    "done": "Ho gaya",
+    "review": "Jaanchein",
+    "callOutline": "112 par call karein"
   },
   "queue": {
     "title": "Ranked Priority Queue",
@@ -99,7 +130,10 @@
     "subtitle": "Sirf flag. Kuch delete nahi hota. Coordinator decide karega.",
     "acknowledge": "Acknowledge",
     "viewMap": "Map par dekhein",
-    "empty": "Abhi koi alert nahi."
+    "empty": "Abhi koi alert nahi.",
+    "silent": "Shaant zone",
+    "spike": "Reports mein uchhal",
+    "ackDone": "Acknowledge ho gaya"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -226,5 +260,42 @@
     "s2b": "Yeh panel case ke liye sabse achhi team aur uska karan dikhata hai. Details ke liye Yeh team kyon kholein.",
     "s3t": "Faisla aapka: approve, badlein ya reject",
     "s3b": "Jab tak aap Approve karein aur bhejein nahi dabate, kuch nahi bheja jata."
+  },
+  "status": {
+    "title2": "Aapka request",
+    "received": "Mil gaya",
+    "arranged": "Madad tay",
+    "onway": "Raaste mein",
+    "requestId": "Request ID",
+    "copy": "Copy",
+    "details": "Details",
+    "track": "Doosra request track karein",
+    "trackBtn": "Track",
+    "idPlaceholder": "Request ID",
+    "eta": "Anumanit aagman",
+    "dispatch": "Dispatch status",
+    "tips": "Madad milne tak",
+    "loading": "Aapka request load ho raha hai…",
+    "error": "Yeh request load nahi hua. ID check karke phir koshish karein."
+  },
+  "nearby": {
+    "title2": "Aas-paas ke alerts",
+    "flood": "Baadh",
+    "animal": "Janwar",
+    "needs": "Madad chahiye",
+    "areaOnly": "Sirf area-level. Exact address nahi dikhaye jaate.",
+    "legend": "Map key",
+    "beAware": "Satark rahein",
+    "activeReports": "active reports",
+    "offer": "Madad ki peshkash",
+    "synthetic": "Synthetic demo data"
+  },
+  "bench": {
+    "title2": "Accuracy report",
+    "sub": "Relief Desk reports kitni achhi tarah padhta aur cases ko rank karta hai, simple baseline se tulna. Synthetic data, hamare apne labels.",
+    "ours": "Relief Desk",
+    "base": "Baseline",
+    "failures": "Jahan yeh ab bhi galat hai",
+    "retry": "Phir koshish karein"
   }
 }

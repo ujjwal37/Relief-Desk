@@ -48,10 +48,11 @@ describe('tap targets and language layouts', () => {
     }).compileComponents();
     const fixture = TestBed.createComponent(PublicLayoutComponent);
     fixture.detectChanges();
-    const tamil = fixture.nativeElement.querySelectorAll('.lang-chip')[3] as HTMLButtonElement;
-    tamil.click();
+    (fixture.nativeElement.querySelector('.rd-set-btn') as HTMLButtonElement).click();
     fixture.detectChanges();
-    const links = fixture.nativeElement.querySelectorAll('.nav-link') as NodeListOf<HTMLElement>;
+    (fixture.nativeElement.querySelectorAll('.opt')[3] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const links = fixture.nativeElement.querySelectorAll('.tab') as NodeListOf<HTMLElement>;
     expect(links.length).toBeGreaterThan(0);
     links.forEach((link) => {
       expect(link.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);

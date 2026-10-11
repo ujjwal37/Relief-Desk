@@ -11,7 +11,12 @@
     "status": "Check Status",
     "nearby": "Nearby Incidents",
     "coordinator": "Coordinator Portal",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "help": "Help",
+    "home2": "Home",
+    "nearby2": "Nearby",
+    "status2": "Status",
+    "reportFab": "Report"
   },
   "landing": {
     "title": "Relief Desk",
@@ -60,7 +65,31 @@
     "listening": "Listening...",
     "submitting": "Submitting report...",
     "success": "Report submitted successfully!",
-    "statusToken": "Your Status Tracking Token:"
+    "statusToken": "Your Status Tracking Token:",
+    "title2": "Report",
+    "edit": "Edit",
+    "understanding": "Understanding your message",
+    "takingLonger": "Taking longer. You can send as is.",
+    "noMedical": "I only collect facts. I cannot give medical advice.",
+    "listeningLang": "Listening · {lang} detected",
+    "type": "Type",
+    "done": "Done",
+    "language": "Language",
+    "preferForm": "Prefer a form?",
+    "speak": "Speak",
+    "sendMsg": "Send",
+    "close": "Close",
+    "back": "Back",
+    "qr12": "1-2 people",
+    "qr35": "3-5 people",
+    "qr6": "6 or more",
+    "qrNot": "Not sure",
+    "reviewSend": "Review and send",
+    "sendSms": "Send by SMS",
+    "offlineBanner": "No network. Saved on this phone. Sending automatically.",
+    "queued": "Queued",
+    "placeholder2": "Describe what happened",
+    "qrNone": "None of these"
   },
   "confirm": {
     "title": "What We Understood",
@@ -83,7 +112,9 @@
     "urgencyNote": "Set by coordinators",
     "anonymous": "Send anonymously",
     "anonymousHint": "Phone number stays off the public map",
-    "done": "Done"
+    "done": "Done",
+    "review": "Review",
+    "callOutline": "Call 112"
   },
   "queue": {
     "title": "Ranked Priority Queue",
@@ -99,7 +130,10 @@
     "subtitle": "Flags only. Nothing is deleted. Coordinator decides.",
     "acknowledge": "Acknowledge",
     "viewMap": "View on map",
-    "empty": "No alerts right now."
+    "empty": "No alerts right now.",
+    "silent": "Silent zone",
+    "spike": "Report spike",
+    "ackDone": "Acknowledged"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -226,5 +260,42 @@
     "s2b": "This panel shows the best team for the case and why it was chosen. Open Why this team for details.",
     "s3t": "You decide: approve, change or reject",
     "s3b": "Nothing is sent until you press Approve and send."
+  },
+  "status": {
+    "title2": "Your request",
+    "received": "Received",
+    "arranged": "Help arranged",
+    "onway": "On the way",
+    "requestId": "Request ID",
+    "copy": "Copy",
+    "details": "Details",
+    "track": "Track another request",
+    "trackBtn": "Track",
+    "idPlaceholder": "Request ID",
+    "eta": "Estimated arrival",
+    "dispatch": "Dispatch status",
+    "tips": "While you wait",
+    "loading": "Loading your request…",
+    "error": "We could not load this request. Check the ID and try again."
+  },
+  "nearby": {
+    "title2": "Nearby alerts",
+    "flood": "Flood",
+    "animal": "Animal",
+    "needs": "Needs help",
+    "areaOnly": "Area-level only. No exact addresses are shown.",
+    "legend": "Map key",
+    "beAware": "Be aware",
+    "activeReports": "active reports",
+    "offer": "Offer help",
+    "synthetic": "Synthetic demo data"
+  },
+  "bench": {
+    "title2": "Accuracy report",
+    "sub": "How well Relief Desk reads reports and ranks cases, compared with a simple baseline. Synthetic data, our own labels.",
+    "ours": "Relief Desk",
+    "base": "Baseline",
+    "failures": "Where it still gets things wrong",
+    "retry": "Try again"
   }
 }
