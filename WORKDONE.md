@@ -539,3 +539,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_intake_nlu.py` 4 passed. Full `pytest tests` 104 passed.
 - Notes / risks / not done: A card place the citizen edited to a short landmark is kept. A sentence-length place is replaced by the ward phrase.
 - Next (suggested task id): FP-04
+
+### 2026-10-11 21:08 IST — FP-04 — Cursor
+- What changed: Needs help now is score 75 and above. Soon stays 70 to 74. Seeded flood data already has 10 cases at or above 75, including oxygen and labour. Chips, the Help now tile and the briefing all read bandCounts.
+- Files: libs/shared/src/lib/utils/band.util.ts, libs/shared/src/lib/utils/band.util.spec.ts, services/api/tests/test_triage_bands.py, TASKS.md
+- How verified: ng test shared 8 passed. pytest tests/test_triage_bands.py passed.
+- Notes / risks / not done: Scores are still computed at ingest until FP-12 recomputes them on read.
+- Next (suggested task id): FP-05
