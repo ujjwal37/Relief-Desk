@@ -53,16 +53,28 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     expect(fixture.nativeElement.querySelector('.demo-phone')).toBeNull();
   });
 
-  it('wraps the tab row on a phone so Accuracy report stays visible', async () => {
+  it('keeps the logo, tabs and avatar on at most two rows', async () => {
     const fixture = await setup(null, true);
     spyOnProperty(window, 'innerWidth', 'get').and.returnValue(390);
     fixture.componentInstance.syncCompactNav();
     fixture.detectChanges();
-    const nav = fixture.nativeElement.querySelector('nav.tabs') as HTMLElement;
+    const header = fixture.nativeElement.querySelector('.top-nav') as HTMLElement;
+    header.style.width = '390px';
+    const brand = header.querySelector('.brand') as HTMLElement;
+    const nav = header.querySelector('nav.tabs') as HTMLElement;
+    const avatar = header.querySelector('.avatar') as HTMLElement;
+    const rows = new Set(
+      [brand, nav, avatar].map((el) => Math.round(el.getBoundingClientRect().top / 8)),
+    );
     expect(nav.classList.contains('wrap')).toBeTrue();
-    expect(getComputedStyle(nav).flexWrap).toBe('wrap');
+    expect(rows.size).toBeLessThanOrEqual(2);
     expect(getComputedStyle(nav).overflow).not.toBe('auto');
-    expect(nav.textContent).toContain('Accuracy report');
+    const accuracy = Array.from(nav.querySelectorAll('a')).find((link) =>
+      (link.textContent || '').includes('Accuracy report'),
+    ) as HTMLElement;
+    expect(accuracy).toBeTruthy();
+    expect(accuracy.offsetWidth).toBeGreaterThan(0);
+    expect(accuracy.getBoundingClientRect().right).toBeLessThanOrEqual(header.getBoundingClientRect().right + 1);
   });
 
   it('hides the phone frame when demo mode is off', async () => {

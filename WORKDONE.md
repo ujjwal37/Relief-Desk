@@ -826,3 +826,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --include='**/coordinator-command.component.spec.ts'` — 19 passed. `node scripts/check-i18n.mjs` — 519 keys.
 - Notes / risks / not done: The outlines are simple shapes around the seeded wards, not official survey boundaries. The alerts page still has its own water stroke.
 - Next (suggested task id): RT-21
+
+### 2026-10-12 05:25 IST — RT-21 — Cursor
+- What changed: On a narrow coordinator header the logo and avatar share the first row and the four tabs share the second. Tab labels can wrap inside their own link so Accuracy report stays inside the header instead of starting a third row.
+- Files: coordinator-layout component scss and spec, TASKS.md
+- How verified: `npx ng test web --include='**/coordinator-layout.component.spec.ts'` — 4 passed.
+- Notes / risks / not done: Between 760px and 900px the search field still sits on the first row between the logo and the avatar.
+- Next (suggested task id): RT-22

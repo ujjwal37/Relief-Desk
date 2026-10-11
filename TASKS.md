@@ -143,6 +143,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | RT-18 | Spam sample is flagged and kept out of Needs help | C | DONE | RT-17 | FREE MONEY bit.ly OTP text is hoax and its score stays under 75 |
 | RT-19 | Tamil seed lines are Tamil sentences | C | DONE | RT-18 | INC-005 names the Aluva clock tower in Tamil; no pasted English words |
 | RT-20 | Dashboard map shows Kerala districts | C | DONE | RT-19 | Bounds fit open cases; labels Alappuzha, Ernakulam, Thrissur, Wayanad; no river stroke |
+| RT-21 | Mobile header stays on two rows | C | DONE | RT-20 | Logo and avatar on one row, tabs on the next; Accuracy report stays inside the header |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
