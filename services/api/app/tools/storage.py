@@ -7,6 +7,8 @@ from app.models.firestore_models import (
     StoredReport,
     StoredRequest,
     StoredCluster,
+    StoredResource,
+    StoredMatch,
     AuditEntry,
     RequestStatus,
 )
@@ -19,6 +21,8 @@ class StorageService:
         self._reports: Dict[str, StoredReport] = {}
         self._requests: Dict[str, StoredRequest] = {}
         self._clusters: Dict[str, StoredCluster] = {}
+        self._resources: Dict[str, StoredResource] = {}
+        self._matches: Dict[str, StoredMatch] = {}
         self._audit_log: List[AuditEntry] = []  # Strictly append-only
         self._firestore_client = None
         self._init_firestore()
@@ -206,6 +210,81 @@ class StorageService:
 
     def list_clusters(self) -> List[StoredCluster]:
         return list(self._clusters.values())
+
+    # --- Resources DAO ---
+    def save_resource(
+        self, resource: StoredResource, actor: str = "system", audit: bool = True
+    ) -> StoredResource:
+        try:
+            before = (
+                self._resources[resource.id].model_dump(mode="json")
+                if resource.id in self._resources
+                else None
+            )
+            resource.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource.id] = resource
+            if audit:
+                self.record_audit(
+                    actor=actor,
+                    action="resource_updated" if before else "resource_created",
+                    target=resource.id,
+                    before=before,
+                    after=resource.model_dump(mode="json"),
+                )
+            return resource
+        except Exception:
+            logger.exception("Failed to save resource %s", resource.id)
+            raise
+
+    def get_resource(self, resource_id: str) -> Optional[StoredResource]:
+        return self._resources.get(resource_id)
+
+    def list_resources(self) -> List[StoredResource]:
+        return list(self._resources.values())
+
+    # --- Matches DAO ---
+    def save_match(self, match: StoredMatch) -> StoredMatch:
+        try:
+            match.updated_at = datetime.now(timezone.utc).isoformat()
+            self._matches[match.id] = match
+            return match
+        except Exception:
+            logger.exception("Failed to save match %s", match.id)
+            raise
+
+    def get_match(self, match_id: str) -> Optional[StoredMatch]:
+        return self._matches.get(match_id)
+
+    def list_matches(self, request_id: Optional[str] = None) -> List[StoredMatch]:
+        matches = list(self._matches.values())
+        if request_id:
+            return [m for m in matches if m.request_id == request_id]
+        return matches
+
+    def mirror_resource_transaction(self, resource: StoredResource) -> None:
+        """Persist a resource inside a Firestore transaction when the emulator is up.
+
+        The in-memory lock is the transaction for local tests. This mirror makes
+        the committed capacity document atomic on Firestore as well.
+        """
+        client = self._firestore_client
+        if client is None:
+            return
+        try:
+            from google.cloud import firestore  # type: ignore
+
+            ref = client.collection("resources").document(resource.id)
+            transaction = client.transaction()
+            payload = resource.model_dump(mode="json")
+
+            @firestore.transactional
+            def _write(txn, doc_ref, body):  # type: ignore[no-untyped-def]
+                txn.set(doc_ref, body)
+
+            _write(transaction, ref, payload)
+            logger.info("Firestore capacity transaction committed for %s", resource.id)
+        except Exception:
+            logger.exception("Firestore capacity transaction failed for %s", resource.id)
 
 
 # Singleton instance

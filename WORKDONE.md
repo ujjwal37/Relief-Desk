@@ -191,3 +191,14 @@
   - `npx ng build web` -> Built successfully and generated standalone report-component lazy bundle.
 - Notes / risks / not done: public chat report path operational end-to-end.
 - Next (suggested task id): T-046 or T-047
+
+### 2026-10-11 19:02 IST — T-020 — Cursor
+- What changed: seeded synthetic Riverbend boats, shelters, food, and medical resources; added deterministic `scoring.match_score` (distance, capacity fit, urgency, vulnerability; the four parts sum to the score; type compatibility and capacity > 0 are hard constraints); added a locked reserve/release transaction so a human Approve decrements capacity. When requested people exceed remaining capacity, approve returns an overcommit warning and does not dispatch until `override=true`, which is audited. Rejecting an approved match releases the reserved units. No auto-dispatch.
+- Files: data/resources/seed.json, services/api/app/tools/capacity.py, services/api/app/tools/scoring.py, services/api/app/tools/storage.py, services/api/app/models/firestore_models.py, services/api/app/api/matches.py, services/api/app/main.py, services/api/tests/test_match_capacity.py, libs/shared/src/lib/models/request.model.ts, libs/shared/src/lib/services/api-client.service.ts, TASKS.md
+- How verified (commands / screenshots):
+  - `python3 -m pytest services/api/tests` -> 57 passed in 0.45s.
+  - `python3 -m pytest services/api/tests/test_match_capacity.py` -> 9 passed. Approve of 5 people on a 12-seat boat leaves 7 and a second approve does not decrement again; reject restores 12. A request for 10 against remaining 4 returns HTTP 409 with `requires_override`, leaves capacity at 4, and writes `overcommit_warning`; `override=true` sets remaining to -6 and writes `capacity_overcommit_override`; reject restores 4. Two concurrent approves of 4 against remaining 5 leave remaining 1. Seed contains boats, shelters, food, and medical inside the Riverbend bbox, synthetic only.
+  - `python3 scripts/validate_seeds.py` -> SUCCESS (12 wards, 60 landmarks, 40 incidents).
+  - `npx ng build shared` -> built shared (typed resource and approve client).
+- Notes / risks / not done: tests use an in-memory lock as the capacity transaction. If the Firestore emulator client is connected, the committed resource document is also written inside a Firestore transaction; the emulator was not running here. The coordinator panel that displays the warning is T-026. Listing two or more ranked proposals is T-021. Proposal does not change capacity.
+- Next (suggested task id): T-021
