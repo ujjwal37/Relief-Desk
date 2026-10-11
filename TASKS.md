@@ -128,6 +128,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | RT-03 | My requests shows translated status and RD code | C | DONE | RT-02 | Home card does not show status.heroReceived or rep_ |
 | RT-04 | Offline replay opens status | C | DONE | RT-03 | After the queued report is accepted, leave the review screen for Status |
 | RT-05 | Mark arrived sets the team to at the scene | C | DONE | RT-04 | Resource status on_scene and the public timeline step is done |
+| RT-06 | Match ETAs prefer a nearer team | C | DONE | RT-05 | Oxygen case is the Varapuzha clinic; a far boat is not offered when a nearer one exists |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

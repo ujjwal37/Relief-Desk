@@ -707,3 +707,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_resources_matching.py` — 5 passed. Command spec 14 passed.
 - Notes / risks / not done: A simulation step already in progress can still write one more point before it notices the stop.
 - Next (suggested task id): RT-06
+
+### 2026-10-12 02:35 IST — RT-06 — Cursor
+- What changed: A relief clinic sits next to the Varapuzha oxygen case. Matching keeps teams near the closest suitable one, because the distance score is zero past 10 km and a far boat was outranking a nearer one. ETA stays straight-line at 20 km/h, so a case with no nearby team still shows the real wait.
+- Files: data/synthetic/flood_v1/resources.yaml, services/api/app/agents/matching.py, services/api/tests/test_match_eta.py, TASKS.md
+- How verified: `pytest tests/test_match_eta.py tests/test_match_types.py` — 5 passed.
+- Notes / risks / not done: Cases with no team inside 40 km still show a long ETA. That is the travel time, not a shortened guess.
+- Next (suggested task id): RT-07

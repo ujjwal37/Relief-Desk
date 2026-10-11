@@ -123,6 +123,18 @@ resources:
   status: available
   synthetic: true
   event_id: event_kerala_flood
+- id: RES-MED-04
+  name: Varapuzha Relief Clinic
+  name_hi: वराप्पुषा राहत चिकित्सालय
+  kind: medical
+  ward_id: ward_5
+  lat: 10.081
+  lng: 76.272
+  capacity_total: 12
+  capacity_remaining: 12
+  status: available
+  synthetic: true
+  event_id: event_kerala_flood
 - id: RES-FOOD-01
   name: Aluva Central Ration & Food Packet Hub
   name_hi: पुराना बाज़ार केंद्रीय राशन व खाद्य पैकेट हब

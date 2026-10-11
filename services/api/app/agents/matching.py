@@ -80,6 +80,10 @@ class MatchingAgent:
                     continue
                 scored_candidates.append((res, breakdown, True))
 
+        # Distance score is 0 past 10 km, so a far team with more seats can outrank a nearer one.
+        # Keep teams near the closest suitable team. If every team is far, keep the closest and show its real ETA.
+        scored_candidates = _keep_nearer(scored_candidates)
+
         # Sort by total_score descending. Primary matches never mix with a fallback list.
         scored_candidates.sort(key=lambda item: item[1].total_score, reverse=True)
         top_candidates = scored_candidates[:top_n]
@@ -156,6 +160,24 @@ class MatchingAgent:
             request.id,
         )
         return proposals
+
+
+# A team inside this radius is close enough to send. Past it, the ETA is the real wait.
+PRACTICAL_KM = 40.0
+# How much farther than the nearest team we still offer as an alternative.
+NEAR_BAND_KM = 15.0
+
+
+def _keep_nearer(scored: list) -> list:
+    if len(scored) <= 1:
+        return scored
+    nearest = min(item[1].distance_km for item in scored)
+    if nearest <= PRACTICAL_KM:
+        limit = min(PRACTICAL_KM, nearest + NEAR_BAND_KM)
+    else:
+        limit = nearest + NEAR_BAND_KM
+    kept = [item for item in scored if item[1].distance_km <= limit + 0.05]
+    return kept or scored
 
 
 _PRIMARY = {
