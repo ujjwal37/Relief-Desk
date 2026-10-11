@@ -742,3 +742,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --include` for the command, layout and alerts specs — 23 passed after the district assertion was corrected, then alerts spec 2 passed.
 - Notes / risks / not done: Landmark names sit above the point. Two labels can still be close if many places share one corner of the map.
 - Next (suggested task id): RT-11
+
+### 2026-10-12 03:25 IST — RT-11 — Cursor
+- What changed: The Hinglish review line now says Abhi bhejein, the same words as the send button, instead of the English "Send now".
+- Files: libs/shared/src/lib/i18n/hinglish.json, confirmation-card.component.spec.ts, TASKS.md
+- How verified: `npx ng test web --include='**/confirmation-card.component.spec.ts'` — 4 passed.
+- Notes / risks / not done: English still says Send now, which is the English label.
+- Next (suggested task id): RT-12
