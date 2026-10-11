@@ -176,6 +176,7 @@ export interface StoredRequest {
   assigned_resource_id?: string | null;
   reserved_people?: number | null;
   merged_count?: number;
+  analysis_status?: 'analysing' | 'complete';
   update_count?: number;
   created_at?: string;
   updated_at?: string;

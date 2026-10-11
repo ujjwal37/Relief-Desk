@@ -300,6 +300,7 @@
     "etaMin": "about {n} min",
     "noNearbyTeam": "No nearby team",
     "aiReading": "AI reading",
+    "analysing": "Analysing",
     "aiGemini": "Gemini",
     "aiOffline": "Offline fallback",
     "aiRecorded": "Recorded Gemini run",

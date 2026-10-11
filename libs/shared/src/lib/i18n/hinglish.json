@@ -300,6 +300,7 @@
     "etaMin": "lagbhag {n} min",
     "noNearbyTeam": "Paas mein koi team nahi",
     "aiReading": "AI reading",
+    "analysing": "Analysing ho raha hai",
     "aiGemini": "Gemini",
     "aiOffline": "Offline fallback",
     "aiRecorded": "Recorded Gemini run",

@@ -11,7 +11,10 @@ client = TestClient(app)
 
 HERO = "Gandhi school ke paas 5 log chat par hain, paani badh raha hai, 2 bache hain"
 PIN = {"lat": 26.852, "lng": 80.925}
-VOLATILE = {"id", "created_at", "updated_at", "report_ids", "merged_count", "merged_into", "cluster_id"}
+VOLATILE = {
+    "id", "created_at", "updated_at", "report_ids", "merged_count", "merged_into", "cluster_id",
+    "analysis", "analysis_status",
+}
 
 
 def _facts_from_card(card) -> dict:

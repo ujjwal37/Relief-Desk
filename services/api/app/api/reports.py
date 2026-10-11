@@ -260,6 +260,9 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
             merged_by="auto_suggest"
         )
 
+    from app.agents.pipeline import spawn_analysis
+    spawn_analysis(req_obj.merged_into or req_obj.id)
+
     response = ReportSubmitResponse(
         report_id=raw_report.id,
         request_id=req_id,

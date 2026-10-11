@@ -75,6 +75,8 @@ class StoredRequest(BaseModel):
     translations: Dict[str, str] = Field(default_factory=dict)
     translation_confidence: float = 1.0
     merged_count: int = 1
+    analysis_status: str = "complete"
+    analysis: Dict[str, Any] = Field(default_factory=dict)
     update_count: int = 0
     assigned_resource_id: Optional[str] = None
     reserved_people: Optional[int] = None

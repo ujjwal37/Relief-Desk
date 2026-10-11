@@ -151,6 +151,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | GM-02 | Structured intake: type, ward, people, hoax | C | DONE | GM-01 | Hinglish and Tamil samples keep the original text. Spam stays under Needs help |
 | GM-03 | Frozen split and Gemini versus keyword baseline | C | DONE | GM-02 | 444 labelled reports. Test ids stay MSG-0073 to MSG-0240. Held-out type 67.3%, ward 100%. Gemini not measured without a key |
 | GM-04 | Embedding retrieval and a Gemini duplicate judge | C | DONE | GM-03 | Same district and time window. Judge says duplicate, update, or distinct. Lexical fallback when AI is off. Merge and undo are audited |
+| GM-05 | ADK pipeline after submit | C | DONE | GM-04 | SequentialAgent of Intake, parallel Dedupe and Triage, Matching, Explainer. Score and capacity stay in tools. The case shows Analysing, then complete, and is not dispatched |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
