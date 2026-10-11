@@ -49,7 +49,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 ## Day 2 / Wed 14 Oct — Matching, explainer, coordinator dashboard
 | ID | Task | Owner | Status | Depends | Acceptance criteria |
 |---|---|---|---|---|---|
-| T-020 | **CORE** Resources seed (boats/shelters/food/medical) + `scoring.match_score` + capacity reserve/release transaction + overcommit warning | C | TODO | T-014, T-011 | Approve decrements capacity; overcommit shows warning and requires override (audited) |
+| T-020 | **CORE** Resources seed (boats/shelters/food/medical) + `scoring.match_score` + capacity reserve/release transaction + overcommit warning | C + A | DONE | T-014, T-011 | Approve decrements capacity; overcommit shows warning and requires override (audited) |
 | T-021 | **CORE** Matching agent (orchestration only) + `GET /api/requests/{id}/matches` with breakdown | A | TODO | T-020 | Returns ≥2 proposals with distance/capacity/urgency/vulnerability parts that sum to the score |
 | T-022 | **CORE** Explainer agent (≤2 sentences, en + hi, numeric-consistency check, template fallback) | A | TODO | T-021 | Any number in text not in breakdown triggers fallback; test with forged output |
 | T-023 | **CORE** Coordinator layout shell under `/coordinator` (lazy-loaded, desktop-first, behind auth guard from T-047): top bar (alerts, scenario switcher, language switcher), 3-pane layout per `coordinator-command.png` | C | TODO | T-006, T-007 | Layout matches mockup at 1440x900; works in EN/HI; public bundle does not include coordinator code (lazy chunk check) Design: `docs/design/coordinator-command.png` |

@@ -137,5 +137,78 @@ class ScoringEngine:
             reason=reason_text,
         )
 
+    def compute_match_score(
+        self, req: StoredRequest, res: "StoredResource"
+    ) -> Optional["MatchBreakdown"]:
+        from app.models.firestore_models import ResourceKind, MatchBreakdown
+        from app.models.schemas import IncidentType
+        from app.tools.geo import haversine_distance
+
+        # Hard constraint 1: Capacity remaining must be > 0
+        if res.capacity_remaining <= 0:
+            return None
+
+        # Hard constraint 2: Compatibility between request incident type and resource kind
+        compat_map = {
+            IncidentType.RESCUE: [ResourceKind.BOAT, ResourceKind.SHELTER],
+            IncidentType.MEDICAL: [ResourceKind.MEDICAL],
+            IncidentType.FOOD: [ResourceKind.FOOD, ResourceKind.SHELTER],
+            IncidentType.SHELTER: [ResourceKind.SHELTER],
+            IncidentType.ANIMAL_ATTACK: [ResourceKind.MEDICAL],
+            IncidentType.INFO: [ResourceKind.SHELTER, ResourceKind.FOOD],
+            IncidentType.OTHER: [ResourceKind.SHELTER, ResourceKind.FOOD, ResourceKind.BOAT],
+        }
+        allowed_kinds = compat_map.get(req.type, [ResourceKind.SHELTER, ResourceKind.FOOD])
+        if res.kind not in allowed_kinds:
+            return None
+
+        # 1. Distance score (max 30 pts)
+        if req.lat is not None and req.lng is not None:
+            dist_km = haversine_distance(req.lat, req.lng, res.lat, res.lng)
+        else:
+            dist_km = 2.5
+
+        if dist_km <= 0.5:
+            dist_score = 30.0
+        else:
+            dist_score = round(max(0.0, 30.0 * (1.0 - min(dist_km, 10.0) / 10.0)), 1)
+
+        # 2. Capacity fit score (max 25 pts)
+        needed = req.people_count if req.people_count else 1
+        if res.capacity_remaining >= needed:
+            cap_score = 25.0
+        else:
+            cap_score = round(25.0 * (res.capacity_remaining / max(1, needed)), 1)
+
+        # 3. Urgency score (max 25 pts)
+        urg_score = round(25.0 * (req.urgency_score / 100.0), 1)
+
+        # 4. Vulnerability fit score (max 20 pts)
+        v = req.vulnerable
+        has_vuln = v.child or v.elderly or v.disabled or v.pregnant or v.medical_need
+        if v.medical_need and res.kind == ResourceKind.MEDICAL:
+            vuln_score = 20.0
+        elif (v.child or v.elderly or v.pregnant or v.disabled) and res.kind in [
+            ResourceKind.BOAT,
+            ResourceKind.SHELTER,
+        ]:
+            vuln_score = 20.0
+        elif has_vuln:
+            vuln_score = 15.0
+        else:
+            vuln_score = 10.0
+
+        total = round(dist_score + cap_score + urg_score + vuln_score, 1)
+
+        return MatchBreakdown(
+            distance_km=round(dist_km, 2),
+            distance_score=dist_score,
+            capacity_fit_score=cap_score,
+            urgency_score=urg_score,
+            vulnerability_fit_score=vuln_score,
+            total_score=total,
+        )
+
 
 scoring_engine = ScoringEngine()
+

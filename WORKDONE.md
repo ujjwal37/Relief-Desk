@@ -211,3 +211,12 @@
   - `npx ng build shared` & `npx ng build web` -> compiled successfully without errors.
 - Notes / risks / not done: All Day 0 tasks in TASKS.md are now 100% DONE. Backend server restarted and running on port 8000.
 - Next (suggested task id): Day 1 tasks (T-020, T-021, T-023...)
+### 2026-10-11 15:52 IST — T-020 — Cursor + Antigravity
+- What changed: Created synthetic resource seeds in data/synthetic/flood_v1/resources.yaml (boats, shelters, medical clinics, food distribution hubs across Riverbend's wards); added Resource and Match domain models (StoredResource, StoredMatch, MatchBreakdown, ResourceKind, ResourceStatus, MatchState) in firestore_models.py; implemented deterministic scoring.compute_match_score in scoring.py with distance (max 30), capacity fit (max 25), urgency (max 25), and vulnerability fit (max 20) with hard constraints; implemented capacity reserve/release transactions with overcommit warning/override enforcement and append-only audit trail logging.
+- Files: data/synthetic/flood_v1/resources.yaml, services/api/app/models/firestore_models.py, services/api/app/tools/storage.py, services/api/app/tools/scoring.py, services/api/tests/test_resources_matching.py, TASKS.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_resources_matching.py` -> 4 passed in 0.47s (verified seed resources loaded, verified match breakdown parts sum to total score, verified hard constraints, verified capacity decrements on approval, verified overcommit raises warning and requires override flag, and verified append-only audit logs).
+  - `python -m pytest services/api/tests` -> 60 passed in 2.32s.
+- Notes / risks / not done: Matching and capacity transaction primitives verified. Ready for Matching agent orchestration (T-021).
+- Next (suggested task id): T-021
+

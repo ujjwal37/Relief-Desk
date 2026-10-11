@@ -80,8 +80,73 @@ class StoredCluster(BaseModel):
 class AuditEntry(BaseModel):
     id: str
     actor: str  # e.g. "coordinator", "intake_agent", "dedupe_agent"
-    action: str  # e.g. "report_created", "status_change", "merged_cluster", "split_cluster", "weights_updated"
+    action: str  # e.g. "report_created", "status_change", "merged_cluster", "split_cluster", "weights_updated", "capacity_reserved", "capacity_released", "match_approved", "match_rejected"
     target: str  # ID of target entity
     before: Optional[Dict[str, Any]] = None
     after: Optional[Dict[str, Any]] = None
     ts: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class ResourceKind(str, Enum):
+    BOAT = "boat"
+    SHELTER = "shelter"
+    FOOD = "food"
+    MEDICAL = "medical"
+
+
+class ResourceStatus(str, Enum):
+    AVAILABLE = "available"
+    BUSY = "busy"
+    DEPLETED = "depleted"
+
+
+class StoredResource(BaseModel):
+    id: str
+    event_id: str = "event_riverbend_flood"
+    pack_id: str = "flood"
+    kind: ResourceKind
+    name: str
+    name_hi: Optional[str] = None
+    ward_id: str
+    lat: float
+    lng: float
+    capacity_total: int
+    capacity_remaining: int
+    status: ResourceStatus = ResourceStatus.AVAILABLE
+    synthetic: bool = True
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class MatchState(str, Enum):
+    PROPOSED = "proposed"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class MatchBreakdown(BaseModel):
+    distance_km: float
+    distance_score: float  # e.g. 0-30
+    capacity_fit_score: float  # e.g. 0-25
+    urgency_score: float  # e.g. 0-25
+    vulnerability_fit_score: float  # e.g. 0-20
+    total_score: float  # 0-100 sum
+
+
+class StoredMatch(BaseModel):
+    id: str
+    request_id: str
+    resource_id: str
+    score: float
+    breakdown: MatchBreakdown
+    explanation: Optional[str] = None
+    explanation_hi: Optional[str] = None
+    state: MatchState = MatchState.PROPOSED
+    approved_by: Optional[str] = None
+    rejected_reason: Optional[str] = None
+    overcommit: bool = False
+    overcommit_override: bool = False
+    synthetic: bool = True
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
