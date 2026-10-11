@@ -938,3 +938,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 174 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Benchmark was not re-run. Last held-out type 67.3%, ward 100.0%, duplicate F1 62.7%, vulnerable F1 58.5%. Keyword type 16.3%, ward 13.3%. Gemini measured false.
 - Notes / risks / not done: The container image was not built or deployed here. Photo intake remains unbuilt.
 - Next (suggested task id): GM-12
+
+### 2026-10-12 08:05 IST — GM-12 — Cursor
+- What changed: Rechecked the six fixes already on this branch. No product code changed. The seeded resource-gap card still shows the Sample badge. A team farther than 30 km does not get a minute ETA, and each district still has a nearby boat, medical, and food team. The landing checkmark is the CSS escape `\2713 `, and the mojibake scan is clean. The dashboard map still labels Alappuzha, Ernakulam, Thrissur, and Wayanad. INC-005 Tamil still names the Aluva clock tower. The coordinator header still keeps the brand, tabs, and avatar on at most two rows.
+- Files: TASKS.md
+- How verified: `pytest tests/test_match_eta.py tests/test_no_mojibake.py tests/test_seed_translations.py` — 11 passed. `npx ng test web --watch=false --browsers=ChromeHeadless` for the alerts, command, and layout specs — 28 passed. Full `pytest tests` — 174 passed, 1 skipped. `node scripts/check-i18n.mjs` — 537 keys. `npx ng build web` succeeded. Benchmark was not re-run. Last held-out type 67.3%, ward 100.0%, duplicate F1 62.7%, vulnerable F1 58.5%. Keyword type 16.3%, ward 13.3%. Gemini measured false, reason no_api_key, model gemini-3.8-flash, n=168, date 2026-10-11.
+- Notes / risks / not done: Playwright was not re-run on this branch. Photo intake is still unbuilt. Gemini accuracy on the frozen split is still unmeasured.
+- Next (suggested task id): none

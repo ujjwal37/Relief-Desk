@@ -158,6 +158,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | GM-09 | Replay cache of recorded Gemini runs | C | DONE | GM-08 | data/ai_cache stays empty until make record-ai. Replay badges Recorded Gemini run. A new report with a key still calls Gemini |
 | GM-10 | Photo intake | C | BLOCKED | GM-09 | Not built. An uploaded image is not sent to Gemini. No assistive photo fields are shown |
 | GM-11 | Honest ADK docs and deploy recipe | C | DONE | GM-10 | README maps ADK and Gemini to files. Held-out type 67.3%, ward 100%, Gemini not measured. Dockerfile and Secret Manager notes are a recipe, not a live service |
+| GM-12 | Recheck the earlier retest fixes | C | DONE | GM-11 | Sample badge, 30 km ETA, checkmark escape, Kerala district labels, Tamil INC-005, and the two-row header still pass. No product code changed |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
