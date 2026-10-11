@@ -700,3 +700,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --watch=false --browsers=ChromeHeadless --include='**/report.component.spec.ts'` — 5 passed.
 - Notes / risks / not done: The public RD code appears on the status page after it loads, not on the review card itself.
 - Next (suggested task id): RT-05
+
+### 2026-10-12 02:25 IST — RT-05 — Cursor
+- What changed: Mark team arrived stops the simulated move, sets the team to at the scene, and moves the public timeline's travel step to done with that label.
+- Files: storage.mark_arrived, public status timeline, coordinator command, tests
+- How verified: `pytest tests/test_resources_matching.py` — 5 passed. Command spec 14 passed.
+- Notes / risks / not done: A simulation step already in progress can still write one more point before it notices the stop.
+- Next (suggested task id): RT-06

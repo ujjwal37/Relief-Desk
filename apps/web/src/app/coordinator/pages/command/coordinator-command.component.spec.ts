@@ -193,6 +193,15 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.filteredRequests().map((r) => r.id)).toEqual(['INC-001']);
   });
 
+  it('marks the assigned team at the scene', () => {
+    component.approveMatch(mockProposal);
+    apiClientSpy.markArrived.and.returnValue(of({ ...mockRequests[0], status: 'in_progress' }));
+    const dispatched = component.requests().find((r) => r.id === 'INC-001')!;
+    component.markArrived(dispatched);
+    expect(component.resources().find((r) => r.id === 'res_boat_02')?.status).toBe('on_scene');
+    expect(component.resources().find((r) => r.id === 'res_boat_02')?.simulated).toBeFalse();
+  });
+
   it('should complete a dispatched case and free the team', () => {
     component.approveMatch(mockProposal);
     apiClientSpy.completeRequest.and.returnValue(of({ ...mockRequests[0], status: 'completed' }));

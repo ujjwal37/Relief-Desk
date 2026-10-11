@@ -617,6 +617,18 @@ class StorageService:
         req.updated_at = datetime.now(timezone.utc).isoformat()
         self._requests[req.id] = req
         self.record_audit(actor=actor, action="status_change", target=req.id, before=before, after=req.model_dump())
+        resource_id = req.assigned_resource_id
+        res = self._resources.get(resource_id) if resource_id else None
+        if res:
+            res.simulated = False
+            res.status = ResourceStatus.ON_SCENE
+            if req.lat is not None and req.lng is not None:
+                res.lat = req.lat
+                res.lng = req.lng
+            res.location_updated_at = req.updated_at
+            res.updated_at = req.updated_at
+            self._append_trail(res)
+            self._resources[res.id] = res
         return req
 
     def complete_request(self, request_id: str, actor: str = "coordinator") -> StoredRequest:

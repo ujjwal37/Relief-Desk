@@ -594,6 +594,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.apiClient.markArrived(req.id).subscribe({
       next: () => {
         this.requests.set(this.requests().map((r) => (r.id === req.id ? { ...r, status: 'in_progress' as const } : r)));
+        if (req.assigned_resource_id) {
+          this.resources.set(this.resources().map((res) => (
+            res.id === req.assigned_resource_id
+              ? { ...res, status: 'on_scene' as const, simulated: false, lat: req.lat ?? res.lat, lng: req.lng ?? res.lng }
+              : res
+          )));
+        }
         this.actionToast.set({ text: this.langService.translate('coord.arrivedNote'), type: 'success' });
       },
     });

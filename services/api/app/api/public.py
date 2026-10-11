@@ -283,12 +283,18 @@ def get_report_status(
     # dispatched/completed are added later; treat the string values the same way.
     approved = approved or req_status.value in ("dispatched", "completed")
     fulfilled = req_status in (RequestStatus.RESOLVED, RequestStatus.CLOSED) or req_status.value == "completed"
+    arrived = req_status == RequestStatus.IN_PROGRESS
     matched_state = "done" if approved else "pending"
-    on_way_state = "done" if fulfilled else ("current" if approved else "pending")
+    on_way_state = "done" if fulfilled or arrived else ("current" if approved else "pending")
     fulfilled_state = "done" if fulfilled else "pending"
     assigned_at = req.updated_at if req and approved else None
     eta_minutes = 12 if approved and not fulfilled else None
-    hero_title = "status.heroDone" if fulfilled else ("status.heroOnWay" if approved else "status.heroReceived")
+    hero_title = (
+        "status.heroDone" if fulfilled
+        else "coord.resStatus.on_scene" if arrived
+        else "status.heroOnWay" if approved
+        else "status.heroReceived"
+    )
 
     timeline = [
         StatusTimelineStep(
@@ -313,7 +319,7 @@ def get_report_status(
             title="status.onway",
             state=on_way_state,
             timestamp=assigned_at if on_way_state != "pending" else None,
-            description="status.stepOnWay",
+            description="coord.resStatus.on_scene" if arrived else "status.stepOnWay",
         ),
         StatusTimelineStep(
             step=4,

@@ -172,6 +172,10 @@ def test_approve_match_capacity_transaction():
 
     arrived = storage_service.mark_arrived("req_match_tx", actor="coordinator_lead")
     assert arrived.status == RequestStatus.IN_PROGRESS
+    on_scene = storage_service.get_resource("RES-BOAT-02")
+    assert on_scene is not None
+    assert on_scene.status == ResourceStatus.ON_SCENE
+    assert on_scene.simulated is False
 
     done = storage_service.complete_request("req_match_tx", actor="coordinator_lead")
     assert done.status == RequestStatus.COMPLETED
