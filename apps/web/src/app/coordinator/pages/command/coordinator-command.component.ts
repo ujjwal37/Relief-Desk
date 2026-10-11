@@ -201,19 +201,56 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (c.high > 0) return t('coord.briefSoon', c.high);
     return this.langService.translate('coord.briefNone');
   });
+  /** Schematic district outlines in lat/lng, south to north, around the seeded wards. */
+  private readonly districtRings: { id: string; ring: [number, number][] }[] = [
+    { id: 'alappuzha', ring: [[9.34, 76.30], [9.34, 76.55], [9.70, 76.52], [9.72, 76.31]] },
+    { id: 'ernakulam', ring: [[9.90, 76.18], [9.95, 76.72], [10.28, 76.70], [10.22, 76.16]] },
+    { id: 'thrissur', ring: [[10.15, 76.02], [10.18, 76.48], [10.62, 76.42], [10.58, 76.02]] },
+    { id: 'wayanad', ring: [[11.42, 75.95], [11.46, 76.28], [11.78, 76.24], [11.74, 75.96]] },
+  ];
+  readonly mapFrame = computed(() => {
+    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r));
+    if (!open.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
+    const lats = open.map((r) => r.lat as number);
+    const lngs = open.map((r) => r.lng as number);
+    const minLa = Math.min(...lats);
+    const maxLa = Math.max(...lats);
+    const minLo = Math.min(...lngs);
+    const maxLo = Math.max(...lngs);
+    const padLa = Math.max(0.08, (maxLa - minLa) * 0.18);
+    const padLo = Math.max(0.08, (maxLo - minLo) * 0.18);
+    return { minLa: minLa - padLa, maxLa: maxLa + padLa, minLo: minLo - padLo, maxLo: maxLo + padLo };
+  });
+  project(lat: number, lng: number): { x: number; y: number } {
+    const frame = this.mapFrame();
+    return {
+      x: 36 + ((lng - frame.minLo) / Math.max(1e-6, frame.maxLo - frame.minLo)) * 528,
+      y: 28 + (1 - (lat - frame.minLa) / Math.max(1e-6, frame.maxLa - frame.minLa)) * 424,
+    };
+  }
+  readonly mapDistricts = computed(() =>
+    this.districtRings.map((district) => {
+      const pts = district.ring.map(([lat, lng]) => this.project(lat, lng));
+      return {
+        id: district.id,
+        points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+        lx: pts.reduce((sum, p) => sum + p.x, 0) / pts.length,
+        ly: pts.reduce((sum, p) => sum + p.y, 0) / pts.length,
+      };
+    }),
+  );
   readonly svgPins = computed(() => {
-    const reqs = this.requests().filter((r) => r.lat != null && r.lng != null);
+    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r));
     const res = this.resources();
-    const pts = [...reqs.map((r) => ({ lat: r.lat as number, lng: r.lng as number })), ...res.map((r) => ({ lat: r.lat, lng: r.lng }))];
-    if (!pts.length) return [] as { id: string; x: number; y: number; band: string; kind: 'req' | 'team'; team: string; n: number }[];
-    const minLa = Math.min(...pts.map((p) => p.lat)), maxLa = Math.max(...pts.map((p) => p.lat));
-    const minLo = Math.min(...pts.map((p) => p.lng)), maxLo = Math.max(...pts.map((p) => p.lng));
-    const fx = (lng: number) => 50 + ((lng - minLo) / Math.max(1e-6, maxLo - minLo)) * 500;
-    const fy = (lat: number) => 40 + (1 - (lat - minLa) / Math.max(1e-6, maxLa - minLa)) * 400;
-    const top = this.filteredRequests().filter((r) => r.lat != null && r.lng != null).slice(0, 14);
     return [
-      ...res.map((r) => ({ id: r.id, x: fx(r.lng), y: fy(r.lat), band: 'team', kind: 'team' as const, team: r.kind, n: 0 })),
-      ...top.map((r, i) => ({ id: r.id, x: fx(r.lng as number), y: fy(r.lat as number), band: urgencyBand(r.urgency_score), kind: 'req' as const, team: '', n: i + 1 })),
+      ...res.map((r) => {
+        const at = this.project(r.lat, r.lng);
+        return { id: r.id, x: at.x, y: at.y, band: 'team', kind: 'team' as const, team: r.kind, n: 0 };
+      }),
+      ...open.map((r, i) => {
+        const at = this.project(r.lat as number, r.lng as number);
+        return { id: r.id, x: at.x, y: at.y, band: urgencyBand(r.urgency_score), kind: 'req' as const, team: '', n: i + 1 };
+      }),
     ];
   });
   readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
@@ -222,16 +259,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const team = req ? this.assignedTeam(req) : undefined;
     const trail = team?.location_trail || [];
     if (trail.length < 2) return '';
-    const pts = [
-      ...this.requests().filter((r) => r.lat != null && r.lng != null).map((r) => ({ lat: r.lat as number, lng: r.lng as number })),
-      ...this.resources().map((r) => ({ lat: r.lat, lng: r.lng })),
-      ...trail,
-    ];
-    const minLa = Math.min(...pts.map((p) => p.lat)), maxLa = Math.max(...pts.map((p) => p.lat));
-    const minLo = Math.min(...pts.map((p) => p.lng)), maxLo = Math.max(...pts.map((p) => p.lng));
-    const fx = (lng: number) => 50 + ((lng - minLo) / Math.max(1e-6, maxLo - minLo)) * 500;
-    const fy = (lat: number) => 40 + (1 - (lat - minLa) / Math.max(1e-6, maxLa - minLa)) * 400;
-    return trail.map((p) => `${fx(p.lng).toFixed(1)},${fy(p.lat).toFixed(1)}`).join(' ');
+    return trail
+      .map((p) => {
+        const at = this.project(p.lat, p.lng);
+        return `${at.x.toFixed(1)},${at.y.toFixed(1)}`;
+      })
+      .join(' ');
   });
 
   etaMinutes(km: number): number {

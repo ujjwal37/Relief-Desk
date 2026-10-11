@@ -819,3 +819,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_seed_translations.py tests/test_no_mojibake.py` — 6 passed.
 - Notes / risks / not done: Tamil place names are transliterations, not a second gazetteer. A Tamil alias must appear as written; a case ending that changes the last letter will fail the place check.
 - Next (suggested task id): RT-20
+
+### 2026-10-12 05:15 IST — RT-20 — Cursor
+- What changed: The coordinator dashboard map fits its frame to every open case and draws four district outlines labelled Alappuzha, Ernakulam, Thrissur and Wayanad. The decorative river stroke and flood blob are gone. A completed case outside Kerala does not stretch the frame. Pins are the open cases, not a cap of 14.
+- Files: coordinator-command component html/ts/scss/spec, coord.district in en/hi/hinglish/ta, TASKS.md
+- How verified: `npx ng test web --include='**/coordinator-command.component.spec.ts'` — 19 passed. `node scripts/check-i18n.mjs` — 519 keys.
+- Notes / risks / not done: The outlines are simple shapes around the seeded wards, not official survey boundaries. The alerts page still has its own water stroke.
+- Next (suggested task id): RT-21

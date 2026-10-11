@@ -356,6 +356,34 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.etaText(near)).toBe('about 4 min');
   });
 
+  it('fits open cases and labels the four Kerala districts without a river', () => {
+    component.requests.set([
+      { ...mockRequests[0], id: 'south', lat: 9.43, lng: 76.4, status: 'new' },
+      { ...mockRequests[0], id: 'north', lat: 11.6, lng: 76.08, status: 'new' },
+      { ...mockRequests[0], id: 'done', lat: 26.8, lng: 80.9, status: 'completed' },
+    ]);
+    fixture.detectChanges();
+    const frame = component.mapFrame();
+    expect(frame.minLa).toBeLessThan(9.43);
+    expect(frame.maxLa).toBeGreaterThan(11.6);
+    expect(frame.maxLa).toBeLessThan(20);
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Alappuzha');
+    expect(text).toContain('Ernakulam');
+    expect(text).toContain('Thrissur');
+    expect(text).toContain('Wayanad');
+    expect(fixture.nativeElement.querySelectorAll('polygon.district').length).toBe(4);
+    expect(fixture.nativeElement.querySelector('path[stroke="var(--map-water)"]')).toBeNull();
+    const pins = component.svgPins().filter((pin) => pin.kind === 'req');
+    expect(pins.map((pin) => pin.id).sort()).toEqual(['north', 'south']);
+    for (const pin of pins) {
+      expect(pin.x).toBeGreaterThan(20);
+      expect(pin.x).toBeLessThan(580);
+      expect(pin.y).toBeGreaterThan(20);
+      expect(pin.y).toBeLessThan(460);
+    }
+  });
+
   it('reloads the queue when the demo phone submits a report', () => {
     apiClientSpy.getRequests.calls.reset();
     component.handleDemoMessage({

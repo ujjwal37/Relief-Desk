@@ -255,6 +255,12 @@
       "medium": "Ruk sakta hai",
       "low": "Nazar rakhein"
     },
+    "district": {
+      "alappuzha": "Alappuzha",
+      "ernakulam": "Ernakulam",
+      "thrissur": "Thrissur",
+      "wayanad": "Wayanad"
+    },
     "priority": "Priority",
     "filterAll": "Sabhi",
     "filterNow": "Abhi madad",

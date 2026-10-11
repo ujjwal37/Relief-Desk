@@ -98,8 +98,10 @@
         <rd-map-provider [pins]="mapPins()" (pinSelect)="selectRequest($event, true)">
           <svg viewBox="0 0 600 480" class="svgmap" preserveAspectRatio="xMidYMid slice" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
             <rect width="600" height="480" fill="var(--map-bg)"/>
-            <path d="M-20 400 C 110 300 200 460 320 360 S 500 180 640 220" fill="none" stroke="var(--map-water)" stroke-width="46" stroke-linecap="round"/>
-            <path d="M70 300 C 130 220 230 240 290 280 S 400 180 470 160 L 540 190 C 510 310 430 410 320 450 S 140 470 80 420 Z" fill="var(--map-flood)" stroke="var(--map-flood-line)" stroke-width="1.5" stroke-dasharray="6 5"/>
+            @for (d of mapDistricts(); track d.id) {
+              <polygon class="district" [attr.points]="d.points"></polygon>
+              <text class="dlabel" [attr.x]="d.lx" [attr.y]="d.ly" text-anchor="middle">{{ ('coord.district.' + d.id) | rdTranslate }}</text>
+            }
             @if (movementTrail()) {
               <polyline [attr.points]="movementTrail()" fill="none" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
             }

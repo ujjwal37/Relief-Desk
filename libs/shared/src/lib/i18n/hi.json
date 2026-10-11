@@ -255,6 +255,12 @@
       "medium": "रुक सकता है",
       "low": "नज़र रखें"
     },
+    "district": {
+      "alappuzha": "आलप्पुषा",
+      "ernakulam": "एर्नाकुलम",
+      "thrissur": "त्रिशूर",
+      "wayanad": "वायनाड"
+    },
     "priority": "प्राथमिकता",
     "filterAll": "सभी",
     "filterNow": "अभी मदद",

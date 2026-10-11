@@ -255,6 +255,12 @@
       "medium": "Can wait",
       "low": "Monitor"
     },
+    "district": {
+      "alappuzha": "Alappuzha",
+      "ernakulam": "Ernakulam",
+      "thrissur": "Thrissur",
+      "wayanad": "Wayanad"
+    },
     "priority": "Priority",
     "filterAll": "All",
     "filterNow": "Needs help now",

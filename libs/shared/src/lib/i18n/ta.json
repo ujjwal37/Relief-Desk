@@ -255,6 +255,12 @@
       "medium": "காத்திருக்கலாம்",
       "low": "கண்காணி"
     },
+    "district": {
+      "alappuzha": "அலப்புழா",
+      "ernakulam": "எர்ணாகுளம்",
+      "thrissur": "திருச்சூர்",
+      "wayanad": "வயநாடு"
+    },
     "priority": "முன்னுரிமை",
     "filterAll": "அனைத்தும்",
     "filterNow": "உடனே",
