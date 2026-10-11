@@ -12,6 +12,7 @@ from app.models.firestore_models import (
 )
 from app.tools.storage import storage_service
 from app.tools.scoring import scoring_engine
+from app.agents.explainer import explainer_agent
 
 logger = logging.getLogger("relief_desk.matching_agent")
 
@@ -76,12 +77,15 @@ class MatchingAgent:
             ]
 
             is_overcommit = people_needed > res.capacity_remaining
+            explanation = explainer_agent.explain(request, res, breakdown)
 
             if existing:
                 match = existing[0]
                 match.score = breakdown.total_score
                 match.breakdown = breakdown
                 match.overcommit = is_overcommit
+                match.explanation = explanation.text_en
+                match.explanation_hi = explanation.text_hi
                 if save_to_storage:
                     storage_service.save_match(match, actor="matching_agent")
             else:
@@ -92,6 +96,8 @@ class MatchingAgent:
                     resource_id=res.id,
                     score=breakdown.total_score,
                     breakdown=breakdown,
+                    explanation=explanation.text_en,
+                    explanation_hi=explanation.text_hi,
                     state=MatchState.PROPOSED,
                     overcommit=is_overcommit,
                 )

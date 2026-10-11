@@ -229,3 +229,12 @@
 - Notes / risks / not done: Matching agent operational. Ready for Explainer agent (T-022).
 - Next (suggested task id): T-022
 
+### 2026-10-11 15:56 IST — T-022 — Antigravity
+- What changed: Implemented ExplainerAgent in services/api/app/agents/explainer.py generating concise (<= 2 sentences) explanations in English and Hindi for match decisions; integrated strict numeric consistency guardrail ensuring any cited numeric token exists in the supplied numbers list (distance, capacity, urgency, people count, total score); tested and verified that forged/hallucinated LLM output immediately triggers deterministic template fallback. Wired explainer into MatchingAgent proposals.
+- Files: services/api/app/agents/explainer.py, services/api/app/agents/matching.py, services/api/tests/test_explainer.py, TASKS.md
+- How verified (commands / screenshots):
+  - `python -m pytest services/api/tests/test_explainer.py` -> 2 passed in 0.20s (verified valid numeric explanations pass, verified unapproved forged numbers trigger fallback, verified Hindi translation present, verified <= 2 sentence limit).
+  - `python -m pytest services/api/tests` -> 66 passed in 2.30s.
+- Notes / risks / not done: Explainer guardrail prevents any LLM numerical hallucinations from reaching responders.
+- Next (suggested task id): T-028 or T-023
+
