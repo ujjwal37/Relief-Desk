@@ -791,3 +791,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_match_eta.py tests/test_match_types.py tests/test_matches_api.py tests/test_resources_matching.py tests/test_anomaly.py` — 20 passed. `npx ng test web --include='**/coordinator-command.component.spec.ts'` — 18 passed. `node scripts/check-i18n.mjs` — 515 keys.
 - Notes / risks / not done: A case outside Kerala still lists the nearest cluster, with the minute figure hidden. Shelters are not in every district; a shelter case there also says No nearby team.
 - Next (suggested task id): RT-16
+
+### 2026-10-12 04:35 IST — RT-16 — Cursor
+- What changed: The landing trust-list checkmark is a CSS escape (\\2713) instead of a double-encoded byte sequence. A scan of scss, css, html, ts, json, py, svg, yaml, mjs, md and js found no other copy of that marker.
+- Files: apps/web/src/app/landing/landing.component.scss, services/api/tests/test_no_mojibake.py, TASKS.md
+- How verified: `pytest tests/test_no_mojibake.py` — 2 passed.
+- Notes / risks / not done: The CSS escape consumes the trailing space, so the check sits against the following word.
+- Next (suggested task id): RT-17
