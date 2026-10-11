@@ -1,4 +1,10 @@
 <div class="report-view">
+  <!-- Offline Alert Banner -->
+  <div class="offline-banner" *ngIf="!offlineSync.isOnline()">
+    <span>📵 {{ 'safety.offlineNotice' | rdTranslate }}</span>
+    <span class="badge" *ngIf="offlineSync.pendingCount() > 0">Queued: {{ offlineSync.pendingCount() }}</span>
+  </div>
+
   <!-- Top bar: Location & Toggle -->
   <div class="report-topbar">
     <div class="location-badge">
@@ -133,7 +139,7 @@
     </div>
 
     <div class="fast-links">
-      <a href="sms:112?body=EMERGENCY%20RELIEF%20REQUEST" class="sms-btn">📱 Send by SMS</a>
+      <a [href]="offlineSync.getPrefilledSmsLink(userInput())" class="sms-btn">📱 Send by SMS</a>
       <a href="tel:112" class="call112-link">🚨 In Danger? Call 112</a>
     </div>
   </div>

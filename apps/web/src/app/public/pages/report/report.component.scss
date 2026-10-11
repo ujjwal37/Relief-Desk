@@ -6,6 +6,28 @@
   margin: 0 auto;
   position: relative;
 
+  .offline-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+
+    .badge {
+      background: #d97706;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+    }
+  }
+
   .report-topbar {
     display: flex;
     justify-content: space-between;

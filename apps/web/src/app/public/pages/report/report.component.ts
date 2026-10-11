@@ -9,7 +9,10 @@ import {
   ConfirmationCardData,
   ChatTurnResponse,
   ReportSubmitResponse,
+  ReportSubmitRequest,
 } from '@rd/shared';
+
+import { OfflineSyncService } from '../../../core/services/offline-sync.service';
 
 export interface ChatMessage {
   id: string;
@@ -30,6 +33,7 @@ export interface ChatMessage {
 export class ReportComponent implements OnInit {
   private apiClient = inject(ApiClientService);
   readonly langService = inject(LanguageService);
+  readonly offlineSync = inject(OfflineSyncService);
 
   readonly sessionId = signal<string>(`sess_${Math.random().toString(36).substring(2, 9)}`);
   readonly mode = signal<'chat' | 'form'>('chat');
@@ -127,31 +131,52 @@ export class ReportComponent implements OnInit {
 
   confirmAndSubmit(card: ConfirmationCardData): void {
     if (this.isLoading()) return;
+
+    const payload: ReportSubmitRequest = {
+      text: card.summary,
+      channel: 'text',
+      lang: this.langService.currentLang(),
+      location_pin: this.locationPin(),
+      scenario_id: 'flood',
+    };
+
+    if (!this.offlineSync.isOnline()) {
+      const item = this.offlineSync.saveReportOffline(payload);
+      const offlineMsg: ChatMessage = {
+        id: `off_${Date.now()}`,
+        role: 'assistant',
+        text: `📵 Offline Mode: Report queued safely on device (ID: ${item.idempotency_key}). It will automatically submit once internet connection is restored. You can also tap 'Send by SMS'.`,
+        timestamp: new Date(),
+      };
+      this.chatMessages.update((msgs) => [...msgs, offlineMsg]);
+      return;
+    }
+
     this.isLoading.set(true);
 
-    this.apiClient
-      .submitReport({
-        text: card.summary,
-        channel: 'text',
-        lang: this.langService.currentLang(),
-        location_pin: this.locationPin(),
-        scenario_id: 'flood',
-      })
-      .subscribe({
-        next: (res: ReportSubmitResponse) => {
-          this.isLoading.set(false);
-          this.submittedResult.set(res);
-          const confirmMsg: ChatMessage = {
-            id: `done_${Date.now()}`,
-            role: 'assistant',
-            text: `✅ Report submitted successfully to response team! Tracking Token: ${res.status_token}`,
-            timestamp: new Date(),
-          };
-          this.chatMessages.update((msgs) => [...msgs, confirmMsg]);
-        },
-        error: (err) => {
-          this.isLoading.set(false);
-        },
-      });
+    this.apiClient.submitReport(payload).subscribe({
+      next: (res: ReportSubmitResponse) => {
+        this.isLoading.set(false);
+        this.submittedResult.set(res);
+        const confirmMsg: ChatMessage = {
+          id: `done_${Date.now()}`,
+          role: 'assistant',
+          text: `✅ Report submitted successfully to response team! Tracking Token: ${res.status_token}`,
+          timestamp: new Date(),
+        };
+        this.chatMessages.update((msgs) => [...msgs, confirmMsg]);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        const item = this.offlineSync.saveReportOffline(payload);
+        const errorMsg: ChatMessage = {
+          id: `err_${Date.now()}`,
+          role: 'assistant',
+          text: `⚠️ Network error encountered. Report queued locally (ID: ${item.idempotency_key}) and will auto-retry. Call 112 for urgent emergency.`,
+          timestamp: new Date(),
+        };
+        this.chatMessages.update((msgs) => [...msgs, errorMsg]);
+      },
+    });
   }
 }

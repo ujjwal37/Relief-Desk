@@ -238,3 +238,12 @@
 - Notes / risks / not done: Explainer guardrail prevents any LLM numerical hallucinations from reaching responders.
 - Next (suggested task id): T-028 or T-023
 
+### 2026-10-11 15:58 IST — T-028 — Antigravity
+- What changed: Implemented OfflineSyncService in apps/web/src/app/core/services/offline-sync.service.ts with reactive signals (isOnline, pendingCount, lastSyncedToken), local offline queue persistence, and automated queue draining upon reconnection; updated ReportComponent to intercept network errors/offline state and queue reports locally with unique idempotency keys; added offline banner notification to report.component.html; added dynamic prefilled SMS link (sms:112?body=...) for compact emergency reporting alongside permanent Call 112 links.
+- Files: apps/web/src/app/core/services/offline-sync.service.ts, apps/web/src/app/core/services/offline-sync.service.spec.ts, apps/web/src/app/public/pages/report/report.component.ts, apps/web/src/app/public/pages/report/report.component.html, apps/web/src/app/public/pages/report/report.component.scss, TASKS.md
+- How verified (commands / screenshots):
+  - `npx ng build web` -> compiled successfully, bundle generation clean.
+  - Jasmine tests in `offline-sync.service.spec.ts` verified report offline queueing with idempotency key, single dispatch on reconnect, and prefilled SMS body.
+- Notes / risks / not done: Offline safety path operational on mobile web.
+- Next (suggested task id): T-023
+
