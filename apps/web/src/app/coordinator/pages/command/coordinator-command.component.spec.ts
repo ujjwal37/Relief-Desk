@@ -224,6 +224,27 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.teamsFree()).toEqual({ free: 2, total: 4 });
   });
 
+  it('tab counts follow the type, area and time filters, and areas use place names', () => {
+    expect(component.counts().total).toBe(2);
+    component.setFilterType('medical');
+    expect(component.counts().total).toBe(1);
+    expect(component.counts().critical).toBe(1);
+    component.setArea('ward_7');
+    expect(component.counts().total).toBe(0);
+    component.setFilterType('all');
+    component.setArea('all');
+    component.setTime('hour');
+    expect(component.counts().total).toBe(0);
+    component.clearFilters();
+    fixture.detectChanges();
+    const options = Array.from(fixture.nativeElement.querySelectorAll('option') as NodeListOf<HTMLOptionElement>)
+      .map((option) => (option.textContent || '').trim());
+    expect(options).toContain('Chalakudy');
+    expect(options).toContain('Aluva');
+    expect(options.some((label) => /ward\s*\d+/i.test(label))).toBeFalse();
+    expect(component.placeName('ward_12')).toBe('Kalpetta');
+  });
+
   it('keeps type, area and time filters and can clear them', () => {
     component.setFilterType('medical');
     component.setArea('ward_4');

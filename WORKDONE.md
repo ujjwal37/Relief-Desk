@@ -721,3 +721,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --watch=false --browsers=ChromeHeadless --include='**/coordinator-command.component.spec.ts'` — 15 passed.
 - Notes / risks / not done: The label stays "Teams free". The number is now all kinds, so a shelter that is free is included.
 - Next (suggested task id): RT-08
+
+### 2026-10-12 02:55 IST — RT-08 — Cursor
+- What changed: The case-tab counts now follow the type, area and time filters. The area list shows the place name (Kalpetta, Aluva) instead of the ward id.
+- Files: coordinator-command.component.ts, coordinator-command.component.html, coordinator-command.component.spec.ts, TASKS.md
+- How verified: `npx ng test web --watch=false --browsers=ChromeHeadless --include='**/coordinator-command.component.spec.ts'` — 16 passed.
+- Notes / risks / not done: A case row can still prefix the place with the ward id. The area dropdown is the list that was showing "ward 12".
+- Next (suggested task id): RT-09

@@ -29,6 +29,21 @@ import {
   UrgencyWeights,
 } from '@rd/shared';
 
+const PLACE_NAMES: Record<string, { en: string; hi: string }> = {
+  ward_1: { en: 'Kainakary', hi: 'काइनकरी' },
+  ward_2: { en: 'Champakulam', hi: 'चम्पाकुलाम' },
+  ward_3: { en: 'Nedumudi', hi: 'नेदुमुडी' },
+  ward_4: { en: 'Aluva', hi: 'आलुवा' },
+  ward_5: { en: 'Varapuzha', hi: 'वरप्पुषा' },
+  ward_6: { en: 'Kothamangalam', hi: 'कोथमंगलम' },
+  ward_7: { en: 'Chalakudy', hi: 'चालाकुडी' },
+  ward_8: { en: 'Mala', hi: 'माला' },
+  ward_9: { en: 'Anthikad', hi: 'अंतिक्काड' },
+  ward_10: { en: 'Meppadi', hi: 'मेप्पाडी' },
+  ward_11: { en: 'Vythiri', hi: 'वित्तूरि' },
+  ward_12: { en: 'Kalpetta', hi: 'कल्पेट्टा' },
+};
+
 @Component({
   selector: 'app-coordinator-command',
   standalone: true,
@@ -161,11 +176,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
 
   readonly activeRequests = computed(() => this.requests().filter((r) => !this.isDispatched(r) && !this.isCompleted(r)));
-  readonly counts = computed(() => ({
-    ...bandCounts(this.activeRequests()),
-    dispatched: this.requests().filter((r) => this.isDispatched(r)).length,
-    completed: this.requests().filter((r) => this.isCompleted(r)).length,
-  }));
+  readonly counts = computed(() => {
+    const scoped = this.requests().filter((r) => this.inScope(r));
+    return {
+      ...bandCounts(scoped.filter((r) => !this.isDispatched(r) && !this.isCompleted(r))),
+      dispatched: scoped.filter((r) => this.isDispatched(r)).length,
+      completed: scoped.filter((r) => this.isCompleted(r)).length,
+    };
+  });
   readonly criticalCount = computed<number>(() => this.counts().critical);
   readonly teamsFree = computed(() => {
     const teams = this.resources();
@@ -258,6 +276,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return this.langService.translate(key).replace('{n}', String(hour ? Math.round(m / 60) : m));
   }
   readonly areas = computed(() => [...new Set(this.requests().map((r) => r.ward_id).filter((w): w is string => !!w))].sort());
+  placeName(wardId: string): string {
+    const names = PLACE_NAMES[wardId];
+    if (!names) return wardId.replaceAll('_', ' ');
+    return this.langService.currentLang() === 'hi' ? names.hi : names.en;
+  }
+  private inScope(r: StoredRequest): boolean {
+    const type = this.filterType();
+    if (type !== 'all' && r.type !== type) return false;
+    const area = this.areaFilter();
+    if (area !== 'all' && r.ward_id !== area) return false;
+    const time = this.timeFilter();
+    if (time === 'all') return true;
+    if (!r.created_at) return false;
+    const start = time === 'hour' ? Date.now() - 60 * 60 * 1000 : new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+    return new Date(r.created_at).getTime() >= start;
+  }
   tr(key: string, n: number): string { this.langService.currentLang(); return this.langService.translate(key).replace('{n}', String(n)); }
   waitLabel(prop: MatchProposal): string {
     this.langService.currentLang();

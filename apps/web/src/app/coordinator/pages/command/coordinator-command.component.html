@@ -49,7 +49,7 @@
         <label>{{ 'coord.filterArea' | rdTranslate }}
           <select [ngModel]="areaFilter()" (ngModelChange)="setArea($event)">
             <option value="all">{{ 'coord.allAreas' | rdTranslate }}</option>
-            @for (w of areas(); track w) { <option [value]="w">{{ w.replace('_', ' ') }}</option> }
+            @for (w of areas(); track w) { <option [value]="w">{{ placeName(w) }}</option> }
           </select>
         </label>
         <label>{{ 'coord.filterTime' | rdTranslate }}

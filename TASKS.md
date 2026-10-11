@@ -130,6 +130,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | RT-05 | Mark arrived sets the team to at the scene | C | DONE | RT-04 | Resource status on_scene and the public timeline step is done |
 | RT-06 | Match ETAs prefer a nearer team | C | DONE | RT-05 | Oxygen case is the Varapuzha clinic; a far boat is not offered when a nearer one exists |
 | RT-07 | Teams free counts every team | C | DONE | RT-06 | The tile total includes shelter and food, not only boats and medical |
+| RT-08 | Tab counts follow filters; areas use place names | C | DONE | RT-07 | Needs-help counts drop with type, area and time; Kalpetta not ward 12 |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
