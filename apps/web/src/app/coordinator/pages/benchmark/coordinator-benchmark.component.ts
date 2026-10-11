@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 
 export interface MetricRow {
@@ -37,7 +36,7 @@ const METRIC_ORDER = [
 @Component({
   selector: 'app-coordinator-benchmark',
   standalone: true,
-  imports: [CommonModule, RdTranslatePipe],
+  imports: [RdTranslatePipe],
   templateUrl: './coordinator-benchmark.component.html',
   styleUrl: './coordinator-benchmark.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +49,9 @@ export class CoordinatorBenchmarkComponent implements OnInit {
   readonly subtitle = signal('');
   readonly failures = signal<string[]>([]);
   readonly error = signal<string | null>(null);
+  readonly example = signal(false);
+  readonly margin = signal<string | null>(null);
+  readonly smallSample = signal(false);
   readonly gemini = signal<{
     measured: boolean;
     model: string;
@@ -80,7 +82,23 @@ export class CoordinatorBenchmarkComponent implements OnInit {
     return Math.max(0, Math.min(100, n <= 1 ? n * 100 : n));
   }
 
+  geminiValue(row: MetricRow): string | null {
+    const gemini = this.gemini();
+    if (!gemini?.measured) return null;
+    if (row.key === 'type_accuracy_pct' && gemini.type) return gemini.type;
+    if (row.key === 'place_ward_accuracy_pct' && gemini.ward) return gemini.ward;
+    return null;
+  }
+
+  marginText(): string {
+    this.lang.currentLang();
+    const value = this.margin();
+    if (!value) return '';
+    return this.lang.translate('ux.margin').replace('{n}', value);
+  }
+
   apply(payload: Record<string, unknown>): void {
+    this.example.set(payload['example'] === true || payload['sample'] === true);
     const metrics = (payload['metrics'] || {}) as Record<string, Record<string, unknown>>;
     const split = String(payload['split_desc'] || '');
     const seed = String(payload['seed'] ?? '');
@@ -103,7 +121,12 @@ export class CoordinatorBenchmarkComponent implements OnInit {
       };
     }));
     const examples = (payload['failure_examples'] || []) as Array<Record<string, unknown>>;
-    this.failures.set(examples.map((item) => `${item['message_id']}: ${item['category']}`));
+    this.failures.set(examples.slice(0, 3).map((item) => {
+      const reason = item['reason'] || item['category'] || '';
+      const id = item['message_id'] ? String(item['message_id']) : '';
+      return [id, reason].filter(Boolean).join(': ');
+    }).filter(Boolean));
+    this.setMargin(payload, this.rows());
     const gemini = payload['gemini'] as Record<string, unknown> | undefined;
     if (!gemini) {
       this.gemini.set(null);
@@ -119,6 +142,33 @@ export class CoordinatorBenchmarkComponent implements OnInit {
       baseType: this.format(gemini['baseline_type_accuracy_pct']),
       baseWard: this.format(gemini['baseline_ward_accuracy_pct']),
     });
+  }
+
+  private setMargin(payload: Record<string, unknown>, rows: MetricRow[]): void {
+    const gemini = payload['gemini'] as Record<string, unknown> | undefined;
+    const n = Number(gemini?.['n'] ?? payload['total_evaluated_messages']);
+    const usable = (row: MetricRow) => {
+      if (!row.pct || row.relief === '') return false;
+      const raw = parseFloat(row.relief);
+      const unit = raw > 1 ? raw / 100 : raw;
+      return unit > 0 && unit < 1;
+    };
+    const source = rows.find(usable) || rows.find((row) => row.pct && row.relief !== '');
+    const raw = source ? parseFloat(source.relief) : Number.NaN;
+    if (!(n > 0) || Number.isNaN(raw)) {
+      this.margin.set(null);
+      this.smallSample.set(false);
+      return;
+    }
+    const p = raw > 1 ? raw / 100 : raw;
+    const points = 1.96 * Math.sqrt((p * (1 - p)) / n) * 100;
+    this.margin.set(points.toFixed(1));
+    this.smallSample.set(rows.some((row) => {
+      if (!row.pct) return false;
+      const rule = parseFloat(row.relief);
+      const base = parseFloat(row.baseline);
+      return !Number.isNaN(rule) && !Number.isNaN(base) && Math.abs(rule - base) <= points;
+    }));
   }
 
   private baselineOf(value: Record<string, unknown>): { value: unknown; name: string } {

@@ -97,6 +97,18 @@ export class ApiClientService {
     return this.http.get<any>(`/api/clusters/${clusterId}`, this.getAuthHeaders());
   }
 
+  getMerge(requestId: string): Observable<any> {
+    return this.http.get<any>(`/api/cases/${requestId}/merge`, this.getAuthHeaders());
+  }
+
+  getAssistProposals(): Observable<any> {
+    return this.http.get<any>('/api/assist/proposals', this.getAuthHeaders());
+  }
+
+  planAssist(): Observable<any> {
+    return this.http.post<any>('/api/assist/plan', {}, this.getAuthHeaders());
+  }
+
   verifyCoordinatorSession(): Observable<any> {
     return this.http.get<any>('/api/coordinator/verify', this.getAuthHeaders());
   }

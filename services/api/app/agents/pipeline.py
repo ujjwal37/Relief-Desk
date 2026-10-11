@@ -207,6 +207,41 @@ def finish(request_id: str) -> None:
     storage_service.save_request(req, actor="pipeline")
 
 
+def ensure_trace(req: StoredRequest) -> None:
+    """Fill a missing trace from the scoring and capacity tools. Does not change the score."""
+    if req.trace or req.analysis_status == "analysing":
+        return
+    summary = (req.raw_text or req.place_text or "")[:180]
+    marks = [time.perf_counter()]
+    dedupe_out = "duplicate" if req.merged_into or (req.merged_count or 1) > 1 else "distinct"
+    marks.append(time.perf_counter())
+    scored = scoring_engine.compute_urgency(req)
+    marks.append(time.perf_counter())
+    kind = {"medical": "medical", "food": "food", "shelter": "shelter"}.get(req.type.value, "boat")
+    capacity = check_capacity(kind)
+    marks.append(time.perf_counter())
+    explanation = strip_advice(
+        f"The urgency score is {scored.score}. "
+        f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch."
+    )
+    explanation = f"{explanation} This note is not medical or legal advice."
+    marks.append(time.perf_counter())
+    marks.append(time.perf_counter())
+    durations = [max(0, int((marks[i + 1] - marks[i]) * 1000)) for i in range(5)]
+    built = [
+        _trace_step("Intake", "complete", summary, summary or req.type.value, [], marks[0]),
+        _trace_step("Dedupe", "complete", summary, dedupe_out, [], marks[1]),
+        _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], marks[2]),
+        _trace_step("Matching", "complete", summary, f"{capacity['available']} {kind} free", ["check_capacity"], marks[3]),
+        _trace_step("Explainer", "complete", summary, explanation, [], marks[4]),
+    ]
+    for step, duration in zip(built, durations):
+        step["latency_ms"] = duration
+    before = req.urgency_score
+    req.trace = built
+    req.urgency_score = before
+
+
 def spawn_analysis(request_id: str) -> None:
     mark_analysing(request_id)
     spawn(lambda: finish(request_id))

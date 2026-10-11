@@ -1,0 +1,21 @@
+<button type="button" class="chip" (click)="toggle($event)">
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 7h11v11H8z"/><path d="M5 10V4h11"/></svg>
+  {{ label() }}
+</button>
+@if (open()) {
+  <div class="pop" [class.sheet]="mobile()" role="dialog" aria-labelledby="merge-title" [style.top.px]="mobile() ? null : anchor().top" [style.left.px]="mobile() ? null : anchor().left" (click)="$event.stopPropagation()">
+    <h2 id="merge-title">{{ 'ux.mergeTitle' | rdTranslate }}</h2>
+    @for (row of shown(); track row.id) {
+      <blockquote>
+        <p>“{{ row.text || ('ux.notRecorded' | rdTranslate) }}”</p>
+        <footer>{{ row.id }} · {{ clock(row.at) || ('ux.notRecorded' | rdTranslate) }} · {{ row.channel || ('ux.notRecorded' | rdTranslate) }} · {{ row.lang || ('ux.notRecorded' | rdTranslate) }}</footer>
+      </blockquote>
+    }
+    @if (extra() > 0) { <p class="more">{{ moreLabel() }}</p> }
+    <p><span>{{ 'ux.why' | rdTranslate }}</span> {{ why() || ('ux.notRecorded' | rdTranslate) }}</p>
+    <p class="note">{{ 'ux.reassurance' | rdTranslate }}</p>
+    <button type="button" class="undo" (click)="onUndo($event)">{{ 'ux.undoMerge' | rdTranslate }}</button>
+    <p class="hint">{{ 'ux.undoHint' | rdTranslate }}</p>
+    <button type="button" class="x" (click)="close($event)" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
+  </div>
+}

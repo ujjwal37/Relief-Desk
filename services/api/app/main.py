@@ -10,6 +10,7 @@ from app.api.clusters import router as clusters_router
 from app.api.reports import router as reports_router
 from app.api.auth import router as auth_router
 from app.api.matches import router as matches_router
+from app.api.assist import router as assist_router
 from app.api.public import router as public_router
 from app.api.alerts import router as alerts_router
 from app.api.benchmark import router as benchmark_router
@@ -52,6 +53,7 @@ app.include_router(clusters_router)
 app.include_router(reports_router)
 app.include_router(auth_router)
 app.include_router(matches_router)
+app.include_router(assist_router)
 app.include_router(public_router)
 app.include_router(alerts_router)
 app.include_router(benchmark_router)

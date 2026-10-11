@@ -1,0 +1,22 @@
+<article class="card" role="status" aria-live="polite">
+  <p class="chip"><i class="spin" aria-hidden="true"></i> {{ 'ux.analysingChip' | rdTranslate }}</p>
+  <p class="fresh">{{ 'ux.newReport' | rdTranslate }}</p>
+  <div class="skel" aria-hidden="true"></div>
+  <div class="skel short" aria-hidden="true"></div>
+  <ol>
+    @for (row of rows; track row.key) {
+      <li>
+        @switch (stateFor(row.indexes)) {
+          @case ('done') { <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg> }
+          @case ('running') { <i class="spin" aria-hidden="true"></i> }
+          @default { <i class="dash" aria-hidden="true"></i> }
+        }
+        <span>{{ ('ux.status' + (stateFor(row.indexes) === 'done' ? 'Done' : stateFor(row.indexes) === 'running' ? 'Running' : 'Waiting')) | rdTranslate }}</span>
+        {{ row.key | rdTranslate }}
+      </li>
+    }
+  </ol>
+  <div class="bar" aria-hidden="true"><b [style.width.%]="width()"></b></div>
+  <p class="count">{{ progress() }}</p>
+  <p class="hint">{{ 'ux.usually' | rdTranslate }}</p>
+</article>

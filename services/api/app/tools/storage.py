@@ -602,6 +602,9 @@ class StorageService:
     def list_matches_for_request(self, request_id: str) -> List[StoredMatch]:
         return [m for m in self._matches.values() if m.request_id == request_id]
 
+    def list_matches(self) -> List[StoredMatch]:
+        return list(self._matches.values())
+
     def approve_match(
         self,
         match_id: str,

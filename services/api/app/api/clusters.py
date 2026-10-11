@@ -124,7 +124,45 @@ def case_trace(
     req = storage_service.get_request(case_id)
     if req is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Case '{case_id}' not found")
+    from app.agents.pipeline import ensure_trace
+    ensure_trace(req)
     return req.trace
+
+
+@router.get("/cases/{case_id}/merge")
+def case_merge(
+    case_id: str,
+    coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
+    """Quotes and dedupe evidence that are actually stored. Missing fields stay null."""
+    req = storage_service.get_request(case_id)
+    if req is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Case '{case_id}' not found")
+    cluster = storage_service.get_cluster(req.cluster_id) if req.cluster_id else None
+    ids = list(cluster.request_ids) if cluster and cluster.request_ids else [req.id]
+    reports = []
+    for rid in ids:
+        member = storage_service.get_request(rid)
+        linked = next((row for row in storage_service.list_reports() if row.request_id == rid), None)
+        reports.append({
+            "id": rid,
+            "text": (member.raw_text if member else None) or (linked.raw_text if linked else None),
+            "at": member.created_at if member else (linked.created_at if linked else None),
+            "channel": linked.channel if linked else None,
+            "lang": linked.lang if linked else None,
+        })
+    why = None
+    for step in req.trace or []:
+        if step.get("agent") == "Dedupe" and step.get("output"):
+            why = step.get("output")
+            break
+    if why is None and cluster and cluster.evidence:
+        why = " ".join(cluster.evidence)
+    return {
+        "count": req.merged_count or 1,
+        "why": why,
+        "reports": reports,
+    }
 
 
 @router.get("/requests", response_model=List[StoredRequest], summary="List ranked requests")
@@ -145,8 +183,10 @@ def list_requests(
     from app.tools.scoring import scoring_engine
 
     closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED}
+    from app.agents.pipeline import ensure_trace
     refreshed = []
     for req in reqs:
+        ensure_trace(req)
         before = req.urgency_score
         if req.status not in closed:
             result = scoring_engine.compute_urgency(req)

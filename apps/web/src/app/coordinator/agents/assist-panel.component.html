@@ -1,0 +1,55 @@
+<div class="scrim" (click)="closed.emit()"></div>
+<div class="panel" [class.sheet]="mobile()" role="dialog" aria-modal="true" aria-labelledby="assist-title">
+  @if (mobile()) { <div class="grab" aria-hidden="true"></div> }
+  <header>
+    <h2 id="assist-title">{{ 'ux.assistTitle' | rdTranslate }}</h2>
+    <span class="chip">{{ 'ux.assistChip' | rdTranslate }}</span>
+    <button type="button" class="x" (click)="closed.emit()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
+  </header>
+  <p class="guard">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V6l8-3z"/></svg>
+    {{ 'ux.nothingDispatched' | rdTranslate }}
+  </p>
+  <div class="list">
+    @for (row of proposals(); track row.match_id) {
+      <article class="card" [class.ended]="row.expired" [class.ok]="row.phase === 'approved'">
+        @if (row.phase === 'approved') {
+          <p class="done">{{ approvedText(row) }}</p>
+        } @else if (row.expired) {
+          <p>{{ 'ux.holdEnded' | rdTranslate }}</p>
+          <button type="button" (click)="refresh.emit()">{{ 'ux.refresh' | rdTranslate }}</button>
+        } @else {
+          <h3>{{ row.title || ('ux.notRecorded' | rdTranslate) }}</h3>
+          <p class="team">
+            @if (row.team_kind === 'medical') {
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            } @else {
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 15h18l-2 4H5l-2-4zM7 15l2-6h6l2 6"/></svg>
+            }
+            @if (row.team_kind) { {{ ('coord.kind.' + row.team_kind) | rdTranslate }} }
+            @else { {{ 'ux.notRecorded' | rdTranslate }} }
+            · {{ row.team_name || ('ux.notRecorded' | rdTranslate) }}
+          </p>
+          <p><span>{{ 'ux.why' | rdTranslate }}</span> {{ row.why || ('ux.notRecorded' | rdTranslate) }}</p>
+          <p class="hold">{{ holdText(row) }}</p>
+          @if (row.phase === 'failed') { <button type="button" (click)="approve.emit(row)">{{ 'ux.retry' | rdTranslate }}</button> }
+          <div class="btns">
+            <button type="button" class="reject" (click)="reject.emit(row)">{{ 'ux.reject' | rdTranslate }}</button>
+            <button type="button" class="approve" (click)="approve.emit(row)">{{ 'ux.approve' | rdTranslate }}</button>
+          </div>
+        }
+      </article>
+    }
+    @for (gap of shortages(); track gap.kind + gap.explanation) {
+      <article class="shortage">
+        <h3>{{ whyOnly(gap) }}</h3>
+        <p>{{ gap.explanation || ('ux.notRecorded' | rdTranslate) }}</p>
+      </article>
+    }
+  </div>
+  <p class="help">{{ 'ux.twoCoord' | rdTranslate }}</p>
+  <div class="bar">
+    <button type="button" class="approve" [disabled]="openCount() === 0" (click)="approveAll.emit()">{{ allLabel() }}</button>
+    <p>{{ 'ux.approveHint' | rdTranslate }}</p>
+  </div>
+</div>

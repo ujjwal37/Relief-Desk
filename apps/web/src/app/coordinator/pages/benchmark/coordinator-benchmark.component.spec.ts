@@ -55,5 +55,9 @@ describe('CoordinatorBenchmarkComponent', () => {
     expect(text).toContain('168');
     expect(text).toContain('16.3');
     expect(text).toContain('Gemini was not called');
+    expect(text).toContain('Not measured yet');
+    expect(text).toContain('First come, first served');
+    expect(text).toContain('Where it still gets it wrong');
+    expect(text).not.toContain('Example data');
   });
 });

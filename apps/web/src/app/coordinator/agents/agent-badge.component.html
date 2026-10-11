@@ -1,0 +1,10 @@
+<span class="badge" [class]="source()">
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    @switch (source()) {
+      @case ('gemini') { <path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/> }
+      @case ('replay') { <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/> }
+      @default { <path d="M8 8l8 8M9 4v4H5M19 16h-4v4"/><path d="M7 17a6 6 0 0 1 0-10"/> }
+    }
+  </svg>
+  {{ labelKey() | rdTranslate }}
+</span>

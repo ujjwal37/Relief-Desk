@@ -190,6 +190,8 @@ class StoredMatch(BaseModel):
     overcommit: bool = False
     overcommit_override: bool = False
     synthetic: bool = True
+    hold_expires_at: Optional[str] = None
+    hold_expired: bool = False
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 

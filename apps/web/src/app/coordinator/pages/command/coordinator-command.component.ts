@@ -14,6 +14,12 @@ import { Subscription } from 'rxjs';
 import { HostListener, effect } from '@angular/core';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { SevChipComponent } from '../../../core/components/sev-chip.component';
+import { AgentBadgeComponent } from '../../agents/agent-badge.component';
+import { AgentTraceDrawerComponent } from '../../agents/agent-trace-drawer.component';
+import { AnalysingCardComponent } from '../../agents/analysing-card.component';
+import { AssistBannerComponent } from '../../agents/assist-banner.component';
+import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
+import { MergedChipComponent } from '../../agents/merged-chip.component';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import {
@@ -47,7 +53,20 @@ const PLACE_NAMES: Record<string, { en: string; hi: string }> = {
 @Component({
   selector: 'app-coordinator-command',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, MapProviderComponent, SevChipComponent, RdTranslatePipe],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    MapProviderComponent,
+    SevChipComponent,
+    RdTranslatePipe,
+    AgentBadgeComponent,
+    AgentTraceDrawerComponent,
+    AnalysingCardComponent,
+    AssistBannerComponent,
+    AssistPanelComponent,
+    MergedChipComponent,
+  ],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -102,7 +121,17 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private media: MediaQueryList | null = null;
   readonly openSection = signal<'why' | 'reports' | null>(null);
   readonly showOriginal = signal(false);
-  readonly traceOpen = signal(false);
+  readonly traceRequestId = signal<string | null>(null);
+  readonly assistOpen = signal(false);
+  readonly assist = signal<{ proposals: AssistProposalView[]; shortages: AssistShortageView[] }>({ proposals: [], shortages: [] });
+  readonly analysedNote = signal<Record<string, { until: number; text: string }>>({});
+  readonly analysedLive = signal('');
+  private traceOpener: HTMLElement | null = null;
+  private analysedTimer: ReturnType<typeof setTimeout> | null = null;
+  readonly traceRequest = computed(() => {
+    const id = this.traceRequestId();
+    return id ? this.requests().find((row) => row.id === id) || null : null;
+  });
 
   traceStatusKey(status: string): string {
     if (status === 'working') return 'coord.traceWorking';
@@ -364,6 +393,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   onKey(e: KeyboardEvent): void {
     const t = e.target as HTMLElement;
     if (/INPUT|TEXTAREA|SELECT/.test(t?.tagName) || e.ctrlKey || e.metaKey) return;
+    if (this.traceRequestId() || this.assistOpen()) return;
     const list = this.filteredRequests();
     const i = list.findIndex((r) => r.id === this.selectedRequestId());
     if (e.key === 'j' && i < list.length - 1) this.selectRequest(list[i + 1].id);
@@ -397,6 +427,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.loadRequests();
     this.loadResources();
     this.loadWeights();
+    this.loadAssist();
     this.startQueuePoll();
     this.readFilters();
     this.watchViewport();
@@ -410,6 +441,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.media?.removeEventListener('change', this.onMedia);
     window.removeEventListener('message', this.handleDemoMessage);
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
+    if (this.analysedTimer) clearTimeout(this.analysedTimer);
   }
 
   private watchViewport(): void {
@@ -447,6 +479,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (typeof document !== 'undefined' && document.hidden) return;
       this.loadRequests(true);
       this.loadResources();
+      this.loadAssist();
     }, 4000);
   }
 
@@ -476,6 +509,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   /** Merge a poll into the open queue. Keeps the selected case and flags brand-new rows. */
   applyQueue(incoming: StoredRequest[], incremental: boolean): void {
+    const previousStatus = new Map(this.requests().map((row) => [row.id, row.analysis_status]));
     const previous = new Set(this.requests().map((row) => row.id));
     let next = incoming;
     const fresh = new Set(this.freshIds());
@@ -490,6 +524,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     for (const row of next) {
       if (row.updated_at && row.updated_at > this.queueWatermark) this.queueWatermark = row.updated_at;
     }
+    this.noteFinished(previousStatus, next);
     const keep = this.selectedRequestId();
     this.requests.set(next);
     this.freshIds.set(fresh);
@@ -531,6 +566,179 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       next: (w) => this.currentWeights.set(w),
       error: (err) => console.warn('Using default weights:', err),
     });
+  }
+
+  loadAssist(): void {
+    this.apiClient.getAssistProposals().subscribe({
+      next: (body) => {
+        const incoming = (body?.proposals || []) as AssistProposalView[];
+        const current = this.assist();
+        const phases = new Map(current.proposals.map((row) => [row.match_id, row.phase]));
+        const kept = current.proposals.filter(
+          (row) => row.phase === 'approved' && !incoming.some((item) => item.match_id === row.match_id),
+        );
+        this.assist.set({
+          proposals: [
+            ...incoming.map((row) => ({ ...row, phase: phases.get(row.match_id) || 'open' })),
+            ...kept,
+          ],
+          shortages: body?.shortages?.length ? body.shortages : current.shortages,
+        });
+      },
+      error: () => undefined,
+    });
+  }
+
+  refreshAssist(): void {
+    this.apiClient.planAssist().subscribe({
+      next: (body) => {
+        this.assist.set({
+          proposals: (body?.proposals || []) as AssistProposalView[],
+          shortages: (body?.shortages || []) as AssistShortageView[],
+        });
+      },
+      error: () => this.actionToast.set({ text: this.langService.translate('ux.retry'), type: 'warning' }),
+    });
+  }
+
+  approveAssist(row: AssistProposalView): void {
+    this.apiClient.approveMatch(row.match_id, false).subscribe({
+      next: () => {
+        this.assist.update((state) => ({
+          ...state,
+          proposals: state.proposals.map((item) => item.match_id === row.match_id ? { ...item, phase: 'approved' } : item),
+        }));
+        this.loadRequests();
+        setTimeout(() => {
+          this.assist.update((state) => ({
+            ...state,
+            proposals: state.proposals.filter((item) => item.match_id !== row.match_id),
+          }));
+        }, 5000);
+      },
+      error: () => {
+        this.assist.update((state) => ({
+          ...state,
+          proposals: state.proposals.map((item) => item.match_id === row.match_id ? { ...item, phase: 'failed' } : item),
+        }));
+      },
+    });
+  }
+
+  rejectAssist(row: AssistProposalView): void {
+    this.apiClient.rejectMatch(row.match_id, this.langService.translate('ux.released')).subscribe({
+      next: () => {
+        this.assist.update((state) => ({
+          ...state,
+          proposals: state.proposals.filter((item) => item.match_id !== row.match_id),
+        }));
+        this.actionToast.set({ text: this.langService.translate('ux.released'), type: 'success' });
+        this.loadRequests();
+      },
+      error: () => {
+        this.assist.update((state) => ({
+          ...state,
+          proposals: state.proposals.map((item) => item.match_id === row.match_id ? { ...item, phase: 'failed' } : item),
+        }));
+      },
+    });
+  }
+
+  approveAllAssist(): void {
+    for (const row of this.assist().proposals) {
+      if (!row.expired && row.phase !== 'approved') this.approveAssist(row);
+    }
+  }
+
+  openTrace(req: StoredRequest, event: Event): void {
+    event.stopPropagation();
+    this.traceOpener = event.currentTarget as HTMLElement;
+    this.traceRequestId.set(req.id);
+  }
+
+  closeTrace(): void {
+    this.traceRequestId.set(null);
+    const opener = this.traceOpener;
+    this.traceOpener = null;
+    queueMicrotask(() => opener?.focus());
+  }
+
+  retryTrace(): void {
+    this.loadRequests();
+  }
+
+  retryAnalysis(): void {
+    this.loadRequests();
+  }
+
+  analysedLabel(id: string): string {
+    const row = this.analysedNote()[id];
+    return row && row.until > Date.now() ? row.text : '';
+  }
+
+  isAnalysing(req: StoredRequest): boolean {
+    return req.analysis_status === 'analysing';
+  }
+
+  isAnalysisFailed(req: StoredRequest): boolean {
+    const status = req.analysis_status as string | undefined;
+    return status === 'failed' || status === 'error';
+  }
+
+  private noteFinished(previous: Map<string, StoredRequest['analysis_status']>, next: StoredRequest[]): void {
+    const notes = { ...this.analysedNote() };
+    let live = '';
+    const now = Date.now();
+    for (const row of next) {
+      if (previous.get(row.id) === 'analysing' && row.analysis_status === 'complete') {
+        const text = this.analysedText(row);
+        notes[row.id] = { until: now + 10000, text };
+        live = text;
+      }
+    }
+    for (const id of Object.keys(notes)) {
+      if (notes[id].until <= now) delete notes[id];
+    }
+    this.analysedNote.set(notes);
+    if (live) this.analysedLive.set(live);
+    this.armAnalysed();
+  }
+
+  private analysedText(req: StoredRequest): string {
+    this.langService.currentLang();
+    const steps = req.trace || [];
+    const count = steps.filter((step) => step.status === 'complete').length || steps.length;
+    const seconds = this.parallelSeconds(req);
+    if (seconds == null) {
+      return this.langService.translate('ux.analysedNoTime').replace('{n}', String(count));
+    }
+    const time = this.langService.translate('ux.seconds').replace('{n}', seconds);
+    return this.langService.translate('ux.analysed').replace('{n}', String(count)).replace('{time}', time);
+  }
+
+  private parallelSeconds(req: StoredRequest): string | null {
+    const steps = req.trace || [];
+    if (!steps.length || steps.some((step) => typeof step.latency_ms !== 'number')) return null;
+    const of = (agent: string) => steps.find((step) => step.agent === agent)?.latency_ms || 0;
+    const ms = of('Intake') + Math.max(of('Dedupe'), of('Triage')) + of('Matching') + of('Explainer');
+    return (ms / 1000).toFixed(1);
+  }
+
+  private armAnalysed(): void {
+    if (this.analysedTimer) clearTimeout(this.analysedTimer);
+    const times = Object.values(this.analysedNote()).map((row) => row.until);
+    if (!times.length) return;
+    const wait = Math.max(0, Math.min(...times) - Date.now());
+    this.analysedTimer = setTimeout(() => {
+      const now = Date.now();
+      const left: Record<string, { until: number; text: string }> = {};
+      for (const [id, row] of Object.entries(this.analysedNote())) {
+        if (row.until > now) left[id] = row;
+      }
+      this.analysedNote.set(left);
+      if (!Object.keys(left).length) this.analysedLive.set('');
+      this.armAnalysed();
+    }, wait + 30);
   }
 
   selectRequest(id: string, openSheet = false): void {

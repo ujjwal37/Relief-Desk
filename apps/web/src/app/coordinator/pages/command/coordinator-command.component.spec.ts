@@ -136,9 +136,13 @@ describe('CoordinatorCommandComponent', () => {
       'splitCluster',
       'getScenarios',
       'getMapsConfig',
+      'getAssistProposals',
+      'planAssist',
     ]);
 
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
+    apiClientSpy.getAssistProposals.and.returnValue(of({ proposals: [], shortages: [] }));
+    apiClientSpy.planAssist.and.returnValue(of({ proposals: [], shortages: [] }));
     apiClientSpy.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
     apiClientSpy.getScenarios.and.returnValue(of([
       { id: 'flood', title: 'Urban Flood Relief', description: '', incident_types: ['rescue'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: [] },
@@ -417,5 +421,64 @@ describe('CoordinatorCommandComponent', () => {
       data: { type: 'rd-report-submitted', reportId: 'R-demo' },
     } as MessageEvent);
     expect(apiClientSpy.getRequests).toHaveBeenCalled();
+  });
+
+  it('opens five agents from the selected case and keeps assist behind a review tap', () => {
+    const opener = fixture.nativeElement.querySelector('.trace-chip') as HTMLButtonElement;
+    opener.click();
+    fixture.detectChanges();
+    const trace = fixture.nativeElement.textContent as string;
+    expect(trace).toContain('Intake');
+    expect(trace).toContain('Duplicate check');
+    expect(trace).toContain('Triage');
+    expect(trace).toContain('Matching');
+    expect(trace).toContain('Explainer');
+    expect(trace).toContain('Not recorded');
+    component.closeTrace();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent as string).not.toContain('Nothing is dispatched until you approve');
+    component.assist.set({
+      proposals: [{
+        match_id: 'm1',
+        request_id: 'INC-001',
+        title: 'Lane',
+        team_name: 'Boat 2',
+        team_kind: 'boat',
+        why: 'Nearest free boat',
+        expires_at: null,
+        expired: false,
+      }],
+      shortages: [{ kind: 'boat', have: 2, need: 3, explanation: 'Not enough teams' }],
+    });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent as string).toContain('Staff low: dispatcher suggests 1 assignment');
+    (fixture.nativeElement.querySelector('app-assist-banner button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.textContent as string;
+    expect(panel).toContain('Nothing is dispatched until you approve');
+    expect(panel).toContain('Why only 2 of 3?');
+    expect(panel).toContain('Not enough teams');
+  });
+
+  it('shows an analysing card in place and a done chip after the trace completes', () => {
+    const live = { ...mockRequests[0], id: 'INC-NEW', analysis_status: 'analysing' as const, urgency_score: 99, trace: [{ agent: 'Intake', status: 'complete' as const, output: 'rescue' }] };
+    component.applyQueue([live], true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-analysing-card')).not.toBeNull();
+    expect(component.selectedRequestId()).toBe('INC-001');
+    component.applyQueue([{
+      ...live,
+      analysis_status: 'complete',
+      trace: ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'].map((agent, index) => ({
+        agent,
+        status: 'complete' as const,
+        output: 'done',
+        model: 'gemini-3.8-flash',
+        latency_ms: 100 * (index + 1),
+      })),
+    }], true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-analysing-card')).toBeNull();
+    expect(fixture.nativeElement.textContent as string).toContain('Analysed by 5 agents in');
   });
 });

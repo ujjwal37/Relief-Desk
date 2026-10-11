@@ -24,6 +24,10 @@
   <div class="grid" [class.has-brief]="briefingOpen()" [class.pane-cases]="narrow() && mobilePane() === 'cases'" [class.pane-map]="narrow() && mobilePane() === 'map'">
     <!-- CASES -->
     <section class="cases" data-tour="cases" aria-labelledby="cases-h">
+      <p class="sr-only" aria-live="polite">{{ analysedLive() }}</p>
+      @if (assist().proposals.length) {
+        <app-assist-banner [count]="assist().proposals.length" (review)="assistOpen.set(true)" />
+      }
       <div class="cases-head">
         <h1 id="cases-h">{{ 'coord.cases' | rdTranslate }}</h1>
         <span class="sort">{{ 'coord.sorted' | rdTranslate }}</span>
@@ -62,24 +66,46 @@
       </div>
       <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {
-          <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
-            <span class="row1">
-              <app-sev-chip [band]="bandOf(req.urgency_score)" />
-              <span class="prio">{{ 'coord.priority' | rdTranslate }} <b>{{ Math.round(req.urgency_score) }}</b></span>
-            </span>
-            <span class="title">{{ getTranslationText(req) }}</span>
-            <span class="meta" [attr.title]="fullStamp(req.created_at)">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text || '' }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
-            <span class="tags">
-              @if ((req.merged_count || 1) > 1) { <span class="tag">{{ tr('coord.sameIncident', req.merged_count || 1) }}</span> }
-              <span class="tag">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
-              @if (waitChip(req)) { <span class="tag warn">{{ waitChip(req) }}</span> }
-              @if (isReview(req)) { <span class="tag warn">{{ 'coord.review' | rdTranslate }}</span> }
-              @if (isDispatched(req)) { <span class="tag ok">{{ 'coord.filterDispatched' | rdTranslate }}</span> }
-              @if (isCompleted(req)) { <span class="tag ok">{{ 'coord.filterCompleted' | rdTranslate }}</span> }
-              @if (freshIds().has(req.id)) { <span class="tag new">{{ 'coord.newJustNow' | rdTranslate }}</span> }
-              @if (req.analysis_status === 'analysing') { <span class="tag">{{ 'coord.analysing' | rdTranslate }}</span> }
-            </span>
-          </button>
+          @if (isAnalysing(req)) {
+            <app-analysing-card [request]="req" />
+          } @else if (isAnalysisFailed(req)) {
+            <article class="case-wrap failed">
+              <p class="title">{{ getTranslationText(req) || ('ux.notRecorded' | rdTranslate) }}</p>
+              <app-agent-badge source="fallback" />
+              <button type="button" class="trace-chip" (click)="retryAnalysis()">{{ 'ux.retry' | rdTranslate }}</button>
+            </article>
+          } @else {
+            <div class="case-wrap" [class.sel]="selectedRequestId() === req.id">
+              <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
+                <span class="row1">
+                  <app-sev-chip [band]="bandOf(req.urgency_score)" />
+                  <span class="prio">{{ 'coord.priority' | rdTranslate }} <b>{{ Math.round(req.urgency_score) }}</b></span>
+                </span>
+                <span class="title">{{ getTranslationText(req) }}</span>
+                <span class="meta" [attr.title]="fullStamp(req.created_at)">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text || '' }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
+                <span class="tags">
+                  <span class="tag">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
+                  @if (waitChip(req)) { <span class="tag warn">{{ waitChip(req) }}</span> }
+                  @if (isReview(req)) { <span class="tag warn">{{ 'coord.review' | rdTranslate }}</span> }
+                  @if (isDispatched(req)) { <span class="tag ok">{{ 'coord.filterDispatched' | rdTranslate }}</span> }
+                  @if (isCompleted(req)) { <span class="tag ok">{{ 'coord.filterCompleted' | rdTranslate }}</span> }
+                  @if (freshIds().has(req.id)) { <span class="tag new">{{ 'coord.newJustNow' | rdTranslate }}</span> }
+                  @if (analysedLabel(req.id)) { <span class="tag analysed">{{ analysedLabel(req.id) }}</span> }
+                </span>
+              </button>
+              <div class="hooks">
+                @if ((req.merged_count || 1) > 1) {
+                  <app-merged-chip [count]="req.merged_count || 1" [requestId]="req.id" [mobile]="narrow()" (undo)="splitCluster(req.id)" />
+                }
+                @if (selectedRequestId() === req.id) {
+                  <button type="button" class="trace-chip" (click)="openTrace(req, $event)">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>
+                    {{ 'ux.viewTrace' | rdTranslate }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
         } @empty {
           <p class="empty">{{ 'coord.noFilterMatch' | rdTranslate }} <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button></p>
         }
@@ -149,6 +175,15 @@
             <span class="id" [attr.title]="fullStamp(req.updated_at) || fullStamp(req.created_at)">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
           </div>
           <h2>{{ getTranslationText(req) }}</h2>
+          <div class="d-hooks">
+            @if ((req.merged_count || 1) > 1) {
+              <app-merged-chip [count]="req.merged_count || 1" [requestId]="req.id" [mobile]="narrow()" (undo)="splitCluster(req.id)" />
+            }
+            <button type="button" class="trace-chip" (click)="openTrace(req, $event)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>
+              {{ 'ux.viewTrace' | rdTranslate }}
+            </button>
+          </div>
           <p class="place">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text }} · {{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</p>
 
           <div class="said">
@@ -159,18 +194,6 @@
             </div>
             <p class="quote">“{{ showOriginal() ? (req.raw_text || req.place_text) : getTranslationText(req) }}”</p>
             @if (req.analysis_status === 'analysing') { <p class="ai-read">{{ 'coord.traceWorking' | rdTranslate }}</p> }
-            <button type="button" class="link" (click)="traceOpen.set(!traceOpen())">{{ 'coord.trace' | rdTranslate }}</button>
-            @if (traceOpen() && req.trace?.length) {
-              <ol class="trace">
-                @for (step of req.trace; track step.agent) {
-                  <li>
-                    <b>{{ step.agent }}</b>
-                    <span class="tag">{{ traceStatusKey(step.status) | rdTranslate }}</span>
-                    <span>{{ step.output }}</span>
-                  </li>
-                }
-              </ol>
-            }
             <p class="ai-read">
               <span class="cap">{{ 'coord.aiReading' | rdTranslate }}</span>
               <span class="ai-src" [class.live]="aiKind(req) === 'gemini'">{{ (aiKind(req) === 'gemini' ? 'coord.aiGemini' : aiKind(req) === 'recorded' ? 'coord.aiRecorded' : 'coord.aiOffline') | rdTranslate }}</span>
@@ -261,6 +284,22 @@
       }
     </aside>
   </div>
+
+  @if (traceRequest(); as traced) {
+    <app-agent-trace-drawer [request]="traced" [mobile]="narrow()" (closed)="closeTrace()" (retry)="retryTrace()" />
+  }
+  @if (assistOpen()) {
+    <app-assist-panel
+      [proposals]="assist().proposals"
+      [shortages]="assist().shortages"
+      [mobile]="narrow()"
+      (closed)="assistOpen.set(false)"
+      (approve)="approveAssist($event)"
+      (reject)="rejectAssist($event)"
+      (approveAll)="approveAllAssist()"
+      (refresh)="refreshAssist()"
+    />
+  }
 
   <!-- WEIGHTS SLIDER DRAWER (Slide-over from right) -->
   @if (ui.weightsOpen()) {

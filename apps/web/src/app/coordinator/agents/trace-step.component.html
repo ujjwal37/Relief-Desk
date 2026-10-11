@@ -1,0 +1,44 @@
+<article class="step">
+  <div class="top">
+    <span class="mark" [class]="step().status">
+      @switch (step().status) {
+        @case ('done') {
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
+        }
+        @case ('running') { <i class="spin" aria-hidden="true"></i> }
+        @case ('fallback') { <i class="dot amber" aria-hidden="true"></i> }
+        @case ('error') { <i class="dot crit" aria-hidden="true"></i> }
+        @default { <i class="dash" aria-hidden="true"></i> }
+      }
+      <span>{{ ('ux.status' + (step().status === 'done' ? 'Done' : step().status === 'running' ? 'Running' : step().status === 'waiting' ? 'Waiting' : step().status === 'fallback' ? 'Fallback' : 'Error')) | rdTranslate }}</span>
+    </span>
+    <h3>{{ nameKey() | rdTranslate }}</h3>
+  </div>
+  <p class="out">{{ step().output || ('ux.notRecorded' | rdTranslate) }}</p>
+  <p class="meta">
+    <span>{{ 'ux.model' | rdTranslate }}</span> {{ step().model || ('ux.notRecorded' | rdTranslate) }}
+    <span>{{ 'ux.time' | rdTranslate }}</span>
+    {{ timeText() || ('ux.notRecorded' | rdTranslate) }}
+  </p>
+  @if (step().status === 'fallback' && step().note) { <p class="note">{{ step().note }}</p> }
+  @if (step().status === 'error') {
+    <p class="note">{{ step().note || ('ux.notRecorded' | rdTranslate) }}</p>
+    <button type="button" class="retry" (click)="retry.emit()">{{ 'ux.retry' | rdTranslate }}</button>
+  }
+  <button type="button" class="details" [attr.aria-expanded]="open()" (click)="toggled.emit()">
+    {{ (open() ? 'ux.hideDetails' : 'ux.showDetails') | rdTranslate }}
+  </button>
+  @if (open()) {
+    <p class="line"><span>{{ 'ux.input' | rdTranslate }}</span> {{ step().input || ('ux.notRecorded' | rdTranslate) }}</p>
+    <div class="tools">
+      <span>{{ 'ux.tools' | rdTranslate }}</span>
+      @if (step().tools.length) {
+        @for (tool of step().tools; track tool) { <code>{{ tool }}</code> }
+      } @else {
+        <em>{{ 'ux.noTools' | rdTranslate }}</em>
+      }
+    </div>
+    <p class="line"><span>{{ 'ux.asked' | rdTranslate }}</span> {{ step().asked || ('ux.notRecorded' | rdTranslate) }}</p>
+    <pre class="raw">{{ step().raw || ('ux.notRecorded' | rdTranslate) }}</pre>
+  }
+</article>

@@ -1,0 +1,34 @@
+<div class="scrim" (click)="closed.emit()"></div>
+<div class="drawer" [class.sheet]="mobile()" role="dialog" aria-modal="true" aria-labelledby="trace-title">
+  @if (mobile()) { <div class="grab" aria-hidden="true"></div> }
+  <header>
+    <div>
+      <h2 id="trace-title">{{ 'ux.traceTitle' | rdTranslate }}</h2>
+      <p>{{ 'ux.traceSub' | rdTranslate }}</p>
+    </div>
+    <button type="button" class="x" (click)="closed.emit()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
+  </header>
+  <div class="run">
+    <app-agent-badge [source]="source()" />
+    <span>{{ 'ux.time' | rdTranslate }} {{ totalText() || ('ux.notRecorded' | rdTranslate) }}</span>
+  </div>
+  <div class="line">
+    @for (step of solo(); track step.agent) {
+      @if (step.agent === 'Matching') {
+        <div class="parallel">
+          <p>{{ 'ux.inParallel' | rdTranslate }}</p>
+          @for (side of parallel(); track side.agent) {
+            <app-trace-step [step]="side" [nameKey]="nameKey(side.agent)" [open]="expanded() === side.agent" (toggled)="toggle(side.agent)" (retry)="retry.emit()" />
+          }
+        </div>
+      }
+      <app-trace-step [step]="step" [nameKey]="nameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
+    }
+  </div>
+  <footer>
+    <p>{{ 'ux.legend' | rdTranslate }}</p>
+    <app-agent-badge source="gemini" />
+    <app-agent-badge source="fallback" />
+    <app-agent-badge source="replay" />
+  </footer>
+</div>
