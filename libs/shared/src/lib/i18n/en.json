@@ -549,6 +549,8 @@
     "coordinator": "Coordinator sign in",
     "updating": "Updating…",
     "cantRefresh": "Could not refresh. Tap View to retry.",
+    "gone": "This request is no longer available",
+    "removeShort": "Remove",
     "remove": "Remove from this phone",
     "coordinatorBtn": "I'm a coordinator",
     "judge": "Judge or reviewer? Open the demo coordinator"

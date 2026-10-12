@@ -20,12 +20,20 @@
           <p class="head">
             @if (r.state === 'loading') { {{ 'home.updating' | rdTranslate }} }
             @else if (r.state === 'ok') { {{ r.headline }} }
+            @else if (r.state === 'gone') { {{ 'home.gone' | rdTranslate }} }
             @else { {{ 'home.cantRefresh' | rdTranslate }} }
           </p>
-          <p class="meta">{{ 'status.requestId' | rdTranslate }} <b>{{ r.code }}</b>@if (r.eta) { · {{ r.eta }} }</p>
+          <p class="meta">
+            @if (r.state === 'gone') { {{ goneMeta(r) }} }
+            @else { {{ 'status.requestId' | rdTranslate }} <b>{{ r.code }}</b>@if (r.eta) { · {{ r.eta }} } }
+          </p>
         </div>
-        <a class="view" routerLink="/status" [queryParams]="{ id: r.req.id, token: r.req.token }">{{ 'home.view' | rdTranslate }}</a>
-        <button type="button" class="rm" (click)="remove(r.req.id)" [attr.aria-label]="'home.remove' | rdTranslate">✕</button>
+        @if (r.state !== 'gone') {
+          <a class="view" routerLink="/status" [queryParams]="{ id: r.req.id, token: r.req.token }">{{ 'home.view' | rdTranslate }}</a>
+        }
+        <button type="button" class="rm" [class.word]="r.state === 'gone'" (click)="remove(r.req.id)" [attr.aria-label]="'home.remove' | rdTranslate">
+          @if (r.state === 'gone') { {{ 'home.removeShort' | rdTranslate }} } @else { ✕ }
+        </button>
       </div>
     } @empty {
       <p class="empty">{{ 'home.none' | rdTranslate }}</p>

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { ApiClientService, LanguageService, ReportStatusResponse } from '@rd/shared';
 import { HomeComponent } from './home.component';
 
@@ -48,5 +48,32 @@ describe('HomeComponent my requests', () => {
     expect(text).toContain('RD-1042');
     expect(text).not.toContain('status.heroReceived');
     expect(text).not.toContain('rep_internal');
+  });
+});
+
+describe('HomeComponent stale request', () => {
+  afterEach(() => localStorage.removeItem('rd_my_requests'));
+
+  it('shows a removed request with its type, time, and a remove button', async () => {
+    localStorage.setItem('rd_my_requests', JSON.stringify([
+      { id: 'rep_gone', token: 'tok', at: Date.parse('2026-10-12T11:42:00'), kind: 'rescue' },
+    ]));
+    const api = jasmine.createSpyObj('ApiClientService', ['getReportStatus', 'getHealth']);
+    api.getHealth.and.returnValue(of({ demo_mode: false }));
+    api.getReportStatus.and.returnValue(throwError(() => ({ status: 404 })));
+    await TestBed.configureTestingModule({
+      imports: [HomeComponent],
+      providers: [provideRouter([]), { provide: ApiClientService, useValue: api }],
+    }).compileComponents();
+    TestBed.inject(LanguageService).setLanguage('en');
+    const gone = TestBed.createComponent(HomeComponent);
+    gone.detectChanges();
+    const text = gone.nativeElement.textContent as string;
+    expect(text).toContain('This request is no longer available');
+    expect(text).toContain('Rescue');
+    expect(text).toContain('Remove');
+    expect(gone.nativeElement.querySelector('a.view')).toBeNull();
+    (gone.nativeElement.querySelector('button.rm') as HTMLButtonElement).click();
+    expect(localStorage.getItem('rd_my_requests')).toBe('[]');
   });
 });

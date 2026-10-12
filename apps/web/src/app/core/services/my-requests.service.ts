@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-export interface SavedRequest { id: string; token: string; at: number; }
+export interface SavedRequest { id: string; token: string; at: number; kind?: string; }
 const KEY = 'rd_my_requests';
 
 /** Requests saved on this device (ID + status token). Also keeps the legacy single-request keys in sync. */
@@ -20,8 +20,9 @@ export class MyRequestsService {
 
   latest(): SavedRequest | undefined { return this.list()[0]; }
 
-  add(id: string, token: string): void {
-    const next = [{ id, token, at: Date.now() }, ...this.list().filter((r) => r.id !== id)].slice(0, 5);
+  add(id: string, token: string, kind?: string): void {
+    const prev = this.list().find((r) => r.id === id);
+    const next = [{ id, token, at: prev?.at ?? Date.now(), kind: kind || prev?.kind }, ...this.list().filter((r) => r.id !== id)].slice(0, 5);
     this.list.set(next);
     this.persist(next);
   }

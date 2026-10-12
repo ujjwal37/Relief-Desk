@@ -11,9 +11,10 @@ describe('MyRequestsService', () => {
   it('saves, dedupes and removes requests on the device', () => {
     const s = TestBed.inject(MyRequestsService);
     expect(s.latest()).toBeUndefined();
-    s.add('R-1', 't1');
+    s.add('R-1', 't1', 'rescue');
     s.add('R-2', 't2');
     s.add('R-1', 't1b');
+    expect(s.list()[0].kind).toBe('rescue');
     expect(s.list().map((r) => r.id)).toEqual(['R-1', 'R-2']);
     expect(localStorage.getItem('rd_last_report_id')).toBe('R-1');
     s.remove('R-1');

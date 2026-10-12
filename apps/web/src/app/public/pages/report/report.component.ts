@@ -441,7 +441,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       next: (res: ReportSubmitResponse) => {
         this.isLoading.set(false);
         this.submittedResult.set(res);
-        this.myRequests.add(res.report_id, res.status_token);
+        this.myRequests.add(res.report_id, res.status_token, card.incident_type);
         announceReport(res.report_id, res.request_id);
         this.router.navigate(['/status'], {
           queryParams: { id: res.report_id, token: res.status_token, new: 1 },

@@ -549,6 +549,8 @@
     "coordinator": "Coordinator sign in",
     "updating": "Update ho raha hai…",
     "cantRefresh": "Refresh nahi ho saka. Phir koshish ke liye Dekhein dabayein.",
+    "gone": "Yeh request ab available nahi hai",
+    "removeShort": "Hatao",
     "remove": "Is phone se hatayein",
     "coordinatorBtn": "Main coordinator hoon",
     "judge": "Judge ya reviewer? Demo coordinator kholein"
