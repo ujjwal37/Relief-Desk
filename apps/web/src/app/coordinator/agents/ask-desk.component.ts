@@ -97,7 +97,8 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .row .btn { flex-shrink: 0; }
     .reason { margin: 10px 0 6px; font-size: .9rem; }
     .via { display: block; font-size: .75rem; opacity: .7; }
-    .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+    .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
+    .trace { max-height: 320px; overflow-y: auto; }
     .case { width: 100%; text-align: left; display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 8px 10px;
             border-radius: 8px; border: 1px solid rgba(0,0,0,.12); background: transparent; cursor: pointer; font: inherit; }
     .case:hover, .case:focus-visible { border-color: currentColor; }
