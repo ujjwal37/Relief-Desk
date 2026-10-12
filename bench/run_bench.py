@@ -72,6 +72,8 @@ def run_benchmark(
     seed: int = 42,
     split: str = "test",
     out_dir: Path = None,
+    gemini_rpm: float = 15.0,
+    gemini_limit: int = None,
 ) -> Dict[str, Any]:
     msgs_file = dataset_dir / "messages.jsonl"
     lbls_file = dataset_dir / "labels.jsonl"
@@ -560,7 +562,7 @@ def run_benchmark(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     run_day = results["created_at"][:10]
-    gemini = evaluate_gemini(messages, all_labels, run_day)
+    gemini = evaluate_gemini(messages, all_labels, run_day, rpm=gemini_rpm, limit=gemini_limit)
     gemini["baseline_type_accuracy_pct"] = results["metrics"]["type_accuracy_pct"]["baseline_keyword"]
     gemini["baseline_ward_accuracy_pct"] = results["metrics"]["place_ward_accuracy_pct"]["baseline_keyword"]
     gemini["rules_type_accuracy_pct"] = results["metrics"]["type_accuracy_pct"]["relief_desk"]
@@ -681,7 +683,7 @@ def run_benchmark(
 
 {gemini_line}
 
-Cache is on. Live calls are limited to 30 per minute. A run without an API key does not fill the Gemini column.
+Cache is on. Live calls are paced to {g.get('rate_limit_per_min')} per minute; cached replies are reused, so a re-run resumes. A run without an API key does not fill the Gemini column.
 
 ## Type error counts
 
@@ -714,6 +716,8 @@ if __name__ == "__main__":
     parser.add_argument("--split", type=str, choices=["test", "dev", "train", "all"], default="test")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--out", type=str, default="bench/results")
+    parser.add_argument("--gemini-rpm", type=float, default=14.0, help="pace live Gemini calls (free tier is 15/min)")
+    parser.add_argument("--gemini-limit", type=int, default=None, help="score only the first N messages with Gemini")
     args = parser.parse_args()
 
     run_benchmark(
@@ -721,4 +725,6 @@ if __name__ == "__main__":
         seed=args.seed,
         split=args.split,
         out_dir=Path(args.out),
+        gemini_rpm=args.gemini_rpm,
+        gemini_limit=args.gemini_limit,
     )

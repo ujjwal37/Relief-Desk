@@ -26,7 +26,7 @@ class TokenBucket:
         self._next = current + self.gap
 
 
-def blank(reason: str, n: int, date: str) -> Dict[str, Any]:
+def blank(reason: str, n: int, date: str, rpm: float = 15.0) -> Dict[str, Any]:
     return {
         "measured": False,
         "reason": reason,
@@ -34,7 +34,7 @@ def blank(reason: str, n: int, date: str) -> Dict[str, Any]:
         "date": date,
         "n": n,
         "cache": True,
-        "rate_limit_per_min": 30,
+        "rate_limit_per_min": rpm,
         "type_accuracy_pct": None,
         "place_ward_accuracy_pct": None,
         "calls": 0,
@@ -79,13 +79,24 @@ def evaluate_gemini(
     date: str,
     extract: Optional[Callable[[str, Optional[str]], Optional[Dict[str, Any]]]] = None,
     bucket: Optional[TokenBucket] = None,
+    rpm: float = 15.0,
+    limit: Optional[int] = None,
+    stop_after_misses: int = 3,
 ) -> Dict[str, Any]:
-    """Rate-limited Gemini reads. A missing key does not invent a score."""
+    """Rate-limited Gemini reads. A missing key does not invent a score.
+
+    Cached replies (data/cache/llm) cost no quota, so a re-run resumes where a quota stop left off.
+    Several misses in a row (quota or outage) stop the run; only answered messages are scored.
+    """
+    if limit:
+        messages = messages[:limit]
     count = len(messages)
     if extract is None and not llm_client.gemini_live():
-        return blank(_offline_reason(), count, date)
+        return blank(_offline_reason(), count, date, rpm)
 
-    bucket = bucket or TokenBucket(30)
+    bucket = bucket or TokenBucket(rpm)
+    streak = 0
+    stopped_early = False
     extract = extract or live_extract
     rows: List[Dict[str, Any]] = []
     calls = 0
@@ -96,7 +107,12 @@ def evaluate_gemini(
         pred = extract(msg["text"], msg.get("lang"))
         if pred is None:
             fallbacks += 1
-            pred = {"type": None, "ward_id": None}
+            streak += 1
+            if streak >= stop_after_misses:
+                stopped_early = True
+                break
+            continue
+        streak = 0
         ground = labels.get(msg["id"], {}).get("ground_truth", {})
         rows.append({
             "gold_type": ground.get("type"),
@@ -104,8 +120,8 @@ def evaluate_gemini(
             "gold_ward": ground.get("ward_id"),
             "pred_ward": pred.get("ward_id"),
         })
-    if calls and fallbacks == calls:
-        missed = blank("fallback", count, date)
+    if not rows:
+        missed = blank("fallback", count, date, rpm)
         missed["calls"] = calls
         return missed
     scored = score_pairs(rows)
@@ -114,9 +130,11 @@ def evaluate_gemini(
         "reason": None,
         "model": settings.GEMINI_MODEL,
         "date": date,
-        "n": count,
+        "n": len(rows),
+        "n_planned": count,
+        "stopped_early": stopped_early,
         "cache": True,
-        "rate_limit_per_min": 30,
+        "rate_limit_per_min": rpm,
         "calls": calls,
         "fallback_skipped": fallbacks,
         **scored,
@@ -125,13 +143,11 @@ def evaluate_gemini(
 
 def live_extract(text: str, lang: Optional[str]) -> Optional[Dict[str, Any]]:
     """One cached Gemini read. Rule repair does not replace the model's type."""
-    from app.agents.intake import SYSTEM_INTAKE_PROMPT
+    from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_user_prompt
     from app.models.schemas import ExtractedRequest
     from app.tools.gazetteer import gazetteer
 
-    user_prompt = f"<report>\n{text.strip()}\n</report>"
-    if lang:
-        user_prompt += f"\n\nLanguage hint: {lang}"
+    user_prompt = intake_user_prompt(text, lang)
 
     def validate(text_output: str) -> ExtractedRequest:
         clean = text_output.strip()

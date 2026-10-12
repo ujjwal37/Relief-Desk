@@ -76,3 +76,16 @@ def test_mocked_gemini_scores_are_counted_and_rate_limited():
         {"gold_type": "rescue", "pred_type": "rescue", "gold_ward": "ward_1", "pred_ward": "ward_1"},
     ])
     assert scored["type_accuracy_pct"] == 100.0
+
+def test_gemini_eval_stops_on_quota_and_scores_only_answered():
+    from bench.gemini_eval import TokenBucket, evaluate_gemini
+
+    msgs = [{"id": f"M{i}", "text": "t"} for i in range(6)]
+    labels = {f"M{i}": {"ground_truth": {"type": "food"}} for i in range(6)}
+    answers = iter([{"type": "food", "ward_id": None}, {"type": "rescue", "ward_id": None}, None, None, None, {"type": "food"}])
+    out = evaluate_gemini(msgs, labels, "2026-10-12", extract=lambda t, l: next(answers),
+                          bucket=TokenBucket(60, sleep=lambda s: None, now=lambda: 0.0), rpm=14)
+    assert out["measured"] and out["stopped_early"]
+    assert out["n"] == 2 and out["n_planned"] == 6
+    assert out["type_accuracy_pct"] == 50.0
+    assert out["rate_limit_per_min"] == 14
