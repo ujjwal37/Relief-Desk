@@ -114,6 +114,7 @@ export class CoordinatorAlertsComponent implements OnInit {
   readonly alerts = signal<AnomalyAlert[]>([]);
   readonly medical = signal<ResPin[]>([]);
   readonly selectedId = signal<string | null>(null);
+  readonly focusNonce = signal(0);
   readonly error = signal<string | null>(null);
 
   readonly items = computed<MapAlert[]>(() => this.alerts().map((a, i) => this.toItem(a, i + 1)));
@@ -222,6 +223,13 @@ export class CoordinatorAlertsComponent implements OnInit {
     this.selectedId.set(alert.id);
   }
 
+  /** Focus the map on this alert, including when the row was already selected. */
+  viewOnMap(alert: AnomalyAlert): void {
+    this.select(alert);
+    this.focusNonce.update((n) => n + 1);
+    document.querySelector('.map-panel')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
   acknowledge(alert: AnomalyAlert): void {
     this.api.acknowledgeAlert(alert.id).subscribe({
       next: (updated) => this.alerts.update((rows) => rows.map((row) => (row.id === updated.id ? updated : row))),
@@ -229,8 +237,9 @@ export class CoordinatorAlertsComponent implements OnInit {
   }
 
   private latlng(i: MapAlert): { lat: number; lng: number } {
+    if (i.ward) return { lat: i.ward.lat, lng: i.ward.lng };
     const at = i.at as Pt;
-    return { lat: LAT_MAX - at.y / 11667, lng: LNG_MIN + at.x / 12500 };
+    return { lat: LAT_MAX - at.y / 230, lng: LNG_MIN + at.x / 1100 };
   }
 
   private kindOf(a: AnomalyAlert): Kind {

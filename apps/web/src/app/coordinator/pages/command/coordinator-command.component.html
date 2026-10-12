@@ -78,7 +78,7 @@
               <button type="button" class="trace-chip" (click)="retryAnalysis()">{{ 'ux.retry' | rdTranslate }}</button>
             </article>
           } @else {
-            <div class="case-wrap" [class.sel]="selectedRequestId() === req.id">
+            <div class="case-wrap" [class.sel]="selectedRequestId() === req.id" [attr.data-case-id]="req.id">
               <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
                 <span class="row1">
                   <app-sev-chip [band]="bandOf(req.urgency_score)" />

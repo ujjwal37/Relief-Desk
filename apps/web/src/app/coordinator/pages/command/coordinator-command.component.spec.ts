@@ -433,6 +433,33 @@ describe('CoordinatorCommandComponent', () => {
     expect(apiClientSpy.getRequests).toHaveBeenCalled();
   });
 
+  it('opens the phone report on the queue and ignores a watermark', () => {
+    expect(component.selectedRequestId()).toBe('INC-001');
+    const live = {
+      ...mockRequests[0],
+      id: 'req_phone',
+      place_text: 'Temple Road',
+      urgency_score: 90,
+      updated_at: '2026-10-12T18:00:00+00:00',
+    };
+    apiClientSpy.getRequests.and.returnValue(of([...mockRequests, live]));
+    apiClientSpy.getRequests.calls.reset();
+    component.onLiveReport({ type: 'rd-report-submitted', requestId: 'req_phone' });
+    const args = apiClientSpy.getRequests.calls.mostRecent().args;
+    expect(args[2]).toBeUndefined();
+    expect(component.requests().some((row) => row.id === 'req_phone')).toBeTrue();
+    expect(component.selectedRequestId()).toBe('req_phone');
+  });
+
+  it('filters the open queue from the top search box', () => {
+    component.searchQuery.set('Gandhi');
+    fixture.detectChanges();
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-001']);
+    component.searchQuery.set('Canal Road');
+    fixture.detectChanges();
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-002']);
+  });
+
   it('opens five agents from the selected case and keeps assist behind a review tap', () => {
     const opener = fixture.nativeElement.querySelector('.trace-chip') as HTMLButtonElement;
     opener.click();

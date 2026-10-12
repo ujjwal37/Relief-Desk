@@ -6,7 +6,7 @@ from app.tools.storage import storage_service
 
 
 def test_two_coordinators_get_disjoint_holds_and_nothing_is_dispatched():
-    south = verify_coordinator_token(create_coordinator_token("demo-coordinator@reliefdesk.internal"))
+    south = verify_coordinator_token(create_coordinator_token("south-coordinator@reliefdesk.internal"))
     north = verify_coordinator_token(create_coordinator_token("north-coordinator@reliefdesk.internal"))
     before = {req.id: req.status for req in storage_service.list_requests()}
     south_body = plan_for(south.email)

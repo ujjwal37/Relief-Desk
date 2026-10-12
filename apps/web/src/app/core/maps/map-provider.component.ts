@@ -13,6 +13,7 @@ import {
   ViewChild,
   inject,
 } from '@angular/core';
+import { panIfMoved } from './map-center';
 import { MapProviderService } from './map-provider.service';
 
 export interface MapPin {
@@ -45,6 +46,8 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
 
   @Input() pins: MapPin[] = [];
   @Input() center: { lat: number; lng: number } = { lat: 10.50, lng: 76.30 };
+  /** Bump this to pan again even when the centre numbers did not change. */
+  @Input() focusToken = 0;
   @Output() pinSelect = new EventEmitter<string>();
 
   @ViewChild('canvas') canvas?: ElementRef<HTMLDivElement>;
@@ -52,6 +55,8 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   mode: 'google' | 'svg' = 'svg';
   private map: { panTo?: (pos: { lat: number; lng: number }) => void } | null = null;
   private markers: { setMap?: (map: null) => void }[] = [];
+  private lastCenter: { lat: number; lng: number } | null = null;
+  private lastToken = 0;
 
   ngAfterViewInit(): void {
     this.maps.decide().then((mode) => {
@@ -69,6 +74,14 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   ngOnChanges(): void {
+    const force = this.focusToken !== this.lastToken;
+    this.lastToken = this.focusToken;
+    if (force && this.map && Number.isFinite(this.center?.lat) && Number.isFinite(this.center?.lng)) {
+      this.map.panTo?.(this.center);
+      this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
+    } else {
+      this.lastCenter = panIfMoved(this.map, this.lastCenter, this.center);
+    }
     if (this.mode === 'google' && this.map) {
       this.draw();
     }
@@ -98,6 +111,7 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
           streetViewControl: false,
           fullscreenControl: false,
         });
+        this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
       }
       this.markers.forEach((marker) => marker.setMap?.(null));
       this.markers = this.pins.map((pin) => {

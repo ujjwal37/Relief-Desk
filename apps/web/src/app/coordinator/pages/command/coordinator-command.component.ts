@@ -21,6 +21,7 @@ import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
 import { AskDeskComponent } from '../../agents/ask-desk.component';
+import { LIVE_CHANNEL } from '../../../core/live-report';
 import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
@@ -169,6 +170,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly selectedTranslationLang = signal<'en' | 'hi' | 'ta'>('en');
 
   private initialSelectDone = false;
+  private focusRequestId: string | null = null;
+  private liveChannel?: { close: () => void };
   pendingMatch: MatchProposal | null = null;
   rejectReasonText = '';
 
@@ -448,6 +451,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.watchViewport();
     window.addEventListener('message', this.handleDemoMessage);
     document.addEventListener('visibilitychange', this.onQueueVisibility);
+    try {
+      const channel = new BroadcastChannel(LIVE_CHANNEL);
+      channel.onmessage = (event) => this.onLiveReport(event.data);
+      this.liveChannel = channel;
+    } catch {
+      // BroadcastChannel is missing in this browser. The poll still picks the report up.
+    }
   }
 
   ngOnDestroy(): void {
@@ -456,6 +466,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.media?.removeEventListener('change', this.onMedia);
     window.removeEventListener('message', this.handleDemoMessage);
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
+    this.liveChannel?.close();
     if (this.analysedTimer) clearTimeout(this.analysedTimer);
   }
 
@@ -509,10 +520,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (event.origin !== window.location.origin) {
       return;
     }
-    if (event.data?.type === 'rd-report-submitted') {
-      this.loadRequests();
-    }
+    this.onLiveReport(event.data);
   };
+
+  /** A phone in this window, a popup, or another tab just saved a report. Show that case. */
+  onLiveReport(data: { type?: string; requestId?: string } | null): void {
+    if (data?.type !== 'rd-report-submitted') return;
+    if (data.requestId) this.focusRequestId = data.requestId;
+    this.loadRequests();
+  }
 
   loadRequests(incremental = false): void {
     const since = incremental ? this.queueWatermark : undefined;
@@ -544,6 +560,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.requests.set(next);
     this.freshIds.set(fresh);
     this.ui.lastRefresh.set(Date.now());
+    const focus = this.focusRequestId;
+    if (focus && next.some((row) => row.id === focus)) {
+      this.focusRequestId = null;
+      this.initialSelectDone = true;
+      this.selectRequest(focus);
+      const reveal = (): void => document.querySelector(`[data-case-id="${focus}"]`)?.scrollIntoView({ block: 'nearest' });
+      if (typeof queueMicrotask === 'function') queueMicrotask(reveal);
+      return;
+    }
     if (!this.initialSelectDone && next.length > 0) {
       this.initialSelectDone = true;
       const pick = next.find((row) => !this.isDispatched(row) && !this.isCompleted(row)) || next[0];

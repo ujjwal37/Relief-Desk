@@ -34,6 +34,24 @@ describe('MapProviderComponent', () => {
     expect(fixture.nativeElement.querySelector('.rd-google-map')).toBeNull();
   });
 
+  it('pans the map when View on map asks for the same centre again', async () => {
+    api.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
+    const fixture = await create(api);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const provider = fixture.debugElement.children[0].componentInstance as MapProviderComponent;
+    const panTo = jasmine.createSpy('panTo');
+    (provider as unknown as { map: { panTo: (pos: { lat: number; lng: number }) => void } }).map = { panTo };
+    provider.center = { lat: 10.308, lng: 76.331 };
+    provider.focusToken = 1;
+    provider.ngOnChanges();
+    expect(panTo).toHaveBeenCalledWith({ lat: 10.308, lng: 76.331 });
+    panTo.calls.reset();
+    provider.focusToken = 2;
+    provider.ngOnChanges();
+    expect(panTo).toHaveBeenCalledWith({ lat: 10.308, lng: 76.331 });
+  });
+
   it('keeps the SVG fallback when the browser is offline', async () => {
     spyOnProperty(navigator, 'onLine', 'get').and.returnValue(false);
     const fixture = await create(api);

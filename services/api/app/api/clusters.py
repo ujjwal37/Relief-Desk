@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -6,6 +7,36 @@ from app.models.firestore_models import StoredCluster, StoredRequest
 from app.api.auth import get_current_coordinator, CoordinatorUser
 
 router = APIRouter(prefix="/api", tags=["Requests & Clusters"])
+
+
+def _parse_stamp(value: Optional[str]) -> Optional[datetime]:
+    """Accept ISO timestamps, a trailing Z, and a '+' that the query string turned into a space."""
+    if not value or not str(value).strip():
+        return None
+    text = str(value).strip().replace("Z", "+00:00")
+    if " " in text and "+" not in text:
+        text = text.replace(" ", "+", 1)
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _changed_since(req, updated_since: Optional[str]) -> bool:
+    """A new report stays visible when a query string turns '+' into a space, or one stamp uses Z."""
+    if not updated_since:
+        return True
+    raw = req.updated_at or req.created_at or ""
+    mark = _parse_stamp(updated_since)
+    if mark is None:
+        return raw >= updated_since
+    got = _parse_stamp(raw)
+    if got is None:
+        return raw >= updated_since
+    return got >= mark
 
 
 class MergeRequestPayload(BaseModel):
@@ -195,7 +226,7 @@ def list_requests(
             req.wait_points = result.breakdown.get("wait_points")
             req.wait_minutes = int(result.breakdown.get("wait_minutes") or 0)
         score_changed = req.urgency_score != before
-        if not updated_since or (req.updated_at or "") >= updated_since or score_changed:
+        if _changed_since(req, updated_since) or score_changed:
             refreshed.append(req)
 
     if sort == "urgency":

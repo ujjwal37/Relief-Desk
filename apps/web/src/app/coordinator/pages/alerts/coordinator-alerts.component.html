@@ -34,13 +34,13 @@
         <button type="button" class="primary" [disabled]="it.alert.acknowledged" (click)="acknowledge(it.alert); $event.stopPropagation()">
           {{ it.alert.acknowledged ? ('alerts.ackDone' | rdTranslate) : ('alerts.acknowledge' | rdTranslate) }}
         </button>
-        <button type="button" class="secondary" *ngIf="it.at" (click)="select(it.alert); $event.stopPropagation()">{{ 'alerts.viewMap' | rdTranslate }}</button>
+        <button type="button" class="secondary" *ngIf="it.at" (click)="viewOnMap(it.alert); $event.stopPropagation()">{{ 'alerts.viewMap' | rdTranslate }}</button>
       </div>
     </article>
   </section>
 
   <section class="map-panel" [attr.aria-label]="'alerts.mapAria' | rdTranslate">
-    <rd-map-provider class="mapbox" [pins]="googlePins()" [center]="center()" (pinSelect)="selectedId.set($event)">
+    <rd-map-provider class="mapbox" [pins]="googlePins()" [center]="center()" [focusToken]="focusNonce()" (pinSelect)="selectedId.set($event)">
       <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="city-map" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="'alerts.mapAria' | rdTranslate">
         <rect [attr.width]="W" [attr.height]="H" fill="var(--map-bg)"></rect>
         <g class="world" [style.transform]="transform()">

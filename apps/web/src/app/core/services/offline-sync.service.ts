@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiClientService, ReportSubmitRequest, ReportSubmitResponse } from '@rd/shared';
+import { announceReport } from '../live-report';
 import { MyRequestsService } from './my-requests.service';
 
 export interface PendingOfflineReport {
@@ -115,6 +116,7 @@ export class OfflineSyncService {
         this.lastSyncedToken.set(resp.status_token);
         this.lastSynced.set({ client_id: item.client_id, response: resp });
         this.myRequests.add(resp.report_id, resp.status_token);
+        announceReport(resp.report_id, resp.request_id);
         this.removePendingReport(item.idempotency_key);
         this.flushing = false;
         if (this.getPendingReports().length) {

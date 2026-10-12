@@ -19,6 +19,7 @@ import {
   canonicalRequestJson,
 } from '@rd/shared';
 
+import { announceReport } from '../../../core/live-report';
 import { MyRequestsService } from '../../../core/services/my-requests.service';
 import { OfflineSyncService } from '../../../core/services/offline-sync.service';
 import { ScenarioService } from '../../../core/services/scenario.service';
@@ -441,12 +442,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.isLoading.set(false);
         this.submittedResult.set(res);
         this.myRequests.add(res.report_id, res.status_token);
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage(
-            { type: 'rd-report-submitted', reportId: res.report_id },
-            window.location.origin,
-          );
-        }
+        announceReport(res.report_id, res.request_id);
         this.router.navigate(['/status'], {
           queryParams: { id: res.report_id, token: res.status_token, new: 1 },
         });

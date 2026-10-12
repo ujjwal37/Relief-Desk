@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { ApiClientService } from '@rd/shared';
 import { CoordinatorLayoutComponent } from './coordinator-layout.component';
@@ -75,6 +75,19 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     expect(accuracy).toBeTruthy();
     expect(accuracy.offsetWidth).toBeGreaterThan(0);
     expect(accuracy.getBoundingClientRect().right).toBeLessThanOrEqual(header.getBoundingClientRect().right + 1);
+  });
+
+  it('opens Cases when the top search box is used from another tab', async () => {
+    const fixture = await setup(null, true);
+    const router = TestBed.inject(Router);
+    spyOnProperty(router, 'url', 'get').and.returnValue('/coordinator/teams');
+    const nav = spyOn(router, 'navigateByUrl').and.resolveTo(true);
+    const input = fixture.nativeElement.querySelector('#coord-search') as HTMLInputElement;
+    input.value = 'Chalakudy';
+    input.dispatchEvent(new Event('input'));
+    expect(fixture.componentInstance.ui.searchQuery()).toBe('Chalakudy');
+    expect(nav).toHaveBeenCalledWith('/coordinator/command');
+    fixture.componentInstance.ui.searchQuery.set('');
   });
 
   it('hides the phone frame when demo mode is off', async () => {
