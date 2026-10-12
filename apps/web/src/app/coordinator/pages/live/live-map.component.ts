@@ -1,7 +1,19 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApiClientService, LanguageService, RdTranslatePipe, StoredRequest, TeamLive } from '@rd/shared';
+import { ApiClientService, LanguageService, RdTranslatePipe, StoredRequest, TeamLive, urgencyBand } from '@rd/shared';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { MapLegendComponent } from '../../../core/maps/map-legend.component';
+import { MapPinDirective } from '../../../core/maps/map-pin.directive';
+import {
+  PinSpec,
+  RELIEF_PLACES,
+  caseTitle,
+  pinCopy,
+  pinZ,
+  placeTitle,
+  teamGlyph,
+  teamTitle,
+} from '../../../core/maps/map-pins';
 
 const KERALA = { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
 const DISTRICTS = [
@@ -14,7 +26,7 @@ const DISTRICTS = [
 @Component({
   selector: 'app-live-map',
   standalone: true,
-  imports: [CommonModule, RdTranslatePipe, MapProviderComponent],
+  imports: [CommonModule, RdTranslatePipe, MapProviderComponent, MapLegendComponent, MapPinDirective],
   templateUrl: './live-map.component.html',
   styleUrl: './live-map.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,10 +80,70 @@ export class LiveMapComponent implements OnInit, OnDestroy {
     .filter((row) => row.lat != null && row.lng != null && !this.isDone(row))
     .map((row) => ({ ...row, ...this.project(row.lat as number, row.lng as number) })));
 
-  readonly pins = computed<MapPin[]>(() => [
-    ...this.teams().map((team) => ({ id: team.id, lat: team.lat, lng: team.lng, title: team.name })),
-    ...this.casePins().map((row) => ({ id: row.id, lat: row.lat as number, lng: row.lng as number, title: row.id })),
-  ]);
+  readonly markerPins = computed(() => {
+    this.lang.currentLang();
+    const copy = pinCopy((key) => this.lang.translate(key));
+    const selected = this.selectedCaseId();
+    const pins: { id: string; x: number; y: number; lat: number; lng: number; title: string; dim: boolean; spec: PinSpec; z: number }[] = [];
+    this.casePins().forEach((row, index) => {
+      const severity = urgencyBand(row.urgency_score || 0);
+      const merged = row.merged_count || 1;
+      const spec: PinSpec = { kind: 'case', severity, queue: index + 1, merged, selected: row.id === selected };
+      pins.push({
+        id: row.id,
+        x: row.x,
+        y: row.y,
+        lat: row.lat as number,
+        lng: row.lng as number,
+        title: caseTitle(index + 1, severity, merged, copy),
+        dim: !!selected && row.id !== selected,
+        spec,
+        z: pinZ(spec),
+      });
+    });
+    for (const team of this.drawn()) {
+      const free = team.status === 'available' && !team.stale;
+      const glyph = teamGlyph(team.kind, team.name);
+      const spec: PinSpec = { kind: 'team', team: glyph, free };
+      pins.push({
+        id: team.id,
+        x: team.x,
+        y: team.y,
+        lat: team.lat,
+        lng: team.lng,
+        title: teamTitle(glyph, team.name, free, !!team.stale, copy),
+        dim: !!selected,
+        spec,
+        z: pinZ(spec),
+      });
+    }
+    for (const place of RELIEF_PLACES) {
+      const at = this.project(place.lat, place.lng);
+      const spec: PinSpec = { kind: 'place', place: place.place, label: place.name };
+      pins.push({
+        id: place.id,
+        x: at.x,
+        y: at.y,
+        lat: place.lat,
+        lng: place.lng,
+        title: placeTitle(place.place, place.name, copy),
+        dim: !!selected,
+        spec,
+        z: pinZ(spec),
+      });
+    }
+    return pins.sort((a, b) => a.z - b.z);
+  });
+
+  readonly pins = computed<MapPin[]>(() => this.markerPins().map((pin) => ({
+    id: pin.id,
+    lat: pin.lat,
+    lng: pin.lng,
+    title: pin.title,
+    spec: pin.spec,
+    dim: pin.dim,
+    zIndex: pin.z,
+  })));
 
   readonly center = computed(() => {
     const frame = this.frame();

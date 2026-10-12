@@ -749,5 +749,36 @@
         "arrived": "Pahunch gayi",
         "completed": "Poora hua"
       }
+    },
+  "pins": {
+    "legend": "Map key",
+    "case": "Case",
+    "cases": "Cases",
+    "teams": "Teams",
+    "places": "Jagah",
+    "merged": "Judhe hue",
+    "free": "Free",
+    "busy": "Busy",
+    "stale": "Purana",
+    "report": "report",
+    "reports": "reports",
+    "sev": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "team": {
+      "boat": "Boat team",
+      "ambulance": "Ambulance team",
+      "medic": "Medic team",
+      "food": "Khana-pani team",
+      "rescue": "Rescue team"
+    },
+    "place": {
+      "shelter": "Shelter",
+      "hospital": "Hospital",
+      "camp": "Camp"
     }
+  }
 }

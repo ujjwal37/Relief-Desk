@@ -60,27 +60,21 @@
             </text>
           </g>
 
-          <g *ngFor="let l of landmarks" class="lm" [class.dim]="selected()">
-            <rect [attr.x]="l.x - 4" [attr.y]="l.y - 4" width="8" height="8" rx="2"></rect>
-            <text [attr.x]="l.x + 8" [attr.y]="l.y - 14">{{ l.name }}</text>
+          <g *ngFor="let l of places" class="pin" [class.dim]="!!selected()" role="img" [attr.aria-label]="placeLabel(l)">
+            <g [rdPin]="placeSpec(l)" [attr.transform]="'translate(' + l.x + ' ' + l.y + ')'"></g>
           </g>
 
-          <!-- resource pins when the gap is selected -->
           <g *ngIf="selected()?.kind === 'resource_gap'">
-            <g *ngFor="let r of medPins()" class="res" [class.busy]="!r.free">
-              <circle [attr.cx]="r.x" [attr.cy]="r.y" r="12"></circle>
-              <path [attr.d]="'M' + (r.x - 5) + ' ' + r.y + 'h10M' + r.x + ' ' + (r.y - 5) + 'v10'"></path>
-              <text [attr.x]="r.x + 17" [attr.y]="r.y + 5" class="rl">{{ r.free ? ('alerts.free' | rdTranslate) : ('alerts.busy' | rdTranslate) }}</text>
+            <g *ngFor="let r of medPins()" class="pin" role="img" [attr.aria-label]="teamLabel(r)">
+              <g [rdPin]="teamSpec(r.free)" [attr.transform]="'translate(' + r.x + ' ' + r.y + ')'"></g>
             </g>
           </g>
 
-          <!-- alert pins -->
           <ng-container *ngFor="let it of items()">
+            <circle *ngIf="it.at && it.kind === 'spike' && selectedId() === it.alert.id" class="pulse" [attr.cx]="it.at.x" [attr.cy]="it.at.y" r="22"></circle>
             <g *ngIf="it.at" class="pin" [class]="'pin k-' + it.kind" [class.on]="selectedId() === it.alert.id" [class.dim]="selected() && selectedId() !== it.alert.id"
-              (click)="select(it.alert)" tabindex="0" (keydown.enter)="select(it.alert)" role="button" [attr.aria-label]="it.n + ', ' + titleOf(it.alert)">
-              <circle *ngIf="it.kind === 'spike' && selectedId() === it.alert.id" class="pulse" [attr.cx]="it.at.x" [attr.cy]="it.at.y - 14" r="22"></circle>
-              <path [attr.d]="'M' + it.at.x + ' ' + (it.at.y + 8) + ' l-12 -17 a15 15 0 1 1 24 0 z'" class="drop"></path>
-              <text [attr.x]="it.at.x" [attr.y]="it.at.y - 9" class="pn">{{ it.n }}</text>
+              (click)="select(it.alert)" tabindex="0" (keydown.enter)="select(it.alert)" role="button" [attr.aria-label]="pinTitle(it)">
+              <g [rdPin]="caseSpec(it.n, it.alert.severity, selectedId() === it.alert.id)" [attr.transform]="'translate(' + it.at.x + ' ' + it.at.y + ')'"></g>
             </g>
           </ng-container>
 
@@ -107,6 +101,7 @@
       </svg>
     </rd-map-provider>
 
+    <rd-map-legend class="pin-legend" />
     <div class="key" role="list" [attr.aria-label]="'alerts.key' | rdTranslate">
       <span class="key-title">{{ 'alerts.key' | rdTranslate }}</span>
       <span *ngFor="let k of kinds" role="listitem" class="kitem" [class]="'kitem k-' + k"><span class="kdot"><ng-container *ngTemplateOutlet="icon; context: { $implicit: k, s: 14 }"></ng-container></span>{{ 'alerts.k.' + k | rdTranslate }}</span>

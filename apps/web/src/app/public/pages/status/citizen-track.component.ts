@@ -2,11 +2,13 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject
 import { CommonModule } from '@angular/common';
 import { ApiClientService, CitizenTrack, LanguageService, RdTranslatePipe } from '@rd/shared';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { MapPinDirective } from '../../../core/maps/map-pin.directive';
+import { PinSpec, caseTitle, pinCopy, teamGlyph, teamTitle } from '../../../core/maps/map-pins';
 
 @Component({
   selector: 'app-citizen-track',
   standalone: true,
-  imports: [CommonModule, RdTranslatePipe, MapProviderComponent],
+  imports: [CommonModule, RdTranslatePipe, MapProviderComponent, MapPinDirective],
   templateUrl: './citizen-track.component.html',
   styleUrl: './citizen-track.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,11 +49,28 @@ export class CitizenTrackComponent implements OnInit, OnDestroy {
   });
 
   readonly pins = computed<MapPin[]>(() => {
+    this.lang.currentLang();
     const row = this.data();
     if (!row?.visible || row.lat == null || row.lng == null) return [];
-    const pins: MapPin[] = [{ id: 'team', lat: row.lat, lng: row.lng, title: row.team_name || '' }];
+    const copy = pinCopy((key) => this.lang.translate(key));
+    const glyph = teamGlyph(row.team_kind || 'boat', row.team_name || '');
+    const teamSpec: PinSpec = { kind: 'team', team: glyph, free: false };
+    const pins: MapPin[] = [{
+      id: 'team',
+      lat: row.lat,
+      lng: row.lng,
+      title: teamTitle(glyph, row.team_name || '', false, !!row.stale, copy),
+      spec: teamSpec,
+    }];
     if (row.case_lat != null && row.case_lng != null) {
-      pins.push({ id: 'case', lat: row.case_lat, lng: row.case_lng, title: '' });
+      const caseSpec: PinSpec = { kind: 'case', severity: 'high', queue: 1, selected: true };
+      pins.push({
+        id: 'case',
+        lat: row.case_lat,
+        lng: row.case_lng,
+        title: caseTitle(1, 'high', 1, copy),
+        spec: caseSpec,
+      });
     }
     return pins;
   });
@@ -74,13 +93,24 @@ export class CitizenTrackComponent implements OnInit, OnDestroy {
       x: 16 + ((lng - minLo) / Math.max(1e-6, maxLo - minLo)) * 248,
       y: 16 + (1 - (lat - minLa) / Math.max(1e-6, maxLa - minLa)) * 128,
     });
+    this.lang.currentLang();
+    const copy = pinCopy((key) => this.lang.translate(key));
+    const glyph = teamGlyph(row.team_kind || 'boat', row.team_name || '');
     const team = project(row.lat, row.lng);
     const place = row.case_lat != null && row.case_lng != null ? project(row.case_lat, row.case_lng) : null;
     const trail = (row.trail || []).map((p) => {
       const at = project(p.lat, p.lng);
       return `${at.x.toFixed(1)},${at.y.toFixed(1)}`;
     }).join(' ');
-    return { team, place, trail };
+    return {
+      team,
+      place,
+      trail,
+      teamSpec: { kind: 'team', team: glyph, free: false } as PinSpec,
+      caseSpec: { kind: 'case', severity: 'high', queue: 1, selected: true } as PinSpec,
+      teamTitle: teamTitle(glyph, row.team_name || '', false, !!row.stale, copy),
+      caseTitle: caseTitle(1, 'high', 1, copy),
+    };
   });
 
   ngOnInit(): void {

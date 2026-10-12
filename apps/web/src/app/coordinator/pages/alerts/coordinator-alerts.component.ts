@@ -2,11 +2,13 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { AnomalyAlert, ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { MapLegendComponent } from '../../../core/maps/map-legend.component';
+import { MapPinDirective } from '../../../core/maps/map-pin.directive';
+import { PinSpec, RELIEF_PLACES, asSeverity, caseTitle, pinCopy, placeTitle, teamTitle } from '../../../core/maps/map-pins';
 
 type Kind = 'spike' | 'silent_zone' | 'resource_gap' | 'conflict' | 'stale';
 interface Ward { id: string; name: string; district: string; lat: number; lng: number; }
 interface Pt { x: number; y: number; }
-interface Landmark { name: string; lat: number; lng: number; }
 interface ResPin { id: string; name: string; lat: number; lng: number; free: boolean; }
 export interface MapAlert {
   n: number; alert: AnomalyAlert; kind: Kind; at: Pt | null; ward?: Ward;
@@ -33,12 +35,6 @@ const WARDS: Ward[] = [
   { id: 'ward_10', name: 'Meppadi', district: 'Wayanad', lat: 11.557, lng: 76.140 },
   { id: 'ward_11', name: 'Vythiri', district: 'Wayanad', lat: 11.550, lng: 76.038 },
   { id: 'ward_12', name: 'Kalpetta', district: 'Wayanad', lat: 11.608, lng: 76.082 },
-];
-const LANDMARKS: Landmark[] = [
-  { name: 'Little Flower Hospital', lat: 10.108, lng: 76.352 },
-  { name: 'Nedumudi Boat Jetty', lat: 9.430, lng: 76.398 },
-  { name: 'Chalakudy River Jetty', lat: 10.308, lng: 76.331 },
-  { name: 'Kainakary Relief Camp', lat: 9.470, lng: 76.390 },
 ];
 const FALLBACK_MEDICAL: ResPin[] = [{ id: 'm1', name: 'Medical team', lat: 10.108, lng: 76.352, free: true }];
 
@@ -96,7 +92,7 @@ const CELLS = withLabelOffsets(RAW_CELLS);
 @Component({
   selector: 'app-coordinator-alerts',
   standalone: true,
-  imports: [CommonModule, RdTranslatePipe, MapProviderComponent],
+  imports: [CommonModule, RdTranslatePipe, MapProviderComponent, MapLegendComponent, MapPinDirective],
   templateUrl: './coordinator-alerts.component.html',
   styleUrl: './coordinator-alerts.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -109,7 +105,7 @@ export class CoordinatorAlertsComponent implements OnInit {
   readonly H = H;
   readonly cells = CELLS;
   readonly spikeRadius = 28;
-  readonly landmarks = LANDMARKS.map((l) => ({ ...l, ...proj(l.lat, l.lng) }));
+  readonly places = RELIEF_PLACES.map((place) => ({ ...place, ...proj(place.lat, place.lng) }));
   readonly kinds: Kind[] = ['spike', 'silent_zone', 'resource_gap', 'conflict'];
   readonly alerts = signal<AnomalyAlert[]>([]);
   readonly medical = signal<ResPin[]>([]);
@@ -132,13 +128,71 @@ export class CoordinatorAlertsComponent implements OnInit {
     return `translate(${tx}px,${ty}px) scale(${k})`;
   });
 
-  readonly googlePins = computed<MapPin[]>(() =>
-    this.items().filter((i) => i.at).map((i) => ({ id: i.alert.id, ...this.latlng(i), title: `${i.n}. ${i.alert.title}` })),
-  );
+  readonly googlePins = computed<MapPin[]>(() => {
+    this.lang.currentLang();
+    const copy = pinCopy((key) => this.lang.translate(key));
+    const selected = this.selectedId();
+    const cases: MapPin[] = this.items().filter((item) => item.at).map((item) => {
+      const spec = this.caseSpec(item.n, item.alert.severity, item.alert.id === selected);
+      return {
+        id: item.alert.id,
+        ...this.latlng(item),
+        title: caseTitle(item.n, asSeverity(item.alert.severity), 1, copy),
+        spec,
+        dim: !!selected && item.alert.id !== selected,
+      };
+    });
+    const places: MapPin[] = RELIEF_PLACES.map((place) => ({
+      id: place.id,
+      lat: place.lat,
+      lng: place.lng,
+      title: placeTitle(place.place, place.name, copy),
+      spec: { kind: 'place', place: place.place, label: place.name } as PinSpec,
+      dim: !!selected,
+    }));
+    const teams: MapPin[] = this.selected()?.kind === 'resource_gap'
+      ? this.medical().map((team) => ({
+        id: team.id,
+        lat: team.lat,
+        lng: team.lng,
+        title: teamTitle('medic', team.name, team.free, false, copy),
+        spec: { kind: 'team', team: 'medic', free: team.free } as PinSpec,
+        dim: false,
+      }))
+      : [];
+    return [...places, ...teams, ...cases];
+  });
   readonly center = computed(() => {
     const s = this.selected();
     return s?.at ? this.latlng(s) : { lat: 10.50, lng: 76.30 };
   });
+
+  caseSpec(n: number, severity: string, selected: boolean): PinSpec {
+    return { kind: 'case', severity: asSeverity(severity), queue: n, selected };
+  }
+
+  placeSpec(place: { place: 'shelter' | 'hospital' | 'camp'; name: string }): PinSpec {
+    return { kind: 'place', place: place.place, label: place.name };
+  }
+
+  teamSpec(free: boolean): PinSpec {
+    return { kind: 'team', team: 'medic', free };
+  }
+
+  pinTitle(item: MapAlert): string {
+    this.lang.currentLang();
+    return caseTitle(item.n, asSeverity(item.alert.severity), 1, pinCopy((key) => this.lang.translate(key)));
+  }
+
+  placeLabel(place: { place: 'shelter' | 'hospital' | 'camp'; name: string }): string {
+    this.lang.currentLang();
+    return placeTitle(place.place, place.name, pinCopy((key) => this.lang.translate(key)));
+  }
+
+  teamLabel(team: ResPin): string {
+    this.lang.currentLang();
+    return teamTitle('medic', team.name, team.free, false, pinCopy((key) => this.lang.translate(key)));
+  }
 
   isSample(alert: AnomalyAlert): boolean {
     return (alert.reason || '').startsWith('Sample.') || (alert.title || '').startsWith('Sample');

@@ -749,5 +749,36 @@
         "arrived": "Arrived",
         "completed": "Completed"
       }
+    },
+  "pins": {
+    "legend": "Map key",
+    "case": "Case",
+    "cases": "Cases",
+    "teams": "Teams",
+    "places": "Places",
+    "merged": "Merged",
+    "free": "Free",
+    "busy": "Busy",
+    "stale": "Stale",
+    "report": "report",
+    "reports": "reports",
+    "sev": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "team": {
+      "boat": "Boat team",
+      "ambulance": "Ambulance team",
+      "medic": "Medic team",
+      "food": "Food and water team",
+      "rescue": "Rescue team"
+    },
+    "place": {
+      "shelter": "Shelter",
+      "hospital": "Hospital",
+      "camp": "Camp"
     }
+  }
 }

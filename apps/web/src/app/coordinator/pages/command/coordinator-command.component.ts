@@ -22,6 +22,21 @@ import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '..
 import { MergedChipComponent } from '../../agents/merged-chip.component';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { MapLegendComponent } from '../../../core/maps/map-legend.component';
+import { MapPinDirective } from '../../../core/maps/map-pin.directive';
+import {
+  DrawnPin,
+  RELIEF_PLACES,
+  caseTitle,
+  clusterDrawnPins,
+  pinCopy,
+  pinZ,
+  placeTitle,
+  positionIsStale,
+  teamGlyph,
+  teamIsFree,
+  teamTitle,
+} from '../../../core/maps/map-pins';
 import {
   ApiClientService,
   RdTranslatePipe,
@@ -58,6 +73,8 @@ const PLACE_NAMES: Record<string, { en: string; hi: string }> = {
     FormsModule,
     RouterLink,
     MapProviderComponent,
+    MapLegendComponent,
+    MapPinDirective,
     SevChipComponent,
     RdTranslatePipe,
     AgentBadgeComponent,
@@ -84,24 +101,77 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly selectedRequestId = signal<string>('INC-001');
   readonly matches = signal<MatchProposal[]>([]);
   readonly resources = signal<StoredResource[]>([]);
-  readonly mapPins = computed<MapPin[]>(() => {
-    const pins: MapPin[] = [];
-    for (const req of this.requests()) {
-      if (req.lat == null || req.lng == null) {
-        continue;
-      }
+  readonly mapMarkers = computed<DrawnPin[]>(() => {
+    this.langService.currentLang();
+    const copy = pinCopy((key) => this.langService.translate(key));
+    const selectedId = this.selectedRequest()?.id ?? null;
+    const pins: DrawnPin[] = [];
+    this.filteredRequests().forEach((req, index) => {
+      if (req.lat == null || req.lng == null) return;
+      const severity = urgencyBand(req.urgency_score);
+      const merged = req.merged_count || 1;
+      const selected = req.id === selectedId;
+      const spec = { kind: 'case' as const, severity, queue: index + 1, merged, selected };
+      const at = this.project(req.lat, req.lng);
       pins.push({
+        ...spec,
         id: req.id,
+        x: at.x,
+        y: at.y,
         lat: req.lat,
         lng: req.lng,
-        title: req.place_text || req.id,
+        title: caseTitle(index + 1, severity, merged, copy),
+        dim: !!selectedId && !selected,
+        z: pinZ(spec),
+        selectId: req.id,
+      });
+    });
+    for (const team of this.resources()) {
+      const stale = positionIsStale(team.location_source, team.location_updated_at);
+      const free = teamIsFree(team.status, team.capacity_remaining, stale);
+      const glyph = teamGlyph(team.kind, team.name);
+      const spec = { kind: 'team' as const, team: glyph, free };
+      const at = this.project(team.lat, team.lng);
+      pins.push({
+        ...spec,
+        id: team.id,
+        x: at.x,
+        y: at.y,
+        lat: team.lat,
+        lng: team.lng,
+        title: teamTitle(glyph, team.name, free, stale, copy),
+        dim: !!selectedId,
+        z: pinZ(spec),
+        selectId: team.assigned_request_id || undefined,
       });
     }
-    for (const res of this.resources()) {
-      pins.push({ id: res.id, lat: res.lat, lng: res.lng, title: res.name });
+    for (const place of RELIEF_PLACES) {
+      const spec = { kind: 'place' as const, place: place.place, label: place.name };
+      const at = this.project(place.lat, place.lng);
+      pins.push({
+        ...spec,
+        id: place.id,
+        x: at.x,
+        y: at.y,
+        lat: place.lat,
+        lng: place.lng,
+        title: placeTitle(place.place, place.name, copy),
+        dim: !!selectedId,
+        z: pinZ(spec),
+      });
     }
-    return pins;
+    return clusterDrawnPins(pins);
   });
+  readonly svgPins = computed(() => this.mapMarkers());
+  readonly mapPins = computed<MapPin[]>(() => this.mapMarkers().map((pin) => ({
+    id: pin.id,
+    lat: pin.lat,
+    lng: pin.lng,
+    title: pin.title,
+    spec: pin,
+    dim: pin.dim,
+    zIndex: pin.z,
+  })));
   readonly filterType = signal<string>('all');
   readonly areaFilter = signal<string>('all');
   readonly timeFilter = signal<'all' | 'hour' | 'today'>('all');
@@ -275,21 +345,17 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       };
     }),
   );
-  readonly svgPins = computed(() => {
-    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r));
-    const res = this.resources();
-    return [
-      ...res.map((r) => {
-        const at = this.project(r.lat, r.lng);
-        return { id: r.id, x: at.x, y: at.y, band: 'team', kind: 'team' as const, team: r.kind, n: 0 };
-      }),
-      ...open.map((r, i) => {
-        const at = this.project(r.lat as number, r.lng as number);
-        return { id: r.id, x: at.x, y: at.y, band: urgencyBand(r.urgency_score), kind: 'req' as const, team: '', n: i + 1 };
-      }),
-    ];
+  readonly routeLine = computed(() => {
+    const req = this.selectedRequest();
+    if (!req || req.lat == null || req.lng == null) return null;
+    const proposal = this.activeProposal();
+    const proposed = proposal ? this.resources().find((team) => team.id === proposal.resource_id) : undefined;
+    const team = proposed || this.assignedTeam(req);
+    if (!team) return null;
+    const from = this.project(team.lat, team.lng);
+    const to = this.project(req.lat, req.lng);
+    return { x1: from.x, y1: from.y, x2: to.x, y2: to.y };
   });
-  readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
   readonly movementTrail = computed(() => {
     const req = this.selectedRequest();
     const team = req ? this.assignedTeam(req) : undefined;
@@ -323,8 +389,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   assignedTeam(req: StoredRequest): StoredResource | undefined {
     return this.resources().find((team) => team.id === req.assigned_resource_id);
   }
-  teamFill(kind: string): string {
-    return ({ boat: '#0b6e99', medical: '#b42318', food: '#b54708', shelter: '#067647' } as Record<string, string>)[kind] || '#0b6e99';
+  onMapPin(id: string): void {
+    const pin = this.mapMarkers().find((row) => row.id === id);
+    if (!pin || pin.kind === 'place') return;
+    const next = pin.selectId || (pin.kind === 'case' || pin.kind === 'cluster' ? pin.id : '');
+    if (next) this.selectRequest(next, true);
   }
   bandOf(score: number): 'critical' | 'high' | 'medium' | 'low' { return urgencyBand(score); }
   isReview(r: StoredRequest): boolean { return needsReview(r); }

@@ -404,7 +404,7 @@ describe('CoordinatorCommandComponent', () => {
     expect(text).toContain('Wayanad');
     expect(fixture.nativeElement.querySelectorAll('polygon.district').length).toBe(4);
     expect(fixture.nativeElement.querySelector('path[stroke="var(--map-water)"]')).toBeNull();
-    const pins = component.svgPins().filter((pin) => pin.kind === 'req');
+    const pins = component.svgPins().filter((pin) => pin.kind === 'case');
     expect(pins.map((pin) => pin.id).sort()).toEqual(['north', 'south']);
     for (const pin of pins) {
       expect(pin.x).toBeGreaterThan(20);
@@ -412,6 +412,30 @@ describe('CoordinatorCommandComponent', () => {
       expect(pin.y).toBeGreaterThan(20);
       expect(pin.y).toBeLessThan(460);
     }
+  });
+
+  it('dims the other pins when a case is selected and keeps the legend in words', () => {
+    fixture.detectChanges();
+    const map = fixture.nativeElement.querySelector('.svgmap') as SVGSVGElement;
+    const selected = map.querySelector('g.pin:not(.dim)') as SVGGElement;
+    expect(selected?.getAttribute('aria-label')).toBe('Case 1, Critical, 3 reports');
+    expect(map.querySelectorAll('g.pin.dim').length).toBeGreaterThan(1);
+    expect(map.querySelector('[data-ring="critical"]')).toBeTruthy();
+    expect(map.textContent).toContain('×3');
+    const boat = map.querySelector('[data-pin="team"][data-free="filled"]');
+    expect(boat?.querySelector('[data-dot="filled"]')?.getAttribute('fill')).toBe('var(--ok)');
+    const legend = fixture.nativeElement.querySelector('rd-map-legend') as HTMLElement;
+    expect(legend.textContent).toContain('Cases');
+    expect(legend.textContent).toContain('Teams');
+    expect(legend.textContent).toContain('Places');
+    expect(legend.textContent).toContain('Critical');
+    expect(legend.textContent).toContain('Boat team');
+    expect(legend.textContent).toContain('Shelter');
+    component.selectRequest('INC-002', true);
+    fixture.detectChanges();
+    const next = map.querySelector('g.pin:not(.dim)') as SVGGElement;
+    expect(next.getAttribute('aria-label')).toBe('Case 2, Critical, 1 report');
+    expect(map.querySelector('[data-merged="3"]')?.closest('g.pin')?.classList.contains('dim')).toBeTrue();
   });
 
   it('reloads the queue when the demo phone submits a report', () => {

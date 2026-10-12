@@ -132,6 +132,7 @@ PUBSUB_TOPIC_ALERTS=alerts
 GCS_BUCKET_MEDIA=your-project-relief-desk-media
 # --- Maps (browser key goes into the Angular environment file, restricted by referrer) ---
 GOOGLE_MAPS_API_KEY=replace-me
+GOOGLE_MAPS_MAP_ID=DEMO_MAP_ID
 # --- App ---
 API_CORS_ORIGINS=http://localhost:4200
 SALT_PHONE_HASH=replace-me

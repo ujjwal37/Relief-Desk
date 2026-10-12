@@ -103,6 +103,14 @@ Matching and Assist only offer a team that is Free, or finishing soon (Arrived f
 
 The citizen status page, opened with the request id and status token, shows only the assigned team, and only from dispatch until completion. It refreshes every 10 seconds. Before dispatch and after completion it does not show a live position. Other teams are not included.
 
+## Map pins
+
+Cases, teams, and places use different shapes, so the map still reads in greyscale. A case is a round pin with the queue number, filled by severity. Critical cases have a second ring. Merged reports add a ×N badge. Selecting a case dims the other pins to 45% and selects the same row in the queue. A team is a pine rounded square with an icon for boat, ambulance, medic, food and water, or rescue. A filled corner dot means the team is free, with seats, and a fresh position. A hollow ring means busy, off duty, depleted, or a shared fix older than 2 minutes. A depot pin that nobody has updated stays fresh. Places are grey diamonds labelled shelter, hospital, or camp. The legend stays visible: shapes and words, grouped as Cases, Teams, and Places. On a wide screen it sits on the bottom of the map. On a narrow screen it sits under the map.
+
+Google Maps draws those pins with `AdvancedMarkerElement`. Advanced markers need a map id, and a map id ignores the JavaScript `styles` array, so the muted basemap is a Cloud map style rather than a styles array in the app. `GET /api/config/maps` returns `mapId`. The default is `DEMO_MAP_ID`, which is the id to use with Google's demo key. Set `GOOGLE_MAPS_MAP_ID` when the Cloud style has its own id. The app switches `google.maps.ColorScheme` with the light and dark theme.
+
+Suggested Cloud style. Light: land `#F1F1EE`, roads `#FFFFFF`, arterials `#E4E2DC`, water `#C9D9DC`, parks `#E2E8DF`, labels `#6F7570`. Dark: land `#1F2321`, roads `#2C312E`, water `#1D3437`, labels `#9AA39C`. Hide POI icons, business labels, and transit. Keep road names and locality labels. If the key is missing, the script fails, or the browser is offline, the SVG ward map draws the same pins. Above about 40 cases, nearby cases collapse into one case circle with a ×N badge.
+
 ## Safety and limitations
 - Decision support only; humans approve every dispatch; no auto-dispatch or auto-delete.
 - Synthetic data only; no real personal data is collected or stored.

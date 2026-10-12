@@ -36,8 +36,15 @@ _PLACEHOLDER_MAP_KEYS = {"", "replace-me", "your-key", "changeme"}
 
 @router.get("/maps")
 def maps_browser_config():
-    """Browser Maps key. Placeholder values stay off so the SVG map is used."""
+    """Browser Maps key and Cloud map id.
+
+    Placeholder keys stay off so the SVG map is used. mapId is still returned:
+    AdvancedMarkerElement requires one, and a map id ignores a styles array.
+    DEMO_MAP_ID is the id for the Google demo key. The muted basemap is the
+    Cloud style attached to that id, not a styles array in this response.
+    """
     key = (settings.GOOGLE_MAPS_API_KEY or "").strip()
+    map_id = (settings.GOOGLE_MAPS_MAP_ID or "").strip() or "DEMO_MAP_ID"
     if key.lower() in _PLACEHOLDER_MAP_KEYS:
-        return {"enabled": False, "apiKey": None}
-    return {"enabled": True, "apiKey": key}
+        return {"enabled": False, "apiKey": None, "mapId": map_id}
+    return {"enabled": True, "apiKey": key, "mapId": map_id}

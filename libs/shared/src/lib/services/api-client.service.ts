@@ -116,8 +116,8 @@ export class ApiClientService {
     return this.http.get<any>('/api/coordinator/verify', this.getAuthHeaders());
   }
 
-  getMapsConfig(): Observable<{ enabled: boolean; apiKey: string | null }> {
-    return this.http.get<{ enabled: boolean; apiKey: string | null }>('/api/config/maps');
+  getMapsConfig(): Observable<{ enabled: boolean; apiKey: string | null; mapId?: string | null }> {
+    return this.http.get<{ enabled: boolean; apiKey: string | null; mapId?: string | null }>('/api/config/maps');
   }
 
   getRequests(sort = 'urgency', packId?: string, updatedSince?: string): Observable<StoredRequest[]> {

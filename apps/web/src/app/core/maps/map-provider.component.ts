@@ -14,12 +14,36 @@ import {
   inject,
 } from '@angular/core';
 import { MapProviderService } from './map-provider.service';
+import { DEMO_MAP_ID, MarkerInput, PinSpec, clusterMapPins, pinMarkerContent, pinZ } from './map-pins';
 
-export interface MapPin {
-  id: string;
-  lat: number;
-  lng: number;
-  title: string;
+export interface MapPin extends MarkerInput {}
+
+/**
+ * Google map options. A mapId is required for AdvancedMarkerElement, and a mapId
+ * ignores the styles array, so the muted basemap is a Cloud style (see README).
+ */
+export function googleMapOptions(
+  center: { lat: number; lng: number },
+  mapId: string,
+  colorScheme: unknown,
+): Record<string, unknown> {
+  const opts: Record<string, unknown> = {
+    center,
+    zoom: 13,
+    mapId: mapId || DEMO_MAP_ID,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false,
+  };
+  if (colorScheme != null) opts['colorScheme'] = colorScheme;
+  return opts;
+}
+
+export function themeIsDark(): boolean {
+  const mode = document.documentElement.getAttribute('data-theme');
+  if (mode === 'dark') return true;
+  if (mode === 'light') return false;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
 }
 
 @Component({
@@ -51,27 +75,30 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
 
   mode: 'google' | 'svg' = 'svg';
   private map: { panTo?: (pos: { lat: number; lng: number }) => void } | null = null;
-  private markers: { setMap?: (map: null) => void }[] = [];
+  private markers: { map: unknown }[] = [];
+  private themeObserver = new MutationObserver(() => {
+    if (this.mode !== 'google') return;
+    this.map = null;
+    this.draw();
+  });
 
   ngAfterViewInit(): void {
+    this.themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     this.maps.decide().then((mode) => {
       this.mode = mode;
       this.cdr.detectChanges();
-      if (mode === 'google') {
-        this.draw();
-      }
+      if (mode === 'google') this.draw();
     });
     window.addEventListener('offline', this.onOffline);
   }
 
   ngOnDestroy(): void {
+    this.themeObserver.disconnect();
     window.removeEventListener('offline', this.onOffline);
   }
 
   ngOnChanges(): void {
-    if (this.mode === 'google' && this.map) {
-      this.draw();
-    }
+    if (this.mode === 'google' && this.map) this.draw();
   }
 
   private onOffline = (): void => {
@@ -84,27 +111,31 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
     const el = this.canvas?.nativeElement;
     const google = (window as unknown as { google?: { maps?: GoogleMapsNs } }).google;
     const maps = google?.maps;
-    if (!el || !maps) {
+    const Advanced = maps?.marker?.AdvancedMarkerElement;
+    if (!el || !maps || !Advanced) {
       this.mode = 'svg';
+      this.map = null;
       this.cdr.markForCheck();
       return;
     }
     try {
       if (!this.map) {
-        this.map = new maps.Map(el, {
-          center: this.center,
-          zoom: 13,
-          mapTypeControl: false,
-          streetViewControl: false,
-          fullscreenControl: false,
-        });
+        const scheme = themeIsDark() ? maps.ColorScheme?.DARK : maps.ColorScheme?.LIGHT;
+        this.map = new maps.Map(el, googleMapOptions(this.center, this.maps.mapId(), scheme));
+      } else {
+        this.map.panTo?.(this.center);
       }
-      this.markers.forEach((marker) => marker.setMap?.(null));
-      this.markers = this.pins.map((pin) => {
-        const marker = new maps.Marker({
+      this.markers.forEach((marker) => { marker.map = null; });
+      const prepared = clusterMapPins(this.pins);
+      this.markers = prepared.map((pin) => {
+        const spec: PinSpec = pin.spec ?? { kind: 'case', severity: 'low' };
+        const marker = new Advanced({
           map: this.map,
           position: { lat: pin.lat, lng: pin.lng },
           title: pin.title,
+          content: pinMarkerContent(spec, !!pin.dim),
+          gmpClickable: true,
+          zIndex: pin.zIndex ?? pinZ(spec),
         });
         marker.addListener?.('click', () => this.pinSelect.emit(pin.id));
         return marker;
@@ -119,5 +150,11 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
 
 interface GoogleMapsNs {
   Map: new (el: HTMLElement, opts: Record<string, unknown>) => { panTo?: (pos: { lat: number; lng: number }) => void };
-  Marker: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void; addListener?: (event: string, fn: () => void) => void };
+  ColorScheme?: { LIGHT: unknown; DARK: unknown };
+  marker?: {
+    AdvancedMarkerElement: new (opts: Record<string, unknown>) => {
+      map: unknown;
+      addListener?: (event: string, fn: () => void) => void;
+    };
+  };
 }

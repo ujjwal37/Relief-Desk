@@ -30,7 +30,7 @@ gcloud run deploy relief-desk-api \
   --set-env-vars GEMINI_MODEL=gemini-3.8-flash,GEMINI_EMBED_MODEL=gemini-embedding-001,GEMINI_EMBED_DIM=768,GEMINI_EMBED_TASK=SEMANTIC_SIMILARITY,AI_MODE=auto,GEMINI_ENABLED=true,DEMO_MODE=true
 ```
 
-`JWT_SECRET` and `GOOGLE_MAPS_API_KEY` are the other values that must stay out of git. Maps stays on the built-in SVG until `GOOGLE_MAPS_API_KEY` is a real key.
+`JWT_SECRET` and `GOOGLE_MAPS_API_KEY` are the other values that must stay out of git. Maps stays on the built-in SVG until `GOOGLE_MAPS_API_KEY` is a real key. `GOOGLE_MAPS_MAP_ID` defaults to `DEMO_MAP_ID`. Advanced markers need that id, and the muted basemap is the Cloud style on the id, because a map id ignores a JavaScript styles array.
 
 ## Not in this deploy
 

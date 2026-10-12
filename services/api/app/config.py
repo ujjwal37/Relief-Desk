@@ -31,8 +31,11 @@ class Settings(BaseSettings):
     PUBSUB_TOPIC_ALERTS: str = "alerts"
     GCS_BUCKET_MEDIA: str = "relief-desk-media"
 
-    # Maps
+    # Maps. Advanced markers need a map id. A map id ignores the JS styles
+    # array, so the muted basemap is a Cloud style on this id.
+    # DEMO_MAP_ID is the id that works with Google's demo key.
     GOOGLE_MAPS_API_KEY: str = "replace-me"
+    GOOGLE_MAPS_MAP_ID: str = "DEMO_MAP_ID"
 
     # App security & throttling
     API_CORS_ORIGINS: List[str] = ["http://localhost:4200", "http://localhost:8000"]
