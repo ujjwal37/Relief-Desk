@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ApiClientService, LanguageService, RdTranslatePipe, StoredResource } from '@rd/shared';
+import { ApiClientService, LanguageService, RdTranslatePipe, StoredRequest, StoredResource } from '@rd/shared';
+import { CoordUiService } from '../../../core/services/coord-ui.service';
 
 const AREAS: Record<string, string> = {
   ward_1: 'Kainakary',
@@ -18,6 +19,20 @@ const AREAS: Record<string, string> = {
   ward_12: 'Kalpetta',
 };
 
+type Strip = 'all' | 'free' | 'busy' | 'stale';
+
+/** Great-circle kilometres, rounded like the case-card distance. */
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const radius = 6371;
+  const p1 = (lat1 * Math.PI) / 180;
+  const p2 = (lat2 * Math.PI) / 180;
+  const dPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const dLambda = ((lng2 - lng1) * Math.PI) / 180;
+  const a = Math.sin(dPhi / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dLambda / 2) ** 2;
+  const raw = radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(raw * 100) / 100;
+}
+
 @Component({
   selector: 'app-coordinator-teams',
   standalone: true,
@@ -29,20 +44,42 @@ const AREAS: Record<string, string> = {
 export class CoordinatorTeamsComponent implements OnInit {
   private api = inject(ApiClientService);
   private lang = inject(LanguageService);
+  private ui = inject(CoordUiService);
 
   readonly resources = signal<StoredResource[]>([]);
-  readonly typeFilter = signal<string>('all');
-  readonly statusFilter = signal<string>('all');
+  readonly requests = signal<StoredRequest[]>([]);
+  readonly strip = signal<Strip>('all');
+  readonly openId = signal<string | null>(null);
   readonly now = signal(Date.now());
   readonly notice = signal('');
 
+  readonly counts = computed(() => {
+    const rows = this.resources();
+    return {
+      free: rows.filter((team) => this.isFree(team)).length,
+      busy: rows.filter((team) => !this.isFree(team)).length,
+      stale: rows.filter((team) => this.stale(team)).length,
+    };
+  });
+
+  readonly focus = computed(() => {
+    const id = this.ui.selectedCaseId();
+    if (!id) return undefined;
+    return this.requests().find((row) => row.id === id);
+  });
+
   readonly filtered = computed(() => {
-    const type = this.typeFilter();
-    const status = this.statusFilter();
-    return this.resources().filter((team) => {
-      if (type !== 'all' && team.kind !== type) return false;
-      if (status !== 'all' && this.statusKey(team) !== status) return false;
+    const mode = this.strip();
+    const rows = this.resources().filter((team) => {
+      if (mode === 'free') return this.isFree(team);
+      if (mode === 'busy') return !this.isFree(team);
+      if (mode === 'stale') return this.stale(team);
       return true;
+    });
+    return [...rows].sort((a, b) => {
+      const rank = Number(!this.isFree(a)) - Number(!this.isFree(b));
+      if (rank !== 0) return rank;
+      return a.name.localeCompare(b.name);
     });
   });
 
@@ -51,6 +88,22 @@ export class CoordinatorTeamsComponent implements OnInit {
       next: (rows) => this.resources.set(rows),
       error: () => this.resources.set([]),
     });
+    this.api.getRequests().subscribe({
+      next: (rows) => this.requests.set(rows),
+      error: () => this.requests.set([]),
+    });
+  }
+
+  setStrip(mode: Exclude<Strip, 'all'>): void {
+    this.strip.set(this.strip() === mode ? 'all' : mode);
+  }
+
+  toggle(id: string): void {
+    this.openId.set(this.openId() === id ? null : id);
+  }
+
+  isFree(team: StoredResource): boolean {
+    return team.status === 'available';
   }
 
   statusKey(team: StoredResource): string {
@@ -70,6 +123,18 @@ export class CoordinatorTeamsComponent implements OnInit {
     return team.area_name || AREAS[team.ward_id] || team.ward_id;
   }
 
+  /** Distance and ETA to the open case, or the ward when no case is selected. */
+  leg(team: StoredResource): string {
+    this.lang.currentLang();
+    const req = this.focus();
+    if (req?.lat == null || req?.lng == null) return this.area(team);
+    const km = distanceKm(req.lat, req.lng, team.lat, team.lng);
+    const minutes = km > 30 ? null : Math.max(1, Math.round((km / 20) * 60));
+    if (minutes == null || minutes > 90) return this.lang.translate('coord.noNearbyTeam');
+    const eta = this.lang.translate('coord.etaMin').replace('{n}', String(minutes));
+    return `${km} km · ${eta}`;
+  }
+
   minutesAgo(team: StoredResource): number {
     this.now();
     const stamp = team.location_updated_at || '';
@@ -86,6 +151,12 @@ export class CoordinatorTeamsComponent implements OnInit {
 
   stale(team: StoredResource): boolean {
     return this.minutesAgo(team) >= 20;
+  }
+
+  seats(team: StoredResource): string {
+    return this.lang.translate('coord.teamSeats')
+      .replace('{free}', String(team.capacity_remaining))
+      .replace('{n}', String(team.capacity_total));
   }
 
   canDo(team: StoredResource): string {

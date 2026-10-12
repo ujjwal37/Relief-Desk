@@ -7,6 +7,8 @@ export class CoordUiService {
   private api = inject(ApiClientService);
 
   readonly searchQuery = signal('');
+  /** Last case opened on Cases, so Teams can quote distance to it. */
+  readonly selectedCaseId = signal('');
   readonly weightsOpen = signal(false);
   readonly alerts = signal<AnomalyAlert[]>([]);
   readonly tourOpen = signal(false);

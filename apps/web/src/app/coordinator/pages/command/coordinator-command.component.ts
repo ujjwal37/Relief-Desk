@@ -631,6 +631,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       this.initialSelectDone = true;
       const pick = next.find((row) => !this.isDispatched(row) && !this.isCompleted(row)) || next[0];
       this.selectedRequestId.set(pick.id);
+      this.ui.selectedCaseId.set(pick.id);
       this.loadMatches(pick.id);
       return;
     }
@@ -842,6 +843,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   selectRequest(id: string, openSheet = false): void {
     this.selectedRequestId.set(id);
+    this.ui.selectedCaseId.set(id);
     this.matchIdx.set(0);
     this.openSection.set(this.ui.demoWhy ? 'why' : null);
     this.showOriginal.set(false);
