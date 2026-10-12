@@ -133,18 +133,52 @@ def set_spawn(fn: Callable[[Callable[[], None]], None]) -> None:
 _TRACE_AGENTS = ("Intake", "Dedupe", "Triage", "Matching", "Explainer")
 
 
-def _trace_step(agent: str, status: str, summary: str, output: str, tools: List[str], started: float) -> dict:
+def _trace_step(
+    agent: str,
+    status: str,
+    summary: str,
+    output: str,
+    tools: List[str],
+    started: float,
+    provider: str = "tool",
+    model: Optional[str] = None,
+    latency_ms: Optional[int] = None,
+    tokens: Optional[int] = None,
+) -> dict:
+    """One trace row. provider is gemini, cache, fallback or tool. model is set only when a model ran."""
+    measured = max(0, int(round((time.perf_counter() - started) * 1000)))
     return {
         "agent": agent,
         "status": status,
         "input_summary": (summary or "")[:180],
         "output": (output or "")[:400],
-        "model": settings.GEMINI_MODEL,
-        "latency_ms": max(0, int((time.perf_counter() - started) * 1000)),
-        "tokens": None,
+        "provider": provider,
+        "model": model,
+        "latency_ms": latency_ms if latency_ms is not None else measured,
+        "tokens": tokens,
         "tool_calls": tools,
         "ts": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
+    """The Intake row reports the model call that actually happened, in English for the coordinator."""
+    ai = req.ai
+    provider = (ai.provider if ai else None) or ("gemini" if req.ai_source == "gemini" else "fallback")
+    ran_model = ai.model if ai and provider in ("gemini", "cache") else None
+    english = (req.translations or {}).get("en") or req.ai_translation or req.summary or summary or req.type.value
+    return _trace_step(
+        "Intake",
+        "complete",
+        summary,
+        english,
+        [],
+        started,
+        provider=provider,
+        model=ran_model,
+        latency_ms=ai.latency_ms if ai else None,
+        tokens=ai.tokens if ai else None,
+    )
 
 
 def mark_analysing(request_id: str) -> None:
@@ -197,7 +231,7 @@ def finish(request_id: str) -> None:
         "explainer": explanation,
     }
     req.trace = [
-        _trace_step("Intake", "complete", summary, summary or req.type.value, [], started),
+        _intake_row(req, summary, started),
         _trace_step("Dedupe", "complete", summary, "duplicate" if req.merged_into else "distinct", [], started),
         _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], triage_at),
         _trace_step("Matching", "complete", summary, f"{capacity['available']} {kind} free", ["check_capacity"], match_at),
@@ -229,13 +263,13 @@ def ensure_trace(req: StoredRequest) -> None:
     marks.append(time.perf_counter())
     durations = [max(0, int((marks[i + 1] - marks[i]) * 1000)) for i in range(5)]
     built = [
-        _trace_step("Intake", "complete", summary, summary or req.type.value, [], marks[0]),
+        _intake_row(req, summary, marks[0]),
         _trace_step("Dedupe", "complete", summary, dedupe_out, [], marks[1]),
         _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], marks[2]),
         _trace_step("Matching", "complete", summary, f"{capacity['available']} {kind} free", ["check_capacity"], marks[3]),
         _trace_step("Explainer", "complete", summary, explanation, [], marks[4]),
     ]
-    for step, duration in zip(built, durations):
+    for step, duration in zip(built[1:], durations[1:]):
         step["latency_ms"] = duration
     before = req.urgency_score
     req.trace = built

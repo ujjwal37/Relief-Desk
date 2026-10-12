@@ -626,6 +626,10 @@
     "legend": "Badge key",
     "badgeGemini": "Gemini",
     "badgeOffline": "Offline fallback",
+
+    "noModel": "Rules (koi model nahi)",
+
+    "ms": "{n} ms",
     "badgeRecorded": "Recorded Gemini run",
     "statusDone": "Ho gaya",
     "statusRunning": "Chal raha hai",

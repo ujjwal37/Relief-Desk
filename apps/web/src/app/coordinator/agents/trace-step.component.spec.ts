@@ -7,6 +7,7 @@ const STEP: TraceStepView = {
   output: 'score 90',
   model: 'gemini-3.8-flash',
   latencyMs: 420,
+  provider: 'gemini',
   input: 'five people',
   tools: ['score_urgency'],
   asked: 'five people',

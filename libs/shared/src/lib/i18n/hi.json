@@ -626,6 +626,10 @@
     "legend": "बैज कुंजी",
     "badgeGemini": "जेमिनी",
     "badgeOffline": "ऑफ़लाइन फ़ॉलबैक",
+
+    "noModel": "नियम (कोई मॉडल नहीं)",
+
+    "ms": "{n} मि.से.",
     "badgeRecorded": "रिकॉर्ड किया जेमिनी रन",
     "statusDone": "हो गया",
     "statusRunning": "चल रहा है",

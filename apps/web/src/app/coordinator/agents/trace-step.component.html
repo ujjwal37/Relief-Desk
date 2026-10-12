@@ -16,7 +16,7 @@
   </div>
   <p class="out">{{ step().output || ('ux.notRecorded' | rdTranslate) }}</p>
   <p class="meta">
-    <span>{{ 'ux.model' | rdTranslate }}</span> {{ step().model || ('ux.notRecorded' | rdTranslate) }}
+    <span>{{ 'ux.model' | rdTranslate }}</span> {{ modelText() }}
     <span>{{ 'ux.time' | rdTranslate }}</span>
     {{ timeText() || ('ux.notRecorded' | rdTranslate) }}
   </p>

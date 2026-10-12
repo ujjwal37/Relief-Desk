@@ -50,6 +50,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
     if (steps.some((step) => step.latencyMs == null)) return null;
     const of = (agent: string) => steps.find((step) => step.agent === agent)?.latencyMs || 0;
     const ms = of('Intake') + Math.max(of('Dedupe'), of('Triage')) + of('Matching') + of('Explainer');
+    if (ms < 1000) return this.lang.translate('ux.ms').replace('{n}', String(Math.round(ms)));
     return this.lang.translate('ux.seconds').replace('{n}', (ms / 1000).toFixed(1));
   });
 
@@ -80,6 +81,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
       status,
       output: raw?.output || null,
       model: raw?.model || null,
+      provider: (raw as { provider?: string } | undefined)?.provider || null,
       latencyMs: typeof raw?.latency_ms === 'number' ? raw.latency_ms : null,
       input: raw?.input_summary || null,
       tools: (raw?.tool_calls || []).map((tool) => this.toolText(tool)),
