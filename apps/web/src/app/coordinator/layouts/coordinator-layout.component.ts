@@ -68,7 +68,13 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.router.navigate([], { relativeTo: this.route, queryParams: { demo: this.demoOn() ? null : '1' }, queryParamsHandling: 'merge' });
   }
 
-  onSearch(event: Event): void { this.ui.searchQuery.set((event.target as HTMLInputElement).value); }
+  /** Search filters the Cases queue, so typing on another tab opens Cases with the query kept. */
+  onSearch(event: Event): void {
+    this.ui.searchQuery.set((event.target as HTMLInputElement).value);
+    if (!this.router.url.startsWith('/coordinator/command')) {
+      this.router.navigateByUrl('/coordinator/command');
+    }
+  }
   openWeights(): void { this.menuOpen.set(false); this.ui.weightsOpen.set(true); }
   takeTour(): void { this.menuOpen.set(false); this.router.navigateByUrl('/coordinator/command').then(() => setTimeout(() => this.ui.startTour(), 150)); }
   selectScenario(id: string): void { this.scenarioService.select(id); this.menuOpen.set(false); location.reload(); }

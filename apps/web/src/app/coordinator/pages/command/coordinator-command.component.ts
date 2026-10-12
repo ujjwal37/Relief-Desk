@@ -21,6 +21,7 @@ import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
 import { AskDeskComponent } from '../../agents/ask-desk.component';
+import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import {
@@ -50,6 +51,10 @@ const PLACE_NAMES: Record<string, { en: string; hi: string }> = {
   ward_11: { en: 'Vythiri', hi: 'वित्तूरि' },
   ward_12: { en: 'Kalpetta', hi: 'कल्पेट्टा' },
 };
+
+const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
+  Object.entries(PLACE_NAMES).map(([id, n]) => [id, [n.en, n.hi]]),
+);
 
 @Component({
   selector: 'app-coordinator-command',
@@ -215,12 +220,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }
 
     if (query) {
-      list = list.filter(
-        (r) =>
-          r.id.toLowerCase().includes(query) ||
-          (r.place_text && r.place_text.toLowerCase().includes(query)) ||
-          (r.ward_id && r.ward_id.toLowerCase().includes(query))
-      );
+      list = list.filter((r) => caseMatches(r as any, query, WARD_NAMES));
     }
 
     return list;
