@@ -116,31 +116,11 @@ firebase emulators:start --only firestore,auth
 ```
 Set `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080` for the API when developing.
 
-## 5. .env.example (copy to `services/api/.env`; the real file is git-ignored)
-```
-# --- Gemini / ADK ---
-GEMINI_API_KEY=replace-me
-GEMINI_MODEL=gemini-2.5-flash        # [VERIFY current model id]
-GEMINI_ENABLED=true                   # kill-switch; false => cached/demo responses
-GEMINI_DAILY_CALL_CAP=2000
-DEMO_MODE=false
-# --- Google Cloud ---
-GCP_PROJECT_ID=your-project-id
-GCP_REGION=asia-south1                # [VERIFY]
-FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
-PUBSUB_TOPIC_ALERTS=alerts
-GCS_BUCKET_MEDIA=your-project-relief-desk-media
-# --- Maps (browser key goes into the Angular environment file, restricted by referrer) ---
-GOOGLE_MAPS_API_KEY=replace-me
-GOOGLE_MAPS_MAP_ID=DEMO_MAP_ID
-# --- App ---
-API_CORS_ORIGINS=http://localhost:4200
-SALT_PHONE_HASH=replace-me
-RATE_LIMIT_REPORTS_PER_HOUR=10
-DEFAULT_LANG=en
-SUPPORTED_LANGS=en,hi,hinglish,ta
-```
-Also create `.gitignore` entries: `.env`, `.venv/`, `node_modules/`, `dist/`, `.angular/`, `*.key`, `android/`, `ios/` (if not needed).
+## 5. Environment
+Copy the root `.env.example` to `.env`. Placeholders only. Never commit `.env`.
+`API_CORS_ORIGINS` and `SUPPORTED_LANGS` are JSON arrays so pydantic-settings can read them.
+Cloud Run mounts `GEMINI_API_KEY`, `JWT_SECRET`, and `GOOGLE_MAPS_API_KEY` from Secret Manager. The other vars for that service are in `deploy/cloudrun.env.yaml`. See `deploy/cloudrun.md`.
+Also keep `.gitignore` entries: `.env`, `.venv/`, `node_modules/`, `dist/`, `.angular/`, `*.key`, `android/`, `ios/` (if not needed).
 
 ## 6. i18n (multilingual UI and reports)
 Languages: English (`en`), हिन्दी (`hi`), Hinglish (`hinglish`, Latin-script Hindi), and one regional language: தமிழ் (`ta`) (swap for বাংলা `bn` if preferred; only the JSON file and font change).
