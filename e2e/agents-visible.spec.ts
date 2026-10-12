@@ -123,9 +123,9 @@ test.describe('agents visible', () => {
         await closeMenu();
         await expect(page.getByRole('button', { name: 'Ye kaise decide hua' }).first()).toBeVisible();
         await menu.click();
-        await page.getByRole('button', { name: 'Tamil' }).click();
+        await page.getByRole('button', { name: 'Malayalam' }).click();
         await closeMenu();
-        await expect(page.getByRole('button', { name: 'இது எப்படி முடிவானது' }).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: 'ഇത് എങ്ങനെ തീരുമാനിച്ചു' }).first()).toBeVisible();
         await menu.click();
         await page.getByRole('button', { name: 'English' }).click();
         await closeMenu();

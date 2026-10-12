@@ -72,7 +72,7 @@ export class SettingsButtonComponent {
   private opener: HTMLElement | null = null;
 
   showCode = () => true;
-  langCode = () => ({ en: 'EN', hi: 'HI', hinglish: 'HG', ta: 'TA' }[this.lang.currentLang()]);
+  langCode = () => ({ en: 'EN', hi: 'HI', hinglish: 'HG', ml: 'ML' }[this.lang.currentLang()]);
 
   open(): void {
     this.opener = document.activeElement as HTMLElement;

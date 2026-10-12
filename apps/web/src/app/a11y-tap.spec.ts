@@ -41,7 +41,7 @@ describe('tap targets and language layouts', () => {
     expect(call.scrollWidth).toBeLessThanOrEqual(call.clientWidth + 1);
   });
 
-  it('public nav links stay at least 48px in Tamil', async () => {
+  it('public nav links stay at least 48px in Malayalam', async () => {
     await TestBed.configureTestingModule({
       imports: [PublicLayoutComponent],
       providers: [

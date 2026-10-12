@@ -300,6 +300,7 @@ describe('CoordinatorCommandComponent', () => {
   it('should accurately detect original languages (Hindi, Tamil, Hinglish, English)', () => {
     expect(component.detectOriginalLanguage('पानी बहुत तेजी से बढ़ रहा है')).toBe('Hindi');
     expect(component.detectOriginalLanguage('வெள்ளத்தில் சிக்கியுள்ளோம் காப்பாற்றுங்கள்')).toBe('Tamil');
+    expect(component.detectOriginalLanguage('വെള്ളം ഉയരുന്നു, സഹായം വേണം')).toBe('Malayalam');
     expect(component.detectOriginalLanguage('paani badh raha hai bachao jaldi')).toBe('Hinglish');
     expect(component.detectOriginalLanguage('Flood water rising rapidly please send boat')).toBe('English');
   });

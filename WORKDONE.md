@@ -1029,3 +1029,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs` — 654 keys. `npx ng test web --include coordinator-overview.component.spec.ts` — 1 passed. Playwright 5 passed on this tree before the commit.
 - Notes / risks / not done: The overview map is a second map above the alerts map. It does not draw team-to-case lines; those stay on Cases.
 - Next (suggested task id): UX8-10
+
+### 2026-10-13 00:55 IST — UX8-10 — Cursor
+- What changed: The fourth UI language is Malayalam (ml), for Kerala, instead of Tamil. The switcher, dictionary, font, and the demo checks use Malayalam. A saved Tamil UI choice opens Malayalam. Malayalam script in a message is labelled Malayalam. Seeded Tamil-script reports are still detected as Tamil.
+- Files: libs/shared/src/lib/i18n/ml.json, libs/shared/src/lib/i18n/en.json, libs/shared/src/lib/i18n/hi.json, libs/shared/src/lib/i18n/hinglish.json, libs/shared/src/lib/services/language.service.ts, libs/shared/src/lib/components/settings-button.component.ts, scripts/check-i18n.mjs, apps/web/src/styles.scss, apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts, apps/web/src/app/public/pages/report/report.component.ts, apps/web/src/app/a11y-tap.spec.ts, e2e/first-pass.spec.ts, e2e/agents-visible.spec.ts
+- How verified: `node scripts/check-i18n.mjs` — 654 keys, en, hi, hinglish, ml. `npx ng test web --include command and a11y` — 30 passed.
+- Notes / risks / not done: The flood seed, intake rules, voice notes, translation cache, and the frozen benchmark stay Tamil (`ta`). Rewriting that corpus would move the frozen split. `ta.json` is no longer on the switcher. Design HTML mockups still draw a Tamil chip. When the UI is Malayalam, a case shows its English reading because there is no Malayalam report text.
+- Next (suggested task id): UX8-11

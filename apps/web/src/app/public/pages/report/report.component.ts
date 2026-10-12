@@ -207,6 +207,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   langLabel(): string {
     const t = this.transcript();
     if (/[\u0900-\u097F]/.test(t)) return 'हिन्दी';
+    if (/[\u0D00-\u0D7F]/.test(t)) return 'മലയാളം';
     if (/[\u0B80-\u0BFF]/.test(t)) return 'தமிழ்';
     return SUPPORTED_LANGUAGES.find((l) => l.code === this.langService.currentLang())?.label || 'English';
   }

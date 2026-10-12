@@ -2,9 +2,9 @@ import { Injectable, signal, computed, Pipe, PipeTransform } from '@angular/core
 import enJson from '../i18n/en.json';
 import hiJson from '../i18n/hi.json';
 import hinglishJson from '../i18n/hinglish.json';
-import taJson from '../i18n/ta.json';
+import mlJson from '../i18n/ml.json';
 
-export type SupportedLang = 'en' | 'hi' | 'hinglish' | 'ta';
+export type SupportedLang = 'en' | 'hi' | 'hinglish' | 'ml';
 
 export interface LangOption {
   code: SupportedLang;
@@ -16,14 +16,14 @@ export const SUPPORTED_LANGUAGES: LangOption[] = [
   { code: 'en', label: 'English', nativeName: 'EN' },
   { code: 'hi', label: 'Hindi', nativeName: 'हिन्दी' },
   { code: 'hinglish', label: 'Hinglish', nativeName: 'Hinglish' },
-  { code: 'ta', label: 'Tamil', nativeName: 'தமிழ்' },
+  { code: 'ml', label: 'Malayalam', nativeName: 'മലയാളം' },
 ];
 
 const DICTIONARIES: Record<SupportedLang, any> = {
   en: enJson,
   hi: hiJson,
   hinglish: hinglishJson,
-  ta: taJson,
+  ml: mlJson,
 };
 
 @Injectable({
@@ -33,7 +33,8 @@ export class LanguageService {
   readonly currentLang = signal<SupportedLang>('en');
 
   constructor() {
-    const saved = localStorage.getItem('rd_preferred_lang') as SupportedLang;
+    const stored = localStorage.getItem('rd_preferred_lang');
+    const saved = (stored === 'ta' ? 'ml' : stored) as SupportedLang;
     if (saved && DICTIONARIES[saved]) {
       this.setLanguage(saved);
     }

@@ -491,7 +491,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
     effect(() => {
       const ui = this.langService.currentLang();
-      const mapped = ui === 'ta' ? 'ta' : ui === 'en' ? 'en' : 'hi';
+      const mapped = ui === 'en' || ui === 'ml' ? 'en' : 'hi';
       this.selectedTranslationLang.set(mapped);
     });
   }
@@ -1130,7 +1130,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (!text) return 'English';
     // Devanagari range
     if (/[\u0900-\u097F]/.test(text)) return 'Hindi';
-    // Tamil range
+    if (/[\u0D00-\u0D7F]/.test(text)) return 'Malayalam';
+    // Tamil range: seeded reports still use Tamil script
     if (/[\u0B80-\u0BFF]/.test(text)) return 'Tamil';
     // Hinglish keywords
     const hinglishMarkers = [

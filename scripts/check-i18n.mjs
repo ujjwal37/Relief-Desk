@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const I18N_DIR = path.resolve(__dirname, '../libs/shared/src/lib/i18n');
-const LANGUAGES = ['en', 'hi', 'hinglish', 'ta'];
+const LANGUAGES = ['en', 'hi', 'hinglish', 'ml'];
 
 function flattenKeys(obj, prefix = '') {
   let keys = [];

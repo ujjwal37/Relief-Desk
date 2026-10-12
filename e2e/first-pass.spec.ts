@@ -250,10 +250,10 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByRole('heading', { name: 'हम कैसे मदद करें?' })).toBeVisible();
       await shot(page, `${viewport.name}-hindi`);
       await page.getByRole('button', { name: 'सेटिंग्स' }).click();
-      await page.getByRole('button', { name: 'Tamil' }).click();
-      await page.getByRole('button', { name: 'முடிந்தது' }).click();
-      await expect(page.getByRole('heading', { name: 'நாங்கள் எப்படி உதவலாம்?' })).toBeVisible();
-      await shot(page, `${viewport.name}-tamil`);
+      await page.getByRole('button', { name: 'Malayalam' }).click();
+      await page.getByRole('button', { name: 'കഴിഞ്ഞു' }).click();
+      await expect(page.getByRole('heading', { name: 'ഞങ്ങൾക്ക് എങ്ങനെ സഹായിക്കാം?' })).toBeVisible();
+      await shot(page, `${viewport.name}-malayalam`);
       await noHorizontalOverflow(page);
     });
   }
