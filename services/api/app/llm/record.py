@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import sys
 
 from app.config import settings
@@ -48,8 +49,17 @@ def record_seeded_reports() -> int:
         return ExtractedRequest(**parsed)
 
     written = 0
+    kept = 0
+    # Free-tier flash-lite allows 15 requests a minute. Stay under it.
+    gap_s = float(os.environ.get("RECORD_AI_GAP_S", "4.5"))
     for row in build_demo_reports():
         user_prompt = intake_user_prompt(row["text"], row.get("lang"))
+        digest = llm_client.cache_key(SYSTEM_INTAKE_PROMPT, user_prompt)
+        if (REPLAY_DIR / f"{digest}.json").exists():
+            kept += 1
+            continue
+        if written:
+            time.sleep(gap_s)
         text = llm_client.generate_content(
             system_instruction=SYSTEM_INTAKE_PROMPT,
             user_prompt=user_prompt,
@@ -79,9 +89,9 @@ def record_seeded_reports() -> int:
         written += 1
         print(f"recorded {row['id']} -> {digest[:8]}")
 
-    if written == 0:
+    if written == 0 and kept == 0:
         raise SystemExit(
             "Gemini returned no usable replies. Fallback text was not written to data/ai_cache."
         )
-    print(f"Wrote {written} recorded Gemini replies to {REPLAY_DIR}")
+    print(f"Wrote {written} new recorded Gemini replies ({kept} already recorded) to {REPLAY_DIR}")
     return written
