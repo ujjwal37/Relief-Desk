@@ -118,6 +118,19 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   readonly briefingOpen = signal(true);
   readonly narrow = signal(false);
+  readonly resetNote = signal<string | null>(null);
+
+  /** Undo this session's merges and dispatches by reloading the synthetic seeds (demo coordinator only). */
+  resetDemo(): void {
+    if (!window.confirm(this.langService.translate('ux.resetDemoConfirm'))) return;
+    this.apiClient.resetDemo().subscribe({
+      next: () => {
+        this.resetNote.set('ux.resetDemoDone');
+        this.loadRequests(true);
+      },
+      error: () => this.resetNote.set('ux.resetDemoFailed'),
+    });
+  }
   readonly mobilePane = signal<'cases' | 'map'>('cases');
   readonly sheetOpen = signal(false);
   private media: MediaQueryList | null = null;

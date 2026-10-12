@@ -31,3 +31,23 @@ def test_reset_demo_reloads_kerala_seeds():
 def test_reset_demo_requires_coordinator():
     response = client.post("/api/demo/reset")
     assert response.status_code == 401
+
+
+def test_reset_works_for_demo_coordinator_with_demo_mode_off(monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "DEMO_MODE", False)
+    assert client.post("/api/demo/reset", headers=AUTH).status_code == 200
+
+
+def test_reset_refused_for_other_coordinator_with_demo_mode_off(monkeypatch):
+    from app.api.auth import CoordinatorUser, get_current_coordinator
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "DEMO_MODE", False)
+    app.dependency_overrides[get_current_coordinator] = lambda: CoordinatorUser(
+        uid="u2", email="real-coordinator@example.org", role="coordinator")
+    try:
+        assert client.post("/api/demo/reset").status_code == 403
+    finally:
+        app.dependency_overrides.clear()

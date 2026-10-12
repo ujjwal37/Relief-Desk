@@ -32,6 +32,8 @@
       <div class="cases-head">
         <h1 id="cases-h">{{ 'coord.cases' | rdTranslate }}</h1>
         <span class="sort">{{ 'coord.sorted' | rdTranslate }}</span>
+        <button type="button" class="reset-demo" (click)="resetDemo()">{{ 'ux.resetDemo' | rdTranslate }}</button>
+        @if (resetNote(); as n) { <span class="reset-note" role="status">{{ n | rdTranslate }}</span> }
         <p class="scenario">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
       </div>
       <div class="filters" role="group">
