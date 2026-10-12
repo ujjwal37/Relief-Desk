@@ -16,3 +16,15 @@ from app.tools.nlu_rules import people_count
 )
 def test_people_count(text, expected):
     assert people_count(text) == expected
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Family of 4 including a pregnant woman stuck on roof", 4),
+        ("family of five stranded near the church", 5),
+        ("a 6-member family on the terrace", 6),
+    ],
+)
+def test_family_of_n(text, expected):
+    assert people_count(text) == expected

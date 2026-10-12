@@ -129,6 +129,14 @@ def people_count(text: str) -> Optional[int]:
     )
     if match:
         return int(match.group(1))
+    family = re.search(
+        rf"(?:family|group)\s+of\s+(\d+|{'|'.join(_EN_NUMBER_WORDS)})(?!\w)|(\d+)[-\s]member\s+family",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+    if family:
+        token = (family.group(1) or family.group(2)).lower()
+        return int(token) if token.isdigit() else _EN_NUMBER_WORDS[token]
     grouped = _group_people_count(normalized)
     if grouped:
         return grouped
