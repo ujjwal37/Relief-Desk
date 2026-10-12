@@ -101,9 +101,14 @@ export class ApiClientService {
     return this.http.get<any>(`/api/cases/${requestId}/merge`, this.getAuthHeaders());
   }
 
-  /** Reload the synthetic demo cases. The API allows it in demo mode or for the demo coordinator. */
+  /** Reload the two-case demo. The API allows it in demo mode or for the demo coordinator. */
   resetDemo(): Observable<any> {
     return this.http.post<any>('/api/demo/reset', {}, this.getAuthHeaders());
+  }
+
+  /** Load every synthetic flood case. Reset returns to the two-case demo. */
+  loadFullScenario(): Observable<any> {
+    return this.http.post<any>('/api/demo/full', {}, this.getAuthHeaders());
   }
 
   /** Ask the desk. Read-only search over cases; Gemini picks the filters, rules if it cannot. */

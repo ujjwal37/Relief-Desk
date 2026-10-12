@@ -126,16 +126,34 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly narrow = signal(false);
   readonly resetNote = signal<string | null>(null);
 
-  /** Undo this session's merges and dispatches by reloading the synthetic seeds (demo coordinator only). */
+  /** Undo this session's merges and dispatches by reloading the two-case demo. */
   resetDemo(): void {
     if (!window.confirm(this.langService.translate('ux.resetDemoConfirm'))) return;
     this.apiClient.resetDemo().subscribe({
       next: () => {
         this.resetNote.set('ux.resetDemoDone');
-        this.loadRequests(true);
+        this.reloadAfterSeed();
       },
       error: () => this.resetNote.set('ux.resetDemoFailed'),
     });
+  }
+
+  /** Replace the two-case demo with the full flood pack. */
+  loadFullScenario(): void {
+    if (!window.confirm(this.langService.translate('ux.loadFullConfirm'))) return;
+    this.apiClient.loadFullScenario().subscribe({
+      next: () => {
+        this.resetNote.set('ux.loadFullDone');
+        this.reloadAfterSeed();
+      },
+      error: () => this.resetNote.set('ux.loadFullFailed'),
+    });
+  }
+
+  private reloadAfterSeed(): void {
+    this.queueWatermark = '';
+    this.loadRequests();
+    this.loadResources();
   }
   readonly mobilePane = signal<'cases' | 'map'>('cases');
   readonly sheetOpen = signal(false);

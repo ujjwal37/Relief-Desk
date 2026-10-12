@@ -973,3 +973,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 209 passed, 1 skipped. `npx ng test web --watch=false --browsers=ChromeHeadless` — 87 passed.
 - Notes / risks / not done: The small demo seed, the end-to-end approve flow, and the tab declutter are not in this commit. Playwright was not re-run. Benchmark was not re-run.
 - Next (suggested task id): UX8-02
+
+### 2026-10-12 23:35 IST — UX8-02 — Cursor
+- What changed: The running demo loads two cases (INC-001 and INC-008) and four teams. `DEMO_SEED=full` and `POST /api/demo/full` load the flood pack. Reset demo returns to the two-case set and replaces the queue, so old cases do not stay on screen. Pytest still boots the full pack, and tests that call reset put it back.
+- Files: services/api/app/config.py, services/api/app/tools/storage.py, services/api/app/api/demo.py, services/api/tests/test_demo_seed_size.py, services/api/tests/test_reset_demo.py, libs/shared/src/lib/services/api-client.service.ts, libs/shared/src/lib/i18n/en.json, libs/shared/src/lib/i18n/hi.json, libs/shared/src/lib/i18n/hinglish.json, libs/shared/src/lib/i18n/ta.json, apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.html, apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts
+- How verified: `pytest tests` — 211 passed, 1 skipped. `node scripts/check-i18n.mjs` — 638 keys, en, hi, hinglish, ta, and the template lint passed. `npx ng test web --watch=false --browsers=ChromeHeadless` — 88 passed.
+- Notes / risks / not done: The end-to-end approve flow and the tab declutter are not in this commit. Playwright was not re-run. Benchmark was not re-run.
+- Next (suggested task id): UX8-03

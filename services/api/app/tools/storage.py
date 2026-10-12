@@ -1,9 +1,11 @@
 import logging
+import os
+import sys
 import threading
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 from app.config import settings
 from app.models.firestore_models import (
     StoredReport,
@@ -21,6 +23,22 @@ from app.models.firestore_models import (
 )
 
 logger = logging.getLogger("relief_desk.storage")
+
+# The default demo is two open cases and the teams that can reach them.
+# DEMO_SEED=full loads every incident in the flood pack. Reset always returns here.
+SMALL_CASE_IDS = ("INC-001", "INC-008")
+SMALL_TEAM_IDS = ("RES-BOAT-01", "RES-BOAT-02", "RES-MED-04", "RES-FOOD-03")
+
+
+def active_seed_mode() -> str:
+    """small unless DEMO_SEED=full. Pytest keeps the full pack unless the env var says small."""
+    explicit = os.environ.get("DEMO_SEED", "").strip().lower()
+    if explicit in ("full", "small"):
+        return explicit
+    if "pytest" in sys.modules:
+        return "full"
+    mode = (getattr(settings, "DEMO_SEED", None) or "small").strip().lower()
+    return mode if mode in ("full", "small") else "small"
 
 
 class StorageService:
@@ -551,7 +569,7 @@ class StorageService:
         self.record_audit(actor=actor, action="team_confirm", target=resource_id, after={"action": action, "status": res.status.value})
         return res
 
-    def load_seed_resources(self, yaml_path: Optional[str] = None) -> int:
+    def load_seed_resources(self, yaml_path: Optional[str] = None, only_ids: Optional[Iterable[str]] = None) -> int:
         """Loads seed resources from YAML file into storage."""
         import os
         import yaml
@@ -568,7 +586,10 @@ class StorageService:
             data = yaml.safe_load(f)
 
         count = 0
+        wanted = set(only_ids) if only_ids is not None else None
         for item in data.get("resources", []):
+            if wanted is not None and item.get("id") not in wanted:
+                continue
             res = StoredResource(
                 id=item["id"],
                 event_id=item.get("event_id", data.get("event_id", "event_kerala_flood")),
@@ -781,7 +802,7 @@ class StorageService:
         )
         return match
 
-    def load_seed_incidents(self, yaml_path: Optional[str] = None, pack_id: str = "flood") -> int:
+    def load_seed_incidents(self, yaml_path: Optional[str] = None, pack_id: str = "flood", only_ids: Optional[Iterable[str]] = None) -> int:
         """Loads seeded flood incidents into storage requests."""
         import os
         import yaml
@@ -799,7 +820,10 @@ class StorageService:
             data = yaml.safe_load(f)
 
         count = 0
+        wanted = set(only_ids) if only_ids is not None else None
         for item in data.get("incidents", []):
+            if wanted is not None and item.get("id") not in wanted:
+                continue
             try:
                 vuln_data = item.get("vulnerable", {})
                 vuln = VulnerableFlags(
@@ -892,28 +916,41 @@ class StorageService:
         return count
 
     def reset_demo(self) -> Dict[str, Any]:
-        """Clear in-memory cases and reload the synthetic Kerala pack. The audit log stays append-only."""
+        """Clear in-memory cases and reload the small demo. The audit log stays append-only."""
+        return self._reload_seed("small")
+
+    def load_full_scenario(self) -> Dict[str, Any]:
+        """Reload the full flood pack. Benchmark files are not involved."""
+        return self._reload_seed("full")
+
+    def _reload_seed(self, mode: str) -> Dict[str, Any]:
         self._reports.clear()
         self._requests.clear()
         self._clusters.clear()
         self._resources.clear()
         self._matches.clear()
         self._idempotent.clear()
-        resources = self.load_seed_resources()
-        incidents = self.load_seed_incidents()
-        packs = self.load_scenario_pack_seeds()
+        if mode == "full":
+            resources = self.load_seed_resources()
+            incidents = self.load_seed_incidents()
+            packs = self.load_scenario_pack_seeds()
+            demo = None
+            if settings.DEMO_MODE:
+                from app.tools.demo_seed import load_demo_pack
+                demo = load_demo_pack(self)
+        else:
+            resources = self.load_seed_resources(only_ids=SMALL_TEAM_IDS)
+            incidents = self.load_seed_incidents(only_ids=SMALL_CASE_IDS)
+            packs = 0
+            demo = None
         _attach_recorded(self)
-        demo = None
-        if settings.DEMO_MODE:
-            from app.tools.demo_seed import load_demo_pack
-            demo = load_demo_pack(self)
         self.record_audit(
             actor="reset_demo",
-            action="demo_reset",
+            action="demo_reset" if mode == "small" else "demo_full",
             target="storage",
-            after={"resources": resources, "incidents": incidents, "scenario_packs": packs},
+            after={"resources": resources, "incidents": incidents, "scenario_packs": packs, "seed": mode},
         )
-        return {"resources": resources, "incidents": incidents, "scenario_packs": packs, "demo": demo}
+        return {"resources": resources, "incidents": incidents, "scenario_packs": packs, "demo": demo, "seed": mode}
 
     def load_scenario_pack_seeds(self) -> int:
         """Load data/synthetic/<scenario-id>/seeds.yaml for every pack. No per-scenario branch."""
@@ -942,13 +979,18 @@ def _attach_recorded(storage) -> None:
 storage_service = StorageService()
 # Auto-load seed resources and incidents
 try:
-    storage_service.load_seed_resources()
-    storage_service.load_seed_incidents()
-    storage_service.load_scenario_pack_seeds()
-    _attach_recorded(storage_service)
-    if settings.DEMO_MODE:
-        from app.tools.demo_seed import load_demo_pack
-        load_demo_pack(storage_service)
+    if active_seed_mode() == "full":
+        storage_service.load_seed_resources()
+        storage_service.load_seed_incidents()
+        storage_service.load_scenario_pack_seeds()
+        _attach_recorded(storage_service)
+        if settings.DEMO_MODE:
+            from app.tools.demo_seed import load_demo_pack
+            load_demo_pack(storage_service)
+    else:
+        storage_service.load_seed_resources(only_ids=SMALL_TEAM_IDS)
+        storage_service.load_seed_incidents(only_ids=SMALL_CASE_IDS)
+        _attach_recorded(storage_service)
 except Exception:
     pass
 

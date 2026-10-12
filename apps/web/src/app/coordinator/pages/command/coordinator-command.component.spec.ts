@@ -138,11 +138,15 @@ describe('CoordinatorCommandComponent', () => {
       'getMapsConfig',
       'getAssistProposals',
       'planAssist',
+      'resetDemo',
+      'loadFullScenario',
     ]);
 
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
     apiClientSpy.getAssistProposals.and.returnValue(of({ proposals: [], shortages: [] }));
     apiClientSpy.planAssist.and.returnValue(of({ proposals: [], shortages: [] }));
+    apiClientSpy.resetDemo.and.returnValue(of({ seed: 'small', incidents: 2 }));
+    apiClientSpy.loadFullScenario.and.returnValue(of({ seed: 'full', incidents: 40 }));
     apiClientSpy.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
     apiClientSpy.getScenarios.and.returnValue(of([
       { id: 'flood', title: 'Urban Flood Relief', description: '', incident_types: ['rescue'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: [] },
@@ -449,6 +453,23 @@ describe('CoordinatorCommandComponent', () => {
     expect(args[2]).toBeUndefined();
     expect(component.requests().some((row) => row.id === 'req_phone')).toBeTrue();
     expect(component.selectedRequestId()).toBe('req_phone');
+  });
+
+  it('Reset demo and Load full scenario replace the whole queue', () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    const labels = Array.from(fixture.nativeElement.querySelectorAll('.reset-demo') as NodeListOf<HTMLElement>).map(
+      (node) => (node.textContent || '').trim(),
+    );
+    expect(labels).toContain('Reset demo');
+    expect(labels).toContain('Load full scenario');
+    apiClientSpy.getRequests.and.returnValue(of([mockRequests[0]]));
+    component.resetDemo();
+    expect(apiClientSpy.resetDemo).toHaveBeenCalled();
+    expect(component.requests().map((row) => row.id)).toEqual(['INC-001']);
+    apiClientSpy.getRequests.and.returnValue(of(mockRequests));
+    component.loadFullScenario();
+    expect(apiClientSpy.loadFullScenario).toHaveBeenCalled();
+    expect(component.requests().map((row) => row.id)).toEqual(['INC-001', 'INC-002']);
   });
 
   it('filters the open queue from the top search box', () => {

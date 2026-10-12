@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     ANTIGRAVITY_BIN: str = ""
     ANTIGRAVITY_TIMEOUT_S: float = 60.0
     DEMO_MODE: bool = True
+    # small: two cases and a few teams. full: the flood pack (benchmark and record_ai read the files directly).
+    DEMO_SEED: str = "small"
 
     # Google Cloud
     GCP_PROJECT_ID: str = "relief-desk-demo"
