@@ -994,3 +994,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs` — 648 keys, en, hi, hinglish, ta. `npx ng test web --watch=false --browsers=ChromeHeadless` — 89 passed. `npx ng build web` succeeded. `npx playwright test e2e/core-flow.spec.ts e2e/first-pass.spec.ts e2e/agents-visible.spec.ts` — 5 passed. No Gemini call: the API log said deterministic fallback.
 - Notes / risks / not done: Map focus mode, team-to-case lines, and map filters were not started. A stale reporter request still has no "no longer available" state. The reporter ETA is still the fixed ~12 min. The run badge on the trace header still says Offline fallback; the step badges are Rules, Gemini, or Recorded. `/` was left as the reporter home so the existing report button stays one link.
 - Next (suggested task id): UX8-05
+
+### 2026-10-13 00:15 IST — UX8-05 — Cursor
+- What changed: The trace header now says Rules, Gemini, or Recorded from the step providers. A recorded step wins, then Gemini, then Rules. It no longer says Offline fallback when a step has a provider. The case-card badge is unchanged.
+- Files: apps/web/src/app/coordinator/agents/agent-trace-drawer.component.ts, apps/web/src/app/coordinator/agents/agent-trace-drawer.component.html, apps/web/src/app/coordinator/agents/agent-trace-drawer.component.spec.ts, e2e/agents-visible.spec.ts
+- How verified: `npx ng test web --include agent-trace-drawer.component.spec.ts` — 2 passed. Playwright core-flow, first-pass, and agents-visible run after this commit.
+- Notes / risks / not done: The case card can still say Offline fallback. That label is the case-level source, not the trace header.
+- Next (suggested task id): UX8-06

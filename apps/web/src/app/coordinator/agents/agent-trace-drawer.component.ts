@@ -1,6 +1,5 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
 import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
-import { AgentBadgeComponent } from './agent-badge.component';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
 
 const ORDER = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'] as const;
@@ -15,7 +14,7 @@ const NAMES: Record<string, string> = {
 @Component({
   selector: 'app-agent-trace-drawer',
   standalone: true,
-  imports: [RdTranslatePipe, AgentBadgeComponent, TraceStepComponent],
+  imports: [RdTranslatePipe, TraceStepComponent],
   templateUrl: './agent-trace-drawer.component.html',
   styleUrl: './agent-trace-drawer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,12 +28,18 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
   readonly retry = output<void>();
   readonly expanded = signal<string | null>(null);
 
-  readonly source = computed<'gemini' | 'fallback' | 'replay' | 'local'>(() => {
+  /** Rules, Gemini, or Recorded. A step provider wins over the case-level offline label. */
+  readonly headerWord = computed(() => {
+    this.lang.currentLang();
+    const providers = this.steps().map((step) => step.provider).filter((provider): provider is string => !!provider);
+    if (providers.some((provider) => provider === 'cache' || provider === 'replay')) return this.lang.translate('ux.badgeRecordedShort');
+    if (providers.some((provider) => provider === 'gemini')) return this.lang.translate('ux.badgeGemini');
+    if (providers.some((provider) => provider === 'tool' || provider === 'fallback')) return this.lang.translate('ux.badgeRules');
+    if (this.steps().some((step) => step.model)) return this.lang.translate('ux.badgeGemini');
     const req = this.request();
-    if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'replay';
-    if (req.ai?.provider === 'antigravity-local' || req.ai_source === 'antigravity-local') return 'local';
-    if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') return 'gemini';
-    return 'fallback';
+    if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return this.lang.translate('ux.badgeRecordedShort');
+    if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') return this.lang.translate('ux.badgeGemini');
+    return this.lang.translate('ux.badgeRules');
   });
 
   readonly steps = computed(() => {

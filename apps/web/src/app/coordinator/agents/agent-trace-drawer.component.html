@@ -9,7 +9,7 @@
     <button type="button" class="x" (click)="closed.emit()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
   </header>
   <div class="run">
-    <app-agent-badge [source]="source()" />
+    <span class="word run-badge">{{ headerWord() }}</span>
     <span>{{ 'ux.time' | rdTranslate }} {{ totalText() || ('ux.notRecorded' | rdTranslate) }}</span>
   </div>
   <div class="line">

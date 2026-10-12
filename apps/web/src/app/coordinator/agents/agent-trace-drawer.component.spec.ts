@@ -6,11 +6,11 @@ const REQUEST = {
   id: 'INC-001',
   ai_source: 'offline_fallback',
   trace: [
-    { agent: 'Intake', status: 'complete', output: 'rescue', model: 'gemini-3.8-flash', latency_ms: 10, tool_calls: [], input_summary: 'report' },
-    { agent: 'Triage', status: 'complete', output: 'score 90', model: 'gemini-3.8-flash', latency_ms: 30, tool_calls: ['score_urgency'], input_summary: 'report' },
-    { agent: 'Matching', status: 'complete', output: '2 boat free', model: 'gemini-3.8-flash', latency_ms: 20, tool_calls: ['check_capacity'], input_summary: 'report' },
+    { agent: 'Intake', status: 'complete', output: 'rescue', model: 'gemini-3.8-flash', provider: 'fallback', latency_ms: 10, tool_calls: [], input_summary: 'report' },
+    { agent: 'Triage', status: 'complete', output: 'score 90', model: null, provider: 'tool', latency_ms: 30, tool_calls: ['score_urgency'], input_summary: 'report' },
+    { agent: 'Matching', status: 'complete', output: '2 boat free', model: null, provider: 'tool', latency_ms: 20, tool_calls: ['check_capacity'], input_summary: 'report' },
   ],
-} as StoredRequest;
+} as unknown as StoredRequest;
 
 describe('AgentTraceDrawerComponent', () => {
   let fixture: ComponentFixture<AgentTraceDrawerComponent>;
@@ -33,7 +33,8 @@ describe('AgentTraceDrawerComponent', () => {
     expect(text).toContain('Matching');
     expect(text).toContain('Explainer');
     expect(text).toContain('in parallel');
-    expect(text).toContain('Offline fallback');
+    expect(fixture.nativeElement.querySelector('.run-badge')?.textContent).toContain('Rules');
+    expect(text).not.toContain('Offline fallback');
     expect(text).toContain('Not recorded');
     expect(text).toContain('Gemini');
     expect(text).toContain('Rules');

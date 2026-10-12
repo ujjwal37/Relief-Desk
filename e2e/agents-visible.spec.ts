@@ -71,8 +71,8 @@ test.describe('agents visible', () => {
       await expect(dialog.getByText('Triage', { exact: true }).first()).toBeVisible();
       await expect(dialog.getByText('Matching', { exact: true }).first()).toBeVisible();
       await expect(dialog.getByText('Explainer', { exact: true }).first()).toBeVisible();
-      await expect(dialog.getByText('gemini-3.8-flash').or(dialog.getByText('Offline fallback')).first()).toBeVisible();
-      await expect(dialog.getByText('Offline fallback').first()).toBeVisible();
+      await expect(dialog.locator('.run-badge')).toHaveText(/Rules|Gemini|Recorded/);
+      await expect(dialog.getByText('Offline fallback')).toHaveCount(0);
       await dialog.getByRole('button', { name: 'Show details' }).nth(3).click();
       await expect(dialog.getByText('check_capacity').or(dialog.getByText('No tools')).first()).toBeVisible();
       await shot(page, `${viewport.name}-agent-trace`);
