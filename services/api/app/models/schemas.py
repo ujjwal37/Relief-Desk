@@ -91,6 +91,7 @@ class FieldConfidences(BaseModel):
 
 class ExtractedRequest(BaseModel):
     type: IncidentType = Field(default=IncidentType.OTHER)
+    secondary_needs: List[IncidentType] = Field(default_factory=list)
     place_text: Optional[str] = Field(default=None, max_length=500)
     people: PeopleInfo = Field(default_factory=PeopleInfo)
     vulnerable: VulnerableFlags = Field(default_factory=VulnerableFlags)
