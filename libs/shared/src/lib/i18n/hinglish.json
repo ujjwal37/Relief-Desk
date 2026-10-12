@@ -389,7 +389,11 @@
     "fallbackSummary": "Is jagah par turant madad maangi gayi hai.",
     "legendCases": "Cases",
     "legendTeams": "Teams",
-    "unitReadyOf": "{n} mein se ready"
+    "unitReadyOf": "{n} mein se ready",
+    "mapFilters": "Map filters",
+    "mapUrgency": "Urgency",
+    "mapTeam": "Team",
+    "mapFree": "Sirf free teams"
   },
   "tour": {
     "next": "Aage",

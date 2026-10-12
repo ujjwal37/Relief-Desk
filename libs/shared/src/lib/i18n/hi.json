@@ -389,7 +389,11 @@
     "fallbackSummary": "इस जगह पर तुरंत मदद माँगी गई है।",
     "legendCases": "मामले",
     "legendTeams": "टीमें",
-    "unitReadyOf": "{n} में से तैयार"
+    "unitReadyOf": "{n} में से तैयार",
+    "mapFilters": "नक्शे के फ़िल्टर",
+    "mapUrgency": "तात्कालिकता",
+    "mapTeam": "टीम",
+    "mapFree": "सिर्फ खाली टीमें"
   },
   "tour": {
     "next": "आगे",

@@ -1015,3 +1015,17 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs` — 650 keys. `npx ng test web --include home and my-requests` — 3 passed. Playwright runs after this commit.
 - Notes / risks / not done: Rows saved before this change have a time label and no type. A 401 still shows the refresh error, not the gone state.
 - Next (suggested task id): UX8-08
+
+### 2026-10-13 00:35 IST — UX8-08 — Cursor
+- What changed: On Cases, the selected case and its candidate teams stay bright. Other pins fade. A line from each candidate team shows the same kilometres and ETA as the case card, and the suggested team is highlighted. Case pins keep their urgency colour. The legend lists only the urgency bands and team kinds that are bright on the map.
+- Files: apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.html, apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss, apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts
+- How verified: `npx ng test web --include coordinator-command.component.spec.ts` — 27 passed. `npx playwright test e2e/core-flow.spec.ts e2e/first-pass.spec.ts e2e/agents-visible.spec.ts` — 5 passed.
+- Notes / risks / not done: Lines are drawn on the schematic map. When Google Maps loads, that canvas replaces the schematic and the lines are not drawn there.
+- Next (suggested task id): UX8-09
+
+### 2026-10-13 00:45 IST — UX8-09 — Cursor
+- What changed: The overview map can filter case pins by urgency, team pins by type, and teams to free-only. The key lists only the bands and team kinds still on that map. The alerts list and its own map are unchanged.
+- Files: apps/web/src/app/coordinator/pages/overview/coordinator-overview.component.ts, apps/web/src/app/coordinator/pages/overview/coordinator-overview.component.spec.ts, libs/shared/src/lib/i18n/en.json, libs/shared/src/lib/i18n/hi.json, libs/shared/src/lib/i18n/hinglish.json, libs/shared/src/lib/i18n/ta.json
+- How verified: `node scripts/check-i18n.mjs` — 654 keys. `npx ng test web --include coordinator-overview.component.spec.ts` — 1 passed. Playwright 5 passed on this tree before the commit.
+- Notes / risks / not done: The overview map is a second map above the alerts map. It does not draw team-to-case lines; those stay on Cases.
+- Next (suggested task id): UX8-10

@@ -389,7 +389,11 @@
     "fallbackSummary": "Urgent assistance requested at this location.",
     "legendCases": "Cases",
     "legendTeams": "Teams",
-    "unitReadyOf": "of {n} ready"
+    "unitReadyOf": "of {n} ready",
+    "mapFilters": "Map filters",
+    "mapUrgency": "Urgency",
+    "mapTeam": "Team",
+    "mapFree": "Free teams only"
   },
   "tour": {
     "next": "Next",

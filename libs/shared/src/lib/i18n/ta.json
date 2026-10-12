@@ -389,7 +389,11 @@
     "fallbackSummary": "இந்த இடத்தில் அவசர உதவி கோரப்பட்டுள்ளது.",
     "legendCases": "வழக்குகள்",
     "legendTeams": "குழுக்கள்",
-    "unitReadyOf": "{n} இல் தயார்"
+    "unitReadyOf": "{n} இல் தயார்",
+    "mapFilters": "வரைபட வடிகட்டிகள்",
+    "mapUrgency": "அவசரம்",
+    "mapTeam": "குழு",
+    "mapFree": "காலியான குழுக்கள் மட்டும்"
   },
   "tour": {
     "next": "அடுத்து",
