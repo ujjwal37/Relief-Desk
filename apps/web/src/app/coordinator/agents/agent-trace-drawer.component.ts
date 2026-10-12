@@ -29,9 +29,10 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
   readonly retry = output<void>();
   readonly expanded = signal<string | null>(null);
 
-  readonly source = computed<'gemini' | 'fallback' | 'replay'>(() => {
+  readonly source = computed<'gemini' | 'fallback' | 'replay' | 'local'>(() => {
     const req = this.request();
     if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'replay';
+    if (req.ai?.provider === 'antigravity-local' || req.ai_source === 'antigravity-local') return 'local';
     if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') return 'gemini';
     return 'fallback';
   });

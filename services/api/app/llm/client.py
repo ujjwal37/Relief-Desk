@@ -213,6 +213,11 @@ class LLMClient:
             return self._from_cache(cache_key, cached, started)
         self.cache_misses += 1
 
+        from app.llm import antigravity as ag
+
+        if ag.antigravity_enabled():
+            return self._via_antigravity(system_instruction, user_prompt, validator, started)
+
         if not self.gemini_live():
             reason = "disabled" if not settings.GEMINI_ENABLED or mode == "fallback" else "no_api_key"
             logger.info("Deterministic fallback (%s).", reason)
@@ -262,6 +267,31 @@ class LLMClient:
                 self.guard.backoff(0)
             logger.error("Live Gemini call failed (%s). Falling back.", exc)
             return self._fallback(user_prompt, reason, started)
+
+    def _via_antigravity(self, system_instruction, user_prompt, validator, started) -> str:
+        """Manual-testing provider. Not cached, so data/ai_cache stays Gemini API output only."""
+        from app.llm import antigravity as ag
+
+        try:
+            raw, tokens = ag.call_antigravity(system_instruction, user_prompt)
+            try:
+                text = ag.extract_json(raw)
+            except ValueError:
+                text = raw.strip()
+            if validator:
+                validator(text)
+        except Exception as exc:
+            logger.error("Antigravity CLI call failed (%s). Falling back.", str(exc)[:200])
+            return self._fallback(user_prompt, "timeout" if isinstance(exc, TimeoutError) else "error", started)
+        usage = AiCall(
+            provider=ag.PROVIDER,
+            model=ag.MODEL,
+            latency_ms=int((time.perf_counter() - started) * 1000),
+            tokens=tokens,
+            cached=False,
+        )
+        self._remember(usage)
+        return text
 
     def _call_with_retry(self, system_instruction: str, user_prompt: str) -> str:
         """One live call, plus a single short retry on a transient 503/504/500."""

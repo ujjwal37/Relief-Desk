@@ -165,7 +165,7 @@ def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
     """The Intake row reports the model call that actually happened, in English for the coordinator."""
     ai = req.ai
     provider = (ai.provider if ai else None) or ("gemini" if req.ai_source == "gemini" else "fallback")
-    ran_model = ai.model if ai and provider in ("gemini", "cache") else None
+    ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local") else None
     english = (req.translations or {}).get("en") or req.ai_translation or req.summary or summary or req.type.value
     return _trace_step(
         "Intake",

@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     # auto: call Gemini when a real key is set. replay: serve data/ai_cache.
     # fallback: never call the network. DEMO_MODE does not skip a real key.
     AI_MODE: str = "auto"
+    # Manual testing only: "antigravity" routes live calls to the local Antigravity CLI (agy).
+    LLM_PROVIDER: str = ""
+    ANTIGRAVITY_BIN: str = ""
+    ANTIGRAVITY_TIMEOUT_S: float = 60.0
     DEMO_MODE: bool = True
 
     # Google Cloud

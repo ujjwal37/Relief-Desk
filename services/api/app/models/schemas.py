@@ -19,6 +19,8 @@ class AiCall(BaseModel):
             return "recorded"
         if self.provider == "gemini":
             return "gemini"
+        if self.provider == "antigravity-local":
+            return "local"
         return "offline"
 
 

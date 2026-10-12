@@ -630,6 +630,7 @@
     "legend": "Badge key",
     "badgeGemini": "Gemini",
     "badgeOffline": "Offline fallback",
+    "badgeLocal": "Local test model (Antigravity)",
     "resetDemo": "Reset demo",
     "resetDemoConfirm": "Reload the synthetic demo cases? Merges, holds and dispatches from this session are undone. The audit log is kept.",
     "resetDemoDone": "Demo cases reloaded.",

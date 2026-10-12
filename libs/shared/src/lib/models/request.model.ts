@@ -162,9 +162,9 @@ export interface StoredRequest {
   raw_text?: string | null;
   ai_translation?: string | null;
   /** "gemini" live, "recorded" cache, or "offline_fallback". */
-  ai_source?: 'gemini' | 'recorded' | 'offline_fallback';
+  ai_source?: 'gemini' | 'recorded' | 'offline_fallback' | 'antigravity-local';
   ai?: {
-    provider: 'gemini' | 'cache' | 'fallback';
+    provider: 'gemini' | 'cache' | 'fallback' | 'antigravity-local';
     model?: string | null;
     latency_ms?: number;
     tokens?: number | null;

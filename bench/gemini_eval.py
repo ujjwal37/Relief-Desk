@@ -88,6 +88,9 @@ def evaluate_gemini(
     Cached replies (data/cache/llm) cost no quota, so a re-run resumes where a quota stop left off.
     Several misses in a row (quota or outage) stop the run; only answered messages are scored.
     """
+    from app.llm.antigravity import assert_not_antigravity
+
+    assert_not_antigravity("benchmark")
     if limit:
         messages = messages[:limit]
     count = len(messages)

@@ -630,6 +630,7 @@
     "legend": "Badge key",
     "badgeGemini": "Gemini",
     "badgeOffline": "Offline fallback",
+    "badgeLocal": "Local test model (Antigravity)",
     "resetDemo": "Demo reset karo",
     "resetDemoConfirm": "Synthetic demo cases phir se load karein? Is session ke merge, hold aur dispatch undo ho jayenge. Audit log rahega.",
     "resetDemoDone": "Demo cases phir se load ho gaye.",

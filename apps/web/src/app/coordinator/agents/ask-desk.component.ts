@@ -168,6 +168,7 @@ export class AskDeskComponent {
   viaText(a: DeskAnswer): string {
     this.lang.currentLang();
     if (a.ai.provider === 'gemini') return a.ai.model || '';
+    if (a.ai.provider === 'antigravity-local') return `${a.ai.model || ''} · ${this.lang.translate('ux.badgeLocal')}`;
     if (a.ai.provider === 'cache') return `${a.ai.model || ''} · ${this.lang.translate('ux.badgeRecorded')}`;
     return this.lang.translate('ux.deskByRules');
   }

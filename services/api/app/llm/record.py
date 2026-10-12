@@ -24,8 +24,15 @@ def require_real_key(key: str) -> str:
     return cleaned
 
 
+def _never_antigravity() -> None:
+    from app.llm.antigravity import assert_not_antigravity
+
+    assert_not_antigravity("record-ai")
+
+
 def record_seeded_reports() -> int:
     """Call Gemini for each seeded report and write data/ai_cache/{hash}.json."""
+    _never_antigravity()
     from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_user_prompt
     from app.llm.client import REPLAY_DIR, llm_client
     from app.models.schemas import ExtractedRequest

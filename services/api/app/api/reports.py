@@ -142,7 +142,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     extracted = intake_agent.parse_report(report_text, language_hint=payload.lang)
     # Capture this before translation or the explainer overwrites the client flag.
     ai_usage = llm_client.last_ai.model_copy()
-    ai_source = {"gemini": "gemini", "cache": "recorded"}.get(ai_usage.provider, "offline_fallback")
+    ai_source = {"gemini": "gemini", "cache": "recorded", "antigravity-local": "antigravity-local"}.get(ai_usage.provider, "offline_fallback")
     machine_summary = None
     if payload.structured:
         facts = payload.structured

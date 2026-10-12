@@ -168,6 +168,22 @@ def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], 
 
     c = llm.llm_client
     meta: Dict[str, Any] = {"provider": "fallback", "model": None, "latency_ms": 0, "tokens": None, "fallback_reason": None}
+    from app.llm import antigravity as ag
+
+    if call is None and ag.antigravity_enabled():
+        started = time.monotonic()
+        schema = json.dumps(FUNCTION["parameters"])
+        try:
+            raw, tokens = ag.call_antigravity(
+                system_prompt(), f"Question: {question}\n\nReturn the search_cases arguments as one JSON object matching: {schema}")
+            filters = clean_filters(json.loads(ag.extract_json(raw)))
+        except Exception:
+            meta["fallback_reason"] = "error"
+            meta["latency_ms"] = int((time.monotonic() - started) * 1000)
+            return None, meta
+        meta.update(provider=ag.PROVIDER, model=ag.MODEL, tokens=tokens,
+                    latency_ms=int((time.monotonic() - started) * 1000))
+        return filters, meta
     if call is None and not c.gemini_live():
         meta["fallback_reason"] = "no_api_key"
         return None, meta
