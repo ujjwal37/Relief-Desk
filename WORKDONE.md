@@ -980,3 +980,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 211 passed, 1 skipped. `node scripts/check-i18n.mjs` — 638 keys, en, hi, hinglish, ta, and the template lint passed. `npx ng test web --watch=false --browsers=ChromeHeadless` — 88 passed.
 - Notes / risks / not done: The end-to-end approve flow and the tab declutter are not in this commit. Playwright was not re-run. Benchmark was not re-run.
 - Next (suggested task id): UX8-03
+
+### 2026-10-12 23:45 IST — UX8-03 — Cursor
+- What changed: A phone report now stays on its status page and updates to "A team is on the way" after a coordinator approves, without a manual reload. The case button says How it decided. The new Playwright spec walks the form, the live queue, the trace, the team distance and ETA, Approve, the Dispatched filter, and the reporter status. The e2e server loads the full flood pack and does not call Gemini.
+- Files: apps/web/src/app/public/pages/status/status.component.ts, apps/web/src/app/public/pages/status/status.component.spec.ts, apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts, libs/shared/src/lib/i18n/en.json, libs/shared/src/lib/i18n/hi.json, libs/shared/src/lib/i18n/hinglish.json, libs/shared/src/lib/i18n/ta.json, e2e/core-flow.spec.ts, e2e/agents-visible.spec.ts, playwright.config.ts
+- How verified: `npx playwright test e2e/core-flow.spec.ts e2e/first-pass.spec.ts e2e/agents-visible.spec.ts` — 5 passed. `npx ng test web --include status and command specs` — 30 passed. `node scripts/check-i18n.mjs` — 638 keys. No Gemini call: the API log said deterministic fallback.
+- Notes / risks / not done: There is no separate Dispatched tab yet; the flow uses the Dispatched filter. The tab declutter, Agent page, and plain trace step are not in this commit. `data/ai_cache` has no recorded replies, so the trace shows Offline fallback rather than a model id. Benchmark was not re-run.
+- Next (suggested task id): UX8-04

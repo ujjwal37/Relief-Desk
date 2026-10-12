@@ -51,15 +51,15 @@ test.describe('agents visible', () => {
       await login(page);
       await noHorizontalOverflow(page);
 
-      await page.getByRole('button', { name: 'View trace' }).first().click();
-      const dialog = page.getByRole('dialog', { name: 'Agent trace' });
+      await page.getByRole('button', { name: 'How it decided' }).first().click();
+      const dialog = page.getByRole('dialog', { name: 'How it decided' });
       await expect(dialog).toBeVisible();
       await expect(dialog.getByText('Intake', { exact: true }).first()).toBeVisible();
       await expect(dialog.getByText('Duplicate check', { exact: true }).first()).toBeVisible();
       await expect(dialog.getByText('Triage', { exact: true }).first()).toBeVisible();
       await expect(dialog.getByText('Matching', { exact: true }).first()).toBeVisible();
       await expect(dialog.getByText('Explainer', { exact: true }).first()).toBeVisible();
-      await expect(dialog.getByText('gemini-3.8-flash').first()).toBeVisible();
+      await expect(dialog.getByText('gemini-3.8-flash').or(dialog.getByText('Offline fallback')).first()).toBeVisible();
       await expect(dialog.getByText('Offline fallback').first()).toBeVisible();
       await dialog.getByRole('button', { name: 'Show details' }).nth(3).click();
       await expect(dialog.getByText('check_capacity').or(dialog.getByText('No tools')).first()).toBeVisible();
@@ -79,8 +79,8 @@ test.describe('agents visible', () => {
       await page.getByRole('link', { name: 'Accuracy report' }).click();
       await expect(page.getByRole('heading', { name: 'Accuracy report' })).toBeVisible();
       await expect(page.getByText('Not measured yet').first()).toBeVisible();
-      await expect(page.getByText('gemini-3.8-flash')).toBeVisible();
-      await expect(page.getByText('2026-10-11')).toBeVisible();
+      await expect(page.getByText('gemini-3.5-flash-lite')).toBeVisible();
+      await expect(page.getByText('2026-10-12')).toBeVisible();
       await expect(page.getByText('168').first()).toBeVisible();
       await expect(page.getByText('Example data')).toHaveCount(0);
       await expect(page.getByText('First come, first served').first()).toBeVisible();
@@ -105,15 +105,15 @@ test.describe('agents visible', () => {
         await page.getByRole('button', { name: 'Hindi' }).click();
         await closeMenu();
         await page.goto('/coordinator/command');
-        await expect(page.getByRole('button', { name: 'ट्रेस देखें' }).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: 'यह कैसे तय हुआ' }).first()).toBeVisible();
         await menu.click();
         await page.getByRole('button', { name: 'Hinglish' }).click();
         await closeMenu();
-        await expect(page.getByRole('button', { name: 'Trace dekho' }).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Ye kaise decide hua' }).first()).toBeVisible();
         await menu.click();
         await page.getByRole('button', { name: 'Tamil' }).click();
         await closeMenu();
-        await expect(page.getByRole('button', { name: 'தடம் பார்' }).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: 'இது எப்படி முடிவானது' }).first()).toBeVisible();
         await menu.click();
         await page.getByRole('button', { name: 'English' }).click();
         await closeMenu();

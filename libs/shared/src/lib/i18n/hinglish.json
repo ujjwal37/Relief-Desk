@@ -611,8 +611,8 @@
     "noGps": "Is phone ne location nahi bheji. Demo ki simulated movement chal sakti hai."
   },
   "ux": {
-    "viewTrace": "Trace dekho",
-    "traceTitle": "Agent trace",
+    "viewTrace": "Ye kaise decide hua",
+    "traceTitle": "Ye kaise decide hua",
     "traceSub": "Is report par har agent ne kya kiya",
     "close": "Band karo",
     "inParallel": "saath saath",

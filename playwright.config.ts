@@ -17,7 +17,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: '/tmp/rd-venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000',
+      command: 'AI_MODE=fallback DEMO_SEED=full /tmp/rd-venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000',
       cwd: 'services/api',
       url: 'http://127.0.0.1:8000/healthz',
       reuseExistingServer: true,

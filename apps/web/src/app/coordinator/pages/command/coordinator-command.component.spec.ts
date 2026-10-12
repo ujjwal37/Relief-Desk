@@ -176,7 +176,7 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.selectedRequestId()).toBe('INC-001');
     fixture.detectChanges();
     const opener = fixture.nativeElement.querySelector('.hooks .trace-chip') as HTMLButtonElement | null;
-    expect(opener?.textContent).toContain('View trace');
+    expect(opener?.textContent).toContain('How it decided');
   });
 
   it('should create and load ranked requests and resources', () => {

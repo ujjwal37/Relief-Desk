@@ -611,8 +611,8 @@
     "noGps": "This phone did not share a location. The demo can keep the simulated move."
   },
   "ux": {
-    "viewTrace": "View trace",
-    "traceTitle": "Agent trace",
+    "viewTrace": "How it decided",
+    "traceTitle": "How it decided",
     "traceSub": "What each agent did with this report",
     "close": "Close",
     "inParallel": "in parallel",

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -13,7 +13,7 @@ import { MyRequestsService } from '../../../core/services/my-requests.service';
   styleUrls: ['./status.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StatusComponent implements OnInit {
+export class StatusComponent implements OnInit, OnDestroy {
   private api = inject(ApiClientService);
   private route = inject(ActivatedRoute);
   private store = inject(MyRequestsService);
@@ -29,6 +29,7 @@ export class StatusComponent implements OnInit {
   invalidInput = signal(false);
   isNew = signal(false);
   private currentToken = '';
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
     const q = this.route.snapshot.queryParams;
@@ -52,6 +53,15 @@ export class StatusComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.stopPoll();
+  }
+
+  /** Keep asking until a coordinator finishes the request, so the phone updates on its own. */
+  stillWaiting(status: string | undefined): boolean {
+    return status !== 'completed' && status !== 'resolved' && status !== 'closed';
+  }
+
   fetchStatus(reportId: string, token?: string): void {
     const cleanId = reportId.trim();
     if (!cleanId) return;
@@ -64,6 +74,8 @@ export class StatusComponent implements OnInit {
         this.showFind.set(false);
         this.isLoading.set(false);
         this.store.add(data.report_id || cleanId, this.currentToken);
+        if (this.stillWaiting(data.status)) this.startPoll();
+        else this.stopPoll();
       },
       error: () => {
         this.statusData.set(null);
@@ -72,6 +84,26 @@ export class StatusComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
+  }
+
+  private startPoll(): void {
+    if (this.pollTimer) return;
+    this.pollTimer = setInterval(() => {
+      const data = this.statusData();
+      const id = data?.report_id || this.reportIdInput().trim();
+      if (!id || !this.stillWaiting(data?.status)) {
+        this.stopPoll();
+        return;
+      }
+      this.fetchStatus(id, this.currentToken);
+    }, 4000);
+  }
+
+  private stopPoll(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
   }
 
   /** Accepts a request ID, or a pasted status link that carries id and token. */
