@@ -120,7 +120,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly freshIds = signal<Set<string>>(new Set());
   private queueWatermark = '';
   private pollTimer: ReturnType<typeof setInterval> | null = null;
-  readonly briefingOpen = signal(true);
   readonly narrow = signal(false);
   readonly resetNote = signal<string | null>(null);
 
@@ -263,14 +262,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     };
   });
   readonly quietCount = computed(() => this.ui.alerts().filter((a) => a.kind === 'silent_zone').length);
-  readonly briefing = computed(() => {
-    this.langService.currentLang();
-    const c = this.counts();
-    const t = (k: string, n: number) => this.langService.translate(k).replace('{n}', String(n));
-    if (c.critical > 0) return t('coord.briefNow', c.critical);
-    if (c.high > 0) return t('coord.briefSoon', c.high);
-    return this.langService.translate('coord.briefNone');
-  });
   /** Schematic district outlines in lat/lng, south to north, around the seeded wards. */
   private readonly districtRings: { id: string; ring: [number, number][] }[] = [
     { id: 'alappuzha', ring: [[9.34, 76.30], [9.34, 76.55], [9.70, 76.52], [9.72, 76.31]] },
@@ -498,7 +489,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.ui.loadAlerts();
-    if (!this.ui.tourDone()) setTimeout(() => this.ui.startTour(), 900);
     this.scenarioService.ensureLoaded();
     this.loadRequests();
     this.loadResources();

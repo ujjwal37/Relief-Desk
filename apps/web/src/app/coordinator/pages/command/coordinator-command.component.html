@@ -1,12 +1,4 @@
 <div class="cmd">
-  @if (briefingOpen()) {
-    <div class="briefing" [class.wrap]="narrow()" role="status">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.5"/></svg>
-      <p>{{ briefing() }}</p>
-      <button type="button" (click)="briefingOpen.set(false)">{{ 'coord.hide' | rdTranslate }}</button>
-    </div>
-  }
-
   @if (actionToast()) {
     <div class="toast" role="status" [class.warn]="actionToast()?.type === 'warning'">
       <span>{{ actionToast()?.text }}</span>
@@ -21,7 +13,7 @@
     </div>
   }
 
-  <div class="grid" [class.has-brief]="briefingOpen()" [class.pane-cases]="narrow() && mobilePane() === 'cases'" [class.pane-map]="narrow() && mobilePane() === 'map'">
+  <div class="grid" [class.pane-cases]="narrow() && mobilePane() === 'cases'" [class.pane-map]="narrow() && mobilePane() === 'map'">
     <!-- CASES -->
     <section class="cases" data-tour="cases" aria-labelledby="cases-h">
       <p class="sr-only" aria-live="polite">{{ analysedLive() }}</p>
@@ -30,9 +22,6 @@
       }
       <div class="cases-head">
         <h1 id="cases-h">{{ 'coord.cases' | rdTranslate }}</h1>
-        <span class="sort">{{ 'coord.sorted' | rdTranslate }}</span>
-        <button type="button" class="reset-demo" (click)="resetDemo()">{{ 'ux.resetDemo' | rdTranslate }}</button>
-        <button type="button" class="reset-demo" (click)="loadFullScenario()">{{ 'ux.loadFull' | rdTranslate }}</button>
         @if (resetNote(); as n) { <span class="reset-note" role="status">{{ n | rdTranslate }}</span> }
         <p class="scenario">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
       </div>
@@ -43,29 +32,6 @@
         <button type="button" [class.on]="bandFilter() === 'review'" (click)="setBandFilter('review')">{{ 'coord.filterReview' | rdTranslate }} {{ counts().review }}</button>
         <button type="button" [class.on]="bandFilter() === 'dispatched'" (click)="setBandFilter('dispatched')">{{ 'coord.filterDispatched' | rdTranslate }} {{ counts().dispatched }}</button>
         <button type="button" [class.on]="bandFilter() === 'completed'" (click)="setBandFilter('completed')">{{ 'coord.filterCompleted' | rdTranslate }} {{ counts().completed }}</button>
-      </div>
-      <div class="filters extra">
-        <label>{{ 'coord.filterType' | rdTranslate }}
-          <select [ngModel]="filterType()" (ngModelChange)="setFilterType($event)">
-            <option value="all">{{ 'coord.allTypes' | rdTranslate }}</option>
-            @for (t of ['rescue', 'medical', 'food', 'shelter']; track t) {
-              <option [value]="t">{{ ('incidentType.' + t) | rdTranslate }}</option>
-            }
-          </select>
-        </label>
-        <label>{{ 'coord.filterArea' | rdTranslate }}
-          <select [ngModel]="areaFilter()" (ngModelChange)="setArea($event)">
-            <option value="all">{{ 'coord.allAreas' | rdTranslate }}</option>
-            @for (w of areas(); track w) { <option [value]="w">{{ placeName(w) }}</option> }
-          </select>
-        </label>
-        <label>{{ 'coord.filterTime' | rdTranslate }}
-          <select [ngModel]="timeFilter()" (ngModelChange)="setTime($event)">
-            <option value="all">{{ 'coord.timeAll' | rdTranslate }}</option>
-            <option value="hour">{{ 'coord.timeHour' | rdTranslate }}</option>
-            <option value="today">{{ 'coord.timeToday' | rdTranslate }}</option>
-          </select>
-        </label>
       </div>
       <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {

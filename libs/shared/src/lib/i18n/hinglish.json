@@ -55,7 +55,9 @@
     "chipHurt": "Koi ghayal ya beemar hai",
     "chipOther": "Kuch aur",
     "composer": "Likhein ya mic dabayein",
-    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
+    "problem": "Kerala floods mein help requests bikhre aur duplicate aate hain, aur coordinator ko nahi pata pehle kisko bhejein.",
+    "does": "Relief Desk unhe ek queue mein rakhta hai, duplicates jodta hai, aur batata hai kisko pehle bhejein. Ek insaan har dispatch approve karta hai."
   },
   "report": {
     "title": "Emergency Crisis Report",
@@ -249,6 +251,8 @@
     "accuracy": "Kitna sahi hai",
     "search": "Cases khojein",
     "tour": "Tour lein",
+    "guide": "1 Report aati hai. 2 AI sort karta hai, merge karta hai aur team suggest karta hai. 3 Aap approve karte ho.",
+    "guideDismiss": "Hatao",
     "live": "Live",
     "menu": "Account menu",
     "scenario": "Scenario",

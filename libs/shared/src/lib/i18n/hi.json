@@ -55,7 +55,9 @@
     "chipHurt": "कोई घायल या बीमार है",
     "chipOther": "कुछ और",
     "composer": "लिखें या माइक दबाएं",
-    "scenarioLabel": "Synthetic scenario inspired by Kerala floods"
+    "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
+    "problem": "केरल की बाढ़ में मदद के अनुरोध बिखरे और दोहराए हुए आते हैं, और संयोजक नहीं देख पाते कि पहले किसे भेजें।",
+    "does": "Relief Desk उन्हें एक कतार में रखता है, डुप्लिकेट जोड़ता है, और बताता है कि पहले किसे भेजें। हर टीम एक व्यक्ति की मंजूरी से जाती है।"
   },
   "report": {
     "title": "आपातकालीन संकट रिपोर्ट",
@@ -249,6 +251,8 @@
     "accuracy": "सटीकता रिपोर्ट",
     "search": "मामले खोजें",
     "tour": "टूर लें",
+    "guide": "1 रिपोर्ट आती है। 2 AI छाँटता है, जोड़ता है और टीम सुझाता है। 3 आप मंजूरी देते हैं।",
+    "guideDismiss": "बंद करें",
     "live": "लाइव",
     "menu": "खाता मेनू",
     "scenario": "परिदृश्य",

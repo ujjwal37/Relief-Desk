@@ -38,6 +38,18 @@ describe('CoordinatorLayoutComponent demo phone', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
+  it('shows the three steps once, then stays dismissed', async () => {
+    localStorage.removeItem('rd_guide_dismissed');
+    localStorage.removeItem('rd_tour_done');
+    const fixture = await setup(null, true);
+    expect(fixture.nativeElement.textContent).toContain('1 A report arrives');
+    (fixture.nativeElement.querySelector('.guide button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.guide')).toBeNull();
+    expect(localStorage.getItem('rd_guide_dismissed')).toBe('1');
+    localStorage.setItem('rd_tour_done', '1');
+  });
+
   it('shows a 390px phone frame beside the coordinator when ?demo=1 on a wide screen', async () => {
     const fixture = await setup('1', true);
     const frame = fixture.nativeElement.querySelector('.demo-phone') as HTMLElement;

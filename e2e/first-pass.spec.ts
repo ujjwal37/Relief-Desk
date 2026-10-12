@@ -120,9 +120,7 @@ test.describe('public and coordinator demo', () => {
       await page.waitForURL(/\/coordinator\/command/);
       await expect(page.getByRole('heading', { name: 'Cases' })).toBeVisible();
       await expect(page.getByText('Synthetic scenario inspired by Kerala floods')).toBeVisible();
-      await page.getByLabel('Time').selectOption({ label: 'Last hour' });
       await expect(page.locator('button.case').first()).toBeVisible();
-      await page.getByLabel('Time').selectOption({ label: 'All time' });
 
       if (viewport.name === 'mobile') {
         await expect(page.getByRole('tab', { name: 'Cases' })).toBeVisible();

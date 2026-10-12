@@ -22,7 +22,6 @@
       </div>
 
       <div class="right">
-        <button type="button" class="tour-btn" (click)="takeTour()">{{ 'coord.tour' | rdTranslate }}</button>
         <span class="live"><i></i>{{ 'coord.live' | rdTranslate }}</span>
         <div class="menu-wrap">
           <button type="button" class="avatar" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate">{{ initial() }}</button>
@@ -53,6 +52,8 @@
                   <button type="button" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" (click)="lang.setLanguage(l.code)">{{ l.label }}</button>
                 }
               </div>
+              <button type="button" class="item" (click)="resetDemo()">{{ 'ux.resetDemo' | rdTranslate }}</button>
+              <button type="button" class="item" (click)="loadFullScenario()">{{ 'ux.loadFull' | rdTranslate }}</button>
               <button type="button" class="item" (click)="openWeights()">{{ 'coord.weights' | rdTranslate }}</button>
               <button type="button" class="item" (click)="toggleDemo()">{{ (showPhone() ? 'demo.hide' : 'coord.demoPhone') | rdTranslate }}</button>
               <button type="button" class="item out" (click)="logout()">{{ 'coord.signOut' | rdTranslate }}</button>
@@ -61,6 +62,13 @@
         </div>
       </div>
     </header>
+
+    @if (guideOpen()) {
+      <p class="guide" role="note">
+        <span>{{ 'coord.guide' | rdTranslate }}</span>
+        <button type="button" (click)="dismissGuide()">{{ 'coord.guideDismiss' | rdTranslate }}</button>
+      </p>
+    }
 
     <main class="dashboard-body">
       <router-outlet></router-outlet>

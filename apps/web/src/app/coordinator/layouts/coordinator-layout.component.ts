@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { AuthService, LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, ThemeMode, ThemeService } from '@rd/shared';
+import { ApiClientService, AuthService, LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, ThemeMode, ThemeService } from '@rd/shared';
 import { ScenarioService } from '../../core/services/scenario.service';
 import { CoordUiService } from '../../core/services/coord-ui.service';
 import { TourComponent } from '../../core/components/tour.component';
@@ -27,6 +27,8 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   readonly wideEnough = signal(true);
   readonly showPhone = computed(() => this.demoOn() && this.wideEnough());
   readonly menuOpen = signal(false);
+  readonly guideOpen = signal(false);
+  private api = inject(ApiClientService);
   readonly compactNav = signal(false);
   readonly langs = SUPPORTED_LANGUAGES;
   readonly themes: { m: ThemeMode; k: string }[] = [
@@ -57,6 +59,32 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.scenarioService.ensureLoaded();
     this.ui.loadAlerts();
     this.syncCompactNav();
+    this.guideOpen.set(!this.guideDismissed());
+  }
+
+  private guideDismissed(): boolean {
+    try {
+      return localStorage.getItem('rd_guide_dismissed') === '1' || localStorage.getItem('rd_tour_done') === '1';
+    } catch {
+      return true;
+    }
+  }
+
+  dismissGuide(): void {
+    this.guideOpen.set(false);
+    try { localStorage.setItem('rd_guide_dismissed', '1'); } catch { /* private mode */ }
+  }
+
+  resetDemo(): void {
+    if (!window.confirm(this.lang.translate('ux.resetDemoConfirm'))) return;
+    this.menuOpen.set(false);
+    this.api.resetDemo().subscribe({ next: () => location.reload() });
+  }
+
+  loadFullScenario(): void {
+    if (!window.confirm(this.lang.translate('ux.loadFullConfirm'))) return;
+    this.menuOpen.set(false);
+    this.api.loadFullScenario().subscribe({ next: () => location.reload() });
   }
 
   syncCompactNav(): void {

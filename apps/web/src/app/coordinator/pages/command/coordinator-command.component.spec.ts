@@ -242,15 +242,6 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.teamsFree()).toEqual({ free: 2, total: 4 });
   });
 
-  it('wraps the briefing on a narrow screen', () => {
-    component.narrow.set(true);
-    fixture.detectChanges();
-    const banner = fixture.nativeElement.querySelector('.briefing') as HTMLElement;
-    const line = banner.querySelector('p') as HTMLElement;
-    expect(banner.classList.contains('wrap')).toBeTrue();
-    expect(getComputedStyle(line).whiteSpace).toBe('normal');
-  });
-
   it('tab counts follow the type, area and time filters, and areas use place names', () => {
     expect(component.counts().total).toBe(2);
     component.setFilterType('medical');
@@ -263,13 +254,10 @@ describe('CoordinatorCommandComponent', () => {
     component.setTime('hour');
     expect(component.counts().total).toBe(0);
     component.clearFilters();
-    fixture.detectChanges();
-    const options = Array.from(fixture.nativeElement.querySelectorAll('option') as NodeListOf<HTMLOptionElement>)
-      .map((option) => (option.textContent || '').trim());
-    expect(options).toContain('Chalakudy');
-    expect(options).toContain('Aluva');
-    expect(options.some((label) => /ward\s*\d+/i.test(label))).toBeFalse();
+    expect(component.placeName('ward_7')).toBe('Chalakudy');
+    expect(component.placeName('ward_4')).toBe('Aluva');
     expect(component.placeName('ward_12')).toBe('Kalpetta');
+    expect(/ward\s*\d+/i.test(component.placeName('ward_7'))).toBeFalse();
   });
 
   it('keeps type, area and time filters and can clear them', () => {
@@ -481,11 +469,6 @@ describe('CoordinatorCommandComponent', () => {
 
   it('Reset demo and Load full scenario replace the whole queue', () => {
     spyOn(window, 'confirm').and.returnValue(true);
-    const labels = Array.from(fixture.nativeElement.querySelectorAll('.reset-demo') as NodeListOf<HTMLElement>).map(
-      (node) => (node.textContent || '').trim(),
-    );
-    expect(labels).toContain('Reset demo');
-    expect(labels).toContain('Load full scenario');
     apiClientSpy.getRequests.and.returnValue(of([mockRequests[0]]));
     component.resetDemo();
     expect(apiClientSpy.resetDemo).toHaveBeenCalled();
