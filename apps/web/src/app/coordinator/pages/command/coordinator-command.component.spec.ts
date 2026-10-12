@@ -428,6 +428,29 @@ describe('CoordinatorCommandComponent', () => {
     }
   });
 
+  it('focuses the selected case, labels team lines, and lists only the kinds on the map', () => {
+    component.resources.set([
+      ...mockResources,
+      { ...mockResources[0], id: 'res_shelter', kind: 'shelter', name: 'School hall', lat: 26.86, lng: 80.94 },
+    ]);
+    fixture.detectChanges();
+    const pins = component.drawnPins();
+    expect(pins.find((pin) => pin.id === 'INC-001')?.dim).toBeFalse();
+    expect(pins.find((pin) => pin.id === 'INC-002')?.dim).toBeTrue();
+    expect(pins.find((pin) => pin.id === 'res_boat_02')?.suggested).toBeTrue();
+    expect(pins.find((pin) => pin.id === 'res_shelter')?.dim).toBeTrue();
+    expect(component.focusLegs().map((leg) => leg.label)).toEqual(['1.2 km · about 4 min']);
+    expect(component.legendBands()).toEqual(['critical']);
+    expect(component.legendKinds()).toEqual(['boat']);
+    const map = (fixture.nativeElement.querySelector('.svgmap') as HTMLElement).textContent || '';
+    const legend = (fixture.nativeElement.querySelector('.legend') as HTMLElement).textContent || '';
+    expect(map).toContain('1.2 km · about 4 min');
+    expect(legend).toContain('Needs help now');
+    expect(legend).toContain('Boat');
+    expect(legend).not.toContain('Shelter');
+    expect(legend).not.toContain('Help soon');
+  });
+
   it('reloads the queue when the demo phone submits a report', () => {
     apiClientSpy.getRequests.calls.reset();
     component.handleDemoMessage({

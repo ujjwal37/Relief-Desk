@@ -1008,3 +1008,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests/test_public_api.py` — 8 passed. Playwright core-flow, first-pass, and agents-visible run after this commit.
 - Notes / risks / not done: The quote is English ("1.2 km · about 4 min") on the status page, matching the English case card. A team with no stored match still has no ETA.
 - Next (suggested task id): UX8-07
+
+### 2026-10-13 00:25 IST — UX8-07 — Cursor
+- What changed: A saved request the server no longer has says "This request is no longer available", with the help type and the time it was saved, and a Remove button. A network error still says it could not refresh. The type is kept when the status page updates the same row.
+- Files: apps/web/src/app/core/services/my-requests.service.ts, apps/web/src/app/core/services/my-requests.service.spec.ts, apps/web/src/app/public/pages/home/home.component.ts, apps/web/src/app/public/pages/home/home.component.html, apps/web/src/app/public/pages/home/home.component.scss, apps/web/src/app/public/pages/home/home.component.spec.ts, apps/web/src/app/public/pages/report/report.component.ts, libs/shared/src/lib/i18n/en.json, libs/shared/src/lib/i18n/hi.json, libs/shared/src/lib/i18n/hinglish.json, libs/shared/src/lib/i18n/ta.json
+- How verified: `node scripts/check-i18n.mjs` — 650 keys. `npx ng test web --include home and my-requests` — 3 passed. Playwright runs after this commit.
+- Notes / risks / not done: Rows saved before this change have a time label and no type. A 401 still shows the refresh error, not the gone state.
+- Next (suggested task id): UX8-08

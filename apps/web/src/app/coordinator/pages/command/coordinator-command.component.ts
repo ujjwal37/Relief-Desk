@@ -324,6 +324,48 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     ];
   });
   readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
+  /** Selected case plus its candidate teams stay bright. Everything else fades. */
+  readonly drawnPins = computed(() => {
+    const focus = this.selectedRequest();
+    const teamIds = new Set(this.matches().map((row) => row.resource_id));
+    const suggested = this.activeProposal()?.resource_id;
+    return this.svgPins().map((pin) => {
+      const kept = !focus || pin.id === focus.id || (pin.kind === 'team' && teamIds.has(pin.id));
+      return { ...pin, dim: !kept, suggested: pin.kind === 'team' && pin.id === suggested && kept };
+    });
+  });
+  readonly focusLegs = computed(() => {
+    const req = this.selectedRequest();
+    if (!req || req.lat == null || req.lng == null) return [];
+    const origin = this.project(req.lat, req.lng);
+    const suggested = this.activeProposal()?.resource_id;
+    const legs: { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; label: string; suggested: boolean }[] = [];
+    for (const prop of this.matches()) {
+      const team = this.resources().find((row) => row.id === prop.resource_id);
+      if (!team) continue;
+      const at = this.project(team.lat, team.lng);
+      legs.push({
+        id: prop.resource_id,
+        x1: origin.x,
+        y1: origin.y,
+        x2: at.x,
+        y2: at.y,
+        lx: (origin.x + at.x) / 2,
+        ly: (origin.y + at.y) / 2 - 8,
+        label: `${prop.breakdown.distance_km} km · ${this.etaText(prop)}`,
+        suggested: prop.resource_id === suggested,
+      });
+    }
+    return legs;
+  });
+  readonly legendBands = computed(() => {
+    const present = new Set(this.drawnPins().filter((pin) => pin.kind === 'req' && !pin.dim).map((pin) => pin.band));
+    return (['critical', 'high', 'medium', 'low'] as const).filter((band) => present.has(band));
+  });
+  readonly legendKinds = computed(() => {
+    const present = new Set(this.drawnPins().filter((pin) => pin.kind === 'team' && !pin.dim).map((pin) => pin.team));
+    return (['boat', 'medical', 'food', 'shelter'] as const).filter((kind) => present.has(kind));
+  });
   readonly movementTrail = computed(() => {
     const req = this.selectedRequest();
     const team = req ? this.assignedTeam(req) : undefined;
