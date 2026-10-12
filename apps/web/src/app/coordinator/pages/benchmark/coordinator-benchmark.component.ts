@@ -53,7 +53,7 @@ export class CoordinatorBenchmarkComponent implements OnInit {
   readonly margin = signal<string | null>(null);
   readonly smallSample = signal(false);
   readonly gemini = signal<{
-    measured: boolean;
+    measured: boolean; reason?: string | null;
     model: string;
     date: string;
     n: string;
