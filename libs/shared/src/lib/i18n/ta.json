@@ -381,7 +381,10 @@
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
     "estimatedWait": "அருகிலுள்ள அணி முடிய {n} நிமிடம் காத்திருப்பு ({team})",
     "backToList": "வழக்குகளுக்குத் திரும்பு",
-    "fallbackSummary": "இந்த இடத்தில் அவசர உதவி கோரப்பட்டுள்ளது."
+    "fallbackSummary": "இந்த இடத்தில் அவசர உதவி கோரப்பட்டுள்ளது.",
+    "legendCases": "வழக்குகள்",
+    "legendTeams": "குழுக்கள்",
+    "unitReadyOf": "{n} இல் தயார்"
   },
   "tour": {
     "next": "அடுத்து",

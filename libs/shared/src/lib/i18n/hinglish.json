@@ -381,7 +381,10 @@
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
     "estimatedWait": "Andaza {n} min, jab tak {team} free na ho",
     "backToList": "Cases par wapas",
-    "fallbackSummary": "Is jagah par turant madad maangi gayi hai."
+    "fallbackSummary": "Is jagah par turant madad maangi gayi hai.",
+    "legendCases": "Cases",
+    "legendTeams": "Teams",
+    "unitReadyOf": "{n} mein se ready"
   },
   "tour": {
     "next": "Aage",
