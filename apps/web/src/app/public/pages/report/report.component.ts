@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, inject, signal, OnInit, effect, viewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { timeout, TimeoutError } from 'rxjs';
 import { Router, RouterLink } from '@angular/router';
 import {
   ApiClientService,
@@ -40,6 +41,9 @@ const EMPTY_VULNERABLE: Record<string, boolean> = {
   pregnant: false,
   medical_need: false,
 };
+
+/** A chat turn that takes longer than this falls back to the form. */
+const CHAT_TURN_TIMEOUT_MS = 15000;
 
 @Component({
   selector: 'app-report',
@@ -360,6 +364,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
         language: this.langService.currentLang(),
         location_pin: this.locationPin(),
       })
+      .pipe(timeout(CHAT_TURN_TIMEOUT_MS))
       .subscribe({
         next: (resp: ChatTurnResponse) => {
           this.isLoading.set(false);
@@ -378,8 +383,19 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
           };
           this.chatMessages.update((msgs) => [...msgs, assistantMsg]);
         },
-        error: () => {
+        error: (err: unknown) => {
           this.isLoading.set(false);
+          this.slow.set(false);
+          if (this.slowTimer) clearTimeout(this.slowTimer);
+          if (err instanceof TimeoutError) {
+            // Never leave the citizen on a spinner: offer the form with what we have.
+            this.chatMessages.update((msgs) => [
+              ...msgs,
+              { id: `ast_${Date.now()}`, role: 'assistant', text: this.langService.translate('report.takingLonger'), timestamp: new Date() },
+            ]);
+            this.openForm();
+            return;
+          }
           this.queueCitizenText(text);
         },
       });
