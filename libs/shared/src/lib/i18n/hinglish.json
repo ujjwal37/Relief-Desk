@@ -482,6 +482,7 @@
     "date": "Run ki tarikh",
     "count": "Is split mein reports",
     "geminiNotMeasured": "Is run mein Gemini call nahi hua. API key set nahi thi.",
+    "geminiUnreachable": "Gemini ko call kiya par jawab nahi mila (daily quota ya outage), isliye is run mein Gemini score nahi hai.",
     "geminiType": "Gemini, madad ka type",
     "geminiWard": "Gemini, sahi ilaqa",
     "keywordType": "Keyword baseline, madad ka type",

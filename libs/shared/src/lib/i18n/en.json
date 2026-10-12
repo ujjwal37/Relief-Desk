@@ -482,6 +482,7 @@
     "date": "Run date",
     "count": "Reports in this split",
     "geminiNotMeasured": "Gemini was not called. No API key was set for this run.",
+    "geminiUnreachable": "Gemini was called but did not answer (daily quota or outage), so this run has no Gemini score.",
     "geminiType": "Gemini, kind of help",
     "geminiWard": "Gemini, right area",
     "keywordType": "Keyword baseline, kind of help",

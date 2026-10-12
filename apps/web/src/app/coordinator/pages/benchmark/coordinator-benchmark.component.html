@@ -8,7 +8,7 @@
       <p class="meta">{{ 'bench.model' | rdTranslate }} {{ g.model || ('ux.notRecorded' | rdTranslate) }}</p>
       <p class="meta">{{ 'bench.date' | rdTranslate }} {{ g.date || ('ux.notRecorded' | rdTranslate) }}</p>
       <p class="meta">{{ 'ux.labelled' | rdTranslate }} {{ g.n || ('ux.notRecorded' | rdTranslate) }}</p>
-      @if (!g.measured) { <p>{{ 'bench.geminiNotMeasured' | rdTranslate }}</p> }
+      @if (!g.measured) { <p>{{ (g.reason === 'fallback' ? 'bench.geminiUnreachable' : 'bench.geminiNotMeasured') | rdTranslate }}</p> }
       @if (g.measured) {
         <p>{{ 'bench.geminiType' | rdTranslate }} {{ g.type || ('ux.notRecorded' | rdTranslate) }}</p>
         <p>{{ 'bench.geminiWard' | rdTranslate }} {{ g.ward || ('ux.notRecorded' | rdTranslate) }}</p>
