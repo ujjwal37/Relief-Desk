@@ -17,6 +17,11 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 REPLAY_DIR = Path(__file__).resolve().parents[4] / "data" / "ai_cache"
 
 
+from concurrent.futures import ThreadPoolExecutor
+
+# Shared pool. Never used in a `with` block: leaving one would join a hung call.
+_GEMINI_POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="gemini")
+
 _PLACEHOLDER_KEYS = {"", "replace-me", "synthetic-demo-gemini-key"}
 
 
@@ -247,20 +252,32 @@ class LLMClient:
             logger.error("Live Gemini call failed (%s). Falling back.", exc)
             return self._fallback(user_prompt, reason, started)
 
-    def _call_gemini(self, system_instruction: str, user_prompt: str, timeout_s: float = 12.0) -> str:
-        """One live generate call. Raises on timeout, missing SDK, or an empty reply."""
-        from concurrent.futures import ThreadPoolExecutor
+    def _make_genai_client(self, timeout_s: float):
+        """Build the SDK client with an HTTP timeout so a stuck request cannot hold a slot forever."""
+        import google.genai as genai  # type: ignore
+
+        return genai.Client(
+            api_key=settings.GEMINI_API_KEY,
+            http_options={"timeout": int(timeout_s * 1000)},
+        )
+
+    def _call_gemini(self, system_instruction: str, user_prompt: str, timeout_s: Optional[float] = None) -> str:
+        """One live generate call. Raises on timeout, missing SDK, or an empty reply.
+
+        The call runs on a shared worker pool. On timeout we stop waiting and
+        release the concurrency slot at once; the worker thread is bounded by
+        the HTTP timeout on the client and is never joined by the request.
+        """
         from concurrent.futures import TimeoutError as FuturesTimeout
 
+        timeout_s = float(timeout_s or settings.GEMINI_TIMEOUT_S or 12.0)
         self._last_tokens = None
         self.guard.wait_turn()
         if not self.guard.semaphore.acquire(timeout=timeout_s):
             raise TimeoutError("Gemini concurrency limit")
 
         def _run() -> str:
-            import google.genai as genai  # type: ignore
-
-            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+            client = self._make_genai_client(timeout_s)
             response_obj = client.models.generate_content(
                 model=settings.GEMINI_MODEL,
                 contents=user_prompt,
@@ -272,12 +289,12 @@ class LLMClient:
             return response_obj.text or ""
 
         try:
-            with ThreadPoolExecutor(max_workers=1) as pool:
-                future = pool.submit(_run)
-                try:
-                    text = future.result(timeout=timeout_s)
-                except FuturesTimeout as exc:
-                    raise TimeoutError("Gemini timed out") from exc
+            future = _GEMINI_POOL.submit(_run)
+            try:
+                text = future.result(timeout=timeout_s)
+            except FuturesTimeout as exc:
+                future.cancel()
+                raise TimeoutError("Gemini timed out") from exc
         finally:
             self.guard.semaphore.release()
         if not text.strip():
