@@ -160,7 +160,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | GM-11 | Honest ADK docs and deploy recipe | C | DONE | GM-10 | README maps ADK and Gemini to files. Held-out type 67.3%, ward 100%, Gemini not measured. Dockerfile and Secret Manager notes are a recipe, not a live service |
 | GM-12 | Recheck the earlier retest fixes | C | DONE | GM-11 | Sample badge, 30 km ETA, checkmark escape, Kerala district labels, Tamil INC-005, and the two-row header still pass. No product code changed |
 | UX-04 | Agents visible on the case queue | C | DONE | GM-12 | View trace opens five agents. Assist stays behind Review and does not dispatch. Merged reports and accuracy bars use stored fields |
-| LT-01 | Live team tracking and the free/busy assignment loop | C | DOING | UX-04 | Team token GPS, simulated movement labelled as such, coordinator live map, citizen card between dispatch and completion, status loop with audited completion, check-in, matching and Assist use fresh free or soon-free teams |
+| LT-01 | Live team tracking and the free/busy assignment loop | C | DONE | UX-04 | Team token GPS, simulated movement labelled as such, coordinator live map, citizen card between dispatch and completion, status loop with audited completion, check-in, matching and Assist use fresh free or soon-free teams |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login

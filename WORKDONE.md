@@ -959,3 +959,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `pytest tests` — 183 passed, 1 skipped. `node scripts/check-i18n.mjs` — 673 keys, en, hi, hinglish, ta, and the template lint passed. `npx ng build web` succeeded. Touched Angular specs — 14 passed. Playwright not run yet in this entry.
 - Notes / risks / not done: A depot pin that has never been shared stays matchable. A shared fix older than 2 minutes does not. Simulated steps can move faster than a boat and are labelled simulated. A person still approves every dispatch. Photo intake stays unbuilt. Gemini accuracy on the frozen split is still unmeasured.
 - Next (suggested task id): none
+
+### 2026-10-12 11:10 IST — LT-01 — Cursor
+- What changed: The Playwright assist step now clicks the Assist banner Review button. LT-01 is marked done after the browser run.
+- Files: e2e/live-tracking.spec.ts, TASKS.md
+- How verified: `npx playwright test e2e/live-tracking.spec.ts` passed. It dispatched a boat, saw simulated distance fall, completed the case from the team page, saw Free, and opened an Assist proposal for that boat. `npx playwright test e2e/first-pass.spec.ts e2e/agents-visible.spec.ts` — 4 passed. Screenshots: coordinator live map, team share, and citizen card, desktop 1440x900 and mobile 390x844, light and dark.
+- Notes / risks / not done: The citizen card in the run read about 2.1 km and 7 min for the simulated boat, labelled Simulated movement. Photo intake stays unbuilt. Gemini accuracy on the frozen split is still unmeasured.
+- Next (suggested task id): none

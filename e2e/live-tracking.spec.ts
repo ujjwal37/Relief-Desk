@@ -155,8 +155,9 @@ test('dispatch, simulated ETA, complete, then the free team is proposed again', 
   expect(proposed.dispatched).toBeFalsy();
 
   await page.goto('/coordinator/command');
-  await expect(page.getByRole('button', { name: 'Review' })).toBeVisible();
-  await page.getByRole('button', { name: 'Review' }).click();
+  const review = page.locator('app-assist-banner').getByRole('button', { name: 'Review', exact: true });
+  await expect(review).toBeVisible();
+  await review.click();
   await expect(page.getByRole('dialog')).toContainText(teamName);
   await expect(page.getByText('Nothing is dispatched until you approve')).toBeVisible();
   await shot(page, 'assist-proposes-free-team');
