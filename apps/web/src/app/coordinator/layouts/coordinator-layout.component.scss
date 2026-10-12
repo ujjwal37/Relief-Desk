@@ -18,7 +18,7 @@
 .top-nav:has(.tabs.wrap) .right { grid-area:avatar; }
 .top-nav:has(.tabs.wrap) .tabs { grid-area:tabs; }
 .tabs.wrap a { flex:1 1 0; min-width:0; height:auto; min-height:40px; padding:4px 4px; justify-content:center; text-align:center; white-space:normal; line-height:1.15; font-size:13px; }
-.count { background:var(--sos); color:#fff; border-radius:999px; padding:1px 7px; font-size:13px; font-weight:700; }
+.count { background:var(--sos); color:var(--on-sos); border-radius:999px; padding:1px 7px; font-size:13px; font-weight:700; }
 .search { flex:1; max-width:340px; position:relative; display:flex; align-items:center; margin-left:auto; color:var(--muted); }
 .search svg { position:absolute; left:12px; }
 .search input { width:100%; height:44px; padding:0 34px 0 34px; border-radius:10px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); font:500 15px var(--rd-font-family); }

@@ -12,7 +12,7 @@
 .body { flex: 1; min-width: 0; }
 .body h2 { margin: 0; font-size: 17px; }
 .meta, .can, .where, .assigned { margin: 2px 0; color: var(--text-2); font-size: 14px; }
-.stale { color: var(--sos-text, #b42318); margin-left: 6px; }
+.stale { color: var(--sos-text); margin-left: 6px; }
 .status { font-weight: 800; font-size: 13px; padding: 4px 8px; border-radius: 999px; background: var(--surface-2); }
 .status.free { background: var(--brand-tint); color: var(--brand); }
 .empty { padding: 24px; color: var(--text-2); }

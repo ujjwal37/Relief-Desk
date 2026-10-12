@@ -1,5 +1,5 @@
 :host { position: fixed; inset: 0; z-index: 1600; }
-.scrim { position: absolute; inset: 0; background: rgba(15, 23, 42, .45); }
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
 .drawer {
   position: absolute; top: 0; right: 0; height: 100%; width: min(520px, 100%);
   background: var(--surface); color: var(--text); border-left: 1px solid var(--border);

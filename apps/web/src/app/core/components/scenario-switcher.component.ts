@@ -24,14 +24,14 @@ import { ScenarioService } from '../services/scenario.service';
     button {
       min-height: 48px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.16);
-      background: transparent;
-      color: #f8fafc;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
       font-weight: 700;
       padding: 8px 12px;
       cursor: pointer;
     }
-    button.on { background: #0f6b5a; color: white; border-color: #14b8a6; }
+    button.on { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

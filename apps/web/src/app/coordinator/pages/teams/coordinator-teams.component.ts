@@ -108,6 +108,6 @@ export class CoordinatorTeamsComponent implements OnInit {
   }
 
   fill(kind: string): string {
-    return ({ boat: '#0b6e99', medical: '#b42318', food: '#b54708', shelter: '#067647' } as Record<string, string>)[kind] || '#0b6e99';
+    return ({ boat: 'var(--brand)', medical: 'var(--sev-crit)', food: 'var(--sev-high)', shelter: 'var(--ok)' } as Record<string, string>)[kind] || 'var(--brand)';
   }
 }

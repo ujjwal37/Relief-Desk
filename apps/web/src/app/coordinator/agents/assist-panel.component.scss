@@ -1,5 +1,5 @@
 :host { position: fixed; inset: 0; z-index: 1650; }
-.scrim { position: absolute; inset: 0; background: rgba(15, 23, 42, .45); }
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
 .panel {
   position: absolute; top: 48px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 24px));
   max-height: calc(100% - 72px); overflow: auto; background: var(--surface); color: var(--text);

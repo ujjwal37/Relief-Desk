@@ -14,10 +14,10 @@
             <circle [attr.cx]="[107, 229, 70, 279, 150, 300][i % 6]" [attr.cy]="[85, 145, 190, 65, 200, 160][i % 6]" [attr.r]="selectedCell()?.cell_id === c.cell_id ? 30 : 24"
               [attr.fill]="c.severity_band === 'critical' ? 'var(--sev-crit)' : c.severity_band === 'high' ? 'var(--sev-high)' : 'var(--sev-med)'" fill-opacity=".28"
               [attr.stroke]="c.severity_band === 'critical' ? 'var(--sev-crit)' : c.severity_band === 'high' ? 'var(--sev-high)' : 'var(--sev-med)'" stroke-width="2"/>
-            <circle [attr.cx]="[107, 229, 70, 279, 150, 300][i % 6]" [attr.cy]="[85, 145, 190, 65, 200, 160][i % 6]" r="5" fill="#fff" stroke="var(--text)" stroke-width="1.5"/>
+            <circle [attr.cx]="[107, 229, 70, 279, 150, 300][i % 6]" [attr.cy]="[85, 145, 190, 65, 200, 160][i % 6]" r="5" fill="var(--surface)" stroke="var(--text)" stroke-width="1.5"/>
           </g>
         }
-        <circle cx="179" cy="125" r="7" fill="var(--brand)" stroke="#fff" stroke-width="3"/>
+        <circle cx="179" cy="125" r="7" fill="var(--brand)" stroke="var(--surface)" stroke-width="3"/>
       </svg>
     </rd-map-provider>
     <p class="privacy">{{ 'nearby.areaOnly' | rdTranslate }}</p>

@@ -324,7 +324,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return this.resources().find((team) => team.id === req.assigned_resource_id);
   }
   teamFill(kind: string): string {
-    return ({ boat: '#0b6e99', medical: '#b42318', food: '#b54708', shelter: '#067647' } as Record<string, string>)[kind] || '#0b6e99';
+    return ({ boat: 'var(--brand)', medical: 'var(--sev-crit)', food: 'var(--sev-high)', shelter: 'var(--ok)' } as Record<string, string>)[kind] || 'var(--brand)';
   }
   bandOf(score: number): 'critical' | 'high' | 'medium' | 'low' { return urgencyBand(score); }
   isReview(r: StoredRequest): boolean { return needsReview(r); }
@@ -1002,10 +1002,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
 
   getUrgencyColor(score: number): string {
-    if (score >= 85) return '#fb7185'; // Red
-    if (score >= 70) return '#fbbf24'; // Amber
-    if (score >= 50) return '#60a5fa'; // Blue
-    return '#94a3b8'; // Slate
+    if (score >= 85) return 'var(--sev-crit)';
+    if (score >= 70) return 'var(--sev-high)';
+    if (score >= 50) return 'var(--sev-med)';
+    return 'var(--sev-low)';
   }
 
   getUrgencyChipClass(score: number): string {

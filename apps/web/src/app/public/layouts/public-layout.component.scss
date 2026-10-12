@@ -7,7 +7,7 @@
 .content-container { flex:1; min-height:0; display:flex; flex-direction:column; padding-bottom:calc(88px + env(safe-area-inset-bottom)); }
 .chat .content-container { padding-bottom:calc(80px + env(safe-area-inset-bottom)); }
 .tabs { position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:720px; height:calc(80px + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom);
-  display:grid; grid-template-columns:repeat(4,1fr); align-items:center; background:var(--surface); border-top:1px solid var(--border); z-index:40; box-shadow:0 -4px 12px rgba(15,23,42,.06); }
+  display:grid; grid-template-columns:repeat(4,1fr); align-items:center; background:var(--surface); border-top:1px solid var(--border); z-index:40; box-shadow:var(--e2); }
 .tab { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:64px; border:0; background:transparent; color:var(--text-2); font:600 13px/1.2 var(--rd-font-family); text-decoration:none; cursor:pointer; }
 .tab.on { color:var(--brand); }
 .fab-tab { position:relative; color:var(--text); }

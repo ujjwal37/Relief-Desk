@@ -13,8 +13,8 @@ h1 { margin:8px 0 8px; font-size:34px; line-height:1.1; font-weight:800; letter-
 .sos { position:relative; display:flex; flex-direction:column; justify-content:flex-end; gap:6px; min-height:290px; padding:24px; border-radius:24px;
   background:var(--sos); color:var(--on-sos); box-shadow:var(--e2); transition:transform 120ms var(--ease); }
 .sos:active, .row:active { transform:scale(.98); }
-.sos-icon { position:absolute; top:24px; left:24px; width:64px; height:64px; border-radius:20px; background:rgba(255,255,255,.18); display:grid; place-items:center; }
-.badge { position:absolute; top:24px; right:24px; background:rgba(255,255,255,.2); border-radius:999px; padding:6px 12px; font-size:13px; font-weight:700; }
+.sos-icon { position:absolute; top:24px; left:24px; width:64px; height:64px; border-radius:20px; background:color-mix(in srgb, var(--on-sos) 18%, transparent); display:grid; place-items:center; }
+.badge { position:absolute; top:24px; right:24px; background:color-mix(in srgb, var(--on-sos) 20%, transparent); border-radius:999px; padding:6px 12px; font-size:13px; font-weight:700; }
 .sos-title { font-size:36px; font-weight:800; line-height:1.1; letter-spacing:-.02em; }
 .sos-sub { font-size:17px; line-height:1.4; opacity:.95; }
 .sos-foot { margin-top:8px; font-size:17px; font-weight:700; }
@@ -47,7 +47,7 @@ h1 { margin:8px 0 8px; font-size:34px; line-height:1.1; font-weight:800; letter-
   .judge-desk { display:inline-block; margin-top:16px; padding:12px 0; color:var(--brand); font-weight:700; font-size:16px; text-decoration:underline; }
   .trust { display:flex; flex-wrap:wrap; gap:8px 24px; list-style:none; margin:8px 0 0; padding:0; font-size:15px; color:var(--text-2); li::before { content:'\2713 '; color:var(--brand); font-weight:800; } }
   .right { display:flex; justify-content:center; }
-  .phone { width:300px; height:560px; border:10px solid #0F172A; border-radius:40px; background:var(--surface); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--e3); }
+  .phone { width:300px; height:560px; border:10px solid var(--text); border-radius:40px; background:var(--surface); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--e3); }
   .phone-head { padding:14px; text-align:center; font-weight:700; border-bottom:1px solid var(--border); }
   .phone-body { flex:1; padding:20px 16px; display:flex; flex-direction:column; gap:8px; align-items:stretch; text-align:center; }
   .spark { color:var(--brand); font-size:28px; } .ph-title { font-size:22px; font-weight:800; } .ph-sub { font-size:14px; color:var(--text-2); margin-bottom:8px; }

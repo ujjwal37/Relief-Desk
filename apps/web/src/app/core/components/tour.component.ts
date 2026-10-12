@@ -35,7 +35,7 @@ const STEPS: Step[] = [
   `,
   styles: [`
     .shade { position:fixed; inset:0; z-index:2000; }
-    .spot { position:fixed; z-index:2001; border-radius:12px; box-shadow:0 0 0 9999px rgba(15,23,42,.62); outline:3px solid var(--brand); pointer-events:none; transition:all 200ms var(--ease); }
+    .spot { position:fixed; z-index:2001; border-radius:12px; box-shadow:0 0 0 9999px var(--scrim); outline:3px solid var(--brand); pointer-events:none; transition:all 200ms var(--ease); }
     .card { position:fixed; z-index:2002; width:340px; max-width:calc(100vw - 24px); background:var(--surface); color:var(--text); border-radius:16px; padding:18px; box-shadow:var(--e3); outline:none; }
     .step { margin:0 0 4px; font-size:13px; color:var(--text-2); font-weight:600; }
     h2 { margin:0 0 6px; font-size:18px; line-height:1.25; }

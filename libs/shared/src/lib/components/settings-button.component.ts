@@ -41,7 +41,7 @@ import { ThemeMode, ThemeService } from '../services/theme.service';
     .rd-set-btn { display:inline-flex; align-items:center; gap:6px; min-height:44px; min-width:44px; padding:0 10px; justify-content:center;
       background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:999px; font:600 15px/1 var(--rd-font-family); cursor:pointer; }
     .rd-set-btn:focus-visible, .opt:focus-visible, .seg button:focus-visible, .done:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
-    .rd-backdrop { position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:1000; animation: fade 200ms var(--ease); }
+    .rd-backdrop { position:fixed; inset:0; background:var(--scrim); z-index:1000; animation: fade 200ms var(--ease); }
     .rd-sheet { position:fixed; z-index:1001; left:0; right:0; bottom:0; max-width:480px; margin:0 auto; background:var(--surface); color:var(--text);
       border-radius:24px 24px 0 0; padding:12px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow:var(--e3); animation: up 200ms var(--ease); outline:none; }
     .grab { width:40px; height:4px; border-radius:2px; background:var(--border); margin:0 auto 12px; }
