@@ -14,9 +14,9 @@
   @if (team(); as t) {
     <article class="card">
       <h2>{{ t.name }}</h2>
-      <p>{{ ('coord.resStatus.' + t.status) | rdTranslate }}</p>
-      @if (t.simulated) { <p class="sim">{{ 'coord.simulated' | rdTranslate }}</p> }
-      @if (t.assigned_request_id) { <p>{{ 'coord.assigned' | rdTranslate }} {{ t.assigned_request_id }}</p> }
+      <p class="state">{{ ('track.status.' + statusKey(t)) | rdTranslate }}</p>
+      <p class="src">{{ sourceKey(t) | rdTranslate }}</p>
+      @if (t.assigned_request_id) { <p>{{ 'track.currentCase' | rdTranslate }} {{ t.assigned_request_id }}</p> }
       @if (trailPoints(t)) {
         <p class="trail-label">{{ 'team.trail' | rdTranslate }}</p>
         <svg viewBox="0 0 332 172" class="trail" role="img" [attr.aria-label]="'team.trail' | rdTranslate">
@@ -26,16 +26,41 @@
       }
     </article>
 
-    <div class="actions">
-      <button type="button" (click)="act('at_scene')">{{ 'team.atScene' | rdTranslate }}</button>
-      <button type="button" (click)="act('done')">{{ 'team.done' | rdTranslate }}</button>
-      <button type="button" (click)="act('available')">{{ 'team.back' | rdTranslate }}</button>
-    </div>
+    <ol class="life" [attr.aria-label]="'track.life' | rdTranslate">
+      @for (step of ['free', 'accepted', 'onTheWay', 'arrived', 'completed']; track step) {
+        <li [class.now]="statusKey(t) === step">{{ ('track.step.' + step) | rdTranslate }}</li>
+      }
+    </ol>
 
-    <label class="share">
-      <input type="checkbox" [checked]="sharing()" (change)="toggleShare($any($event.target).checked)" />
-      {{ 'team.share' | rdTranslate }}
-    </label>
-    @if (sharing()) { <p>{{ 'team.sharing' | rdTranslate }}</p> }
+    @if (nextAction(t); as action) {
+      <button type="button" class="big" (click)="startAction(action)">{{ actionKey(action) | rdTranslate }}</button>
+    }
+
+    @if (outcomeOpen()) {
+      <form class="outcome" (submit)="submitComplete($event)">
+        <p>{{ 'track.outcome' | rdTranslate }}</p>
+        <label>{{ 'track.peopleHelped' | rdTranslate }}
+          <input name="people" type="number" min="0" max="500" required />
+        </label>
+        <fieldset>
+          <legend>{{ 'track.followUp' | rdTranslate }}</legend>
+          <label><input type="radio" name="follow" value="yes" required /> {{ 'track.followYes' | rdTranslate }}</label>
+          <label><input type="radio" name="follow" value="no" /> {{ 'track.followNo' | rdTranslate }}</label>
+        </fieldset>
+        <button type="submit">{{ 'track.markCompleted' | rdTranslate }}</button>
+      </form>
+    }
+
+    <section class="share-box" aria-live="polite">
+      <button type="button" class="share" [attr.aria-pressed]="sharing()" (click)="toggleShare(!sharing())">
+        {{ 'track.share' | rdTranslate }}
+      </button>
+      <p class="pill" [class.on]="sharing()">{{ (sharing() ? 'track.sharingOn' : 'track.sharingOff') | rdTranslate }}</p>
+      @if (lastSent(); as sent) { <p>{{ 'track.lastSent' | rdTranslate }} {{ clock(sent) }}</p> }
+      @if (permDenied()) { <p class="err">{{ 'track.permDenied' | rdTranslate }}</p> }
+      @if (lowAccuracy()) { <p class="warn">{{ 'track.lowAccuracy' | rdTranslate }}</p> }
+      @if (offline()) { <p class="warn">{{ 'track.offline' | rdTranslate }}</p> }
+      @if (queued()) { <p>{{ 'track.queued' | rdTranslate }}</p> }
+    </section>
   }
 </div>

@@ -203,12 +203,76 @@ export interface StoredResource {
   lng: number;
   capacity_total: number;
   capacity_remaining: number;
-  status: 'available' | 'busy' | 'dispatched' | 'en_route' | 'on_scene' | 'returning' | 'depleted';
+  status: 'available' | 'busy' | 'dispatched' | 'accepted' | 'en_route' | 'on_scene' | 'returning' | 'depleted' | 'off_duty';
   location_updated_at?: string | null;
   assigned_request_id?: string | null;
   area_name?: string | null;
   simulated?: boolean;
+  location_source?: 'seed' | 'gps' | 'simulated' | 'coordinator' | string;
+  heading?: number | null;
+  speed_mps?: number | null;
+  accuracy_m?: number | null;
+  status_changed_at?: string | null;
+  busy_since?: string | null;
+  share_token?: string;
   location_trail?: { lat: number; lng: number; at: string }[];
+}
+
+export interface TeamFix {
+  lat: number;
+  lng: number;
+  accuracy?: number | null;
+  heading?: number | null;
+  speed?: number | null;
+  ts?: string | null;
+  token?: string;
+}
+
+export interface TeamLive {
+  id: string;
+  name: string;
+  kind: 'boat' | 'medical' | 'food' | 'shelter' | string;
+  status: string;
+  lat: number;
+  lng: number;
+  heading?: number | null;
+  speed?: number | null;
+  accuracy?: number | null;
+  updated_at?: string | null;
+  stale: boolean;
+  simulated: boolean;
+  source: string;
+  assigned_request_id?: string | null;
+  case_lat?: number | null;
+  case_lng?: number | null;
+  distance_km?: number | null;
+  eta_minutes?: number | null;
+  no_nearby: boolean;
+  trail: { lat: number; lng: number; at?: string }[];
+  check_in: boolean;
+  busy_minutes?: number | null;
+  status_changed_at?: string | null;
+  busy_since?: string | null;
+  soon_free: boolean;
+  share_token: string;
+}
+
+export interface CitizenTrack {
+  visible: boolean;
+  state: 'hidden' | 'dispatched' | 'arrived' | 'completed' | string;
+  team_name?: string | null;
+  team_kind?: string | null;
+  distance_km?: number | null;
+  eta_minutes?: number | null;
+  no_nearby: boolean;
+  lat?: number | null;
+  lng?: number | null;
+  case_lat?: number | null;
+  case_lng?: number | null;
+  updated_at?: string | null;
+  simulated: boolean;
+  stale: boolean;
+  trail: { lat: number; lng: number }[];
 }
 
 export interface MatchBreakdown {
@@ -242,6 +306,7 @@ export interface MatchProposal {
   wait_minutes?: number | null;
   wait_team_name?: string | null;
   overcommit_warning: boolean;
+  soon_free?: boolean;
 }
 
 export interface StoredCluster {

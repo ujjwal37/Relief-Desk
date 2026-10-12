@@ -91,6 +91,18 @@ Not built: Gemini Live voice, Search grounding, Malayalam, photo intake, Pub/Sub
 
 The type target is 90%. This split is at 67.3%. Of 32 type misses, the rule read rescue when the label said medical (10), food (8), shelter (6), or info (5). The ward target is 85%. This split is at 100.0% because the ward comes from the gazetteer. The `$0.0465` per 1,000 messages in `RESULTS.md` is an estimate from assumed token counts and a Gemini 2.5 Flash price card. It is not a measured invoice, and Gemini was not called. These figures are synthetic labels, not real-world accuracy. The Accuracy page reads `bench/results/latest.json`.
 
+## Live tracking
+
+A team page opened with its demo token can share the phone's GPS. The browser asks for permission. While sharing is on, the page posts latitude, longitude, accuracy, heading, and speed about every 8 seconds, and once more when the status changes. Permission denied, low accuracy, and offline are shown on the page. The latest point stays on the phone and is sent when the connection returns. The server checks the team token, rejects a second post inside 4 seconds, and rejects a GPS jump that is too fast to be a real move from the previous GPS point. The first GPS fix after a depot pin or a simulated point is accepted, so a phone can take over.
+
+Coordinators see every team on `/coordinator/live`. Markers use the team type, a heading when one was sent, a short trail, and a line to the assigned case. The map polls every 5 seconds. A shared fix older than 2 minutes is marked Stale and drops out of matching. A depot pin that nobody has updated stays usable, so the demo does not go empty. Positions that come from the demo mover are labelled Simulated movement. They are not a live GPS feed. The demo mover can step faster than a boat would travel; the label stays simulated.
+
+Dispatch sets the team to Busy. On the team page the buttons run Free, Accepted, On the way, Arrived, Completed, then Free again. Off duty is optional. Mark completed asks how many people were helped and whether follow-up is needed, closes the case, gives the seats back, and leaves the team Free at its current point. Each change is audited. If a busy team sends no location and no status change for 10 minutes, the coordinator sees Check in. A coordinator can override a status and must give a reason.
+
+Matching and Assist only offer a team that is Free, or finishing soon (Arrived for more than 8 minutes), and whose position is fresh. They rank by live-position ETA, seats, and type. A finishing-soon team is labelled. The explanation cites the live state, for example "Motorized Rescue Boat is free since 10:42, 1.6 km away, 12 seats." A person still approves every dispatch.
+
+The citizen status page, opened with the request id and status token, shows only the assigned team, and only from dispatch until completion. It refreshes every 10 seconds. Before dispatch and after completion it does not show a live position. Other teams are not included.
+
 ## Safety and limitations
 - Decision support only; humans approve every dispatch; no auto-dispatch or auto-delete.
 - Synthetic data only; no real personal data is collected or stored.

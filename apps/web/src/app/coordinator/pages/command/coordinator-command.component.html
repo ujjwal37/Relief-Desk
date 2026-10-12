@@ -211,7 +211,7 @@
               @if (prop.is_fallback && prop.fallback_label) { <p class="warnline">{{ prop.fallback_label | rdTranslate }}</p> }
               @if (prop.wait_minutes) { <p class="warnline">{{ waitLabel(prop) }}</p> }
               @if (req.assigned_resource_id) {
-                <a class="link" [routerLink]="['/team', req.assigned_resource_id]">{{ 'team.open' | rdTranslate }}</a>
+                <a class="link" [routerLink]="['/team', req.assigned_resource_id]" [queryParams]="{ token: assignedTeam(req)?.share_token }">{{ 'track.demoLink' | rdTranslate }}</a>
               }
               <div class="facts">{{ prop.breakdown.distance_km }} km · {{ etaText(prop) }} · {{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ ('coord.kind.' + prop.resource_kind) | rdTranslate }}
                 @if (prop.simulated || assignedTeam(req)?.simulated) { <span class="tag">{{ 'coord.simulated' | rdTranslate }}</span> }

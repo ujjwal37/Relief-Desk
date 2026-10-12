@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiClientService, ReportStatusResponse, RdTranslatePipe } from '@rd/shared';
 import { MyRequestsService } from '../../../core/services/my-requests.service';
+import { CitizenTrackComponent } from './citizen-track.component';
 
 @Component({
   selector: 'app-status',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, RdTranslatePipe],
+  imports: [CommonModule, FormsModule, RouterModule, RdTranslatePipe, CitizenTrackComponent],
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +30,7 @@ export class StatusComponent implements OnInit {
   invalidInput = signal(false);
   isNew = signal(false);
   private currentToken = '';
+  readonly trackToken = signal('');
 
   ngOnInit(): void {
     const q = this.route.snapshot.queryParams;
@@ -58,6 +60,7 @@ export class StatusComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     this.currentToken = token?.trim() || '';
+    this.trackToken.set(this.currentToken);
     this.api.getReportStatus(cleanId, token?.trim()).subscribe({
       next: (data) => {
         this.statusData.set(data);

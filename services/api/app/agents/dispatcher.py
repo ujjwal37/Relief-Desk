@@ -38,8 +38,12 @@ def list_open_cases() -> list:
     return rows
 
 
-def find_teams(kind: str) -> list:
-    """Teams of this kind that still have free seats and are not on hold."""
+def find_teams(kind: str, lat: float | None = None, lng: float | None = None) -> list:
+    """Free or finishing-soon teams of this kind with a fresh position, closest live ETA first."""
+    from app.tools.geo import haversine_distance
+    from app.tracking.availability import candidate_kind, cite_sentence
+    from app.tracking.live import live_eta
+
     _calls.append("find_teams")
     found = []
     for res in storage_service.list_resources():
@@ -47,7 +51,30 @@ def find_teams(kind: str) -> list:
             continue
         if res.hold_request_id or res.capacity_remaining <= 0:
             continue
-        found.append({"id": res.id, "name": res.name, "free": res.capacity_remaining})
+        availability = candidate_kind(res)
+        if availability is None:
+            continue
+        distance = 0.0
+        eta = None
+        if lat is not None and lng is not None:
+            distance = round(haversine_distance(res.lat, res.lng, lat, lng), 1)
+            eta, far = live_eta(distance, res.kind.value)
+            if far:
+                continue
+        rank = (eta if eta is not None else 10_000) + (8 if availability == "soon_free" else 0)
+        found.append({
+            "id": res.id,
+            "name": res.name,
+            "free": res.capacity_remaining,
+            "availability": availability,
+            "finishing_soon": availability == "soon_free",
+            "simulated": bool(res.simulated) or res.location_source == "simulated",
+            "distance_km": distance,
+            "eta_minutes": eta,
+            "rank": rank,
+            "note": cite_sentence(res, distance),
+        })
+    found.sort(key=lambda row: (row["rank"], -row["free"], row["id"]))
     return found
 
 
@@ -67,6 +94,19 @@ def propose_assignment(request_id: str, resource_id: str) -> dict:
     res = storage_service.get_resource(resource_id)
     if req is None or res is None:
         return {"ok": False, "explanation": "That case or team is not on the board."}
+    from app.tools.geo import haversine_distance
+    from app.tracking.availability import cite_sentence, proposal_block_reason
+
+    if proposal_block_reason(res):
+        return {
+            "ok": False,
+            "dispatched": False,
+            "explanation": "That team is busy, off duty, or its position is stale.",
+        }
+    distance = 0.0
+    if req.lat is not None and req.lng is not None:
+        distance = round(haversine_distance(res.lat, res.lng, req.lat, req.lng), 1)
+    note = cite_sentence(res, distance)
     people = req.people_count or 1
     try:
         hold = storage_service.reserve_hold(request_id, resource_id, people, actor="dispatcher")
@@ -89,7 +129,7 @@ def propose_assignment(request_id: str, resource_id: str) -> dict:
             vulnerability_fit_score=0.0,
             total_score=1.0,
         ),
-        explanation="Proposed for a coordinator to approve. Not dispatched.",
+        explanation=note,
         state=MatchState.PROPOSED,
     )
     storage_service.save_match(match, actor="dispatcher")

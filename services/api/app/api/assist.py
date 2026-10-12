@@ -79,7 +79,7 @@ def _row(match, expired: bool) -> dict:
         "title": title or match.request_id,
         "team_name": res.name if res else None,
         "team_kind": res.kind.value if res else None,
-        "why": _why(req) or match.explanation,
+        "why": match.explanation or _why(req),
         "expires_at": match.hold_expires_at,
         "expired": expired,
         "ward_id": ward,
@@ -120,7 +120,7 @@ def plan_for(email: str) -> dict:
         if req.id in held:
             have[kind] = have.get(kind, 0) + 1
             continue
-        teams = find_teams(kind)
+        teams = find_teams(kind, req.lat, req.lng)
         if not teams:
             failures.append({
                 "kind": kind,

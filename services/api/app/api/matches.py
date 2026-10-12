@@ -3,6 +3,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from app.api.auth import get_current_coordinator, CoordinatorUser
+from app.tracking.live import ingest_fix
+from app.tracking.tokens import team_share_token, token_matches
+from app.tracking.availability import TrackingError
 from app.models.firestore_models import StoredMatch, StoredRequest, StoredResource, ResourceKind
 from app.agents.matching import matching_agent, MatchProposal
 from app.tools.storage import storage_service
@@ -22,6 +25,10 @@ class RejectMatchRequest(BaseModel):
 class ResourceLocationRequest(BaseModel):
     lat: float
     lng: float
+
+
+class CoordinatorResource(StoredResource):
+    share_token: str = ""
 
 
 @router.get(
@@ -134,14 +141,15 @@ def update_resource_location(
 
 @router.get(
     "/resources",
-    response_model=List[StoredResource],
+    response_model=List[CoordinatorResource],
     summary="List available rescue resources and capacity bars",
 )
 def list_resources(
     kind: Optional[ResourceKind] = None,
     user: CoordinatorUser = Depends(get_current_coordinator),
 ):
-    return storage_service.list_resources(kind=kind)
+    rows = storage_service.list_resources(kind=kind)
+    return [CoordinatorResource(**row.model_dump(), share_token=team_share_token(row.id)) for row in rows]
 
 
 class TeamActionRequest(BaseModel):
@@ -177,8 +185,17 @@ def confirm_team(resource_id: str, payload: TeamActionRequest):
     response_model=StoredResource,
     summary="Optional location share from the team phone",
 )
-def share_team_location(resource_id: str, payload: ResourceLocationRequest):
+def share_team_location(
+    resource_id: str,
+    payload: ResourceLocationRequest,
+    token: Optional[str] = Query(None),
+):
+    if storage_service.get_resource(resource_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+    if not token_matches(resource_id, token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Team token required")
     try:
-        return storage_service.update_resource_location(resource_id, payload.lat, payload.lng, actor="team")
-    except ValueError as ve:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
+        return ingest_fix(resource_id, payload.lat, payload.lng, source="gps")
+    except TrackingError as exc:
+        code = status.HTTP_429_TOO_MANY_REQUESTS if exc.code == "rate_limit" else status.HTTP_422_UNPROCESSABLE_ENTITY
+        raise HTTPException(status_code=code, detail=str(exc))

@@ -151,7 +151,7 @@ class ScoringEngine:
         )
 
     def compute_match_score(
-        self, req: StoredRequest, res: "StoredResource", fallback_ok: bool = False
+        self, req: StoredRequest, res: "StoredResource", fallback_ok: bool = False, soon_free: bool = False
     ) -> Optional["MatchBreakdown"]:
         from app.models.firestore_models import ResourceKind, ResourceStatus, MatchBreakdown
         from app.models.schemas import IncidentType
@@ -180,7 +180,7 @@ class ScoringEngine:
         allowed = fallback.get(req.type, []) if fallback_ok else primary.get(req.type, [])
         if res.kind not in allowed:
             return None
-        if res.status not in (ResourceStatus.AVAILABLE,) and not fallback_ok:
+        if res.status not in (ResourceStatus.AVAILABLE,) and not fallback_ok and not soon_free:
             return None
 
         # 1. Distance score (max 30 pts)

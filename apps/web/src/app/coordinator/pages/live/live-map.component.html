@@ -1,0 +1,99 @@
+<section class="live" data-testid="live-map">
+  <header>
+    <div>
+      <h1>{{ 'track.liveTitle' | rdTranslate }}</h1>
+      <p>{{ 'track.liveLead' | rdTranslate }}</p>
+    </div>
+  </header>
+  @if (notice()) { <p class="note" role="status">{{ notice() }}</p> }
+  <div class="layout">
+    <div class="side">
+      <h2>{{ 'track.teams' | rdTranslate }}</h2>
+      <ul>
+        @for (team of teams(); track team.id) {
+          <li>
+            <button type="button" class="row" [class.on]="selectedTeamId() === team.id" (click)="selectTeam(team.id)" [attr.data-testid]="'team-' + team.id">
+              <b>{{ team.name }}</b>
+              <span>{{ statusLabel(team.status) }} · {{ sourceLabel(team) }}</span>
+              @if (team.assigned_request_id) { <span>{{ 'track.currentCase' | rdTranslate }} {{ team.assigned_request_id }}</span> }
+              @if (team.eta_minutes != null || team.no_nearby) { <span>{{ etaLabel(team) }}</span> }
+              @if (team.stale) { <strong class="badge">{{ 'track.stale' | rdTranslate }}</strong> }
+              @if (team.check_in) { <strong class="badge">{{ 'track.checkIn' | rdTranslate }}</strong> }
+              @if (team.soon_free) { <strong class="soon">{{ 'track.soonFree' | rdTranslate }}</strong> }
+              @if (team.busy_minutes != null) { <span>{{ busyLabel(team) }}</span> }
+            </button>
+            @if (selectedTeamId() === team.id) {
+              <form class="override" (submit)="override(team, $event)">
+                <label>{{ 'track.override' | rdTranslate }}
+                  <select name="status">
+                    @for (s of ['available', 'accepted', 'en_route', 'on_scene', 'off_duty']; track s) {
+                      <option [value]="s">{{ statusLabel(s) }}</option>
+                    }
+                  </select>
+                </label>
+                <label>{{ 'track.reason' | rdTranslate }} <input name="reason" required minlength="3" /></label>
+                <button type="submit">{{ 'track.saveOverride' | rdTranslate }}</button>
+              </form>
+            }
+          </li>
+        }
+      </ul>
+      <h2>{{ 'track.cases' | rdTranslate }}</h2>
+      <ul>
+        @for (row of casePins(); track row.id) {
+          <li>
+            <button type="button" class="row" [class.on]="selectedCaseId() === row.id" (click)="selectCase(row.id)">{{ row.id }}</button>
+          </li>
+        }
+      </ul>
+    </div>
+    <div class="map-card">
+      <rd-map-provider [pins]="pins()" [center]="center()" (pinSelect)="onPin($event)">
+        <svg viewBox="0 0 600 480" class="svgmap" role="img" [attr.aria-label]="'track.liveTitle' | rdTranslate">
+          <rect width="600" height="480" fill="var(--map-bg)"/>
+          @for (d of districts(); track d.id) {
+            <polygon class="district" [attr.points]="d.points"></polygon>
+            <text class="dlabel" [attr.x]="d.lx" [attr.y]="d.ly" text-anchor="middle">{{ ('coord.district.' + d.id) | rdTranslate }}</text>
+          }
+          @for (team of drawn(); track team.id) {
+            @if (team.trail) {
+              <polyline [attr.points]="team.trail" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" [attr.opacity]="selectedTeamId() && selectedTeamId() !== team.id ? 0.25 : 1"/>
+            }
+            @if (team.linked && (!selectedTeamId() || selectedTeamId() === team.id)) {
+              <line [attr.x1]="team.x" [attr.y1]="team.y" [attr.x2]="team.linked.x" [attr.y2]="team.linked.y" class="link"/>
+            }
+          }
+          @for (row of casePins(); track row.id) {
+            <g class="pin" (click)="selectCase(row.id)" tabindex="0" (keydown.enter)="selectCase(row.id)" role="button">
+              <circle [attr.cx]="row.x" [attr.cy]="row.y" r="8" [attr.fill]="selectedCaseId() === row.id ? 'var(--brand)' : 'var(--sos)'" stroke="var(--surface)" stroke-width="2"/>
+            </g>
+          }
+          @for (team of drawn(); track team.id) {
+            <g class="mk" [class.on]="selectedTeamId() === team.id" (click)="selectTeam(team.id)" tabindex="0" (keydown.enter)="selectTeam(team.id)" role="button" [attr.aria-label]="team.name">
+              @if (selectedTeamId() === team.id) {
+                <circle [attr.cx]="team.x" [attr.cy]="team.y" r="16" fill="none" stroke="var(--brand)" stroke-width="3"/>
+              }
+              <g [attr.transform]="'translate(' + team.x + ' ' + team.y + ') rotate(' + (team.heading || 0) + ')'">
+                <circle r="9" [class]="'kind ' + team.kind"/>
+                <path d="M0 -12 L4 -4 L-4 -4 Z" fill="var(--text)"/>
+              </g>
+              @if (team.stale) {
+                <text [attr.x]="team.x + 12" [attr.y]="team.y - 10" class="badge">{{ 'track.stale' | rdTranslate }}</text>
+              }
+            </g>
+          }
+        </svg>
+      </rd-map-provider>
+      <div class="legend" [attr.aria-label]="'track.legend' | rdTranslate">
+        <b>{{ 'track.legend' | rdTranslate }}</b>
+        <span><i class="sw boat"></i>{{ 'coord.kind.boat' | rdTranslate }}</span>
+        <span><i class="sw medical"></i>{{ 'coord.kind.medical' | rdTranslate }}</span>
+        <span><i class="sw food"></i>{{ 'coord.kind.food' | rdTranslate }}</span>
+        <span><i class="sw shelter"></i>{{ 'coord.kind.shelter' | rdTranslate }}</span>
+        <span><i class="sw case"></i>{{ 'track.cases' | rdTranslate }}</span>
+        <span>{{ 'track.simulated' | rdTranslate }}</span>
+        <span>{{ 'track.stale' | rdTranslate }}</span>
+      </div>
+    </div>
+  </div>
+</section>

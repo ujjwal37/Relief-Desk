@@ -1,7 +1,7 @@
 <section class="teams">
   <header class="head">
     <h1>{{ 'coord.teams' | rdTranslate }}</h1>
-    <p>{{ 'coord.teamsLead' | rdTranslate }}</p>
+    <p>{{ 'coord.teamsLead' | rdTranslate }} <a routerLink="/coordinator/live">{{ 'track.liveTitle' | rdTranslate }}</a></p>
   </header>
 
   <div class="filters" role="group" [attr.aria-label]="'coord.teams' | rdTranslate">
@@ -25,14 +25,15 @@
           <h2>{{ team.name }}</h2>
           <p class="meta">{{ kindLabel(team.kind) }} · {{ team.capacity_remaining }}/{{ team.capacity_total }} {{ 'coord.seats' | rdTranslate }}</p>
           <p class="can">{{ canDo(team) }}</p>
-          <p class="where">{{ area(team) }} · {{ 'coord.updated' | rdTranslate }} {{ ageLabel(team) }}
+          <p class="where">{{ area(team) }} · {{ lastSeen(team) }}
             @if (stale(team)) { <strong class="stale">{{ 'coord.staleTeam' | rdTranslate }}</strong> }
+            @if (positionStale(team)) { <strong class="stale">{{ 'track.stale' | rdTranslate }}</strong> }
+            @if (checkIn(team)) { <strong class="stale">{{ 'track.checkIn' | rdTranslate }}</strong> }
           </p>
-          @if (team.assigned_request_id) {
-            <p class="assigned">{{ 'coord.assigned' | rdTranslate }} {{ team.assigned_request_id }}</p>
-          }
-          @if (team.simulated) { <p class="sim">{{ 'coord.simulated' | rdTranslate }}</p> }
-          <a class="confirm" [routerLink]="['/team', team.id]">{{ 'team.open' | rdTranslate }}</a>
+          <p class="where">{{ 'track.currentCase' | rdTranslate }} {{ team.assigned_request_id || ('track.none' | rdTranslate) }}</p>
+          @if (busyMinutes(team) != null) { <p class="where">{{ busyLabel(team) }}</p> }
+          @if (team.simulated || team.location_source === 'simulated') { <p class="sim">{{ 'track.simulated' | rdTranslate }}</p> }
+          <a class="confirm" [routerLink]="['/team', team.id]" [queryParams]="{ token: team.share_token }">{{ 'track.demoLink' | rdTranslate }}</a>
           <form class="loc" (submit)="saveLocation(team, $event)">
             <span>{{ 'coord.updateLocation' | rdTranslate }}</span>
             <label>{{ 'coord.lat' | rdTranslate }} <input name="lat" type="number" step="any" [value]="team.lat" /></label>

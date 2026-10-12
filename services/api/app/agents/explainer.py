@@ -22,10 +22,13 @@ class ExplainerAgent:
         resource: StoredResource,
         breakdown: MatchBreakdown,
     ) -> Explanation:
+        from app.tracking.availability import cite_sentence
+
         people = request.people_count if request.people_count else 1
+        cite = cite_sentence(resource, breakdown.distance_km)
         text_en = (
             f"{resource.name} is {breakdown.distance_km} km away with {resource.capacity_remaining} capacity "
-            f"to assist {people} people. Total match score is {breakdown.total_score} based on proximity and urgency."
+            f"to assist {people} people (Total match score {breakdown.total_score}). {cite}"
         )
 
         res_name_hi = resource.name_hi or resource.name

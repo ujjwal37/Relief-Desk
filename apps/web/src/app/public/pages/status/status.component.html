@@ -39,6 +39,8 @@
       </div>
     </section>
 
+    <app-citizen-track [reportId]="data.report_id" [token]="trackToken()" />
+
     <section class="hero" aria-live="polite">
       <p class="eta-cap">{{ 'status.eta' | rdTranslate }}</p>
       <p class="eta">{{ data.eta_minutes != null ? data.eta_display : ('status.etaLater' | rdTranslate) }}</p>

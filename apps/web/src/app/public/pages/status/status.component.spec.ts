@@ -62,8 +62,24 @@ describe('StatusComponent', () => {
   };
 
   beforeEach(async () => {
-    apiSpy = jasmine.createSpyObj('ApiClientService', ['getReportStatus']);
+    apiSpy = jasmine.createSpyObj('ApiClientService', ['getReportStatus', 'getCitizenTrack', 'getMapsConfig']);
     apiSpy.getReportStatus.and.returnValue(of(mockStatus));
+    apiSpy.getCitizenTrack.and.returnValue(of({
+      visible: true,
+      state: 'dispatched',
+      team_name: 'Motorized Rescue Boat',
+      distance_km: 1.8,
+      eta_minutes: 6,
+      no_nearby: false,
+      lat: 9.45,
+      lng: 76.4,
+      case_lat: 9.5,
+      case_lng: 76.41,
+      simulated: true,
+      stale: false,
+      trail: [],
+    }));
+    apiSpy.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: '' }));
 
     await TestBed.configureTestingModule({
       imports: [StatusComponent],

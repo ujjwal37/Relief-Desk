@@ -42,6 +42,7 @@ class MatchProposal(BaseModel):
     no_nearby: bool = False
     wait_minutes: Optional[int] = None
     wait_team_name: Optional[str] = None
+    soon_free: bool = False
 
 
 class MatchingAgent:
@@ -63,14 +64,21 @@ class MatchingAgent:
             storage_service.load_seed_resources()
             resources = storage_service.list_resources(event_id=request.event_id)
 
+        from app.tracking.availability import candidate_kind
+
         scored_candidates = []
         people_needed = request.people_count if request.people_count else 1
 
         for res in resources:
-            breakdown = scoring_engine.compute_match_score(request, res, fallback_ok=False)
+            kind = candidate_kind(res)
+            if kind is None:
+                continue
+            breakdown = scoring_engine.compute_match_score(
+                request, res, fallback_ok=False, soon_free=(kind == "soon_free")
+            )
             if breakdown is None:
                 continue
-            scored_candidates.append((res, breakdown, False))
+            scored_candidates.append((res, breakdown, False, kind))
 
         using_fallback = False
         if not scored_candidates:
@@ -79,14 +87,17 @@ class MatchingAgent:
                 breakdown = scoring_engine.compute_match_score(request, res, fallback_ok=True)
                 if breakdown is None:
                     continue
-                scored_candidates.append((res, breakdown, True))
+                scored_candidates.append((res, breakdown, True, "fallback"))
 
         # Distance score is 0 past 10 km, so a far team with more seats can outrank a nearer one.
         # Keep teams near the closest suitable team. If every team is far, keep the closest and show its real ETA.
         scored_candidates = _keep_nearer(scored_candidates)
 
-        # Sort by total_score descending. Primary matches never mix with a fallback list.
-        scored_candidates.sort(key=lambda item: item[1].total_score, reverse=True)
+        # Score already includes live distance, seats, and type fit. Free teams rank above a soon-free team.
+        scored_candidates.sort(
+            key=lambda item: item[1].total_score - (8 if item[3] == "soon_free" else 0),
+            reverse=True,
+        )
         top_candidates = scored_candidates[:top_n]
         fallback_label = _fallback_label(request.type) if using_fallback else None
         wait_minutes, wait_team_name = (None, None)
@@ -94,7 +105,7 @@ class MatchingAgent:
             wait_minutes, wait_team_name = _nearest_finish(request, resources)
 
         proposals: List[MatchProposal] = []
-        for res, breakdown, is_fallback in top_candidates:
+        for res, breakdown, is_fallback, kind in top_candidates:
             # Check if there is an existing match in storage
             existing = [
                 m
@@ -153,6 +164,7 @@ class MatchingAgent:
                     no_nearby=breakdown.distance_km > NEARBY_KM,
                     wait_minutes=wait_minutes if is_fallback else None,
                     wait_team_name=wait_team_name if is_fallback else None,
+                    soon_free=(kind == "soon_free"),
                 )
             )
 

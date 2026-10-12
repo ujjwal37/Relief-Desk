@@ -34,6 +34,18 @@ describe('CoordinatorTeamsComponent', () => {
     expect(cmp.filtered().map((t) => t.id)).toEqual(['b1']);
     expect(cmp.stale(rows[1])).toBeTrue();
     expect(cmp.stale(rows[0])).toBeFalse();
+    const quiet = {
+      ...rows[0],
+      status: 'dispatched' as const,
+      location_source: 'gps' as const,
+      location_updated_at: old,
+      status_changed_at: old,
+      busy_since: old,
+    };
+    expect(cmp.checkIn(quiet)).toBeTrue();
+    expect(cmp.busyMinutes(quiet)).toBeGreaterThanOrEqual(10);
+    expect(cmp.positionStale(quiet)).toBeTrue();
+    expect(cmp.lastSeen(quiet)).toContain('Last seen');
   });
 
   it('saves a manual location', () => {

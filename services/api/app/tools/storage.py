@@ -434,8 +434,14 @@ class StorageService:
         res.location_updated_at = datetime.now(timezone.utc).isoformat()
         res.updated_at = res.location_updated_at
         res.simulated = False
+        res.location_source = "coordinator"
         res.sim_step = 0
         self._append_trail(res)
+        try:
+            from app.tracking.simulate import disarm
+            disarm(resource_id)
+        except Exception:
+            logger.debug("No demo route to stop for %s", resource_id)
         self._resources[resource_id] = res
         self.record_audit(
             actor=actor, action="location_update", target=resource_id, before=before, after=res.model_dump()
@@ -490,9 +496,13 @@ class StorageService:
             lat=res.lat,
             lng=res.lng,
             at=res.location_updated_at or datetime.now(timezone.utc).isoformat(),
+            accuracy=res.accuracy_m,
+            heading=res.heading,
+            speed=res.speed_mps,
+            source=res.location_source or "seed",
         ))
-        if len(res.location_trail) > 40:
-            res.location_trail = res.location_trail[-40:]
+        if len(res.location_trail) > 50:
+            res.location_trail = res.location_trail[-50:]
 
     def team_action(self, resource_id: str, action: str, actor: str = "team") -> StoredResource:
         """Field confirmation: at the scene, job done, or back in the pool."""
@@ -647,9 +657,12 @@ class StorageService:
             assigned.assigned_request_id = req.id
             if not assigned.location_updated_at:
                 assigned.location_updated_at = assigned.updated_at
+            assigned.busy_since = datetime.now(timezone.utc).isoformat()
+            assigned.status_changed_at = assigned.busy_since
             self._resources[assigned.id] = assigned
-            if req.lat is not None and req.lng is not None:
-                self.begin_simulation(assigned.id, req.lat, req.lng)
+            if settings.DEMO_MODE and req.lat is not None and req.lng is not None:
+                from app.tracking.simulate import arm_demo_route
+                arm_demo_route(assigned.id, req.lat, req.lng)
 
         before = match.model_dump()
         match.state = MatchState.APPROVED
@@ -683,7 +696,7 @@ class StorageService:
         )
         return match
 
-    def mark_arrived(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
+    def mark_arrived(self, request_id: str, actor: str = "coordinator", keep_position: bool = False) -> StoredRequest:
         """Coordinator marks the team on scene. Audited. Does not change capacity."""
         req = self._requests.get(request_id)
         if not req:
@@ -698,14 +711,16 @@ class StorageService:
         resource_id = req.assigned_resource_id
         res = self._resources.get(resource_id) if resource_id else None
         if res:
-            res.simulated = False
             res.status = ResourceStatus.ON_SCENE
-            if req.lat is not None and req.lng is not None:
-                res.lat = req.lat
-                res.lng = req.lng
-            res.location_updated_at = req.updated_at
+            res.status_changed_at = req.updated_at
+            if not keep_position:
+                res.simulated = False
+                if req.lat is not None and req.lng is not None:
+                    res.lat = req.lat
+                    res.lng = req.lng
+                res.location_updated_at = req.updated_at
+                self._append_trail(res)
             res.updated_at = req.updated_at
-            self._append_trail(res)
             self._resources[res.id] = res
         return req
 
@@ -883,6 +898,11 @@ class StorageService:
 
     def reset_demo(self) -> Dict[str, Any]:
         """Clear in-memory cases and reload the synthetic Kerala pack. The audit log stays append-only."""
+        try:
+            from app.tracking.simulate import disarm_all
+            disarm_all()
+        except Exception:
+            logger.debug("Demo routes were not armed")
         self._reports.clear()
         self._requests.clear()
         self._clusters.clear()

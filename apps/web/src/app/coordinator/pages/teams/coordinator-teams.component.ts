@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiClientService, LanguageService, RdTranslatePipe, StoredResource } from '@rd/shared';
@@ -26,7 +26,7 @@ const AREAS: Record<string, string> = {
   styleUrl: './coordinator-teams.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CoordinatorTeamsComponent implements OnInit {
+export class CoordinatorTeamsComponent implements OnInit, OnDestroy {
   private api = inject(ApiClientService);
   private lang = inject(LanguageService);
 
@@ -46,7 +46,18 @@ export class CoordinatorTeamsComponent implements OnInit {
     });
   });
 
+  private timer: ReturnType<typeof setInterval> | null = null;
+
   ngOnInit(): void {
+    this.reload();
+    this.timer = setInterval(() => this.reload(), 5000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.timer) clearInterval(this.timer);
+  }
+
+  reload(): void {
     this.api.getResources().subscribe({
       next: (rows) => this.resources.set(rows),
       error: () => this.resources.set([]),
@@ -59,7 +70,14 @@ export class CoordinatorTeamsComponent implements OnInit {
   }
 
   statusLabel(team: StoredResource): string {
-    return this.lang.translate(`coord.resStatus.${this.statusKey(team)}`);
+    const key = team.status === 'dispatched' || team.status === 'busy' ? 'busy'
+      : team.status === 'en_route' ? 'onTheWay'
+      : team.status === 'on_scene' ? 'arrived'
+      : team.status === 'available' ? 'free'
+      : team.status === 'off_duty' ? 'offDuty'
+      : team.status === 'accepted' ? 'accepted'
+      : 'free';
+    return this.lang.translate(`track.status.${key}`);
   }
 
   kindLabel(kind: string): string {
@@ -86,6 +104,40 @@ export class CoordinatorTeamsComponent implements OnInit {
 
   stale(team: StoredResource): boolean {
     return this.minutesAgo(team) >= 20;
+  }
+
+  positionStale(team: StoredResource): boolean {
+    if (!team.location_source || team.location_source === 'seed') return false;
+    return this.minutesAgo(team) >= 2;
+  }
+
+  checkIn(team: StoredResource): boolean {
+    const busy = ['dispatched', 'busy', 'accepted', 'en_route', 'on_scene', 'returning'].includes(team.status);
+    if (!busy) return false;
+    const stamps = [team.location_updated_at, team.status_changed_at].filter(Boolean) as string[];
+    if (!stamps.length) return true;
+    const newest = Math.max(...stamps.map((stamp) => new Date(stamp).getTime()));
+    return Date.now() - newest >= 10 * 60 * 1000;
+  }
+
+  busyMinutes(team: StoredResource): number | null {
+    const busy = ['dispatched', 'busy', 'accepted', 'en_route', 'on_scene', 'returning'].includes(team.status);
+    if (!busy || !team.busy_since) return null;
+    return Math.max(0, Math.round((Date.now() - new Date(team.busy_since).getTime()) / 60000));
+  }
+
+  busyLabel(team: StoredResource): string {
+    const minutes = this.busyMinutes(team);
+    if (minutes == null) return '';
+    return this.lang.translate('track.busyFor').replace('{n}', String(minutes));
+  }
+
+  lastSeen(team: StoredResource): string {
+    const stamp = team.location_updated_at;
+    if (!stamp) return this.lang.translate('track.unseen');
+    const parsed = new Date(stamp);
+    if (Number.isNaN(parsed.getTime())) return this.lang.translate('track.unseen');
+    return this.lang.translate('track.lastSeen').replace('{time}', parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   }
 
   canDo(team: StoredResource): string {

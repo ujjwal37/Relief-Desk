@@ -16,6 +16,9 @@ import {
   PublicAlert,
   AnomalyAlert,
   ReportStatusResponse,
+  TeamFix,
+  TeamLive,
+  CitizenTrack,
 } from '../models/request.model';
 import { AuthService } from './auth.service';
 
@@ -169,6 +172,29 @@ export class ApiClientService {
 
   shareTeamLocation(id: string, lat: number, lng: number): Observable<StoredResource> {
     return this.http.post<StoredResource>(`/api/team/${id}/location`, { lat, lng });
+  }
+
+  postTeamLocation(id: string, fix: TeamFix): Observable<StoredResource> {
+    return this.http.post<StoredResource>(`/api/teams/${id}/location`, fix);
+  }
+
+  postTeamStatus(id: string, body: { action: string; token?: string; people_helped?: number; needs_follow_up?: boolean }): Observable<StoredResource> {
+    return this.http.post<StoredResource>(`/api/teams/${id}/status`, body);
+  }
+
+  overrideTeamStatus(id: string, status: string, reason: string): Observable<StoredResource> {
+    return this.http.post<StoredResource>(`/api/teams/${id}/override`, { status, reason }, this.getAuthHeaders());
+  }
+
+  getTeamLocations(): Observable<{ teams: TeamLive[] }> {
+    return this.http.get<{ teams: TeamLive[] }>('/api/teams/locations', this.getAuthHeaders());
+  }
+
+  getCitizenTrack(reportId: string, token?: string): Observable<CitizenTrack> {
+    const url = token
+      ? `/api/reports/${reportId}/tracking?token=${encodeURIComponent(token)}`
+      : `/api/reports/${reportId}/tracking`;
+    return this.http.get<CitizenTrack>(url);
   }
 
   getResources(kind?: string): Observable<StoredResource[]> {

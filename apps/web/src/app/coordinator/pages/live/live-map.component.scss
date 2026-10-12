@@ -1,0 +1,39 @@
+:host { display:block; height:100%; overflow:auto; background:var(--bg); color:var(--text); }
+.live { padding:16px; }
+header h1 { margin:0; font-size:28px; }
+header p { margin:4px 0 12px; color:var(--text-2); }
+.note { color:var(--brand); font-weight:700; }
+.layout { display:grid; grid-template-columns:320px 1fr; gap:12px; align-items:start; }
+.side, .map-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; }
+.side { padding:12px; max-height:calc(100vh - 140px); overflow:auto; }
+.side h2 { margin:8px 0; font-size:16px; }
+.side ul { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+.row { width:100%; text-align:left; display:grid; gap:2px; min-height:44px; padding:8px 10px; border-radius:12px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); }
+.row.on { border-color:var(--brand); background:var(--brand-tint); }
+.badge { color:var(--sos-text); }
+.soon { color:var(--amber); }
+.override { display:grid; gap:8px; margin:6px 0 10px; }
+.override input, .override select { min-height:40px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); padding:0 8px; }
+.override button { min-height:40px; border-radius:10px; border:1px solid var(--border); background:var(--brand); color:var(--on-brand); font-weight:800; }
+.map-card { min-height:480px; position:relative; overflow:hidden; }
+.svgmap { width:100%; height:520px; display:block; }
+.district { fill:var(--map-water); stroke:var(--border); }
+.dlabel { fill:var(--text-2); font-size:12px; font-weight:700; }
+.link { stroke:var(--blue); stroke-dasharray:5 4; }
+.kind.boat { fill:var(--brand); }
+.kind.medical { fill:var(--sos); }
+.kind.food { fill:var(--amber); }
+.kind.shelter { fill:var(--green); }
+.badge { fill:var(--sos-text); font-size:11px; font-weight:800; }
+.legend { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:8px 12px; border-top:1px solid var(--border); color:var(--text-2); font-size:13px; }
+.sw { width:12px; height:12px; border-radius:3px; display:inline-block; margin-right:4px; }
+.sw.boat { background:var(--brand); }
+.sw.medical { background:var(--sos); }
+.sw.food { background:var(--amber); }
+.sw.shelter { background:var(--green); }
+.sw.case { background:var(--sos); border-radius:50%; }
+@media (max-width: 800px) {
+  .layout { grid-template-columns:1fr; }
+  .side { max-height:none; }
+  .svgmap { height:360px; }
+}

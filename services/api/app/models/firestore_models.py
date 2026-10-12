@@ -123,12 +123,18 @@ class ResourceStatus(str, Enum):
     ON_SCENE = "on_scene"
     RETURNING = "returning"
     DEPLETED = "depleted"
+    ACCEPTED = "accepted"
+    OFF_DUTY = "off_duty"
 
 
 class LocationPoint(BaseModel):
     lat: float
     lng: float
     at: str
+    accuracy: Optional[float] = None
+    heading: Optional[float] = None
+    speed: Optional[float] = None
+    source: str = "seed"
 
 
 class StoredResource(BaseModel):
@@ -150,6 +156,12 @@ class StoredResource(BaseModel):
     assigned_request_id: Optional[str] = None
     area_name: Optional[str] = None
     simulated: bool = False
+    location_source: str = "seed"
+    heading: Optional[float] = None
+    speed_mps: Optional[float] = None
+    accuracy_m: Optional[float] = None
+    status_changed_at: Optional[str] = None
+    busy_since: Optional[str] = None
     location_trail: List[LocationPoint] = Field(default_factory=list)
     sim_origin_lat: Optional[float] = None
     sim_origin_lng: Optional[float] = None

@@ -15,7 +15,7 @@ from google.adk.tools import FunctionTool
 from app.config import settings
 from app.llm.client import llm_client
 from app.llm.guards import strip_advice
-from app.models.firestore_models import ResourceStatus, StoredRequest
+from app.models.firestore_models import StoredRequest
 from app.models.schemas import IncidentType
 from app.tools.scoring import scoring_engine
 from app.tools.storage import storage_service
@@ -43,11 +43,13 @@ def score_urgency(people_count: int, incident_type: str, child: bool = False, el
 
 
 def check_capacity(kind: str) -> dict:
-    """How many teams of this kind are free. Does not reserve or dispatch."""
+    """How many teams of this kind are free with a fresh position. Does not reserve or dispatch."""
+    from app.tracking.availability import candidate_kind
+
     wanted = (kind or "boat").lower()
     free = [
         res for res in storage_service.list_resources()
-        if res.kind.value == wanted and res.status == ResourceStatus.AVAILABLE and (res.capacity_remaining or 0) > 0
+        if res.kind.value == wanted and candidate_kind(res) == "free" and (res.capacity_remaining or 0) > 0
     ]
     return {"kind": wanted, "available": len(free), "dispatched": False}
 
