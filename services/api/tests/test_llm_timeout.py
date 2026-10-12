@@ -29,6 +29,7 @@ def test_hanging_gemini_falls_back_within_15s(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "GEMINI_TIMEOUT_S", 2.0)
     monkeypatch.setattr("app.llm.client.CACHE_DIR", tmp_path)
     monkeypatch.setattr(llm_client.guard, "circuit_open", lambda: False)
+    monkeypatch.setattr(llm_client.guard, "failures", 0)
     monkeypatch.setattr(llm_client.guard, "sleep", lambda s: None)
     release = threading.Event()
     seen = {}

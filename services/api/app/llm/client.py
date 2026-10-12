@@ -33,6 +33,17 @@ def _is_quota(exc: BaseException) -> bool:
     return "429" in text or "resource_exhausted" in text or "quota" in text
 
 
+def _is_transient(exc: BaseException) -> bool:
+    """503 high demand, 504 deadline, or 500: worth one short retry. Not 429 and not our own timeout."""
+    if isinstance(exc, TimeoutError) or _is_quota(exc):
+        return False
+    status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
+    if status in (500, 503, 504):
+        return True
+    text = str(exc)
+    return text.startswith(("500", "503", "504")) or "UNAVAILABLE" in text or "DEADLINE_EXCEEDED" in text
+
+
 class LLMClient:
     def __init__(self):
         self.call_count = 0
@@ -218,7 +229,7 @@ class LLMClient:
         try:
             while True:
                 self.call_count += 1
-                text = self._call_gemini(system_instruction, current_prompt)
+                text = self._call_with_retry(system_instruction, current_prompt)
                 if validator:
                     try:
                         validator(text)
@@ -251,6 +262,18 @@ class LLMClient:
                 self.guard.backoff(0)
             logger.error("Live Gemini call failed (%s). Falling back.", exc)
             return self._fallback(user_prompt, reason, started)
+
+    def _call_with_retry(self, system_instruction: str, user_prompt: str) -> str:
+        """One live call, plus a single short retry on a transient 503/504/500."""
+        try:
+            return self._call_gemini(system_instruction, user_prompt)
+        except Exception as exc:
+            if not _is_transient(exc):
+                raise
+            logger.warning("Gemini transient error (%s). Retrying once.", str(exc)[:80])
+            self.guard.sleep(1.0)
+            self.call_count += 1
+            return self._call_gemini(system_instruction, user_prompt)
 
     def _make_genai_client(self, timeout_s: float):
         """Build the SDK client with an HTTP timeout so a stuck request cannot hold a slot forever."""
