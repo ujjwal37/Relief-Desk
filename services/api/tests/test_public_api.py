@@ -148,6 +148,42 @@ def test_submitted_report_status_lifecycle():
     assert "Paani bohot tez" not in raw_str  # Raw report text not exposed in public status
 
 
+def test_approved_status_uses_the_match_distance_and_eta():
+    """The reporter sees the same kilometres and minutes as the coordinator card."""
+    from app.agents.matching import matching_agent
+    from app.api.public import _format_km
+
+    submit_res = client.post(
+        "/api/reports",
+        json={
+            "text": "4 people on a roof at Champakulam School need a boat.",
+            "channel": "text",
+            "lang": "en",
+            "idempotency_key": "idem_status_eta_match",
+            "location_pin": {"lat": 9.416, "lng": 76.411},
+            "scenario_id": "flood",
+        },
+    )
+    assert submit_res.status_code == 200
+    body = submit_res.json()
+    report = storage_service.get_report(body["report_id"])
+    assert report is not None and report.request_id
+    req = storage_service.get_request(report.request_id)
+    assert req is not None
+    proposals = matching_agent.find_matches(req, top_n=1)
+    assert proposals, "a nearby team should be proposed"
+    best = proposals[0]
+    assert best.eta_minutes is not None
+    storage_service.approve_match(best.match_id, approved_by="coordinator_lead")
+
+    status_res = client.get(f"/api/reports/{body['report_id']}/status?token={body['status_token']}")
+    assert status_res.status_code == 200
+    data = status_res.json()
+    assert data["eta_minutes"] == best.eta_minutes
+    assert data["eta_display"] == f"{_format_km(best.breakdown.distance_km)} km · about {best.eta_minutes} min"
+    assert "~12" not in data["eta_display"]
+
+
 def test_report_status_not_found():
     response = client.get("/api/reports/nonexistent_99999/status?token=bad_token")
     assert response.status_code == 404

@@ -11,7 +11,8 @@ from app.models.public_models import (
     ReportStatusResponse,
     StatusTimelineStep,
 )
-from app.models.firestore_models import RequestStatus, StoredReport, StoredRequest
+from app.agents.matching import NEARBY_KM, eta_for_distance
+from app.models.firestore_models import MatchState, RequestStatus, StoredReport, StoredRequest
 from app.tools.storage import storage_service
 from app.tools.geo import grid_cell_id
 
@@ -22,6 +23,33 @@ def public_code_for(report_id: str) -> str:
     """Stable short id such as RD-1042. The internal id and token stay unchanged."""
     digest = int(hashlib.sha256(report_id.encode("utf-8")).hexdigest()[:6], 16)
     return f"RD-{1000 + (digest % 9000)}"
+
+
+def _format_km(km: float) -> str:
+    text = f"{km:.2f}".rstrip("0").rstrip(".")
+    return text or "0"
+
+
+def reporter_leg(req: Optional[StoredRequest]) -> tuple[Optional[int], str]:
+    """Distance and minute quote for the team the coordinator card would show."""
+    if req is None:
+        return None, ""
+    matches = storage_service.list_matches_for_request(req.id)
+    chosen = None
+    if req.assigned_resource_id:
+        chosen = next((row for row in matches if row.resource_id == req.assigned_resource_id), None)
+    if chosen is None:
+        approved_rows = [row for row in matches if row.state == MatchState.APPROVED]
+        pool = approved_rows or list(matches)
+        if pool:
+            chosen = max(pool, key=lambda row: row.score)
+    if chosen is None:
+        return None, ""
+    km = chosen.breakdown.distance_km
+    minutes = eta_for_distance(km)
+    if km > NEARBY_KM or minutes is None or minutes > 90:
+        return None, ""
+    return minutes, f"{_format_km(km)} km · about {minutes} min"
 
 
 # Canned status only for these ids. A token that merely contains "demo" is not enough.
@@ -288,7 +316,7 @@ def get_report_status(
     on_way_state = "done" if fulfilled or arrived else ("current" if approved else "pending")
     fulfilled_state = "done" if fulfilled else "pending"
     assigned_at = req.updated_at if req and approved else None
-    eta_minutes = 12 if approved and not fulfilled else None
+    eta_minutes, eta_display = reporter_leg(req) if approved and not fulfilled else (None, "")
     hero_title = (
         "status.heroDone" if fulfilled
         else "coord.resStatus.on_scene" if arrived
@@ -339,7 +367,7 @@ def get_report_status(
         hero_title=hero_title,
         hero_subtitle=code,
         eta_minutes=eta_minutes,
-        eta_display="~12 min" if eta_minutes else "",
+        eta_display=eta_display,
         delivery_status="status.delivered" if fulfilled else ("status.onway" if approved else "status.waiting"),
         timeline=timeline,
         while_you_wait_tips=[

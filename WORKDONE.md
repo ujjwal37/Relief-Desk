@@ -1001,3 +1001,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng test web --include agent-trace-drawer.component.spec.ts` — 2 passed. Playwright core-flow, first-pass, and agents-visible run after this commit.
 - Notes / risks / not done: The case card can still say Offline fallback. That label is the case-level source, not the trace header.
 - Next (suggested task id): UX8-06
+
+### 2026-10-13 00:20 IST — UX8-06 — Cursor
+- What changed: After a coordinator approves, the reporter status uses that team's distance and the same minute quote as the case card (20 km/h, no quote past 30 km). The fixed ~12 min is gone. The canned R-0412 demo status still says ~18 min.
+- Files: services/api/app/api/public.py, services/api/tests/test_public_api.py
+- How verified: `pytest tests/test_public_api.py` — 8 passed. Playwright core-flow, first-pass, and agents-visible run after this commit.
+- Notes / risks / not done: The quote is English ("1.2 km · about 4 min") on the status page, matching the English case card. A team with no stored match still has no ETA.
+- Next (suggested task id): UX8-07
