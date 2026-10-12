@@ -155,7 +155,9 @@ A timeout, a 429, or invalid JSON after one repair retry uses the deterministic 
 
 ## Deploy
 
-There is no live Cloud Run URL in this repo. `deploy/cloudrun.md` is the recipe: a root `Dockerfile`, `GEMINI_API_KEY` injected from Secret Manager as an environment variable, and the note that case rows stay in process memory. Firestore is not the store this process writes.
+There is no live Cloud Run URL in this repo. `deploy/cloudrun.md` is the recipe a human runs after they supply a GCP project and secrets: root `Dockerfile` on `$PORT`, Cloud Run in `asia-south1`, Secret Manager mounts for `GEMINI_API_KEY`, `JWT_SECRET`, and `GOOGLE_MAPS_API_KEY`, and Firebase Hosting (`dist/web/browser`) rewriting `/api/**` and `/healthz` to that service. Case rows stay in process memory. Firestore is not the store this process writes.
+
+When that deploy has actually happened, replace `<URL to add>` above with the Firebase Hosting URL (`https://PROJECT_ID.web.app`). Leave this placeholder until then. Do not record the `*.run.app` service URL as the public demo.
 
 ## Built with
 
