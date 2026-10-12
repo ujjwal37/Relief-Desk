@@ -96,6 +96,28 @@ def extract_place(text: str) -> Optional[str]:
     return None
 
 
+_EN_NUMBER_WORDS = {
+    "a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "twelve": 12,
+}
+_EN_GROUP_NOUNS = (
+    r"elderly|old\s+(?:people|persons|men|women)|seniors?|child(?:ren)?|kids?|babies|baby|infants?"
+    r"|people|persons|adults?|women|woman|men|man|girls?|boys?|patients?|students?|family\s+members"
+)
+
+
+def _group_people_count(text: str) -> Optional[int]:
+    """Add up groups such as '2 elderly and a child' (3). None when no group is named."""
+    total = 0
+    found = False
+    pattern = rf"(?<![\w])(\d+|{'|'.join(_EN_NUMBER_WORDS)})\s+(?:{_EN_GROUP_NOUNS})(?!\w)"
+    for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+        token = match.group(1).lower()
+        total += int(token) if token.isdigit() else _EN_NUMBER_WORDS[token]
+        found = True
+    return total if found and total > 0 else None
+
+
 def people_count(text: str) -> Optional[int]:
     if not text:
         return None
@@ -107,6 +129,9 @@ def people_count(text: str) -> Optional[int]:
     )
     if match:
         return int(match.group(1))
+    grouped = _group_people_count(normalized)
+    if grouped:
+        return grouped
     for word, count in _TA_NUMBER_WORDS:
         if re.search(rf"{word}\s*(?:பேர்|பேர்கள்|நபர்|நபர்கள்)", text):
             return count
