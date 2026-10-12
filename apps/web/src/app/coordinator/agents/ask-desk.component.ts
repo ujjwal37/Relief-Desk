@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
@@ -34,9 +34,14 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
   imports: [FormsModule, RdTranslatePipe, TraceStepComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="ask-desk card" aria-labelledby="ask-desk-h">
+    <section class="ask-desk card" [class.page]="fullPage()" aria-labelledby="ask-desk-h">
       <h2 id="ask-desk-h">{{ 'ux.deskTitle' | rdTranslate }}</h2>
       <p class="hint">{{ 'ux.deskHint' | rdTranslate }}</p>
+      <div class="suggestions">
+        @for (key of suggestions; track key) {
+          <button type="button" (click)="useSuggestion(key)">{{ key | rdTranslate }}</button>
+        }
+      </div>
       <form class="row" (ngSubmit)="ask()">
         <input
           name="q"
@@ -106,17 +111,27 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .sum { flex-basis: 100%; font-size: .82rem; }
     .link { background: none; border: 0; padding: 6px 0; text-decoration: underline; cursor: pointer; font: inherit; font-size: .8rem; }
     .err { color: #b3261e; }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+    .suggestions button { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(0,0,0,.2); background: transparent; cursor: pointer; font: inherit; }
+    .page .cards, .page .trace { max-height: none; }
   `],
 })
 export class AskDeskComponent {
   private readonly api = inject(ApiClientService);
   private readonly lang = inject(LanguageService);
+  readonly fullPage = input(false);
   readonly picked = output<string>();
+  readonly suggestions = ['ux.suggestWaiting', 'ux.suggestElderly', 'ux.suggestBoats'];
   readonly busy = signal(false);
   readonly error = signal(false);
   readonly answer = signal<DeskAnswer | null>(null);
   readonly showTrace = signal(false);
   question = '';
+
+  useSuggestion(key: string): void {
+    this.question = this.lang.translate(key);
+    this.ask();
+  }
 
   ask(): void {
     const q = this.question.trim();

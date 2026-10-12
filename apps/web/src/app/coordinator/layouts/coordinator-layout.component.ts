@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService, LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, ThemeMode, ThemeService } from '@rd/shared';
 import { ScenarioService } from '../../core/services/scenario.service';
 import { CoordUiService } from '../../core/services/coord-ui.service';
@@ -32,6 +33,12 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' }, { m: 'system', k: 'settings.themeSystem' },
   ];
   readonly initial = computed(() => (this.authService.currentUser()?.email || 'D').charAt(0).toUpperCase());
+  readonly path = signal('');
+  readonly dispatchedOn = computed(() => /(?:\?|&)status=dispatched(?:&|$)/.test(this.path()));
+  readonly casesOn = computed(() => {
+    const path = this.path().split('?')[0];
+    return (path === '/coordinator/command' || path.startsWith('/coordinator/command/')) && !this.dispatchedOn();
+  });
 
   private media?: MediaQueryList;
   private onMedia = (event: MediaQueryListEvent): void => { this.wideEnough.set(event.matches); };
@@ -43,7 +50,10 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.wideEnough.set(this.media.matches);
     this.media.addEventListener('change', this.onMedia);
     const sub = this.route.queryParamMap.subscribe((params) => { this.demoOn.set(params.get('demo') === '1'); });
-    this.stopQuery = () => sub.unsubscribe();
+    this.path.set(this.router.url);
+    const nav = this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(() => this.path.set(this.router.url));
+    this.stopQuery = () => { sub.unsubscribe(); nav.unsubscribe(); };
     this.scenarioService.ensureLoaded();
     this.ui.loadAlerts();
     this.syncCompactNav();

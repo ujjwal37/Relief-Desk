@@ -28,7 +28,6 @@
       @if (assist().proposals.length) {
         <app-assist-banner [count]="assist().proposals.length" (review)="assistOpen.set(true)" />
       }
-      <app-ask-desk (picked)="selectRequest($event, true)" />
       <div class="cases-head">
         <h1 id="cases-h">{{ 'coord.cases' | rdTranslate }}</h1>
         <span class="sort">{{ 'coord.sorted' | rdTranslate }}</span>

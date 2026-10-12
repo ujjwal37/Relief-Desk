@@ -20,3 +20,4 @@ header p, footer p { margin: 4px 0 0; font-size: 13px; color: var(--text-2); }
 .parallel { border: 1px dashed var(--border); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
 .parallel p { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-2); }
 footer { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+footer .word { font: 700 12px/1 var(--rd-font-family); padding: 6px 8px; border-radius: 999px; background: var(--surface-2); }

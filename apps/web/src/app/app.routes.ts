@@ -10,6 +10,10 @@ export const routes: Routes = [
     loadComponent: () => import('./landing/landing.component').then(m => m.LandingComponent),
   },
   {
+    path: 'report-preview',
+    loadComponent: () => import('./landing/report-preview.component').then(m => m.ReportPreviewComponent),
+  },
+  {
     path: '',
     loadChildren: () => import('./public/public.routes').then(m => m.PUBLIC_ROUTES),
   },

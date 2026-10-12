@@ -13,32 +13,31 @@
       <span>{{ ('ux.status' + (step().status === 'done' ? 'Done' : step().status === 'running' ? 'Running' : step().status === 'waiting' ? 'Waiting' : step().status === 'fallback' ? 'Fallback' : 'Error')) | rdTranslate }}</span>
     </span>
     <h3>{{ nameKey() | rdTranslate }}</h3>
+    <span class="badge">{{ badgeWord() }}</span>
   </div>
-  <p class="out">{{ step().output || ('ux.notRecorded' | rdTranslate) }}</p>
-  <p class="meta">
-    <span>{{ 'ux.model' | rdTranslate }}</span> {{ modelText() }}
-    <span>{{ 'ux.time' | rdTranslate }}</span>
-    {{ timeText() || ('ux.notRecorded' | rdTranslate) }}
-  </p>
+  @if (step().output) { <p class="out">{{ step().output }}</p> }
+  @if (timeText()) {
+    <p class="meta"><span>{{ 'ux.time' | rdTranslate }}</span> {{ timeText() }}</p>
+  }
   @if (step().status === 'fallback' && step().note) { <p class="note">{{ step().note }}</p> }
   @if (step().status === 'error') {
-    <p class="note">{{ step().note || ('ux.notRecorded' | rdTranslate) }}</p>
+    @if (step().note) { <p class="note">{{ step().note }}</p> }
     <button type="button" class="retry" (click)="retry.emit()">{{ 'ux.retry' | rdTranslate }}</button>
   }
   <button type="button" class="details" [attr.aria-expanded]="open()" (click)="toggled.emit()">
     {{ (open() ? 'ux.hideDetails' : 'ux.showDetails') | rdTranslate }}
   </button>
   @if (open()) {
-    <p class="line"><span>{{ 'ux.input' | rdTranslate }}</span> {{ step().input || ('ux.notRecorded' | rdTranslate) }}</p>
-    <div class="tools">
-      <span>{{ 'ux.tools' | rdTranslate }}</span>
-      @if (step().tools.length) {
+    @if (step().input) { <p class="line"><span>{{ 'ux.input' | rdTranslate }}</span> {{ step().input }}</p> }
+    @if (step().tools.length) {
+      <div class="tools">
+        <span>{{ 'ux.tools' | rdTranslate }}</span>
         @for (tool of step().tools; track tool) { <code>{{ tool }}</code> }
-      } @else {
-        <em>{{ 'ux.noTools' | rdTranslate }}</em>
-      }
-    </div>
-    <p class="line"><span>{{ 'ux.asked' | rdTranslate }}</span> {{ step().asked || ('ux.notRecorded' | rdTranslate) }}</p>
-    <pre class="raw">{{ step().raw || ('ux.notRecorded' | rdTranslate) }}</pre>
+      </div>
+    }
+    @if (step().asked && step().asked !== step().input) {
+      <p class="line"><span>{{ 'ux.asked' | rdTranslate }}</span> {{ step().asked }}</p>
+    }
+    @if (step().raw && step().raw !== step().output) { <pre class="raw">{{ step().raw }}</pre> }
   }
 </article>

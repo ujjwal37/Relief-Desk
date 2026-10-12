@@ -2,11 +2,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LandingComponent } from './landing/landing.component';
 import { PublicLayoutComponent } from './public/layouts/public-layout.component';
-import { LanguageSwitcherComponent } from '@rd/shared';
+import { LanguageService, LanguageSwitcherComponent } from '@rd/shared';
 import { of } from 'rxjs';
 import { ApiClientService } from '@rd/shared';
 
 describe('tap targets and language layouts', () => {
+  afterEach(() => {
+    TestBed.inject(LanguageService).setLanguage('en');
+  });
   it('language chips are at least 48px tall', async () => {
     await TestBed.configureTestingModule({
       imports: [LanguageSwitcherComponent],

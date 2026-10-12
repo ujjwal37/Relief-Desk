@@ -15,6 +15,18 @@ test.beforeAll(() => {
   fs.mkdirSync(SHOTS, { recursive: true });
 });
 
+async function clickCoordLink(page: Page, name: string): Promise<void> {
+  const nav = page.locator('nav.tabs').getByRole('link', { name, exact: true });
+  if (await nav.count() && await nav.isVisible()) {
+    await nav.click();
+    return;
+  }
+  const more = page.getByRole('button', { name: 'More' });
+  if (await more.isVisible()) await more.click();
+  else await page.getByRole('button', { name: 'Account menu' }).click();
+  await page.locator('.menu').getByRole('link', { name }).click();
+}
+
 async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SHOTS, `${name}.png`) });
 }
@@ -176,17 +188,17 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByRole('option', { name: new RegExp(marker) })).toBeVisible();
       await shot(page, `${viewport.name}-completed`);
 
-      await page.getByRole('link', { name: 'Teams' }).click();
+      await clickCoordLink(page, 'Teams');
       await expect(page.getByRole('heading', { name: 'Teams' })).toBeVisible();
       await expect(page.getByText(/boat|Naav|medical|Simulated|Nakli/i).first()).toBeVisible();
       await shot(page, `${viewport.name}-teams`);
 
-      await page.getByRole('link', { name: 'Alerts' }).click();
+      await clickCoordLink(page, 'Alerts');
       await expect(page.getByRole('heading', { name: 'Alerts' })).toBeVisible();
       await expect(page.getByText('Resource gap').first()).toBeVisible();
       await shot(page, `${viewport.name}-alerts`);
 
-      await page.getByRole('link', { name: 'Accuracy report' }).click();
+      await clickCoordLink(page, 'Accuracy report');
       await expect(page.getByRole('heading', { name: 'Accuracy report' })).toBeVisible();
       await expect(page.getByText('First come, first served').first()).toBeVisible();
       await expect(page.getByText('Synthetic reports, our own labels')).toBeVisible();

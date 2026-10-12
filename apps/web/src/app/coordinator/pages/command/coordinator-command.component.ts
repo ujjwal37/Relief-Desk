@@ -20,7 +20,6 @@ import { AnalysingCardComponent } from '../../agents/analysing-card.component';
 import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
-import { AskDeskComponent } from '../../agents/ask-desk.component';
 import { LIVE_CHANNEL } from '../../../core/live-report';
 import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
@@ -73,7 +72,6 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
     AssistBannerComponent,
     AssistPanelComponent,
     MergedChipComponent,
-    AskDeskComponent,
   ],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
@@ -844,6 +842,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       this.areaFilter.set(params.get('area') || 'all');
       const time = params.get('time');
       if (time === 'hour' || time === 'today' || time === 'all') this.timeFilter.set(time);
+      const focus = params.get('case');
+      if (focus && focus !== this.selectedRequestId()) {
+        this.focusRequestId = focus;
+        if (this.requests().some((row) => row.id === focus)) this.selectRequest(focus, true);
+      }
     });
   }
 

@@ -36,6 +36,18 @@ async function noHorizontalOverflow(page: Page): Promise<void> {
   expect(overflow).toBeLessThanOrEqual(2);
 }
 
+async function clickCoordLink(page: Page, name: string): Promise<void> {
+  const nav = page.locator('nav.tabs').getByRole('link', { name, exact: true });
+  if (await nav.count() && await nav.isVisible()) {
+    await nav.click();
+    return;
+  }
+  const more = page.getByRole('button', { name: 'More' });
+  if (await more.isVisible()) await more.click();
+  else await page.getByRole('button', { name: 'Account menu' }).click();
+  await page.locator('.menu').getByRole('link', { name }).click();
+}
+
 async function login(page: Page): Promise<void> {
   await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
   await page.goto('/coordinator/login');
@@ -76,7 +88,7 @@ test.describe('agents visible', () => {
       await page.keyboard.press('Escape');
       await expect(merge).toBeHidden();
 
-      await page.getByRole('link', { name: 'Accuracy report' }).click();
+      await clickCoordLink(page, 'Accuracy report');
       await expect(page.getByRole('heading', { name: 'Accuracy report' })).toBeVisible();
       await expect(page.getByText('Not measured yet').first()).toBeVisible();
       await expect(page.getByText('gemini-3.5-flash-lite')).toBeVisible();

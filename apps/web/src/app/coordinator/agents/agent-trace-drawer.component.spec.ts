@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { StoredRequest } from '@rd/shared';
+import { LanguageService, StoredRequest } from '@rd/shared';
 import { AgentTraceDrawerComponent } from './agent-trace-drawer.component';
 
 const REQUEST = {
@@ -17,6 +17,7 @@ describe('AgentTraceDrawerComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({ imports: [AgentTraceDrawerComponent] }).compileComponents();
+    TestBed.inject(LanguageService).setLanguage('en');
     fixture = TestBed.createComponent(AgentTraceDrawerComponent);
     fixture.componentRef.setInput('request', REQUEST);
     fixture.componentRef.setInput('mobile', false);
@@ -34,7 +35,10 @@ describe('AgentTraceDrawerComponent', () => {
     expect(text).toContain('in parallel');
     expect(text).toContain('Offline fallback');
     expect(text).toContain('Not recorded');
-    expect(text).toContain('gemini-3.8-flash');
+    expect(text).toContain('Gemini');
+    expect(text).toContain('Rules');
+    expect(text).toContain('Recorded');
+    expect(text).not.toContain('gemini-3.8-flash');
     expect(fixture.nativeElement.querySelectorAll('.details').length).toBe(5);
   });
 
@@ -47,6 +51,6 @@ describe('AgentTraceDrawerComponent', () => {
     const open = Array.from(fixture.nativeElement.querySelectorAll('.details') as NodeListOf<HTMLButtonElement>)
       .filter((button) => button.getAttribute('aria-expanded') === 'true');
     expect(open.length).toBe(1);
-    expect(fixture.nativeElement.textContent).toContain('No tools');
+    expect(fixture.nativeElement.textContent).not.toContain('No tools');
   });
 });

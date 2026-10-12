@@ -49,7 +49,7 @@ test('phone report is approved and the reporter sees help on the way', async ({ 
   await approve.click();
   await expect(desk.locator('.toast')).toContainText('Dispatch Approved');
 
-  await desk.getByRole('button', { name: 'Dispatched' }).click();
+  await desk.getByRole('link', { name: 'Dispatched', exact: true }).click();
   await expect(desk.getByRole('option', { name: new RegExp(marker) })).toBeVisible();
 
   await expect(phone.getByText('A team is on the way.')).toBeVisible({ timeout: 20_000 });

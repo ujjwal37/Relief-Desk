@@ -7,12 +7,12 @@
       </a>
 
       <nav class="tabs" [class.wrap]="compactNav()" [attr.aria-label]="'ui.coordNav' | rdTranslate">
-        <a routerLink="/coordinator/command" routerLinkActive="on">{{ 'coord.cases' | rdTranslate }}</a>
-        <a routerLink="/coordinator/teams" routerLinkActive="on">{{ 'coord.teams' | rdTranslate }}</a>
-        <a routerLink="/coordinator/alerts" routerLinkActive="on">{{ 'coord.alerts' | rdTranslate }}
-          @if (ui.alerts().length) { <span class="count" aria-label="{{ ui.alerts().length }}">{{ ui.alerts().length }}</span> }
-        </a>
-        <a routerLink="/coordinator/benchmark" routerLinkActive="on">{{ 'coord.accuracy' | rdTranslate }}</a>
+        <a routerLink="/coordinator/overview" routerLinkActive="on">{{ 'coord.overview' | rdTranslate }}</a>
+        <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge" [class.on]="casesOn()">{{ 'coord.cases' | rdTranslate }}</a>
+        <a routerLink="/coordinator/command" [queryParams]="{ status: 'dispatched' }" queryParamsHandling="merge" [class.on]="dispatchedOn()">{{ 'coord.filterDispatched' | rdTranslate }}</a>
+        <a class="wide-only" routerLink="/coordinator/teams" routerLinkActive="on">{{ 'coord.teams' | rdTranslate }}</a>
+        <a routerLink="/coordinator/agent" routerLinkActive="on">{{ 'coord.agent' | rdTranslate }}</a>
+        <button type="button" class="more-tab" (click)="menuOpen.set(true)">{{ 'coord.more' | rdTranslate }}</button>
       </nav>
 
       <div class="search">
@@ -30,6 +30,11 @@
             <div class="menu-back" (click)="menuOpen.set(false)"></div>
             <div class="menu" role="menu">
               <p class="who">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</p>
+              <a class="item" routerLink="/coordinator/teams" (click)="menuOpen.set(false)">{{ 'coord.teams' | rdTranslate }}</a>
+              <a class="item" routerLink="/coordinator/alerts" (click)="menuOpen.set(false)">{{ 'coord.alerts' | rdTranslate }}
+                @if (ui.alerts().length) { <span class="count">{{ ui.alerts().length }}</span> }
+              </a>
+              <a class="item" routerLink="/coordinator/benchmark" (click)="menuOpen.set(false)">{{ 'coord.accuracy' | rdTranslate }}</a>
               <h3>{{ 'coord.scenario' | rdTranslate }}</h3>
               <div class="seg stack">
                 @for (pack of scenarioService.scenarios(); track pack.id) {

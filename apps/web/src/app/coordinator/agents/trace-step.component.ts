@@ -39,14 +39,12 @@ export class TraceStepComponent {
     return this.lang.translate('ux.seconds').replace('{n}', (ms / 1000).toFixed(1));
   }
 
-  modelText(): string {
+  /** One word: Rules, Gemini, or Recorded. Empty fields stay off the card. */
+  badgeWord(): string {
     this.lang.currentLang();
     const step = this.step();
-    if (step.model) {
-      return step.provider === 'cache' ? `${step.model} · ${this.lang.translate('ux.badgeRecorded')}` : step.model;
-    }
-    if (step.provider === 'fallback') return this.lang.translate('ux.badgeOffline');
-    if (step.provider === 'tool') return this.lang.translate('ux.noModel');
-    return this.lang.translate('ux.notRecorded');
+    if (step.provider === 'cache' || step.provider === 'replay') return this.lang.translate('ux.badgeRecordedShort');
+    if (step.provider === 'tool' || step.provider === 'fallback' || !step.model) return this.lang.translate('ux.badgeRules');
+    return this.lang.translate('ux.badgeGemini');
   }
 }

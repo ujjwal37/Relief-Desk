@@ -18,8 +18,16 @@ export const COORDINATOR_ROUTES: Routes = [
         pathMatch: 'full',
       },
       {
+        path: 'overview',
+        loadComponent: () => import('./pages/overview/coordinator-overview.component').then(m => m.CoordinatorOverviewComponent),
+      },
+      {
         path: 'command',
         loadComponent: () => import('./pages/command/coordinator-command.component').then(m => m.CoordinatorCommandComponent),
+      },
+      {
+        path: 'agent',
+        loadComponent: () => import('./pages/agent/coordinator-agent.component').then(m => m.CoordinatorAgentComponent),
       },
       {
         path: 'teams',
