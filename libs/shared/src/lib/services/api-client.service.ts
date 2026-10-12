@@ -101,6 +101,11 @@ export class ApiClientService {
     return this.http.get<any>(`/api/cases/${requestId}/merge`, this.getAuthHeaders());
   }
 
+  /** Ask the desk. Read-only search over cases; Gemini picks the filters, rules if it cannot. */
+  askDesk(question: string, lang?: string): Observable<any> {
+    return this.http.post<any>('/api/desk/ask', { question, lang }, this.getAuthHeaders());
+  }
+
   getAssistProposals(): Observable<any> {
     return this.http.get<any>('/api/assist/proposals', this.getAuthHeaders());
   }

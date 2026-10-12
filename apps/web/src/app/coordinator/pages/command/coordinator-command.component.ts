@@ -20,6 +20,7 @@ import { AnalysingCardComponent } from '../../agents/analysing-card.component';
 import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
+import { AskDeskComponent } from '../../agents/ask-desk.component';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import {
@@ -66,6 +67,7 @@ const PLACE_NAMES: Record<string, { en: string; hi: string }> = {
     AssistBannerComponent,
     AssistPanelComponent,
     MergedChipComponent,
+    AskDeskComponent,
   ],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
