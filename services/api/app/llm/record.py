@@ -52,8 +52,14 @@ def record_seeded_reports() -> int:
     kept = 0
     # Free-tier flash-lite allows 15 requests a minute. Stay under it.
     gap_s = float(os.environ.get("RECORD_AI_GAP_S", "4.5"))
-    for row in build_demo_reports():
-        user_prompt = intake_user_prompt(row["text"], row.get("lang"))
+    from app.llm.replay_seed import seed_prompt
+    from app.tools.storage import storage_service
+
+    rows = [{"id": r["id"], "prompt": intake_user_prompt(r["text"], r.get("lang"))} for r in build_demo_reports()]
+    # The dashboard's seeded cases (INC-*) are read with the same prompt, so they can be replayed too.
+    rows += [{"id": r.id, "prompt": seed_prompt(r.raw_text)} for r in storage_service._requests.values() if r.raw_text]
+    for row in rows:
+        user_prompt = row["prompt"]
         digest = llm_client.cache_key(SYSTEM_INTAKE_PROMPT, user_prompt)
         if (REPLAY_DIR / f"{digest}.json").exists():
             kept += 1

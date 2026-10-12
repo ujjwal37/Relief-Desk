@@ -902,6 +902,7 @@ class StorageService:
         resources = self.load_seed_resources()
         incidents = self.load_seed_incidents()
         packs = self.load_scenario_pack_seeds()
+        _attach_recorded(self)
         demo = None
         if settings.DEMO_MODE:
             from app.tools.demo_seed import load_demo_pack
@@ -928,6 +929,15 @@ class StorageService:
         return loaded
 
 
+def _attach_recorded(storage) -> None:
+    try:
+        from app.llm.replay_seed import attach_recorded_ai
+
+        attach_recorded_ai(storage)
+    except Exception as exc:  # recordings are optional
+        logger.warning("Could not attach recorded Gemini readings: %s", exc)
+
+
 # Singleton instance
 storage_service = StorageService()
 # Auto-load seed resources and incidents
@@ -935,6 +945,7 @@ try:
     storage_service.load_seed_resources()
     storage_service.load_seed_incidents()
     storage_service.load_scenario_pack_seeds()
+    _attach_recorded(storage_service)
     if settings.DEMO_MODE:
         from app.tools.demo_seed import load_demo_pack
         load_demo_pack(storage_service)
