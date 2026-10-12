@@ -100,7 +100,7 @@ The type target is 90%. This split is at 67.3%. Of 32 type misses, the rule read
 
 ## Run locally
 ```bash
-cp .env.example .env     # add your own settings; never commit secrets
+cp .env.example services/api/.env     # the API reads services/api/.env; never commit secrets
 
 # API, from services/api
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
@@ -123,7 +123,7 @@ python scripts/reset_demo
 
 `data/ai_cache` is empty in git. `make record-ai` writes it only after a real key returns Gemini JSON for the seeded reports. `AI_MODE=replay` serves those files as Recorded Gemini run. A new report that is not in the cache still calls Gemini when a key is set.
 
-Set the key only in `.env`. Do not commit it.
+Set the key only in `services/api/.env`. Do not commit it.
 
 ```
 GEMINI_ENABLED=true
