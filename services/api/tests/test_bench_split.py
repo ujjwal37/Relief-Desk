@@ -89,3 +89,16 @@ def test_gemini_eval_stops_on_quota_and_scores_only_answered():
     assert out["n"] == 2 and out["n_planned"] == 6
     assert out["type_accuracy_pct"] == 50.0
     assert out["rate_limit_per_min"] == 14
+
+
+def test_gemini_eval_reports_type_by_label_kind():
+    from bench.gemini_eval import TokenBucket, evaluate_gemini
+
+    msgs = [{"id": "S1", "text": "a"}, {"id": "D1", "text": "b"}]
+    labels = {"S1": {"label_type": "single_incident", "ground_truth": {"type": "food"}},
+              "D1": {"label_type": "duplicate_of", "ground_truth": {"type": "medical"}}}
+    out = evaluate_gemini(msgs, labels, "d", extract=lambda t, l: {"type": "food", "ward_id": None},
+                          bucket=TokenBucket(60, sleep=lambda s: None, now=lambda: 0.0))
+    assert out["type_accuracy_pct"] == 50.0
+    assert out["type_accuracy_need_stated_pct"] == 100.0
+    assert out["type_by_label_type"]["duplicate_of"]["type_accuracy_pct"] == 0.0

@@ -116,8 +116,10 @@ def evaluate_gemini(
                 break
             continue
         streak = 0
-        ground = labels.get(msg["id"], {}).get("ground_truth", {})
+        label = labels.get(msg["id"], {})
+        ground = label.get("ground_truth", {})
         rows.append({
+            "label_type": label.get("label_type"),
             "gold_type": ground.get("type"),
             "pred_type": pred.get("type"),
             "gold_ward": ground.get("ward_id"),
@@ -128,6 +130,17 @@ def evaluate_gemini(
         missed["calls"] = calls
         return missed
     scored = score_pairs(rows)
+    # duplicate_of labels inherit the type of the incident they repeat, and their text names no need
+    # (see docs/benchmark-labels.md), so type is also reported per label kind.
+    by_kind: Dict[str, Any] = {}
+    for kind in sorted({r.get("label_type") or "unknown" for r in rows}):
+        part = score_pairs([r for r in rows if (r.get("label_type") or "unknown") == kind])
+        if part["type_n"]:
+            by_kind[kind] = {"type_accuracy_pct": part["type_accuracy_pct"], "type_n": part["type_n"]}
+    stated = score_pairs([r for r in rows if r.get("label_type") != "duplicate_of"])
+    scored["type_by_label_type"] = by_kind
+    scored["type_accuracy_need_stated_pct"] = stated["type_accuracy_pct"]
+    scored["type_n_need_stated"] = stated["type_n"]
     return {
         "measured": True,
         "reason": None,
