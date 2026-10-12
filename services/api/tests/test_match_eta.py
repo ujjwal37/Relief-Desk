@@ -95,8 +95,8 @@ def test_a_request_with_no_team_within_30_km_hides_the_minute_eta():
 
 
 def test_each_district_has_a_boat_medical_and_food_team_near_its_cases():
-    seeds = yaml.safe_load(SEEDS.read_text())
-    resources = yaml.safe_load(RESOURCES.read_text())["resources"]
+    seeds = yaml.safe_load(SEEDS.read_text(encoding="utf-8"))
+    resources = yaml.safe_load(RESOURCES.read_text(encoding="utf-8"))["resources"]
     wards = {ward["id"]: ward for ward in seeds["wards"]}
     by_kind: dict = {}
     for team in resources:

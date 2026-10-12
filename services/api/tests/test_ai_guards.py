@@ -2,6 +2,7 @@
 from fastapi.testclient import TestClient
 
 from app.agents.intake import intake_agent
+from app.config import settings
 from app.llm.client import llm_client
 from app.llm.guards import Guard, scrub_pii, strip_advice
 from app.main import app
@@ -64,7 +65,9 @@ def test_explainer_drops_medical_and_legal_advice():
     assert "4 km" in cleaned
 
 
-def test_ai_health_reports_provider_and_quota():
+def test_ai_health_reports_provider_and_quota(monkeypatch):
+    # Independent of a real key in the developer's .env.
+    monkeypatch.setattr(settings, "GEMINI_ENABLED", False)
     llm_client.guard.failures = 0
     body = client.get("/api/health/ai")
     assert body.status_code == 200
