@@ -134,6 +134,7 @@ export class CoordinatorBenchmarkComponent implements OnInit {
     }
     this.gemini.set({
       measured: gemini['measured'] === true,
+      reason: typeof gemini['reason'] === 'string' ? gemini['reason'] : null,
       model: String(gemini['model'] ?? ''),
       date: String(gemini['date'] ?? ''),
       n: String(gemini['n'] ?? ''),
