@@ -531,8 +531,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.ui.lastRefresh.set(Date.now());
     if (!this.initialSelectDone && next.length > 0) {
       this.initialSelectDone = true;
-      this.selectedRequestId.set(next[0].id);
-      this.loadMatches(next[0].id);
+      const pick = next.find((row) => !this.isDispatched(row) && !this.isCompleted(row)) || next[0];
+      this.selectedRequestId.set(pick.id);
+      this.loadMatches(pick.id);
       return;
     }
     if (keep && next.some((row) => row.id === keep)) {
@@ -973,7 +974,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.apiClient.splitCluster(requestId).subscribe({
       next: (res) => {
         this.actionToast.set({
-          text: `Cluster split undone: Constituent requests restored as independent reports (Audited).`,
+          text: this.langService.translate('ux.undoHint'),
           type: 'success',
         });
         this.loadRequests();

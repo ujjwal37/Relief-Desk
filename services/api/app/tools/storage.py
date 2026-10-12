@@ -262,6 +262,16 @@ class StorageService:
                 req.merged_count = 1
             req.updated_at = datetime.now(timezone.utc).isoformat()
 
+        # Seed clusters can list report ids that were never stored. Those ghosts
+        # never had merged_into, so the loop above left the parent's count high
+        # and the chip stayed after undo. Recount from requests that still exist.
+        for r_id in cluster.request_ids:
+            req = self._requests.get(r_id)
+            if req is None or req.merged_into:
+                continue
+            still = sum(1 for other in self._requests.values() if other.merged_into == req.id)
+            req.merged_count = 1 + still
+
         self.record_audit(
             actor=actor,
             action="cluster_split",

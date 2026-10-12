@@ -15,6 +15,6 @@
 @media (min-width: 721px) { .public-shell { border-left:1px solid var(--border); border-right:1px solid var(--border); background:var(--bg); } }
 .chat .fab { margin-top:0; width:52px; height:52px; border-width:3px; }
 .brand { min-width:0; flex:0 1 auto; font-size:18px; line-height:1.15; } .app-nav { gap:6px; padding:0 12px; } .app-nav > * { min-width:0; }
-@media (max-width:420px) { :host-context(html[lang='ta']) .brand span { display:none; } }
+@media (max-width:420px) { .brand span { display:none; } }
 .brand { min-width:44px; justify-content:center; }
 .app-nav a.brand { min-width:44px; flex:none; }

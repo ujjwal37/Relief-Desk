@@ -73,3 +73,85 @@ def test_merge_split_undo_api_and_audit():
     assert "cluster_created" in actions
     assert "cluster_split" in actions
     assert any(a.actor == "coordinator_jane" for a in cluster_audit)
+    assert r1_restored.merged_count == 1
+    assert r2_restored.merged_count == 1
+
+
+def test_split_clears_count_when_cluster_members_were_never_stored():
+    """Seed merges list duplicate ids that were never saved as requests."""
+    parent = StoredRequest(
+        id="req_ghost_parent",
+        type=IncidentType.RESCUE,
+        place_text="North Jetty lane",
+        people_count=5,
+        hazard=HazardType.WATER_RISING,
+        status=RequestStatus.NEW,
+        merged_count=3,
+    )
+    storage_service.save_request(parent, actor="test")
+    storage_service.create_cluster(
+        request_ids=[parent.id, "req_ghost_parent-dup1", "req_ghost_parent-dup2"],
+        evidence=["3 reports, same lane, within 9 min"],
+        merged_by="dedupe_agent",
+    )
+    parent.merged_count = 3
+    storage_service.save_request(parent, actor="test")
+
+    auth_headers = {"Authorization": "Bearer demo-coordinator-token"}
+    split_resp = client.post(f"/api/requests/{parent.id}/split", headers=auth_headers)
+    assert split_resp.status_code == 200
+    assert split_resp.json()["undone"] is True
+
+    restored = storage_service.get_request(parent.id)
+    assert restored is not None
+    assert restored.cluster_id is None
+    assert restored.merged_count == 1
+
+    again = client.post(f"/api/requests/{parent.id}/split", headers=auth_headers)
+    assert again.status_code == 400
+
+
+def test_split_releases_a_folded_report_and_resets_the_count():
+    parent = StoredRequest(
+        id="req_fold_parent",
+        type=IncidentType.RESCUE,
+        place_text="Sangam lane",
+        people_count=4,
+        hazard=HazardType.WATER_RISING,
+        status=RequestStatus.NEW,
+        merged_count=2,
+    )
+    child = StoredRequest(
+        id="req_fold_child",
+        type=IncidentType.RESCUE,
+        place_text="Near Sangam lane",
+        people_count=2,
+        hazard=HazardType.WATER_RISING,
+        status=RequestStatus.NEW,
+        merged_into="req_fold_parent",
+        merged_count=2,
+    )
+    storage_service.save_request(parent, actor="test")
+    storage_service.save_request(child, actor="test")
+    storage_service.create_cluster(
+        request_ids=[parent.id, child.id],
+        evidence=["Same lane within 9 min"],
+        merged_by="dedupe_agent",
+    )
+    parent.merged_count = 2
+    child.merged_into = parent.id
+    storage_service.save_request(parent, actor="test")
+    storage_service.save_request(child, actor="test")
+
+    auth_headers = {"Authorization": "Bearer demo-coordinator-token"}
+    split_resp = client.post(f"/api/requests/{parent.id}/split", headers=auth_headers)
+    assert split_resp.status_code == 200
+
+    restored_parent = storage_service.get_request(parent.id)
+    restored_child = storage_service.get_request(child.id)
+    assert restored_parent is not None and restored_child is not None
+    assert restored_parent.cluster_id is None
+    assert restored_parent.merged_count == 1
+    assert restored_child.cluster_id is None
+    assert restored_child.merged_into is None
+    assert restored_child.merged_count == 1

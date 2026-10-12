@@ -165,6 +165,16 @@ describe('CoordinatorCommandComponent', () => {
     fixture.detectChanges();
   });
 
+  it('lands on an open case when the highest score is already dispatched', () => {
+    const dispatched = { ...mockRequests[0], id: 'INC-DISP', status: 'dispatched' as const, urgency_score: 99 };
+    (component as unknown as { initialSelectDone: boolean }).initialSelectDone = false;
+    component.applyQueue([dispatched, mockRequests[0], mockRequests[1]], false);
+    expect(component.selectedRequestId()).toBe('INC-001');
+    fixture.detectChanges();
+    const opener = fixture.nativeElement.querySelector('.hooks .trace-chip') as HTMLButtonElement | null;
+    expect(opener?.textContent).toContain('View trace');
+  });
+
   it('should create and load ranked requests and resources', () => {
     expect(component).toBeTruthy();
     expect(component.requests().length).toBe(2);
@@ -272,7 +282,7 @@ describe('CoordinatorCommandComponent', () => {
   it('should split cluster and reload requests when undo merge is clicked', () => {
     component.splitCluster('INC-001');
     expect(apiClientSpy.splitCluster).toHaveBeenCalledWith('INC-001');
-    expect(component.actionToast()?.text).toContain('Cluster split undone');
+    expect(component.actionToast()?.text).toContain('separate cases');
     expect(apiClientSpy.getRequests).toHaveBeenCalled();
   });
 

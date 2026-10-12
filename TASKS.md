@@ -161,6 +161,7 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | GM-12 | Recheck the earlier retest fixes | C | DONE | GM-11 | Sample badge, 30 km ETA, checkmark escape, Kerala district labels, Tamil INC-005, and the two-row header still pass. No product code changed |
 | UX-04 | Agents visible on the case queue | C | DONE | GM-12 | View trace opens five agents. Assist stays behind Review and does not dispatch. Merged reports and accuracy bars use stored fields |
 | UX-05 | Pine & Sand palette | C | DONE | UX-04 | Light and dark themes use the pine and sand tokens. Navy gradients and glow shadows are gone. Text pairs are at least 4.5:1 |
+| STAB-01 | Stabilise the demo after the theme change | C | DONE | UX-05 | Undo clears a seed merge count. The public header fits at 390px. The queue opens on a case that is still waiting |
 
 ## T-UX-03 UX3 uplift (branch ux-uplift)
 - DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
