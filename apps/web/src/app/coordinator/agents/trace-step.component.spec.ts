@@ -33,7 +33,7 @@ describe('TraceStepComponent', () => {
     expect(text).toContain('Done');
     expect(text).toContain('score 90');
     expect(text).toContain('gemini-3.8-flash');
-    expect(text).toContain('0.4 s');
+    expect(text).toContain('420 ms');
     const button = fixture.nativeElement.querySelector('.details') as HTMLButtonElement;
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(fixture.nativeElement.querySelector('.tools')).toBeNull();
