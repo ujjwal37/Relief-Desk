@@ -381,7 +381,10 @@
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
     "estimatedWait": "Estimated wait {n} min until {team} finishes",
     "backToList": "Back to cases",
-    "fallbackSummary": "Urgent assistance requested at this location."
+    "fallbackSummary": "Urgent assistance requested at this location.",
+    "legendCases": "Cases",
+    "legendTeams": "Teams",
+    "unitReadyOf": "of {n} ready"
   },
   "tour": {
     "next": "Next",
