@@ -1204,3 +1204,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs`. `npx ng build web --configuration=development`. Screenshots at 1366 of the default panel, duplicate review, Hindi, and How it decided.
 - Notes / risks / not done: Front-end only. No new backend endpoints. Undo cannot reverse a dispatch. TASKS.md has no UX10 row. No e2e or unit suite this pass. `.env` was not changed.
 - Next (suggested task id): none
+
+### 2026-10-14 01:50 IST — Cursor
+- What changed: Tightened the right panel to the written ux10 spec. How it decided now sits inside More details. Why is one sentence from the top two factors. Only one state banner shows at a time. Offline is a grey bar. Title 19/650, Send team name 17/650, Approve 16/700, note 12.5px.
+- Files: apps/web/src/app/coordinator/pages/command/coordinator-command.component.{html,ts,scss}, libs/shared/src/lib/i18n/{en,hi,hinglish,ml}.json, WORKDONE.md
+- How verified: `node scripts/check-i18n.mjs`. `npx ng build web --configuration=development`. Screenshots at 1366 of default, duplicate, Hindi, and How it decided.
+- Notes / risks / not done: Duplicate review still also appears when the stored case has `possible_duplicate` and no `dedupe_decision`, because the list API does not persist that field. `.env` was not changed.
+- Next (suggested task id): none

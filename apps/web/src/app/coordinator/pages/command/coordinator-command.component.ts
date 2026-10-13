@@ -601,7 +601,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       { n: b?.urgency_score || 0, t: this.langService.translate('coord.whyUrgent') },
       { n: b?.vulnerability_fit_score || 0, t: this.langService.translate('coord.whyVuln') },
     ].sort((a, b2) => b2.n - a.n).slice(0, 2).map((row) => row.t);
-    const built = ranked.join(' · ');
+    const second = ranked[1] ? ranked[1].charAt(0).toLocaleLowerCase() + ranked[1].slice(1) : '';
+    const built = ranked.length >= 2
+      ? this.langService.translate('coord.whyJoin').replace('{a}', ranked[0]).replace('{b}', second)
+      : (ranked[0] || '');
     if (built.length > 90) return built.slice(0, 89).trim();
     return built || this.langService.translate('coord.whyFallback');
   }

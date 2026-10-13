@@ -452,6 +452,7 @@
     "send": "Send",
     "whyColon": "Why:",
     "whyChose": "You chose this team.",
+    "whyJoin": "{a} and {b}.",
     "whyClosest": "Closest free team",
     "whySeats": "Has seats for this group",
     "whyUrgent": "Matches the urgency",

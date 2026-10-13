@@ -156,10 +156,10 @@
           </div>
           <h2>{{ getTranslationText(req) }}</h2>
           <p class="fact-line">{{ factLine(req) }}</p>
-          @if (isLowTranslationConfidence(req)) {
+          @if (!offline() && !needsDupReview(req) && isLowTranslationConfidence(req)) {
             <p class="check-line">{{ checkThisLine(req) }}</p>
           }
-          @if (needsDupReview(req)) {
+          @if (!offline() && needsDupReview(req)) {
             <div class="dup-review" data-testid="dup-review">
               <p>{{ dupTitle(req) }}</p>
               <button type="button" data-testid="merge-dup" (click)="confirmMerge(req)">{{ 'coord.mergeReports' | rdTranslate }}</button>
@@ -186,9 +186,6 @@
               @if (prop.wait_minutes) { <p class="warnline">{{ waitLabel(prop) }}</p> }
               @if (prop.capacity_remaining < (req.people_count || 1) || prop.overcommit_warning) { <p class="warnline">{{ 'coord.overcommit' | rdTranslate }}</p> }
             </div>
-            @if (!narrow()) {
-              <button type="button" class="trace-chip" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
-            }
           } @else {
             <div class="best send-card no-team"><p class="facts">{{ 'coord.noTeamNow' | rdTranslate }}</p></div>
           }
@@ -297,16 +294,14 @@
                 </div>
               }
             </div>
-            @if (narrow()) {
-              <button type="button" class="trace-chip" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
-            }
+            <button type="button" class="trace-chip" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
           </div>
         </div>
 
         <div class="actionbar" data-tour="actions">
           <p class="approve-note">{{ 'coord.youDecide' | rdTranslate }}</p>
           @if (offline()) { <p class="offline-bar">{{ 'coord.approveOffline' | rdTranslate }}</p> }
-          @if (needsDupReview(req)) { <p class="dup-note">{{ 'coord.decideDupFirst' | rdTranslate }}</p> }
+          @else if (needsDupReview(req)) { <p class="dup-note">{{ 'coord.decideDupFirst' | rdTranslate }}</p> }
           @if (changeOpen()) {
             <div class="chooser" role="listbox" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">
               @for (m of chooserMatches(); track m.match_id; let i = $index) {
