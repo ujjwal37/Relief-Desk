@@ -15,11 +15,24 @@ export class DeskStore {
   readonly casesReady = signal(false);
   readonly teamsReady = signal(false);
   readonly alertsReady = signal(false);
+  /** Copy id → the case it joined. The first id on a merge event is the one that stays. */
+  readonly joined = signal<Record<string, string>>({});
+  private casesTicket = 0;
+
+  noteMerge(ids: string[]): void {
+    const [target, ...copies] = ids.filter(Boolean);
+    if (!target || !copies.length) return;
+    const next = { ...this.joined() };
+    for (const copy of copies) next[copy] = target;
+    this.joined.set(next);
+  }
 
   refreshCases(): void {
+    const ticket = ++this.casesTicket;
     this.api.getRequests().subscribe({
       next: (rows) => {
-        this.requests.set(rows);
+        if (ticket !== this.casesTicket) return;
+        this.requests.set(rows.filter((row) => !row.merged_into));
         this.casesReady.set(true);
       },
     });

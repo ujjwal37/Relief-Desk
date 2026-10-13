@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import re
+import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -66,6 +67,8 @@ class LLMClient:
     def __init__(self):
         self.call_count = 0
         self.daily_cap = settings.GEMINI_DAILY_CALL_CAP
+        self._tls = threading.local()
+        self._cache_lock = threading.Lock()
         self.last_source = "offline_fallback"
         self.last_ai = AiCall(provider="fallback", fallback_reason="not_called")
         self._last_tokens: Optional[int] = None
@@ -90,6 +93,27 @@ class LLMClient:
             return False
         key = (settings.GEMINI_API_KEY or "").strip()
         return key not in _PLACEHOLDER_KEYS
+
+    @property
+    def last_ai(self) -> AiCall:
+        """The call this thread just made. Parallel intake must not share one slot."""
+        value = getattr(self._tls, "last_ai", None)
+        if value is None:
+            value = AiCall(provider="fallback", fallback_reason="not_called")
+            self._tls.last_ai = value
+        return value
+
+    @last_ai.setter
+    def last_ai(self, usage: AiCall) -> None:
+        self._tls.last_ai = usage
+
+    @property
+    def last_source(self) -> str:
+        return getattr(self._tls, "last_source", "offline_fallback")
+
+    @last_source.setter
+    def last_source(self, value: str) -> None:
+        self._tls.last_source = value
 
     def _remember(self, usage: AiCall) -> None:
         self.last_ai = usage
@@ -123,6 +147,10 @@ class LLMClient:
         return val
 
     def get_cached(self, key: str) -> Optional[str]:
+        with self._cache_lock:
+            return self._get_cached_unlocked(key)
+
+    def _get_cached_unlocked(self, key: str) -> Optional[str]:
         if key in self._memory_cache:
             return self._memory_cache[key]
         mode = (settings.AI_MODE or "auto").lower()
@@ -142,6 +170,17 @@ class LLMClient:
         source: str = "offline_fallback",
         model: Optional[str] = None,
         tokens: Optional[int] = None,
+    ) -> None:
+        with self._cache_lock:
+            self._set_cached_unlocked(key, response, source, model, tokens)
+
+    def _set_cached_unlocked(
+        self,
+        key: str,
+        response: str,
+        source: str,
+        model: Optional[str],
+        tokens: Optional[int],
     ) -> None:
         self._memory_cache[key] = response
         self._memory_source[key] = source

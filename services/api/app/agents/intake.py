@@ -134,6 +134,11 @@ class IntakeAgent:
         return _repair_with_rules(extracted, raw_text)
 
 
+def extract_with_rules(raw_text: str) -> ExtractedRequest:
+    """Place, people, type, and hazard from the words alone. No model call."""
+    return _repair_with_rules(ExtractedRequest(), raw_text or "")
+
+
 def _repair_with_rules(extracted: ExtractedRequest, raw_text: str) -> ExtractedRequest:
     """Fill place, ward phrase, people and vulnerability from the citizen's words."""
     place = extract_place(raw_text)

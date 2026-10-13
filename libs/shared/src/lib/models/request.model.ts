@@ -330,6 +330,7 @@ export interface ReportStatusResponse {
   timeline: StatusTimelineStep[];
   while_you_wait_tips: string[];
   emergency_phone: string;
+  analysis_status?: string;
   synthetic: boolean;
 }
 

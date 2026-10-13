@@ -595,7 +595,9 @@ describe('CoordinatorCommandComponent', () => {
     const live = { ...mockRequests[0], id: 'INC-NEW', analysis_status: 'analysing' as const, urgency_score: 99, trace: [{ agent: 'Intake', status: 'complete' as const, output: 'rescue' }] };
     component.applyQueue([live], true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-analysing-card')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="ai-analysing"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent as string).toContain('AI analysing…');
+    expect(fixture.nativeElement.querySelector('button.case')).not.toBeNull();
     expect(component.selectedRequestId()).toBe('INC-001');
     component.applyQueue([{
       ...live,
@@ -609,7 +611,7 @@ describe('CoordinatorCommandComponent', () => {
       })),
     }], true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-analysing-card')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="ai-analysing"]')).toBeNull();
     expect(fixture.nativeElement.textContent as string).toContain('Analysed by 5 agents in');
   });
 });

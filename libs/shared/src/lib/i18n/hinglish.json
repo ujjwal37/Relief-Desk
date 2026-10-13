@@ -730,6 +730,7 @@
     "agentExplainer": "Explainer",
     "agentParallel": "Duplicate check + Triage",
     "analysingChip": "Nayi report ka analysis",
+    "aiAnalysing": "AI analysis ho raha hai…",
     "newReport": "Nayi report · abhi",
     "agentsDone": "{total} mein se {done} agents done",
     "usually": "Aam taur par 5 second se kam",

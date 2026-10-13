@@ -730,6 +730,7 @@
     "agentExplainer": "വിശദീകരണം",
     "agentParallel": "ആവർത്തന പരിശോധന + ട്രയേജ്",
     "analysingChip": "പുതിയ റിപ്പോർട്ട് വിശകലനം",
+    "aiAnalysing": "AI വിശകലനം നടക്കുന്നു…",
     "newReport": "പുതിയ റിപ്പോർട്ട് · ഇപ്പോൾ",
     "agentsDone": "{total} ഏജന്റുകളിൽ {done} പൂർത്തിയായി",
     "usually": "സാധാരണ 5 സെക്കൻഡിനുള്ളിൽ",

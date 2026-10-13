@@ -29,6 +29,9 @@
     @if (isNew()) {
       <div class="sent" role="status">✓ {{ 'status.new' | rdTranslate }} <small>{{ 'status.saved' | rdTranslate }}</small></div>
     }
+    @if (data.analysis_status === 'analysing') {
+      <p class="ai" data-testid="ai-analysing" role="status">{{ 'ux.aiAnalysing' | rdTranslate }}</p>
+    }
 
     <section class="idcard" aria-label="{{ 'status.requestId' | rdTranslate }}">
       <p class="cap">{{ 'status.requestId' | rdTranslate }}</p>

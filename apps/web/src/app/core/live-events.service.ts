@@ -90,6 +90,7 @@ export class LiveEventsService implements OnDestroy {
       return;
     }
     this.lastBeat = Date.now();
+    if (event.type === 'case.merged') this.desk.noteMerge(event.request_ids || []);
     for (const listener of this.listeners) listener(event);
     for (const kind of kindsFor(event.type)) this.kinds.next(kind);
   }

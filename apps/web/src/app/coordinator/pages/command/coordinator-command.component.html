@@ -37,11 +37,7 @@
       </div>
       <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {
-          @if (isAnalysing(req)) {
-            <div class="arriving" [class.row-flash]="flashIds().has(req.id)" [attr.data-case-id]="req.id">
-              <app-analysing-card [request]="req" />
-            </div>
-          } @else if (isAnalysisFailed(req)) {
+          @if (isAnalysisFailed(req)) {
             <article class="case-wrap failed">
               <p class="title">{{ getTranslationText(req) || ('ux.notRecorded' | rdTranslate) }}</p>
               <app-agent-badge source="fallback" />
@@ -62,6 +58,7 @@
                   @if (isReview(req)) { <span class="tag warn">{{ 'coord.review' | rdTranslate }}</span> }
                   @if (isDispatched(req)) { <span class="tag ok">{{ 'coord.filterDispatched' | rdTranslate }}</span> }
                   @if (isCompleted(req)) { <span class="tag ok">{{ 'coord.filterCompleted' | rdTranslate }}</span> }
+                  @if (isAnalysing(req)) { <span class="tag ai" data-testid="ai-analysing">{{ 'ux.aiAnalysing' | rdTranslate }}</span> }
                   @if (freshIds().has(req.id)) { <span class="tag new">{{ 'coord.newJustNow' | rdTranslate }}</span> }
                   @if (analysedLabel(req.id)) { <span class="tag analysed"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8 6h11M8 12h11M8 18h7"/><circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>{{ analysedLabel(req.id) }}</span> }
                 </span>

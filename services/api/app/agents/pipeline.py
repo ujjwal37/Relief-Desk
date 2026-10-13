@@ -22,7 +22,39 @@ from app.tools.storage import storage_service
 
 logger = logging.getLogger("relief_desk.pipeline")
 
-_spawn: Callable[[Callable[[], None]], None] = lambda fn: threading.Thread(target=fn, daemon=True).start()
+_inflight_lock = threading.Lock()
+_inflight: List[threading.Thread] = []
+
+
+def _start_thread(fn: Callable[[], None]) -> None:
+    """Run intake after the HTTP response. The thread is tracked so tests can join it."""
+    def run() -> None:
+        try:
+            fn()
+        finally:
+            with _inflight_lock:
+                if thread in _inflight:
+                    _inflight.remove(thread)
+
+    thread = threading.Thread(target=run, daemon=True)
+    with _inflight_lock:
+        _inflight.append(thread)
+    thread.start()
+
+
+def wait_for_idle(timeout: float = 5.0) -> bool:
+    """True when every background intake thread has finished."""
+    deadline = time.perf_counter() + timeout
+    while time.perf_counter() < deadline:
+        with _inflight_lock:
+            alive = [item for item in _inflight if item.is_alive()]
+        if not alive:
+            return True
+        time.sleep(0.02)
+    return False
+
+
+_spawn: Callable[[Callable[[], None]], None] = _start_thread
 
 
 def score_urgency(people_count: int, incident_type: str, child: bool = False, elderly: bool = False) -> dict:
@@ -238,6 +270,12 @@ def finish(request_id: str) -> None:
         _trace_step("Explainer", "complete", summary, explanation, [], match_at),
     ]
     req.analysis_status = "complete"
+    # A coordinator may have approved this case while the model was still working.
+    latest = storage_service.get_request(request_id)
+    if latest is not None and latest.status != req.status:
+        req.status = latest.status
+        req.assigned_resource_id = latest.assigned_resource_id
+        req.reserved_people = latest.reserved_people
     storage_service.save_request(req, actor="pipeline")
 
 

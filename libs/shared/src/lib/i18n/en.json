@@ -730,6 +730,7 @@
     "agentExplainer": "Explainer",
     "agentParallel": "Duplicate check + Triage",
     "analysingChip": "Analysing new report",
+    "aiAnalysing": "AI analysing…",
     "newReport": "New report · just now",
     "agentsDone": "{done} of {total} agents done",
     "usually": "Usually under 5 seconds",

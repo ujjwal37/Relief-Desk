@@ -50,4 +50,5 @@ class ReportStatusResponse(BaseModel):
     timeline: List[StatusTimelineStep]
     while_you_wait_tips: List[str] = Field(default_factory=list)
     emergency_phone: str = "112"
+    analysis_status: str = "complete"
     synthetic: bool = True

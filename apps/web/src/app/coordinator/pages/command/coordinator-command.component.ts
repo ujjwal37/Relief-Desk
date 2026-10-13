@@ -16,7 +16,6 @@ import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { SevChipComponent } from '../../../core/components/sev-chip.component';
 import { AgentBadgeComponent } from '../../agents/agent-badge.component';
 import { AgentTraceDrawerComponent } from '../../agents/agent-trace-drawer.component';
-import { AnalysingCardComponent } from '../../agents/analysing-card.component';
 import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
@@ -72,7 +71,6 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
     RdTranslatePipe,
     AgentBadgeComponent,
     AgentTraceDrawerComponent,
-    AnalysingCardComponent,
     AssistBannerComponent,
     AssistPanelComponent,
     MergedChipComponent,
@@ -707,7 +705,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (row.updated_at && row.updated_at > this.queueWatermark) this.queueWatermark = row.updated_at;
     }
     this.noteFinished(previousStatus, next);
+    const joined = { ...this.desk.joined() };
+    for (const row of incoming) {
+      if (row.merged_into) joined[row.id] = row.merged_into;
+    }
+    next = next.filter((row) => !row.merged_into && !joined[row.id]);
     const keep = this.selectedRequestId();
+    const moved = keep ? joined[keep] : undefined;
     this.requests.set(next);
     if (previous.size) {
       for (const row of next) {
@@ -733,6 +737,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       this.loadMatches(pick.id);
       return;
     }
+    if (moved && next.some((row) => row.id === moved)) {
+      this.selectRequest(moved);
+      return;
+    }
     if (keep && next.some((row) => row.id === keep)) {
       if (!incremental) this.loadMatches(keep);
       return;
@@ -743,6 +751,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   loadMatches(requestId: string): void {
     this.apiClient.getRequestMatches(requestId, 5).subscribe({
       next: (proposals) => {
+        if (this.selectedRequestId() !== requestId) return;
         this.matches.set(proposals);
       },
       error: (err) => {

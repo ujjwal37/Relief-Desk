@@ -277,7 +277,8 @@ def list_requests(
 
     if sort == "urgency":
         refreshed = sorted(refreshed, key=lambda r: r.urgency_score, reverse=True)
-    return refreshed
+    # A merge can land while this list is being built. Drop the copy that joined another case.
+    return [req for req in refreshed if not req.merged_into]
 
 
 @router.get("/requests/{id}", response_model=StoredRequest, summary="Get single request detail")

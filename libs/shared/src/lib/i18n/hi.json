@@ -730,6 +730,7 @@
     "agentExplainer": "समझाने वाला",
     "agentParallel": "डुप्लिकेट जाँच + ट्राइएज",
     "analysingChip": "नई रिपोर्ट का विश्लेषण",
+    "aiAnalysing": "एआई विश्लेषण हो रहा है…",
     "newReport": "नई रिपोर्ट · अभी",
     "agentsDone": "{total} में से {done} एजेंट पूरे",
     "usually": "आमतौर पर 5 सेकंड से कम",

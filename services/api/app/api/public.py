@@ -369,5 +369,6 @@ def get_report_status(
         timeline=timeline,
         while_you_wait_tips=tips_for_request(req),
         emergency_phone="112",
+        analysis_status=req.analysis_status if req else "complete",
         synthetic=True,
     )
