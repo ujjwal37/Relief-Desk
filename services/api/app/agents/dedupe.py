@@ -390,7 +390,10 @@ class DedupeAgent:
 
     def _ask_gemini(self, raw_text: str, new_req: ExtractedRequest, candidates: List[StoredRequest]) -> Optional[DedupeDecision]:
         """Ask Gemini to judge duplicate, update, or distinct. None means use the lexical decision."""
-        if not candidates or not getattr(self.client, "gemini_live", lambda: False)():
+        from app.llm.antigravity import antigravity_requested
+
+        # Antigravity does not call Gemini embeddings. The lexical rules decide duplicates.
+        if antigravity_requested() or not candidates or not getattr(self.client, "gemini_live", lambda: False)():
             return None
         summary = [
             {

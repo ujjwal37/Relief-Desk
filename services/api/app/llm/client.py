@@ -110,7 +110,7 @@ class LLMClient:
             logger.warning("Error reading cache file %s: %s", cache_file, e)
             return None
         val = data.get("response")
-        if not isinstance(val, str):
+        if not isinstance(val, str) or not val.strip():
             return None
         self._memory_cache[key] = val
         source = data.get("source") or data.get("provider") or "offline_fallback"
@@ -230,6 +230,13 @@ class LLMClient:
             self.cache_hits += 1
             return self._from_cache(cache_key, cached, started)
         self.cache_misses += 1
+
+        if mode == "replay":
+            from app.llm.replay_catalog import catalog_keys
+
+            if cache_key in catalog_keys():
+                logger.info("No recorded Gemini reply for %s. Skipping the live call.", cache_key[:8])
+                return self._fallback(user_prompt, "replay_pending", started)
 
         from app.llm import antigravity as ag
 

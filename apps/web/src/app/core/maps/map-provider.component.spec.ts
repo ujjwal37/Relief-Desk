@@ -52,6 +52,54 @@ describe('MapProviderComponent', () => {
     expect(panTo).toHaveBeenCalledWith({ lat: 10.308, lng: 76.331 });
   });
 
+  it('fits bounds to the case and its teams and labels the line', async () => {
+    api.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
+    const fixture = await create(api);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const provider = fixture.debugElement.children[0].componentInstance as MapProviderComponent;
+    const fitBounds = jasmine.createSpy('fitBounds');
+    const extended: { lat: number; lng: number }[] = [];
+    const created: Record<string, unknown>[] = [];
+    const canvas = document.createElement('div');
+    (provider as unknown as { canvas: { nativeElement: HTMLElement } }).canvas = { nativeElement: canvas };
+    (provider as unknown as { mode: string }).mode = 'google';
+    (window as unknown as { google: unknown }).google = {
+      maps: {
+        Map: class {
+          fitBounds = fitBounds;
+        },
+        LatLngBounds: class {
+          extend(pos: { lat: number; lng: number }) { extended.push(pos); }
+        },
+        Marker: class {
+          constructor(opts: Record<string, unknown>) { created.push(opts); }
+          setMap() {}
+          addListener() {}
+        },
+        Polyline: class {
+          constructor(opts: Record<string, unknown>) { created.push(opts); }
+          setMap() {}
+        },
+        SymbolPath: { CIRCLE: 0 },
+      },
+    };
+    provider.pins = [{ id: 'INC-001', lat: 9.436, lng: 76.398, title: 'Nedumudi' }];
+    provider.legs = [{
+      id: 'RES-BOAT-01',
+      from: { lat: 9.436, lng: 76.398 },
+      to: { lat: 9.43, lng: 76.398 },
+      title: '0.7 km · about 2 min',
+      suggested: true,
+    }];
+    provider.center = { lat: 9.436, lng: 76.398 };
+    (provider as unknown as { draw: () => void }).draw();
+    expect(fitBounds).toHaveBeenCalled();
+    expect(extended.some((point) => point.lat === 9.43 && point.lng === 76.398)).toBeTrue();
+    expect(created.some((opts) => (opts['label'] as { text?: string } | undefined)?.text === '0.7 km · about 2 min')).toBeTrue();
+    delete (window as unknown as { google?: unknown }).google;
+  });
+
   it('keeps the SVG fallback when the browser is offline', async () => {
     spyOnProperty(navigator, 'onLine', 'get').and.returnValue(false);
     const fixture = await create(api);

@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     # Manual testing only: "antigravity" routes live calls to the local Antigravity CLI (agy).
     LLM_PROVIDER: str = ""
     ANTIGRAVITY_BIN: str = ""
-    ANTIGRAVITY_TIMEOUT_S: float = 60.0
+    ANTIGRAVITY_TIMEOUT_S: float = 40.0
     DEMO_MODE: bool = True
     # small: two cases and a few teams. full: the flood pack (benchmark and record_ai read the files directly).
     DEMO_SEED: str = "small"

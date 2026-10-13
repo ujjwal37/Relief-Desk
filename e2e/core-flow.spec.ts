@@ -49,6 +49,9 @@ test('phone report is approved and the reporter sees help on the way', async ({ 
 
   await expect(desk.locator('.facts').first()).toContainText(/\d+(\.\d+)? km/);
   await expect(desk.locator('.facts').first()).toContainText(/min|No nearby team/);
+  const leg = desk.locator('.svgmap text.leg').first();
+  await expect(leg).toBeVisible();
+  await expect(leg).toContainText(/km/);
   const approve = desk.getByRole('button', { name: 'Approve and send' });
   await expect(approve).toBeEnabled({ timeout: 20_000 });
   await approve.click();

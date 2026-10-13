@@ -153,6 +153,9 @@ export class CoordinatorTeamsComponent implements OnInit {
     const km = quoted?.breakdown?.distance_km ?? distanceKm(req.lat, req.lng, team.lat, team.lng);
     const minutes = quoted?.eta_minutes ?? Math.max(1, Math.round((km / 20) * 60));
     const eta = this.lang.translate('coord.etaMin').replace('{n}', String(minutes));
+    if (this.isFree(team) && km <= 15 && minutes <= 90) {
+      return `${km} km · ${eta}`;
+    }
     if (quoted?.no_nearby || km > 30 || minutes > 90) {
       return `${km} km · ${this.lang.translate('coord.noNearbyTeam')}`;
     }

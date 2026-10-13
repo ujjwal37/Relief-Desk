@@ -70,7 +70,7 @@ ADK 2.11 warns that `SequentialAgent` and `ParallelAgent` are deprecated in favo
 | Explainer text | `GEMINI_MODEL` | `app/agents/explainer.py`, `pipeline.py` | The stored note is the tool sentence plus "not medical or legal advice" unless a live call replaces it. Not scored on the split |
 | Assist dispatcher | `GEMINI_MODEL` | `app/agents/dispatcher.py` | Tool order, reject, and the two-coordinator hold are tested without a model call |
 | Benchmark column | `GEMINI_MODEL` | `bench/gemini_eval.py` | `measured: false`, reason `no_api_key`, n=168, date 2026-10-11 |
-| Recorded replay | `AI_MODE=replay` | `data/ai_cache`, `scripts/record_ai.py` | The directory in git has no transcripts. `make record-ai` writes them only after a real call |
+| Recorded replay | `AI_MODE=replay` | `data/ai_cache`, `scripts/record_ai.py` | `fixture.json` lists the prompts with no replies. `make record-ai` writes transcripts only after a real call |
 | Health | none | `GET /api/health/ai` in `app/api/health.py` | Returns provider, model, cache hit rate, and quota. It does not return the key |
 
 Not built: Gemini Live voice, Search grounding, Malayalam, photo intake, Pub/Sub, BigQuery.
@@ -120,9 +120,9 @@ python scripts/reset_demo
 
 ### Live Gemini versus the recorded demo
 
-`DEMO_MODE=true` still loads the synthetic scenario and the demo login. It does not block Gemini. A real `GEMINI_API_KEY` calls the model named by `GEMINI_MODEL` (currently `gemini-3.8-flash`, from the Gemini models page dated 2026-10-09). No key, a placeholder key, or `GEMINI_ENABLED=false` uses the deterministic fallback. The case stores `ai.provider` as `gemini`, `cache`, or `fallback`, and the AI reading line shows Gemini, Recorded Gemini run, or Offline fallback.
+`DEMO_MODE=true` still loads the synthetic scenario and the demo login. It does not block Gemini. A real `GEMINI_API_KEY` calls the model named by `GEMINI_MODEL` (currently `gemini-3.8-flash`, from the Gemini models page dated 2026-10-09). No key, a placeholder key, or `GEMINI_ENABLED=false` uses the deterministic fallback. The case stores `ai.provider` as `gemini`, `cache`, or `fallback`, and the AI reading line shows Gemini, Recorded (Gemini), or Offline fallback.
 
-`data/ai_cache` is empty in git. `make record-ai` writes it only after a real key returns Gemini JSON for the seeded reports. `AI_MODE=replay` serves those files as Recorded Gemini run. A new report that is not in the cache still calls Gemini when a key is set.
+`data/ai_cache/fixture.json` lists the demo seed and the scripted phone reports with no model replies. `make record-ai` writes the hash files only after a real key returns Gemini JSON. `AI_MODE=replay` serves those files as Recorded (Gemini). A listed prompt that is still empty does not call Gemini. A new report that is not in the catalog still calls Gemini when a key is set.
 
 Set the key only in `services/api/.env`. Do not commit it.
 

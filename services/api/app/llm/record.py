@@ -36,8 +36,6 @@ def record_seeded_reports() -> int:
     from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_user_prompt
     from app.llm.client import REPLAY_DIR, llm_client
     from app.models.schemas import ExtractedRequest
-    from app.tools.demo_seed import build_demo_reports
-
     key = require_real_key(os.environ.get("GEMINI_API_KEY") or settings.GEMINI_API_KEY)
     settings.GEMINI_API_KEY = key
     settings.GEMINI_ENABLED = True
@@ -59,12 +57,12 @@ def record_seeded_reports() -> int:
     kept = 0
     # Free-tier flash-lite allows 15 requests a minute. Stay under it.
     gap_s = float(os.environ.get("RECORD_AI_GAP_S", "4.5"))
-    from app.llm.replay_seed import seed_prompt
-    from app.tools.storage import storage_service
+    from app.llm.replay_catalog import catalog_rows
 
-    rows = [{"id": r["id"], "prompt": intake_user_prompt(r["text"], r.get("lang"))} for r in build_demo_reports()]
-    # The dashboard's seeded cases (INC-*) are read with the same prompt, so they can be replayed too.
-    rows += [{"id": r.id, "prompt": seed_prompt(r.raw_text)} for r in storage_service._requests.values() if r.raw_text]
+    rows = [
+        {"id": row["id"], "prompt": intake_user_prompt(row["text"] or "", row.get("lang"))}
+        for row in catalog_rows()
+    ]
     for row in rows:
         user_prompt = row["prompt"]
         digest = llm_client.cache_key(SYSTEM_INTAKE_PROMPT, user_prompt)

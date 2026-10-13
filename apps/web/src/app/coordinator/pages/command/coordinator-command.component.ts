@@ -88,6 +88,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   // Reactive state signals
   readonly requests = signal<StoredRequest[]>([]);
   readonly selectedRequestId = signal<string>('INC-001');
+  readonly mapFocus = signal(0);
   readonly matches = signal<MatchProposal[]>([]);
   readonly resources = signal<StoredResource[]>([]);
   readonly mapPins = computed<MapPin[]>(() => {
@@ -288,18 +289,33 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     { id: 'thrissur', ring: [[10.15, 76.02], [10.18, 76.48], [10.62, 76.42], [10.58, 76.02]] },
     { id: 'wayanad', ring: [[11.42, 75.95], [11.46, 76.28], [11.78, 76.24], [11.74, 75.96]] },
   ];
+  /** Open cases, or the selected case plus its candidate teams so the line is on screen. */
   readonly mapFrame = computed(() => {
-    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r));
-    if (!open.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
-    const lats = open.map((r) => r.lat as number);
-    const lngs = open.map((r) => r.lng as number);
+    const req = this.selectedRequest();
+    const teams = this.matches()
+      .map((prop) => this.resources().find((row) => row.id === prop.resource_id))
+      .filter((team): team is StoredResource => !!team && Number.isFinite(team.lat) && Number.isFinite(team.lng));
+    const focused = req?.lat != null && req.lng != null && teams.length > 0;
+    const points = focused
+      ? [{ lat: req.lat as number, lng: req.lng as number }, ...teams.map((team) => ({ lat: team.lat, lng: team.lng }))]
+      : this.requests()
+          .filter((row) => row.lat != null && row.lng != null && !this.isCompleted(row))
+          .map((row) => ({ lat: row.lat as number, lng: row.lng as number }));
+    if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
+    const lats = points.map((point) => point.lat);
+    const lngs = points.map((point) => point.lng);
     const minLa = Math.min(...lats);
     const maxLa = Math.max(...lats);
     const minLo = Math.min(...lngs);
     const maxLo = Math.max(...lngs);
-    const padLa = Math.max(0.08, (maxLa - minLa) * 0.18);
-    const padLo = Math.max(0.08, (maxLo - minLo) * 0.18);
+    const padLa = focused ? Math.max(0.012, (maxLa - minLa) * 0.45) : Math.max(0.08, (maxLa - minLa) * 0.18);
+    const padLo = focused ? Math.max(0.012, (maxLo - minLo) * 0.45) : Math.max(0.08, (maxLo - minLo) * 0.18);
     return { minLa: minLa - padLa, maxLa: maxLa + padLa, minLo: minLo - padLo, maxLo: maxLo + padLo };
+  });
+  readonly mapCenter = computed(() => {
+    const req = this.selectedRequest();
+    if (req?.lat != null && req.lng != null) return { lat: req.lat, lng: req.lng };
+    return { lat: 10.5, lng: 76.3 };
   });
   project(lat: number, lng: number): { x: number; y: number } {
     const frame = this.mapFrame();
@@ -401,6 +417,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.langService.currentLang();
     const km = prop.breakdown?.distance_km ?? 0;
     const minutes = prop.eta_minutes ?? this.etaMinutes(km);
+    const team = this.resources().find((row) => row.id === prop.resource_id);
+    if (team?.status === 'available' && km <= 15 && minutes <= 90) {
+      return this.langService.translate('coord.etaMin').replace('{n}', String(minutes));
+    }
     if (prop.no_nearby || km > 30 || minutes > 90) {
       return this.langService.translate('coord.noNearbyTeam');
     }
@@ -852,6 +872,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   selectRequest(id: string, openSheet = false): void {
     this.selectedRequestId.set(id);
+    this.mapFocus.update((n) => n + 1);
     this.ui.selectedCaseId.set(id);
     this.matchIdx.set(0);
     this.openSection.set(this.ui.demoWhy ? 'why' : null);

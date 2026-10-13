@@ -364,7 +364,7 @@ describe('CoordinatorCommandComponent', () => {
     component.requests.set(rows);
     component.selectRequest('INC-001');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent as string).toContain('Recorded Gemini run');
+    expect(fixture.nativeElement.textContent as string).toContain('Recorded (Gemini)');
   });
 
   it('says there is no nearby team instead of an hours-long ETA', () => {
@@ -382,9 +382,18 @@ describe('CoordinatorCommandComponent', () => {
       breakdown: { ...mockProposal.breakdown, distance_km: 1.2 },
     };
     expect(component.etaText(near)).toBe('about 4 min');
+    const freeClose: MatchProposal = {
+      ...mockProposal,
+      eta_minutes: undefined,
+      no_nearby: true,
+      breakdown: { ...mockProposal.breakdown, distance_km: 12 },
+    };
+    expect(component.etaText(freeClose)).toBe('about 36 min');
+    expect(component.etaText(freeClose)).not.toContain('No nearby team');
   });
 
   it('fits open cases and labels the four Kerala districts without a river', () => {
+    component.matches.set([]);
     component.requests.set([
       { ...mockRequests[0], id: 'south', lat: 9.43, lng: 76.4, status: 'new' },
       { ...mockRequests[0], id: 'north', lat: 11.6, lng: 76.08, status: 'new' },
@@ -424,6 +433,21 @@ describe('CoordinatorCommandComponent', () => {
     expect(pins.find((pin) => pin.id === 'res_boat_02')?.suggested).toBeTrue();
     expect(pins.find((pin) => pin.id === 'res_shelter')?.dim).toBeTrue();
     expect(component.focusLegs().map((leg) => leg.label)).toEqual(['1.2 km · about 4 min']);
+    const frame = component.mapFrame();
+    expect(frame.minLa).toBeLessThan(26.85);
+    expect(frame.maxLa).toBeGreaterThan(26.852);
+    expect(frame.minLo).toBeLessThan(80.925);
+    expect(frame.maxLo).toBeGreaterThan(80.93);
+    for (const leg of component.focusLegs()) {
+      for (const value of [leg.x1, leg.x2, leg.lx]) {
+        expect(value).toBeGreaterThan(20);
+        expect(value).toBeLessThan(580);
+      }
+      for (const value of [leg.y1, leg.y2, leg.ly]) {
+        expect(value).toBeGreaterThan(10);
+        expect(value).toBeLessThan(470);
+      }
+    }
     expect(component.legendBands()).toEqual(['critical']);
     expect(component.legendKinds()).toEqual(['boat']);
     const map = (fixture.nativeElement.querySelector('.svgmap') as HTMLElement).textContent || '';

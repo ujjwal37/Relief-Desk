@@ -26,8 +26,14 @@ def cosine(left: List[float], right: List[float]) -> float:
 
 
 def embed_texts(texts: List[str]) -> Optional[List[List[float]]]:
-    """768-d unit vectors, or None when Gemini cannot be called."""
-    if not texts or not llm_client.gemini_live():
+    """768-d unit vectors, or None when Gemini cannot be called.
+
+    Antigravity mode does not call the Gemini embedding API. Callers use the
+    lexical duplicate check instead.
+    """
+    from app.llm.antigravity import antigravity_requested
+
+    if antigravity_requested() or not texts or not llm_client.gemini_live():
         return None
     try:
         from google import genai

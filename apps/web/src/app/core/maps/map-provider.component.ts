@@ -62,7 +62,7 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   @ViewChild('canvas') canvas?: ElementRef<HTMLDivElement>;
 
   mode: 'google' | 'svg' = 'svg';
-  private map: { panTo?: (pos: { lat: number; lng: number }) => void } | null = null;
+  private map: { panTo?: (pos: { lat: number; lng: number }) => void; fitBounds?: (bounds: unknown, padding?: number) => void } | null = null;
   private markers: { setMap?: (map: null) => void }[] = [];
   private lines: { setMap?: (map: null) => void }[] = [];
   private lastCenter: { lat: number; lng: number } | null = null;
@@ -132,6 +132,18 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
         strokeWeight: leg.suggested ? 4 : 2,
         geodesic: true,
       }));
+      const labels = this.legs.filter((leg) => leg.title).map((leg) => new maps.Marker({
+        map: this.map,
+        position: { lat: (leg.from.lat + leg.to.lat) / 2, lng: (leg.from.lng + leg.to.lng) / 2 },
+        label: {
+          text: leg.title,
+          color: leg.suggested ? '#0b6e4f' : '#1c2430',
+          fontSize: '12px',
+          fontWeight: '700',
+        },
+        icon: { path: maps.SymbolPath?.CIRCLE ?? 0, scale: 0 },
+        clickable: false,
+      }));
       this.markers = this.pins.map((pin) => {
         const marker = new maps.Marker({
           map: this.map,
@@ -141,16 +153,37 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
         marker.addListener?.('click', () => this.pinSelect.emit(pin.id));
         return marker;
       });
+      this.markers.push(...labels);
+      this.fitToLegs(maps);
     } catch {
       this.mode = 'svg';
       this.map = null;
       this.cdr.markForCheck();
     }
   }
+
+  /** When a case is open, keep the case pin and its candidate teams in view. */
+  private fitToLegs(maps: GoogleMapsNs): void {
+    if (!this.map?.fitBounds || !this.legs.length || !maps.LatLngBounds) return;
+    const bounds = new maps.LatLngBounds();
+    for (const leg of this.legs) {
+      bounds.extend(leg.from);
+      bounds.extend(leg.to);
+    }
+    const anchor = this.legs[0].from;
+    bounds.extend({ lat: anchor.lat + 0.012, lng: anchor.lng + 0.012 });
+    bounds.extend({ lat: anchor.lat - 0.012, lng: anchor.lng - 0.012 });
+    this.map.fitBounds(bounds, 48);
+  }
 }
 
 interface GoogleMapsNs {
-  Map: new (el: HTMLElement, opts: Record<string, unknown>) => { panTo?: (pos: { lat: number; lng: number }) => void };
+  Map: new (el: HTMLElement, opts: Record<string, unknown>) => {
+    panTo?: (pos: { lat: number; lng: number }) => void;
+    fitBounds?: (bounds: unknown, padding?: number) => void;
+  };
+  LatLngBounds?: new () => { extend: (pos: { lat: number; lng: number }) => void };
   Marker: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void; addListener?: (event: string, fn: () => void) => void };
   Polyline: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void };
+  SymbolPath?: { CIRCLE: number };
 }

@@ -1,7 +1,5 @@
 # Recorded Gemini replies
 
-This directory has no Gemini transcripts until someone runs `make record-ai` with a real `GEMINI_API_KEY`.
+`fixture.json` lists the demo seed and the scripted phone reports. Every `response` is null until someone runs `make record-ai` with a real `GEMINI_API_KEY` and quota. That command writes `data/ai_cache/{prompt-hash}.json`. It exits before writing when the key is missing, `replace-me`, or `synthetic-demo-gemini-key`. A fallback reply is not stored.
 
-The command calls the configured model for each seeded Kerala flood report and writes `data/ai_cache/{prompt-hash}.json`. It exits before writing when the key is missing, `replace-me`, or `synthetic-demo-gemini-key`. A fallback reply is not stored and is not badged as a recorded run.
-
-`AI_MODE=replay` serves a file from this directory. The case badge is "Recorded Gemini run". A report whose prompt is not in this directory still calls Gemini when a real key is set.
+`AI_MODE=replay` serves a hash file and the trace says Recorded (Gemini). A catalog prompt that is still empty uses the deterministic fallback and does not call Gemini. A report that is not in the catalog can still call Gemini when a real key is set.

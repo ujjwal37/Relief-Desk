@@ -24,10 +24,10 @@ from app.models.firestore_models import (
 
 logger = logging.getLogger("relief_desk.storage")
 
-# The default demo is two open cases and the teams that can reach them.
+# The default demo is two Kuttanad cases and the teams that sit within 15 km of them.
 # DEMO_SEED=full loads every incident in the flood pack. Reset always returns here.
-SMALL_CASE_IDS = ("INC-001", "INC-008")
-SMALL_TEAM_IDS = ("RES-BOAT-01", "RES-BOAT-02", "RES-MED-04", "RES-FOOD-03")
+SMALL_CASE_IDS = ("INC-001", "INC-002")
+SMALL_TEAM_IDS = ("RES-BOAT-01", "RES-MED-02", "RES-FOOD-03", "RES-SHELTER-02")
 
 
 def active_seed_mode() -> str:

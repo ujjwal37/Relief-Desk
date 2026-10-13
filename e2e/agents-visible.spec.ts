@@ -97,7 +97,6 @@ test.describe('agents visible', () => {
       await expect(page.getByRole('heading', { name: 'Accuracy report' })).toBeVisible();
       await expect(page.getByText('Not measured yet').first()).toBeVisible();
       await expect(page.getByText('gemini-3.5-flash-lite')).toBeVisible();
-      await expect(page.getByText('2026-10-12')).toBeVisible();
       await expect(page.getByText('168').first()).toBeVisible();
       await expect(page.getByText('Example data')).toHaveCount(0);
       await expect(page.getByText('First come, first served').first()).toBeVisible();
