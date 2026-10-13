@@ -6,15 +6,12 @@
   <div class="strip" role="group" [attr.aria-label]="'coord.teamStrip' | rdTranslate">
     <button type="button" [class.on]="strip() === 'free'" [attr.aria-pressed]="strip() === 'free'" (click)="setStrip('free')">{{ 'coord.teamFree' | rdTranslate }} {{ counts().free }}</button>
     <button type="button" [class.on]="strip() === 'busy'" [attr.aria-pressed]="strip() === 'busy'" (click)="setStrip('busy')">{{ 'coord.teamBusy' | rdTranslate }} {{ counts().busy }}</button>
+    <button type="button" [class.on]="strip() === 'notUpdated'" [attr.aria-pressed]="strip() === 'notUpdated'" (click)="setStrip('notUpdated')">{{ 'coord.notUpdated' | rdTranslate }} {{ counts().notUpdated }}</button>
   </div>
 
-  @if (focus(); as req) {
-    @if (req.lat != null && req.lng != null) {
-      <div class="team-map">
-        <rd-map-provider [pins]="teamPins()" [legs]="teamLegs()" [center]="mapCenter()" [focusToken]="focusToken()" [fitAll]="true"></rd-map-provider>
-      </div>
-    }
-  }
+  <div class="team-map">
+    <rd-map-provider [pins]="teamPins()" [center]="mapCenter()" [fitAll]="true"></rd-map-provider>
+  </div>
   @if (notice()) { <p class="note" role="status">{{ notice() }}</p> }
   <ul class="list">
     @for (team of filtered(); track team.id) {
@@ -37,9 +34,9 @@
             }
           </span>
           <span class="name">{{ team.name }}</span>
-          <span class="status" [class.free]="isFree(team)">{{ statusLabel(team) }}</span>
+          <span class="status" [class.free]="bucket(team) === 'free'" [class.late]="bucket(team) === 'notUpdated'">{{ statusLabel(team) }}</span>
           <span class="leg">{{ leg(team) }}</span>
-          <time class="age" [class.stale]="stale(team)" [attr.datetime]="team.location_updated_at || null" [attr.title]="stale(team) ? ('coord.staleTeam' | rdTranslate) : null">{{ ageLabel(team) }}</time>
+          <time class="age" [class.stale]="checkInLate(team)" [attr.datetime]="team.location_updated_at || null" [attr.title]="checkInLate(team) ? ('coord.notUpdated' | rdTranslate) : null">{{ ageLabel(team) }}</time>
           <span class="chev" aria-hidden="true">{{ openId() === team.id ? '▾' : '▸' }}</span>
         </button>
         @if (openId() === team.id) {

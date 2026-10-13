@@ -22,6 +22,7 @@
 .name { grid-area: name; font-weight: 800; font-size: 16px; min-width: 0; }
 .status { grid-area: status; justify-self: end; font-weight: 800; font-size: 12px; padding: 4px 8px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; }
 .status.free { background: var(--brand-tint); color: var(--brand); }
+.status.late { background: var(--sev-high-t, #fff4e5); color: var(--sev-high); }
 .leg { grid-area: leg; color: var(--text-2); font-size: 13px; font-weight: 650; min-width: 0; }
 .age { grid-area: age; justify-self: end; color: var(--text-2); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .age.stale { color: var(--sev-high); }

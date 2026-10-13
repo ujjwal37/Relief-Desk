@@ -41,8 +41,9 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
       } @else {
         <h2 id="ask-desk-h" class="sr">{{ 'ux.deskTitle' | rdTranslate }}</h2>
       }
-      <div class="thread">
-        @if (fullPage() && !thread().length) {
+      @if (fullPage() && !thread().length) {
+        <div class="empty">
+          <p class="hello">{{ 'ux.agentHello' | rdTranslate }}</p>
           <div class="examples">
             @for (ex of examples; track ex.q) {
               <button type="button" class="example" (click)="useSuggestion(ex.q)">
@@ -52,7 +53,9 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
               </button>
             }
           </div>
-        }
+        </div>
+      }
+      <div class="thread">
         @for (turn of thread(); track $index; let last = $last) {
           <p class="bubble user">{{ turn.question }}</p>
           <div class="bubble desk">
@@ -66,7 +69,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
             <ul class="cards">
               @for (c of turn.answer.cases; track c.id) {
                 <li>
-                  <button type="button" class="case" (click)="picked.emit(c.id)">
+                  <button type="button" class="case case-link" (click)="picked.emit(c.id)">
                     <span class="id">{{ c.id }}</span>
                     <span class="type">{{ ('incidentType.' + c.type) | rdTranslate }}</span>
                     @if (c.ward_name) { <span class="ward">{{ c.ward_name }}</span> }
@@ -94,7 +97,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
       @if (error()) {
         <p class="err" role="alert">{{ 'ux.deskError' | rdTranslate }}</p>
       }
-      <form class="row" (ngSubmit)="ask()">
+      <form class="row composer" (ngSubmit)="ask()">
         <input
           name="q"
           [(ngModel)]="question"
@@ -140,13 +143,16 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .bubble.desk { align-self: stretch; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--border, rgba(0,0,0,.12)); background: var(--surface, #fff); }
     .thread { display: flex; flex-direction: column; gap: 10px; }
     .page { position: relative; display: flex; flex-direction: column; justify-content: center; height: 100%; min-height: 0; margin: 0; padding: 8px 0 12px; background: transparent; border: 0; box-shadow: none; }
-    .page .thread { flex: 0 1 auto; min-height: 0; max-height: 48%; overflow: auto; }
-    .page.has-thread { justify-content: flex-end; }
-    .page.has-thread .thread { flex: 1; max-height: none; justify-content: flex-start; }
+    .page .thread { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+    .page.has-thread { justify-content: flex-start; }
+    .page.has-thread .thread { flex: 1; overflow: auto; }
+    .page .composer, .page .suggestions { flex: none; }
     .page .cards, .page .trace { max-height: none; }
     .page .row input { min-height: 56px; border-radius: 28px; padding: 0 20px; font-size: 17px; }
     .page .suggestions { justify-content: center; }
-    .examples { display: grid; gap: 10px; width: min(560px, 100%); margin: 0 auto 8px; }
+    .hello { margin: 0 0 16px; text-align: center; font-size: 28px; font-weight: 650; line-height: 1.25; }
+    .empty { width: min(720px, 100%); margin: 0 auto 12px; }
+    .examples { display: grid; gap: 10px; width: min(560px, 100%); margin: 0 auto; }
     .example { text-align: left; border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; background: var(--surface); color: inherit; cursor: pointer; font: inherit; }
     .example strong { display: block; margin: 2px 0; }
     .example p { margin: 0; color: var(--text-2); font-size: 14px; }

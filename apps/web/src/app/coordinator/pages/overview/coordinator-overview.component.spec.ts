@@ -40,6 +40,12 @@ describe('CoordinatorOverviewComponent map filters', () => {
     expect(component.mapPins().map((pin) => pin.id).sort()).toEqual(['boat', 'med', 'now', 'soon']);
     expect(fixture.nativeElement.querySelectorAll('rd-map-provider').length).toBe(1);
     expect(fixture.nativeElement.querySelector('.omap')).toBeNull();
+    const map = fixture.nativeElement.querySelector('rd-map-provider') as HTMLElement;
+    const alerts = fixture.nativeElement.querySelector('app-coordinator-alerts') as HTMLElement;
+    expect(getComputedStyle(map).top).toBe('56px');
+    expect(getComputedStyle(alerts).width).toBe('380px');
+    expect(getComputedStyle(fixture.nativeElement.querySelector('.alerts-page.list-only')).overflowY).toBe('auto');
+    expect(map.compareDocumentPosition(alerts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.map-stage svg:not(.rd-schematic)')).toBeNull();
     expect(provider().pins.map((pin) => pin.id).sort()).toEqual(['boat', 'med', 'now', 'soon']);
     expect(provider().fitAll).toBeTrue();

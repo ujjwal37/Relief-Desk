@@ -31,7 +31,6 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
       </div>
     </section>
     <div class="stage">
-      <app-coordinator-alerts [listOnly]="true" />
       <section class="map-stage" [attr.aria-label]="'ui.map' | rdTranslate">
         <rd-map-provider [pins]="mapPins()" [center]="mapCenter()" [fitAll]="true"></rd-map-provider>
         <div class="chips" role="group" [attr.aria-label]="'coord.mapFilters' | rdTranslate">
@@ -56,6 +55,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
           }
         </div>
       </section>
+      <app-coordinator-alerts [listOnly]="true" />
     </div>
   `,
   styles: [`
@@ -71,18 +71,19 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     }
     .stage {
       flex: 1; min-height: 0; display: grid;
-      grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) 380px;
       gap: 12px; padding: 0 12px 12px;
     }
-    app-coordinator-alerts { min-height: 0; height: 100%; overflow: auto; display: block; }
+    app-coordinator-alerts { width: 380px; min-height: 0; height: 100%; overflow: hidden; display: block; }
     .map-stage {
       position: relative; min-height: 0; border-radius: 16px; overflow: hidden;
       border: 1px solid var(--border); background: var(--map-bg);
     }
-    rd-map-provider { position: absolute; inset: 0; display: block; }
+    rd-map-provider { position: absolute; top: 56px; right: 0; bottom: 0; left: 0; display: block; }
     .chips {
-      position: absolute; z-index: 2; top: 10px; left: 10px; max-width: 68%;
-      display: flex; flex-wrap: wrap; gap: 6px; pointer-events: auto;
+      position: absolute; z-index: 2; top: 0; left: 0; right: 0; height: 56px;
+      display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 10px;
+      pointer-events: auto;
     }
     .chips button {
       min-height: 32px; padding: 0 10px; border-radius: 999px;
@@ -91,8 +92,8 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     }
     .chips button.on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
     .legend {
-      position: absolute; z-index: 2; top: 10px; right: 10px; display: flex; flex-wrap: wrap;
-      max-width: 220px; gap: 6px 10px; background: var(--surface); border: 1px solid var(--border);
+      position: absolute; z-index: 2; bottom: 10px; left: 10px; display: flex; flex-wrap: wrap;
+      max-width: 280px; gap: 6px 10px; background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 700;
     }
     .legend span { display: inline-flex; align-items: center; gap: 4px; }
@@ -104,7 +105,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
       :host { overflow: auto; }
       .stage { grid-template-columns: 1fr; overflow: visible; }
       .map-stage { min-height: 420px; }
-      app-coordinator-alerts { height: auto; max-height: none; overflow: visible; }
+      app-coordinator-alerts { width: auto; height: auto; max-height: none; overflow: visible; }
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,

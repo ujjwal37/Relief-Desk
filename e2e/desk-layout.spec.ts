@@ -30,6 +30,17 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   await expect(page.locator('.map-stage svg:not(.rd-schematic)')).toHaveCount(0);
   await expect(page.locator('.omap')).toHaveCount(0);
   await expect(page.locator('.map-stage .chips button').first()).toBeVisible();
+  const mapTop = await page.locator('.map-stage rd-map-provider').evaluate((el) => getComputedStyle(el).top);
+  expect(mapTop).toBe('56px');
+  const panel = await page.locator('app-coordinator-alerts').boundingBox();
+  expect(panel).not.toBeNull();
+  expect(panel!.width).toBeGreaterThan(370);
+  expect(panel!.width).toBeLessThan(400);
+  expect(panel!.x).toBeGreaterThan(700);
+  const alertsOverflow = await page.locator('.alerts-page.list-only').evaluate((el) => getComputedStyle(el).overflowY);
+  expect(alertsOverflow).toBe('auto');
+  const fits = await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight + 1);
+  expect(fits).toBeTruthy();
   const alerts = page.getByRole('heading', { name: 'Alerts' });
   await expect(alerts).toBeVisible();
   const box = await alerts.boundingBox();
@@ -55,6 +66,7 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   await page.screenshot({ path: path.join(SHOTS, '1366-teams.png'), fullPage: false });
 
   await page.getByRole('link', { name: 'Agent', exact: true }).click();
+  await expect(page.getByText('Hi, what do you need to know?')).toBeVisible();
   await expect(page.locator('.example')).toHaveCount(3);
   await expect(page.locator('input[name="q"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Which cases are still waiting?', exact: true })).toBeVisible();
@@ -62,4 +74,6 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   await page.getByRole('button', { name: 'Which cases are still waiting?', exact: true }).click();
   await expect(page.locator('.bubble.user')).toBeVisible();
   await expect(page.locator('.example')).toHaveCount(0);
+  await expect(page.locator('form.composer')).toBeVisible();
+  await expect(page.locator('.case-link').first()).toBeVisible();
 });
