@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import queue
 import threading
 from typing import Any, Optional
@@ -25,8 +26,32 @@ ACTION_KIND = {
 HEARTBEAT_SECONDS = 15
 
 _lock = threading.Lock()
-_subscribers: list[queue.Queue] = []
+_subscribers: list[Any] = []
 _seen_alerts: Optional[set[str]] = None
+
+
+class LoopBox:
+    """A subscriber that lives on the event loop.
+
+    An SSE stream waits on this without holding a worker thread, so many open or stale
+    streams cannot starve the one phone that is waiting for "A team is on the way".
+    """
+
+    def __init__(self, loop: asyncio.AbstractEventLoop):
+        self.loop = loop
+        self.queue: asyncio.Queue = asyncio.Queue(maxsize=200)
+
+    def put_nowait(self, event: dict[str, Any]) -> None:
+        self.loop.call_soon_threadsafe(self._put, event)
+
+    def _put(self, event: dict[str, Any]) -> None:
+        try:
+            self.queue.put_nowait(event)
+        except asyncio.QueueFull:
+            pass
+
+    async def get(self, timeout: float) -> dict[str, Any]:
+        return await asyncio.wait_for(self.queue.get(), timeout)
 
 
 def subscribe() -> queue.Queue:
@@ -36,7 +61,14 @@ def subscribe() -> queue.Queue:
     return box
 
 
-def unsubscribe(box: queue.Queue) -> None:
+def subscribe_async() -> LoopBox:
+    box = LoopBox(asyncio.get_running_loop())
+    with _lock:
+        _subscribers.append(box)
+    return box
+
+
+def unsubscribe(box: Any) -> None:
     with _lock:
         if box in _subscribers:
             _subscribers.remove(box)
@@ -50,6 +82,9 @@ def publish(event: dict[str, Any]) -> None:
             box.put_nowait(event)
         except queue.Full:
             # A slow client should not stall intake. It will catch up on the next poll.
+            pass
+        except RuntimeError:
+            # The stream's event loop has closed. Its generator removes the box on exit.
             pass
 
 

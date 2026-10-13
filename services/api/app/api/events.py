@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import json
-import queue
 from typing import AsyncIterator, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
 
 from app.api.auth import verify_coordinator_token
-from app.tools.events import HEARTBEAT_SECONDS, subscribe, unsubscribe
+from app.tools.events import HEARTBEAT_SECONDS, subscribe_async, unsubscribe
 from app.tools.storage import storage_service
 
 router = APIRouter(prefix="/api", tags=["Events"])
@@ -32,6 +31,16 @@ def _case_for_report(report_id: str, status_token: str) -> str:
     return report.case_id or report.request_id or ""
 
 
+def _live_case(case_id: Optional[str]) -> Optional[str]:
+    """A report merged after the phone connected still hears the case it joined."""
+    if not case_id:
+        return case_id
+    req = storage_service.get_request(case_id)
+    if req is not None and req.merged_into:
+        return req.merged_into
+    return case_id
+
+
 def _visible(event: dict, case_id: Optional[str]) -> bool:
     if case_id is None:
         return True
@@ -49,7 +58,7 @@ def _frame(event: dict) -> str:
 
 
 async def _stream(request: Request, case_id: Optional[str]) -> AsyncIterator[str]:
-    box = subscribe()
+    box = subscribe_async()
     try:
         # Ask the browser to wait 5s if it reconnects on its own. We also reconnect with backoff.
         yield "retry: 5000\n\n"
@@ -58,11 +67,11 @@ async def _stream(request: Request, case_id: Optional[str]) -> AsyncIterator[str
             if await request.is_disconnected():
                 break
             try:
-                item = await asyncio.to_thread(box.get, True, HEARTBEAT_SECONDS)
-            except queue.Empty:
+                item = await box.get(HEARTBEAT_SECONDS)
+            except asyncio.TimeoutError:
                 yield "event: heartbeat\ndata: {}\n\n"
                 continue
-            if _visible(item, case_id):
+            if _visible(item, case_id) or _visible(item, _live_case(case_id)):
                 yield _frame(item)
     finally:
         unsubscribe(box)

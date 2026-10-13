@@ -294,8 +294,11 @@ def get_report_status(
 
     # If real report found, find corresponding request
     req: Optional[StoredRequest] = None
-    if report.request_id:
-        req = storage_service.get_request(report.request_id)
+    if report.case_id or report.request_id:
+        req = storage_service.get_request(report.case_id or report.request_id)
+    # A merged report follows the case it joined, so its phone sees that case's dispatch.
+    if req is not None and req.merged_into:
+        req = storage_service.get_request(req.merged_into) or req
 
     req_status = req.status if req else RequestStatus.NEW
     code = public_code_for(report.id)
