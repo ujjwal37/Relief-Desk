@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openTechnical } from './desk-ui';
 import { resetDemo } from './reset-demo';
 
 test.beforeEach(async ({ request }) => {
@@ -42,6 +43,8 @@ test('phone report is approved and the reporter sees help on the way', async ({ 
   await desk.getByRole('button', { name: 'How it decided' }).first().click();
   const trace = desk.getByRole('dialog', { name: 'How it decided' });
   await expect(trace).toBeVisible();
+  await expect(trace.getByText('Read the report', { exact: true })).toBeVisible();
+  await openTechnical(trace);
   await expect(trace.getByText('Intake', { exact: true }).first()).toBeVisible();
   await expect(trace.getByText('Matching', { exact: true }).first()).toBeVisible();
   await desk.keyboard.press('Escape');

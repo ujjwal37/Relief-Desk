@@ -56,14 +56,14 @@ import { JustReportedService } from './just-reported.service';
   `,
   styles: [`
     :host { display: block; flex: none; }
-    .just { padding: 8px 12px 0; }
-    h2 { margin: 0 0 6px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
-    .row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .just { padding: 6px 12px 0; }
+    h2 { margin: 0 0 4px; font-size: 13px; font-weight: 600; letter-spacing: -0.01em; color: var(--muted); }
+    .row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
     .chip {
-      flex: none; display: flex; gap: 8px; align-items: flex-start; max-width: 280px;
-      min-height: 44px; text-align: left; border: 1px solid var(--border); border-radius: 12px;
-      background: var(--surface); color: var(--text); padding: 6px 10px; cursor: pointer;
-      font: 400 14px/1.4 var(--rd-font-family);
+      flex: none; display: flex; gap: 6px; align-items: flex-start; max-width: 240px;
+      min-height: 40px; text-align: left; border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface); color: var(--text); padding: 4px 8px; cursor: pointer;
+      font: 400 13px/1.35 var(--rd-font-family);
     }
     .ico { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--brand-tint); color: var(--brand); }
     .ico[data-type="medical"] { color: var(--sev-crit); background: var(--sev-crit-t); }
@@ -92,7 +92,7 @@ export class JustReportedStripComponent implements OnInit, OnDestroy {
 
   readonly rows = computed(() => {
     this.lang.currentLang();
-    return visibleReports(this.store.items(), this.now());
+    return visibleReports(this.store.items(), this.now()).slice(0, 3);
   });
 
   ngOnInit(): void {

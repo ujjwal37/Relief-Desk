@@ -28,6 +28,18 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
   readonly closed = output<void>();
   readonly retry = output<void>();
   readonly expanded = signal<string | null>(null);
+  readonly techOpen = signal(false);
+
+  readonly story = computed(() => {
+    this.lang.currentLang();
+    const t = (key: string) => this.lang.translate(key);
+    return [
+      { key: 'read', title: t('ux.stepRead'), note: t('ux.stepReadNote') },
+      { key: 'dedupe', title: t('ux.stepDedupe'), note: t('ux.stepDedupeNote') },
+      { key: 'rank', title: t('ux.stepRank'), note: t('ux.stepRankNote') },
+      { key: 'team', title: t('ux.stepTeam'), note: t('ux.stepTeamNote') },
+    ];
+  });
 
   /** Test model (vendor) when a test provider ran any step. Null for Gemini, recorded and rules runs. */
   readonly testWord = computed(() => {

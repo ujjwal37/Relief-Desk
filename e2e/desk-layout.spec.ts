@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { openMoreDetails, openTechnical } from './desk-ui';
 import { resetDemo } from './reset-demo';
 
 const SHOTS = '/opt/cursor/artifacts/screenshots';
@@ -24,6 +25,18 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   await expect(homeTab).toHaveClass(/on/);
   // The first open case can sit far from the Kuttanad teams. Open a Ward 1 case so the lines show minutes.
   await page.locator('button.case').filter({ hasText: /Ward 1 ·/ }).first().click();
+  await expect(page.locator('.facts').first()).toContainText(/km/);
+  await expect(page.locator('.facts').first()).toContainText(/min/);
+  await page.screenshot({ path: path.join(SHOTS, '1366-home-selected.png'), fullPage: false });
+  await page.getByRole('button', { name: 'How it decided' }).first().click();
+  const how = page.getByRole('dialog', { name: 'How it decided' });
+  await expect(how).toBeVisible();
+  await expect(how.getByText('Read the report', { exact: true })).toBeVisible();
+  await expect(how.getByText('Picked team', { exact: true })).toBeVisible();
+  await page.screenshot({ path: path.join(SHOTS, '1366-how-it-decided.png'), fullPage: false });
+  await openTechnical(how);
+  await page.keyboard.press('Escape');
+  await openMoreDetails(page);
   const eta = page.locator('.candidates .eta').first();
   await expect(eta).toContainText(/km/);
   await expect(eta).toContainText(/min/);

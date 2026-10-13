@@ -369,6 +369,24 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.waitTime({ ...mockRequests[0], wait_minutes: 0, created_at: hourAgo })).toMatch(/1 h/);
   });
 
+  it('shows a slim queue card and a Send card with one Why line', () => {
+    const card = fixture.nativeElement.querySelector('button.case') as HTMLElement;
+    expect(card.querySelector('.title')?.textContent).toContain('Water has entered');
+    expect(card.querySelector('.loc')?.textContent).toMatch(/^Ward 7 ·/);
+    expect(card.querySelector('.prio')?.textContent?.trim()).toBe('94');
+    expect(card.querySelector('.ico-chip.people')?.textContent).toContain('5');
+    expect(card.querySelector('.ico-chip.vuln')?.textContent).toContain('Vulnerable');
+    expect(card.textContent).not.toContain('Priority');
+    expect(card.querySelector('.need')).toBeNull();
+    const panel = fixture.nativeElement.querySelector('.detail') as HTMLElement;
+    expect(panel.querySelector('.send-kicker')?.textContent).toContain('Send: Motorized Rescue Boat #02');
+    expect((panel.querySelector('.facts') as HTMLElement).textContent).toContain('1.2 km · about 4 min');
+    expect(panel.querySelector('.why-line')?.textContent).toContain('Rescue Boat #02');
+    expect(panel.querySelector('.more-block')?.hasAttribute('hidden')).toBeTrue();
+    expect(component.sendTeamLabel('Boat 2')).toBe('Send: Boat 2');
+    expect(component.whyLine(mockProposal)).toContain('1.2 km');
+  });
+
   it('keeps Ward N on the queue location line', () => {
     expect(component.locationLine(mockRequests[0])).toMatch(/^Ward 7 ·/);
     expect(component.locationLine({ ...mockRequests[0], ward_id: 'ward_12', place_text: 'Canal Road' }))

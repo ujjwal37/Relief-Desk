@@ -40,29 +40,30 @@
             <div class="case-wrap" [class.sel]="selectedRequestId() === req.id" [class.row-flash]="flashIds().has(req.id)" [attr.data-case-id]="req.id">
               <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.data-band]="bandOf(req.urgency_score)" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
                 <span class="tone" aria-hidden="true"></span>
-                <span class="row1">
-                  <app-sev-chip [band]="bandOf(req.urgency_score)" />
-                  <span class="prio">{{ 'coord.priorityScore' | rdTranslate }} <b>{{ Math.round(req.urgency_score) }}</b></span>
+                <span class="q-top">
+                  <span class="q-main">
+                    <span class="title">{{ getTranslationText(req) }}</span>
+                    <span class="loc">{{ locationLine(req) }}</span>
+                  </span>
+                  <span class="prio" [attr.title]="fullStamp(req.created_at)">{{ Math.round(req.urgency_score) }}</span>
                 </span>
-                <span class="title">{{ getTranslationText(req) }}</span>
-                <span class="loc">{{ locationLine(req) }}</span>
-                @if (queueNeedLine(req)) { <span class="need">{{ queueNeedLine(req) }}</span> }
-                <span class="foot" [attr.title]="fullStamp(req.created_at)">
-                  <span class="stat">{{ 'coord.priorityScore' | rdTranslate }} {{ Math.round(req.urgency_score) }}</span>
-                  <span class="stat">{{ waitTime(req) }}</span>
-                  <span class="stat">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
+                <span class="q-meta">
+                  <span class="wait">{{ waitTime(req) }}</span>
+                  <span class="ico-chips">
+                    <span class="ico-chip people">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-7 1.7-7 4v2h14v-2c0-2.3-3.7-4-7-4z"/></svg>
+                      {{ req.people_count || 1 }}
+                    </span>
+                    @if (hasVulnerable(req)) {
+                      <span class="ico-chip vuln">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg>
+                        {{ 'coord.chipVulnerable' | rdTranslate }}
+                      </span>
+                    }
+                  </span>
                 </span>
-                <span class="tags">
-                  @if (waitChip(req)) { <span class="tag warn">{{ waitChip(req) }}</span> }
-                  @if (isReview(req)) { <span class="tag warn">{{ 'coord.review' | rdTranslate }}</span> }
-                  @if (isDispatched(req)) { <span class="tag ok">{{ 'coord.filterDispatched' | rdTranslate }}</span> }
-                  @if (isCompleted(req)) { <span class="tag ok">{{ 'coord.filterCompleted' | rdTranslate }}</span> }
-                  @if (isAnalysing(req)) { <span class="tag ai" data-testid="ai-analysing">{{ 'ux.aiAnalysing' | rdTranslate }}</span> }
-                  @if (countSpans(req).length > 1) { <span class="tag warn" data-testid="counts-differ">{{ countsDiffer(req) }}</span> }
-                  @if (req.possible_duplicate) { <span class="tag warn" data-testid="possible-duplicate">{{ 'coord.possibleDuplicate' | rdTranslate }}</span> }
-                  @if (freshIds().has(req.id)) { <span class="tag new">{{ 'coord.newJustNow' | rdTranslate }}</span> }
-                  @if (analysedLabel(req.id)) { <span class="tag analysed"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8 6h11M8 12h11M8 18h7"/><circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>{{ analysedLabel(req.id) }}</span> }
-                </span>
+                @if (isAnalysing(req)) { <span class="tag ai" data-testid="ai-analysing">{{ 'ux.aiAnalysing' | rdTranslate }}</span> }
+                @if (analysedLabel(req.id)) { <span class="sr-only">{{ analysedLabel(req.id) }}</span> }
               </button>
               <div class="hooks">
                 @if ((req.merged_count || 1) > 1) {
@@ -152,22 +153,7 @@
       @if (selectedRequest(); as req) {
         <div class="detail-scroll">
           <p class="decision-kicker">{{ 'coord.decision' | rdTranslate }}</p>
-          <div class="d-head">
-            <app-sev-chip [band]="bandOf(req.urgency_score)" />
-            <span class="id" [attr.title]="fullStamp(req.updated_at) || fullStamp(req.created_at)">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
-          </div>
           <h2>{{ getTranslationText(req) }}</h2>
-          <div class="d-hooks">
-            @if ((req.merged_count || 1) > 1) {
-              <app-merged-chip [count]="req.merged_count || 1" [requestId]="req.id" [mobile]="narrow()" (undo)="splitCluster(req.id)" />
-            }
-            <button type="button" class="trace-chip" (click)="openTrace(req, $event)">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>
-              {{ 'ux.viewTrace' | rdTranslate }}
-            </button>
-          </div>
-          <p class="place">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text }} · {{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</p>
-          @if (countSpans(req).length > 1) { <p class="count-note" data-testid="counts-differ">{{ countsDiffer(req) }}</p> }
           @if (req.possible_duplicate) {
             <div class="dup-review" data-testid="dup-review">
               <p>{{ 'coord.possibleDuplicate' | rdTranslate }}</p>
@@ -176,100 +162,140 @@
             </div>
           }
 
-          <div class="said">
-            <div class="said-head">
-              <span class="cap">{{ 'coord.said' | rdTranslate }}</span>
-              @if (isLowTranslationConfidence(req)) { <span class="tag warn">{{ 'coord.lowTrans' | rdTranslate }} ({{ getTranslationConfidencePercent(req) }}%)</span> }
-              <button type="button" class="link" (click)="showOriginal.set(!showOriginal())">{{ (showOriginal() ? 'coord.showTranslation' : 'coord.showOriginal') | rdTranslate }}</button>
-            </div>
-            @if ((req.report_quotes?.length || 0) > 1) {
-              @for (quote of req.report_quotes; track quote.report_id) {
-                <p class="quote" data-testid="report-quote">“{{ quote.text }}”</p>
-              }
-            } @else {
-              <p class="quote">“{{ showOriginal() ? (req.raw_text || req.place_text) : getTranslationText(req) }}”</p>
-            }
-            @if (req.analysis_status === 'analysing') { <p class="ai-read">{{ 'coord.traceWorking' | rdTranslate }}</p> }
-            <p class="ai-read">
-              <span class="cap">{{ 'coord.aiReading' | rdTranslate }}</span>
-              <span class="ai-src" [class.live]="aiKind(req) === 'gemini'" data-testid="ai-source">{{ aiSourceText(req) }}</span>
-            </p>
-            @if ((req.merged_count || 1) > 1) { <p class="more">{{ tr('coord.moreReports', (req.merged_count || 1) - 1) }}</p> }
-          </div>
-
           @if (activeProposal(); as prop) {
-            <div class="best" data-tour="detail">
-              <div class="best-head">
-                <span class="cap">{{ 'coord.bestTeam' | rdTranslate }}</span>
-                <span class="fit">{{ tr('coord.fit', fitPct(prop)) }}</span>
+            <div class="best send-card" data-tour="detail">
+              <p class="send-kicker">{{ sendTeamLabel(prop.resource_name) }}</p>
+              <div class="send-row">
+                <span class="veh" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22"><path [attr.d]="vehiclePath(prop.resource_kind)" fill="currentColor"/></svg>
+                </span>
+                <div class="send-copy">
+                  <div class="team">{{ prop.resource_name }}</div>
+                  <div class="facts">{{ legLabel(prop) }}</div>
+                </div>
               </div>
-              <div class="team">{{ prop.resource_name }}</div>
               @if (prop.is_fallback && prop.fallback_label) { <p class="warnline">{{ prop.fallback_label | rdTranslate }}</p> }
               @if (prop.wait_minutes) { <p class="warnline">{{ waitLabel(prop) }}</p> }
-              @if (req.assigned_resource_id) {
-                <a class="link" [routerLink]="['/team', req.assigned_resource_id]">{{ 'team.open' | rdTranslate }}</a>
-              }
-              <div class="facts">{{ legLabel(prop) }} · {{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ ('coord.kind.' + prop.resource_kind) | rdTranslate }}
-                @if (prop.simulated || assignedTeam(req)?.simulated) { <span class="tag">{{ 'coord.simulated' | rdTranslate }}</span> }
-              </div>
               @if (prop.capacity_remaining < (req.people_count || 1) || prop.overcommit_warning) { <p class="warnline">⚠ {{ 'coord.overcommit' | rdTranslate }}</p> }
-              @if (prop.explanation) {
-                <p class="reason-cap">{{ 'coord.reasoning' | rdTranslate }}</p>
-                <p class="expl reason" data-testid="decision-reason">{{ prop.explanation }}</p>
+            </div>
+            <p class="why-line" [attr.title]="whyLine(prop)"><span class="why-k">{{ 'ux.why' | rdTranslate }}</span> {{ whyLine(prop) }}</p>
+          } @else {
+            <div class="best send-card"><p class="facts">…</p></div>
+          }
+
+          <div class="panel-links">
+            <button type="button" class="trace-chip" (click)="openTrace(req, $event)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"/></svg>
+              {{ 'ux.viewTrace' | rdTranslate }}
+            </button>
+            <button type="button" class="more-toggle" [attr.aria-expanded]="moreOpen()" (click)="moreOpen.set(!moreOpen())">
+              {{ (moreOpen() ? 'coord.hideMoreDetails' : 'coord.moreDetails') | rdTranslate }}
+            </button>
+          </div>
+
+          <div class="more-block" [hidden]="!moreOpen()">
+            <p class="place">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text }} · {{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</p>
+            @if (countSpans(req).length > 1) { <p class="count-note" data-testid="counts-differ">{{ countsDiffer(req) }}</p> }
+            <div class="d-hooks">
+              @if ((req.merged_count || 1) > 1) {
+                <app-merged-chip [count]="req.merged_count || 1" [requestId]="req.id" [mobile]="narrow()" (undo)="splitCluster(req.id)" />
               }
             </div>
+            <div class="said">
+              <div class="said-head">
+                <span class="cap">{{ 'coord.said' | rdTranslate }}</span>
+                @if (isLowTranslationConfidence(req)) { <span class="tag warn">{{ 'coord.lowTrans' | rdTranslate }} ({{ getTranslationConfidencePercent(req) }}%)</span> }
+                <button type="button" class="link" (click)="showOriginal.set(!showOriginal())">{{ (showOriginal() ? 'coord.showTranslation' : 'coord.showOriginal') | rdTranslate }}</button>
+              </div>
+              @if ((req.report_quotes?.length || 0) > 1) {
+                @for (quote of req.report_quotes; track quote.report_id) {
+                  <p class="quote" data-testid="report-quote">“{{ quote.text }}”</p>
+                }
+              } @else {
+                <p class="quote">“{{ showOriginal() ? (req.raw_text || req.place_text) : getTranslationText(req) }}”</p>
+              }
+              @if (req.analysis_status === 'analysing') { <p class="ai-read">{{ 'coord.traceWorking' | rdTranslate }}</p> }
+              <p class="ai-read">
+                <span class="cap">{{ 'coord.aiReading' | rdTranslate }}</span>
+                <span class="ai-src" [class.live]="aiKind(req) === 'gemini'" data-testid="ai-source">{{ aiSourceText(req) }}</span>
+              </p>
+              @if ((req.merged_count || 1) > 1) { <p class="more">{{ tr('coord.moreReports', (req.merged_count || 1) - 1) }}</p> }
+            </div>
+
+            @if (activeProposal(); as prop) {
+              <div class="best">
+                <div class="best-head">
+                  <span class="cap">{{ 'coord.bestTeam' | rdTranslate }}</span>
+                  <span class="fit">{{ tr('coord.fit', fitPct(prop)) }}</span>
+                </div>
+                <div class="team">{{ prop.resource_name }}</div>
+                @if (req.assigned_resource_id) {
+                  <a class="link" [routerLink]="['/team', req.assigned_resource_id]">{{ 'team.open' | rdTranslate }}</a>
+                }
+                <div class="score-facts">{{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ ('coord.kind.' + prop.resource_kind) | rdTranslate }}
+                  @if (prop.simulated || assignedTeam(req)?.simulated) { <span class="tag">{{ 'coord.simulated' | rdTranslate }}</span> }
+                </div>
+                @if (prop.explanation) {
+                  <p class="reason-cap">{{ 'coord.reasoning' | rdTranslate }}</p>
+                  <p class="expl reason" data-testid="decision-reason">{{ prop.explanation }}</p>
+                }
+              </div>
+
+              <div class="acc">
+                <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'why'" (click)="toggleSection('why')"><span>{{ 'coord.why' | rdTranslate }}</span><span class="chev">{{ openSection() === 'why' ? '⌃' : '⌄' }}</span></button>
+                @if (openSection() === 'why') {
+                  <div class="acc-b">
+                    <div class="bd"><span>{{ 'ui.distance' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.distance_score / 30) * 100"></b></div><em>{{ prop.breakdown.distance_score.toFixed(1) }}/30</em></div>
+                    <div class="bd"><span>{{ 'ui.capacity' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.capacity_fit_score / 25) * 100"></b></div><em>{{ prop.breakdown.capacity_fit_score.toFixed(1) }}/25</em></div>
+                    <div class="bd"><span>{{ 'ui.urgency' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.urgency_score / 25) * 100"></b></div><em>{{ prop.breakdown.urgency_score.toFixed(1) }}/25</em></div>
+                    <div class="bd"><span>{{ 'ui.vuln' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.vulnerability_fit_score / 20) * 100"></b></div><em>{{ prop.breakdown.vulnerability_fit_score.toFixed(1) }}/20</em></div>
+                    @if (prop.explanation) { <p class="expl">{{ prop.explanation }}</p> }
+                  </div>
+                }
+              </div>
+            }
+
+            @if (candidateMatches().length) {
+              <ul class="candidates">
+                @for (m of candidateMatches(); track m.resource_id) {
+                  <li [class.on]="highlightId() === m.resource_id" (mouseenter)="highlightId.set(m.resource_id)" (mouseleave)="highlightId.set(null)">
+                    <span>{{ m.resource_name }}</span>
+                    <span class="eta">{{ legLabel(m) }}</span>
+                  </li>
+                }
+              </ul>
+            }
 
             <div class="acc">
-              <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'why'" (click)="toggleSection('why')"><span>{{ 'coord.why' | rdTranslate }}</span><span class="chev">{{ openSection() === 'why' ? '⌃' : '⌄' }}</span></button>
-              @if (openSection() === 'why') {
+              <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'reports'" (click)="toggleSection('reports')"><span>{{ (req.merged_count || 1) > 1 ? tr('coord.allReports', req.merged_count || 1) : ('coord.reportDetails' | rdTranslate) }}</span><span class="chev">{{ openSection() === 'reports' ? '⌃' : '⌄' }}</span></button>
+              @if (openSection() === 'reports') {
                 <div class="acc-b">
-                  <div class="bd"><span>{{ 'ui.distance' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.distance_score / 30) * 100"></b></div><em>{{ prop.breakdown.distance_score.toFixed(1) }}/30</em></div>
-                  <div class="bd"><span>{{ 'ui.capacity' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.capacity_fit_score / 25) * 100"></b></div><em>{{ prop.breakdown.capacity_fit_score.toFixed(1) }}/25</em></div>
-                  <div class="bd"><span>{{ 'ui.urgency' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.urgency_score / 25) * 100"></b></div><em>{{ prop.breakdown.urgency_score.toFixed(1) }}/25</em></div>
-                  <div class="bd"><span>{{ 'ui.vuln' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.vulnerability_fit_score / 20) * 100"></b></div><em>{{ prop.breakdown.vulnerability_fit_score.toFixed(1) }}/20</em></div>
-                  @if (prop.explanation) { <p class="expl">{{ prop.explanation }}</p> }
+                  @if (req.report_quotes?.length) {
+                    @for (quote of req.report_quotes; track quote.report_id) {
+                      <p class="expl" data-testid="report-quote">“{{ quote.text }}”</p>
+                    }
+                  } @else {
+                    <p class="expl">“{{ req.raw_text || req.place_text }}”</p>
+                  }
+                  <div class="conf">
+                    <span>{{ 'ui.type' | rdTranslate }} {{ Math.round((req.confidence?.type || 0.96) * 100) }}%</span>
+                    <span>{{ 'ui.place' | rdTranslate }} {{ Math.round((req.confidence?.place || 0.88) * 100) }}%</span>
+                    <span>{{ 'ui.peopleW' | rdTranslate }} {{ Math.round((req.confidence?.people || 0.82) * 100) }}%</span>
+                  </div>
+                  @if (req.cluster_id) { <button type="button" class="link" (click)="splitCluster(req.id)">{{ 'ui.undoMerge' | rdTranslate }}</button> }
                 </div>
               }
             </div>
-          } @else {
-            <div class="best"><p class="facts">…</p></div>
-          }
-
-          @if (candidateMatches().length) {
-            <ul class="candidates">
-              @for (m of candidateMatches(); track m.resource_id) {
-                <li [class.on]="highlightId() === m.resource_id" (mouseenter)="highlightId.set(m.resource_id)" (mouseleave)="highlightId.set(null)">
-                  <span>{{ m.resource_name }}</span>
-                  <span class="eta">{{ legLabel(m) }}</span>
-                </li>
+            @if (activeProposal(); as rejectProp) {
+              @if (!isCompleted(req) && !isDispatched(req)) {
+                <button type="button" class="btn-quiet more-reject" (click)="openRejectModal(rejectProp)">{{ 'coord.reject' | rdTranslate }}</button>
               }
-            </ul>
-          }
-
-          <div class="acc">
-            <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'reports'" (click)="toggleSection('reports')"><span>{{ (req.merged_count || 1) > 1 ? tr('coord.allReports', req.merged_count || 1) : ('coord.reportDetails' | rdTranslate) }}</span><span class="chev">{{ openSection() === 'reports' ? '⌃' : '⌄' }}</span></button>
-            @if (openSection() === 'reports') {
-              <div class="acc-b">
-                @if (req.report_quotes?.length) {
-                  @for (quote of req.report_quotes; track quote.report_id) {
-                    <p class="expl" data-testid="report-quote">“{{ quote.text }}”</p>
-                  }
-                } @else {
-                  <p class="expl">“{{ req.raw_text || req.place_text }}”</p>
-                }
-                <div class="conf">
-                  <span>{{ 'ui.type' | rdTranslate }} {{ Math.round((req.confidence?.type || 0.96) * 100) }}%</span>
-                  <span>{{ 'ui.place' | rdTranslate }} {{ Math.round((req.confidence?.place || 0.88) * 100) }}%</span>
-                  <span>{{ 'ui.peopleW' | rdTranslate }} {{ Math.round((req.confidence?.people || 0.82) * 100) }}%</span>
-                </div>
-                @if (req.cluster_id) { <button type="button" class="link" (click)="splitCluster(req.id)">{{ 'ui.undoMerge' | rdTranslate }}</button> }
-              </div>
             }
           </div>
         </div>
 
         <div class="actionbar" data-tour="actions">
-          <p class="decide">{{ 'coord.youDecide' | rdTranslate }}</p>
+          <p class="sr-only">{{ 'coord.youDecide' | rdTranslate }}</p>
           @if (changeOpen()) {
             <div class="chooser" role="listbox" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">
               @for (m of matches(); track m.match_id; let i = $index) {
@@ -289,8 +315,7 @@
           } @else if (activeProposal(); as prop) {
             <div class="btns">
               <button type="button" class="btn-approve" (click)="approveMatch(prop)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>{{ 'coord.approve' | rdTranslate }}</button>
-              <button type="button" class="btn-sec" (click)="changeOpen.set(!changeOpen())" [attr.aria-expanded]="changeOpen()">{{ 'coord.change' | rdTranslate }}</button>
-              <button type="button" class="btn-quiet" (click)="openRejectModal(prop)">{{ 'coord.reject' | rdTranslate }}</button>
+              <button type="button" class="btn-sec" (click)="changeOpen.set(!changeOpen())" [attr.aria-expanded]="changeOpen()">{{ 'coord.chooseTeam' | rdTranslate }}</button>
             </div>
           } @else {
             <div class="btns"><button type="button" class="btn-approve" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>{{ 'coord.approve' | rdTranslate }}</button></div>

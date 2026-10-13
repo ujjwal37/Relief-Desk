@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { API } from './ports';
+import { openTechnical } from './desk-ui';
 import { resetDemo } from './reset-demo';
 
 const SHOTS = '/opt/cursor/artifacts/screenshots';
@@ -47,7 +48,7 @@ async function clickCoordLink(page: Page, name: string): Promise<void> {
     await nav.click();
     return;
   }
-  const more = page.getByRole('button', { name: 'More' });
+  const more = page.getByRole('button', { name: 'More', exact: true });
   if (await more.isVisible()) await more.click();
   else await page.getByRole('button', { name: 'Account menu' }).click();
   await page.locator('.menu').getByRole('link', { name }).click();
@@ -73,6 +74,8 @@ test.describe('agents visible', () => {
       await page.getByRole('button', { name: 'How it decided' }).first().click();
       const dialog = page.getByRole('dialog', { name: 'How it decided' });
       await expect(dialog).toBeVisible();
+      await expect(dialog.getByText('Read the report', { exact: true })).toBeVisible();
+      await openTechnical(dialog);
       await expect(dialog.getByText('Intake', { exact: true }).first()).toBeVisible();
       await expect(dialog.getByText('Duplicate check', { exact: true }).first()).toBeVisible();
       await expect(dialog.getByText('Triage', { exact: true }).first()).toBeVisible();

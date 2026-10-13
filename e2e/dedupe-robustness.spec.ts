@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { API } from './ports';
+import { openMoreDetails, openTechnical } from './desk-ui';
 import { resetDemo } from './reset-demo';
 
 const PIN = { lat: 8.11, lng: 77.21 };
@@ -47,11 +48,14 @@ test('three reworded reports become one case, and conflicting counts keep the hi
   await expect(row).toHaveCount(1, { timeout: 20_000 });
   await expect(merged.getByRole('button', { name: '3 reports', exact: true })).toBeVisible();
   await row.click();
+  await openMoreDetails(desk);
   await expect(desk.getByTestId('report-quote')).toHaveCount(3);
   await expect(desk.getByTestId('report-quote').nth(0)).toContainText('roof');
   await expect(desk.getByTestId('report-quote').nth(1)).toContainText(place);
   await desk.locator('.detail').getByRole('button', { name: 'How it decided' }).click();
-  await expect(desk.getByRole('dialog')).toContainText('Similarity');
+  const firstTrace = desk.getByRole('dialog');
+  await openTechnical(firstTrace);
+  await expect(firstTrace).toContainText('Similarity');
   await desk.keyboard.press('Escape');
 
   const ranges = `Oakbend${Date.now().toString(36).replace(/[0-9]/g, 'y')}`;
@@ -59,15 +63,16 @@ test('three reworded reports become one case, and conflicting counts keep the hi
   await submit(request, `${ranges} ghat: 4-5 people stranded, send a rescue boat`, PIN, `e2e-rg-${ranges}-b`);
   const conflict = desk.getByRole('option', { name: new RegExp(ranges) });
   await expect(conflict).toHaveCount(1, { timeout: 20_000 });
-  await expect(conflict).toContainText('Counts differ: 2-3 vs 4-5');
   await expect(conflict).toContainText('5');
   await conflict.click();
+  await openMoreDetails(desk);
   await expect(desk.locator('.detail').getByTestId('counts-differ')).toContainText('Counts differ: 2-3 vs 4-5');
   await expect(desk.locator('.detail').getByTestId('report-quote')).toHaveCount(2);
   await expect(desk.locator('.detail')).toContainText('2-3 people');
   await expect(desk.locator('.detail')).toContainText('4-5 people');
   await desk.locator('.detail').getByRole('button', { name: 'How it decided' }).click();
   const trace = desk.getByRole('dialog');
+  await openTechnical(trace);
   await expect(trace).toContainText('Similarity');
   await expect(trace).toContainText('Counts differ: 2-3 vs 4-5');
   await context.close();

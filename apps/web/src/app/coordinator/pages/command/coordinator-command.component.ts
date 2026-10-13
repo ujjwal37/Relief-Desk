@@ -13,7 +13,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { HostListener, effect, untracked } from '@angular/core';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
-import { SevChipComponent } from '../../../core/components/sev-chip.component';
 import { AgentBadgeComponent } from '../../agents/agent-badge.component';
 import { AgentTraceDrawerComponent } from '../../agents/agent-trace-drawer.component';
 import { AssistBannerComponent } from '../../agents/assist-banner.component';
@@ -68,7 +67,6 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
     FormsModule,
     RouterLink,
     MapProviderComponent,
-    SevChipComponent,
     RdTranslatePipe,
     AgentBadgeComponent,
     AgentTraceDrawerComponent,
@@ -204,6 +202,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private media: MediaQueryList | null = null;
   readonly openSection = signal<'why' | 'reports' | null>(null);
   readonly showOriginal = signal(false);
+  readonly moreOpen = signal(false);
+  readonly vehiclePath = vehiclePath;
   readonly traceRequestId = signal<string | null>(null);
   readonly assistOpen = signal(false);
   readonly assist = signal<{ proposals: AssistProposalView[]; shortages: AssistShortageView[] }>({ proposals: [], shortages: [] });
@@ -531,6 +531,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       ? r.ward_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
       : '';
     return [ward, r.place_text].filter(Boolean).join(' · ');
+  }
+  hasVulnerable(r: StoredRequest): boolean {
+    const flags = r.vulnerable;
+    return !!(flags && (flags.child || flags.elderly || flags.disabled || flags.pregnant || flags.medical_need));
+  }
+  sendTeamLabel(name: string): string {
+    this.langService.currentLang();
+    return this.langService.translate('coord.sendTeam').replace('{team}', name);
+  }
+  whyLine(prop: MatchProposal): string {
+    this.langService.currentLang();
+    const lang = this.langService.currentLang();
+    const raw = ((lang === 'hi' || lang === 'hinglish') && prop.explanation_hi ? prop.explanation_hi : prop.explanation) || '';
+    const first = (raw.split(/(?<=[.।!?])\s+/)[0] || raw).replace(/\s+/g, ' ').trim();
+    if (first && !INTERNAL.test(first)) return first;
+    return this.langService.translate('coord.whyFallback');
   }
   waitTime(r: StoredRequest): string {
     this.langService.currentLang();
@@ -1031,6 +1047,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.matchIdx.set(0);
     this.openSection.set(this.ui.demoWhy ? 'why' : null);
     this.showOriginal.set(false);
+    this.moreOpen.set(false);
+    this.changeOpen.set(false);
     this.loadMatches(id);
     if (openSheet && this.narrow()) this.sheetOpen.set(true);
   }

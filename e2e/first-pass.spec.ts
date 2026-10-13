@@ -26,7 +26,7 @@ async function clickCoordLink(page: Page, name: string): Promise<void> {
     await nav.click();
     return;
   }
-  const more = page.getByRole('button', { name: 'More' });
+  const more = page.getByRole('button', { name: 'More', exact: true });
   if (await more.isVisible()) await more.click();
   else await page.getByRole('button', { name: 'Account menu' }).click();
   await page.locator('.menu').getByRole('link', { name }).click();
@@ -134,6 +134,7 @@ test.describe('public and coordinator demo', () => {
       const hindiCase = page.getByRole('option', { name: /3 children and 2/ });
       await hindiCase.scrollIntoViewIfNeeded();
       await hindiCase.click();
+      await page.getByRole('button', { name: 'More details' }).click();
       await page.getByRole('button', { name: 'Show original' }).click();
       await expect(page.getByText('तुरंत नाव भेजो')).toBeVisible();
 

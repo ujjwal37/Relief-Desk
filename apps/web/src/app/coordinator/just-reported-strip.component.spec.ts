@@ -46,6 +46,22 @@ describe('JustReportedStripComponent', () => {
     fixture.detectChanges();
   });
 
+  it('keeps the strip to three newest reports', () => {
+    const extra: RecentReport[] = [1, 2, 3, 4].map((n) => ({
+      id: `rep-${n}`,
+      case_id: `INC-${n}`,
+      type: 'rescue',
+      summary: `Report ${n}`,
+      ward_id: 'ward_1',
+      place_text: 'Kainakary',
+      created_at: new Date(Date.now() - n * 1000).toISOString(),
+      joined_existing: false,
+    }));
+    store.apply(extra);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('button.chip').length).toBe(3);
+  });
+
   it('lists newest first with a ward, a New badge, and a merge note', () => {
     store.apply(rows);
     fixture.detectChanges();

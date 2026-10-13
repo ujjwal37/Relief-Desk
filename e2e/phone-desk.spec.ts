@@ -142,6 +142,7 @@ test('a Hindi report uses Hindi labels, reaches the desk, and the status stays H
   await expect(row).toContainText('6');
   await expect(row).toContainText(/Ward 12/);
   await row.click();
+  await desk.getByRole('button', { name: 'More details' }).click();
   await desk.getByRole('button', { name: 'Show original' }).click();
   await expect(desk.locator('p.quote')).toContainText('6 लोग फंसे');
   await expect(desk.locator('p.quote')).toContainText(tag);
