@@ -1,6 +1,6 @@
 <div class="cmd">
   @if (actionToast()) {
-    <div class="toast" role="status" [class.warn]="actionToast()?.type === 'warning'">
+    <div class="toast" role="status" data-testid="dispatch-banner" [class.ok]="actionToast()?.type === 'success'" [class.warn]="actionToast()?.type === 'warning'">
       <span>{{ actionToast()?.text }}</span>
       <button type="button" (click)="clearToast()" [attr.aria-label]="'ui.close' | rdTranslate">✕</button>
     </div>
@@ -8,14 +8,7 @@
 
   <app-just-reported (picked)="openReported($event)" />
 
-  @if (narrow()) {
-    <div class="pane-toggle" role="tablist" [attr.aria-label]="'ui.main' | rdTranslate">
-      <button type="button" role="tab" [class.on]="mobilePane() === 'cases'" [attr.aria-selected]="mobilePane() === 'cases'" (click)="setPane('cases')">{{ 'ui.cases' | rdTranslate }}</button>
-      <button type="button" role="tab" [class.on]="mobilePane() === 'map'" [attr.aria-selected]="mobilePane() === 'map'" (click)="setPane('map')">{{ 'ui.map' | rdTranslate }}</button>
-    </div>
-  }
-
-  <div class="grid" [class.pane-cases]="narrow() && mobilePane() === 'cases'" [class.pane-map]="narrow() && mobilePane() === 'map'">
+  <div class="grid">
     <!-- CASES -->
     <section class="cases" data-tour="cases" aria-labelledby="cases-h">
       <p class="sr-only" aria-live="polite">{{ analysedLive() }}</p>
@@ -45,15 +38,21 @@
             </article>
           } @else {
             <div class="case-wrap" [class.sel]="selectedRequestId() === req.id" [class.row-flash]="flashIds().has(req.id)" [attr.data-case-id]="req.id">
-              <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
+              <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.data-band]="bandOf(req.urgency_score)" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
+                <span class="tone" aria-hidden="true"></span>
                 <span class="row1">
                   <app-sev-chip [band]="bandOf(req.urgency_score)" />
-                  <span class="prio">{{ 'coord.priority' | rdTranslate }} <b>{{ Math.round(req.urgency_score) }}</b></span>
+                  <span class="prio">{{ 'coord.priorityScore' | rdTranslate }} <b>{{ Math.round(req.urgency_score) }}</b></span>
                 </span>
                 <span class="title">{{ getTranslationText(req) }}</span>
-                <span class="meta" [attr.title]="fullStamp(req.created_at)">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text || '' }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
+                <span class="loc">{{ locationLine(req) }}</span>
+                @if (queueNeedLine(req)) { <span class="need">{{ queueNeedLine(req) }}</span> }
+                <span class="foot" [attr.title]="fullStamp(req.created_at)">
+                  <span class="stat">{{ 'coord.priorityScore' | rdTranslate }} {{ Math.round(req.urgency_score) }}</span>
+                  <span class="stat">{{ waitTime(req) }}</span>
+                  <span class="stat">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
+                </span>
                 <span class="tags">
-                  <span class="tag">{{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</span>
                   @if (waitChip(req)) { <span class="tag warn">{{ waitChip(req) }}</span> }
                   @if (isReview(req)) { <span class="tag warn">{{ 'coord.review' | rdTranslate }}</span> }
                   @if (isDispatched(req)) { <span class="tag ok">{{ 'coord.filterDispatched' | rdTranslate }}</span> }
@@ -86,7 +85,7 @@
 
     <!-- CENTRE -->
     <section class="centre">
-      <div class="tiles">
+      <div class="tiles map-intel" data-testid="map-intel">
         <div class="tile t-now"><span class="lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5"/></svg>{{ 'coord.tileNow' | rdTranslate }}</span><span class="num">{{ counts().critical }}</span><span class="unit">{{ 'coord.unitCases' | rdTranslate }}</span></div>
         <div class="tile"><span class="lbl">{{ 'coord.tileSoon' | rdTranslate }}</span><span class="num">{{ counts().high }}</span><span class="unit">{{ 'coord.unitCases' | rdTranslate }}</span></div>
         <div class="tile"><span class="lbl">{{ 'coord.tileTeams' | rdTranslate }}</span><span class="num">{{ teamsFree().free }}</span><span class="unit">{{ tr('coord.unitReadyOf', teamsFree().total) }}</span></div>
@@ -149,12 +148,10 @@
     </section>
 
     <!-- DETAIL -->
-    <aside class="detail" [class.sheet]="narrow() && sheetOpen()" [attr.aria-label]="'ui.selCase' | rdTranslate">
+    <aside class="detail decision-panel" [attr.aria-label]="'coord.decision' | rdTranslate">
       @if (selectedRequest(); as req) {
         <div class="detail-scroll">
-          @if (narrow() && sheetOpen()) {
-            <button type="button" class="sheet-back" (click)="closeSheet()">{{ 'coord.backToList' | rdTranslate }}</button>
-          }
+          <p class="decision-kicker">{{ 'coord.decision' | rdTranslate }}</p>
           <div class="d-head">
             <app-sev-chip [band]="bandOf(req.urgency_score)" />
             <span class="id" [attr.title]="fullStamp(req.updated_at) || fullStamp(req.created_at)">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}{{ updatedLabel(req) ? ' · ' + updatedLabel(req) : '' }}</span>
@@ -216,6 +213,10 @@
                 @if (prop.simulated || assignedTeam(req)?.simulated) { <span class="tag">{{ 'coord.simulated' | rdTranslate }}</span> }
               </div>
               @if (prop.capacity_remaining < (req.people_count || 1) || prop.overcommit_warning) { <p class="warnline">⚠ {{ 'coord.overcommit' | rdTranslate }}</p> }
+              @if (prop.explanation) {
+                <p class="reason-cap">{{ 'coord.reasoning' | rdTranslate }}</p>
+                <p class="expl reason" data-testid="decision-reason">{{ prop.explanation }}</p>
+              }
             </div>
 
             <div class="acc">

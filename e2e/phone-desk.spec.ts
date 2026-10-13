@@ -71,7 +71,7 @@ test('a phone report reaches the desk, merges, and comes back approved', async (
   await expect(approve).toBeEnabled({ timeout: 20_000 });
   await shot(desk, 'phone-desk-suggest');
   await approve.click();
-  await expect(desk.locator('.toast')).toContainText('Dispatch Approved');
+  await expect(desk.locator('.toast')).toContainText('Dispatch approved');
   await shot(desk, 'phone-desk-approved');
 
   await phone.goto(statusUrl);

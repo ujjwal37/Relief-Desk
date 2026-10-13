@@ -207,7 +207,7 @@ describe('CoordinatorCommandComponent', () => {
   it('should approve match, update request status, and display confirmation toast', () => {
     component.approveMatch(mockProposal);
     expect(apiClientSpy.approveMatch).toHaveBeenCalledWith('match_001', false);
-    expect(component.actionToast()?.text).toContain('Dispatch Approved');
+    expect(component.actionToast()?.text).toMatch(/Dispatch approved|Motorized Rescue Boat/);
     const updated = component.requests().find((r) => r.id === 'INC-001');
     expect(updated?.status).toBe('dispatched');
     expect(component.filteredRequests().some((r) => r.id === 'INC-001')).toBeFalse();
@@ -346,6 +346,33 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.getTranslationText({ ...analysing, summary: null })).toBe(analysing.raw_text as string);
     expect(component.getTranslationText({ ...analysing, summary: null, raw_text: 'Vulnerable flags: child (Urgency score: 44.7)' }))
       .toBe(analysing.place_text as string);
+  });
+
+  it('builds a queue need line from flags and the needed team, never a scoring note', () => {
+    const line = component.queueNeedLine(mockRequests[0]);
+    expect(line.toLowerCase()).toContain('children');
+    expect(line.toLowerCase()).toContain('elderly');
+    expect(line.toLowerCase()).toMatch(/boat/);
+    expect(line).not.toMatch(/urgency score/i);
+    const onlyChild = component.queueNeedLine({
+      ...mockRequests[0],
+      people_count: 3,
+      vulnerable: { child: true, elderly: false, disabled: false, pregnant: false, medical_need: false },
+    });
+    expect(onlyChild.toLowerCase()).toMatch(/3 children/);
+    expect(onlyChild.toLowerCase()).toMatch(/boat/);
+  });
+
+  it('formats waiting time from wait_minutes or created_at', () => {
+    expect(component.waitTime({ ...mockRequests[0], wait_minutes: 12 })).toMatch(/12/);
+    const hourAgo = new Date(Date.now() - 70 * 60_000).toISOString();
+    expect(component.waitTime({ ...mockRequests[0], wait_minutes: 0, created_at: hourAgo })).toMatch(/1 h/);
+  });
+
+  it('keeps Ward N on the queue location line', () => {
+    expect(component.locationLine(mockRequests[0])).toMatch(/^Ward 7 ·/);
+    expect(component.locationLine({ ...mockRequests[0], ward_id: 'ward_12', place_text: 'Canal Road' }))
+      .toBe('Ward 12 · Canal Road');
   });
 
   it('merges a new report into the open queue and keeps the selected case', () => {

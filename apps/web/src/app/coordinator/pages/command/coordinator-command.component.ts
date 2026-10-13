@@ -501,6 +501,47 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return r.status === 'completed' || r.status === 'resolved' || r.status === 'closed';
   }
   fitPct(p: MatchProposal): number { return Math.round(p.score); }
+  queueNeed(r: StoredRequest): string {
+    this.langService.currentLang();
+    const key = ({ rescue: 'coord.queueNeedBoat', animal_attack: 'coord.queueNeedBoat', medical: 'coord.queueNeedMedical',
+      food: 'coord.queueNeedFood', shelter: 'coord.queueNeedShelter' } as Record<string, string>)[r.type || ''];
+    return key ? this.langService.translate(key) : '';
+  }
+  queueNeedLine(r: StoredRequest): string {
+    this.langService.currentLang();
+    const flags = r.vulnerable || { child: false, elderly: false, disabled: false, pregnant: false, medical_need: false };
+    const on = (['child', 'elderly', 'disabled', 'pregnant', 'medical_need'] as const).filter((k) => !!flags[k]);
+    const n = r.people_count || 0;
+    const parts: string[] = [];
+    if (on.length === 1 && on[0] === 'child' && n) parts.push(this.langService.translate('coord.nChildren').replace('{n}', String(n)));
+    else if (on.length === 1 && on[0] === 'elderly' && n) parts.push(this.langService.translate('coord.nElderly').replace('{n}', String(n)));
+    else {
+      if (flags.child) parts.push(this.langService.translate('coord.metaChildren'));
+      if (flags.elderly) parts.push(this.langService.translate('coord.metaElderly'));
+      if (flags.disabled) parts.push(this.langService.translate('coord.metaDisabled'));
+      if (flags.pregnant) parts.push(this.langService.translate('coord.metaPregnant'));
+      if (flags.medical_need) parts.push(this.langService.translate('coord.metaMedical'));
+    }
+    const need = this.queueNeed(r);
+    if (need) parts.push(need);
+    return parts.join(' · ');
+  }
+  locationLine(r: StoredRequest): string {
+    const ward = r.ward_id
+      ? r.ward_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      : '';
+    return [ward, r.place_text].filter(Boolean).join(' · ');
+  }
+  waitTime(r: StoredRequest): string {
+    this.langService.currentLang();
+    let mins = r.wait_minutes ?? 0;
+    if (!mins && r.created_at) {
+      const t = new Date(r.created_at).getTime();
+      if (!Number.isNaN(t)) mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+    }
+    const time = mins >= 60 ? `${Math.round(mins / 60)} h` : `${mins} min`;
+    return this.langService.translate('coord.waitingTime').replace('{time}', time);
+  }
   waitChip(r: StoredRequest): string {
     const pts = Math.round(r.wait_points || 0);
     if (pts < 1) return '';
@@ -1101,7 +1142,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.apiClient.approveMatch(prop.match_id, allowOvercommit).subscribe({
       next: (approved) => {
         this.actionToast.set({
-          text: `✓ Dispatch Approved: ${prop.resource_name} dispatched for ${this.selectedRequest()?.place_text || prop.request_id}`,
+          text: this.langService.translate('coord.dispatchApproved').replace('{team}', prop.resource_name),
           type: 'success',
         });
 

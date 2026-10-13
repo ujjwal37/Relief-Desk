@@ -55,7 +55,7 @@ test('phone report is approved and the reporter sees help on the way', async ({ 
   const approve = desk.getByRole('button', { name: 'Approve and send' });
   await expect(approve).toBeEnabled({ timeout: 20_000 });
   await approve.click();
-  await expect(desk.locator('.toast')).toContainText('Dispatch Approved');
+  await expect(desk.locator('.toast')).toContainText('Dispatch approved');
 
   await desk.getByRole('link', { name: 'Dispatched', exact: true }).click();
   await expect(desk.getByRole('option', { name: new RegExp(marker) })).toBeVisible();

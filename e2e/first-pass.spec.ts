@@ -133,21 +133,14 @@ test.describe('public and coordinator demo', () => {
       await hindiCase.click();
       await page.getByRole('button', { name: 'Show original' }).click();
       await expect(page.getByText('तुरंत नाव भेजो')).toBeVisible();
-      if (viewport.name === 'mobile') {
-        await page.getByRole('button', { name: 'Back to cases' }).click();
-      }
 
       if (viewport.name === 'mobile') {
-        await expect(page.getByRole('tab', { name: 'Cases' })).toBeVisible();
-        await expect(page.getByRole('tab', { name: 'Map' })).toBeVisible();
-        await page.locator('button.case').first().click();
-        await expect(page.getByRole('button', { name: 'Back to cases' })).toBeVisible();
+        await expect(page.locator('button.case').first()).toBeVisible();
+        await expect(page.locator('.map-card')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Approve and send' })).toBeVisible();
         await shot(page, 'mobile-case-sheet');
         await noHorizontalOverflow(page);
-        await page.getByRole('button', { name: 'Back to cases' }).click();
-        await page.getByRole('tab', { name: 'Map' }).click();
-        await expect(page.locator('.map-card')).toBeVisible();
+        await page.locator('.map-card').scrollIntoViewIfNeeded();
         await shot(page, 'mobile-map');
         await noHorizontalOverflow(page);
       } else {
@@ -176,18 +169,15 @@ test.describe('public and coordinator demo', () => {
         },
       });
       expect(submitted.ok()).toBeTruthy();
-      if (viewport.name === 'mobile') await page.getByRole('tab', { name: 'Cases' }).click();
       const search = page.locator('#coord-search');
       if (await search.isVisible()) await search.fill(marker);
       await expect(page.getByRole('option', { name: new RegExp(marker) })).toBeVisible({ timeout: 12_000 });
       await page.getByRole('option', { name: new RegExp(marker) }).click();
-      if (viewport.name === 'mobile') {
-        await expect(page.getByRole('button', { name: 'Back to cases' })).toBeVisible();
-      }
       const approve = page.getByRole('button', { name: 'Approve and send' });
+      await approve.scrollIntoViewIfNeeded();
       await expect(approve).toBeEnabled();
       await approve.click();
-      await expect(page.locator('.toast')).toContainText('Dispatch Approved');
+      await expect(page.locator('.toast')).toContainText('Dispatch approved');
       const mobile = viewport.name === 'mobile';
       await closeCaseSheet(page, mobile);
       await page.getByRole('button', { name: 'Dispatched' }).click();
