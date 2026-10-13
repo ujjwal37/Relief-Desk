@@ -1,4 +1,4 @@
-"""Nearby teams are offered first. Past 30 km the card says there is no nearby team."""
+"""Nearby teams are offered first. The demo pack sits within 15 km of Kuttanad."""
 from pathlib import Path
 
 import yaml
@@ -17,13 +17,13 @@ def _eta(km: float) -> int:
     return max(1, round((km / 20.0) * 60))
 
 
-def test_oxygen_case_matches_the_varapuzha_clinic():
+def test_oxygen_case_matches_the_kainakary_clinic():
     storage_service.load_seed_resources()
     req = StoredRequest(
-        id="req_oxygen_varapuzha",
+        id="req_oxygen_kainakary",
         type=IncidentType.MEDICAL,
-        lat=10.07985,
-        lng=76.27371,
+        lat=9.478,
+        lng=76.399,
         people_count=3,
         urgency_score=90.0,
         vulnerable=VulnerableFlags(medical_need=True),
@@ -31,15 +31,15 @@ def test_oxygen_case_matches_the_varapuzha_clinic():
     proposals = matching_agent.find_matches(req, top_n=5, save_to_storage=False)
     assert proposals
     best = proposals[0]
-    assert best.resource_id == "RES-MED-04"
+    assert best.resource_id == "RES-MED-02"
     assert best.resource_kind == ResourceKind.MEDICAL
     assert best.breakdown.distance_km < 2
     assert best.eta_minutes == _eta(best.breakdown.distance_km)
     assert best.eta_minutes < 15
-    assert all(p.breakdown.distance_km <= 40 for p in proposals)
+    assert all(p.breakdown.distance_km <= 15 for p in proposals)
 
 
-def test_alappuzha_rescue_does_not_offer_the_wayanad_boat():
+def test_kuttanad_rescue_offers_a_nearby_boat():
     storage_service.load_seed_resources()
     req = StoredRequest(
         id="req_alappuzha_rescue",
@@ -51,13 +51,14 @@ def test_alappuzha_rescue_does_not_offer_the_wayanad_boat():
     )
     proposals = matching_agent.find_matches(req, top_n=5, save_to_storage=False)
     assert proposals
-    assert all(p.resource_id != "RES-BOAT-04" for p in proposals)
-    assert proposals[0].breakdown.distance_km < 5
-    assert proposals[0].eta_minutes == _eta(proposals[0].breakdown.distance_km)
-    assert proposals[0].eta_minutes < 20
+    best = proposals[0]
+    assert best.no_nearby is False
+    assert best.breakdown.distance_km < 15
+    assert best.eta_minutes == _eta(best.breakdown.distance_km)
+    assert best.eta_minutes < 45
 
 
-def test_chalakudy_rescue_has_a_nearby_thrissur_boat():
+def test_chalakudy_rescue_is_outside_the_kuttanad_cluster():
     storage_service.load_seed_resources()
     req = StoredRequest(
         id="req_chalakudy_rescue",
@@ -70,11 +71,9 @@ def test_chalakudy_rescue_has_a_nearby_thrissur_boat():
     proposals = matching_agent.find_matches(req, top_n=5, save_to_storage=False)
     assert proposals
     best = proposals[0]
-    assert best.resource_id == "RES-BOAT-03"
-    assert best.no_nearby is False
-    assert best.breakdown.distance_km <= NEARBY_KM
-    assert best.eta_minutes == _eta(best.breakdown.distance_km)
-    assert best.eta_minutes < 90
+    assert best.no_nearby is True
+    assert best.breakdown.distance_km > NEARBY_KM
+    assert best.eta_minutes is None
 
 
 def test_a_request_with_no_team_within_30_km_hides_the_minute_eta():
@@ -94,24 +93,29 @@ def test_a_request_with_no_team_within_30_km_hides_the_minute_eta():
     assert all(p.eta_minutes is None for p in proposals)
 
 
-def test_each_district_has_a_boat_medical_and_food_team_near_its_cases():
+def test_demo_teams_are_within_15_km_of_kuttanad_and_alappuzha():
     seeds = yaml.safe_load(SEEDS.read_text(encoding="utf-8"))
     resources = yaml.safe_load(RESOURCES.read_text(encoding="utf-8"))["resources"]
     wards = {ward["id"]: ward for ward in seeds["wards"]}
+    kuttanad = (9.47, 76.39)
+    alappuzha = (9.498, 76.339)
     by_kind: dict = {}
     for team in resources:
         by_kind.setdefault(team["kind"], []).append(team)
-    for district in ("Alappuzha", "Ernakulam", "Thrissur", "Wayanad"):
-        points = [(ward["lat"], ward["lng"]) for ward in wards.values() if ward["district"] == district]
-        assert points, district
-        for kind in ("boat", "medical", "food"):
-            for lat, lng in points:
-                nearest = min(
-                    haversine_distance(lat, lng, team["lat"], team["lng"]) for team in by_kind[kind]
-                )
-                assert nearest <= NEARBY_KM, f"{district} {kind} is {nearest} km from a ward"
+        for label, (lat, lng) in (("Kuttanad", kuttanad), ("Alappuzha", alappuzha)):
+            km = haversine_distance(lat, lng, team["lat"], team["lng"])
+            assert km <= 15, f"{team['id']} is {km:.1f} km from {label}"
+    points = [(ward["lat"], ward["lng"]) for ward in wards.values() if ward["district"] == "Alappuzha"]
+    assert points
+    for kind in ("boat", "medical", "food"):
+        for lat, lng in points:
+            nearest = min(haversine_distance(lat, lng, team["lat"], team["lng"]) for team in by_kind[kind])
+            assert nearest <= 15, f"Alappuzha {kind} is {nearest} km from a ward"
     kind_for = {"rescue": "boat", "medical": "medical", "food": "food", "animal_attack": "medical"}
     for incident in seeds["incidents"]:
+        ward = wards.get(incident.get("ward_id"))
+        if not ward or ward["district"] != "Alappuzha":
+            continue
         kind = kind_for.get(incident["type"])
         if not kind:
             continue
@@ -119,4 +123,4 @@ def test_each_district_has_a_boat_medical_and_food_team_near_its_cases():
             haversine_distance(incident["lat"], incident["lng"], team["lat"], team["lng"])
             for team in by_kind[kind]
         )
-        assert nearest <= NEARBY_KM, f"{incident['id']} {kind} is {nearest} km"
+        assert nearest <= 15, f"{incident['id']} {kind} is {nearest} km"

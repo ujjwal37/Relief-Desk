@@ -1,0 +1,59 @@
+import { expect, test } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
+import { resetDemo } from './reset-demo';
+
+const SHOTS = '/opt/cursor/artifacts/screenshots';
+
+test.beforeAll(() => {
+  fs.mkdirSync(SHOTS, { recursive: true });
+});
+
+test.beforeEach(async ({ request }) => {
+  await resetDemo(request);
+});
+
+test('overview, teams, and agent at 1366', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await page.goto('/coordinator/login');
+  await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
+  await page.waitForURL(/\/coordinator\/command/);
+
+  await page.getByRole('link', { name: 'Overview', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await expect(page.locator('.nums')).toContainText(/\d+ Cases/);
+  await expect(page.locator('.nums')).toContainText(/Dispatched/);
+  await expect(page.locator('.nums')).toContainText(/Teams/);
+  await expect(page.locator('rd-map-provider')).toHaveCount(1);
+  await expect(page.locator('.schematic circle, .rd-google-map')).not.toHaveCount(0);
+  await expect(page.locator('.omap')).toHaveCount(0);
+  await expect(page.locator('.map-stage .chips button').first()).toBeVisible();
+  const alerts = page.getByRole('heading', { name: 'Alerts' });
+  await expect(alerts).toBeVisible();
+  const box = await alerts.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.y).toBeGreaterThan(40);
+  expect(box!.y).toBeLessThan(280);
+  await page.screenshot({ path: path.join(SHOTS, '1366-overview.png'), fullPage: false });
+
+  await page.getByRole('link', { name: 'Teams', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Teams' })).toBeVisible();
+  await expect(page.getByText(/Stale \d/)).toHaveCount(0);
+  await expect(page.locator('.team-map')).toBeVisible();
+  expect(await page.locator('.team-map rect[rx]').count()).toBeGreaterThan(2);
+  const legs = await page.locator('.list .leg').allTextContents();
+  expect(legs.length).toBeGreaterThan(2);
+  for (const leg of legs) expect(leg).not.toContain('No nearby team');
+  expect(legs.some((leg) => /km/.test(leg))).toBeTruthy();
+  await page.screenshot({ path: path.join(SHOTS, '1366-teams.png'), fullPage: false });
+
+  await page.getByRole('link', { name: 'Agent', exact: true }).click();
+  await expect(page.locator('.example')).toHaveCount(3);
+  await expect(page.locator('input[name="q"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Which cases are still waiting?', exact: true })).toBeVisible();
+  await page.screenshot({ path: path.join(SHOTS, '1366-agent.png'), fullPage: false });
+  await page.getByRole('button', { name: 'Which cases are still waiting?', exact: true }).click();
+  await expect(page.locator('.bubble.user')).toBeVisible();
+  await expect(page.locator('.example')).toHaveCount(0);
+});

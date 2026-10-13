@@ -6,7 +6,6 @@
   <div class="strip" role="group" [attr.aria-label]="'coord.teamStrip' | rdTranslate">
     <button type="button" [class.on]="strip() === 'free'" [attr.aria-pressed]="strip() === 'free'" (click)="setStrip('free')">{{ 'coord.teamFree' | rdTranslate }} {{ counts().free }}</button>
     <button type="button" [class.on]="strip() === 'busy'" [attr.aria-pressed]="strip() === 'busy'" (click)="setStrip('busy')">{{ 'coord.teamBusy' | rdTranslate }} {{ counts().busy }}</button>
-    <button type="button" [class.on]="strip() === 'stale'" [attr.aria-pressed]="strip() === 'stale'" (click)="setStrip('stale')">{{ 'coord.teamStale' | rdTranslate }} {{ counts().stale }}</button>
   </div>
 
   @if (casePin(); as pin) {

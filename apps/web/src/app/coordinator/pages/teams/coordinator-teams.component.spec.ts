@@ -33,11 +33,12 @@ describe('CoordinatorTeamsComponent', () => {
   it('puts free teams first and hides details until the row is opened', () => {
     const cmp = fixture.componentInstance;
     expect(cmp.filtered().map((team) => team.id)).toEqual(['b1', 'd1', 'm1']);
-    expect(cmp.counts()).toEqual({ free: 1, busy: 2, stale: 1 });
+    expect(cmp.counts()).toEqual({ free: 1, busy: 2 });
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Free 1');
     expect(text).toContain('Busy 2');
-    expect(text).toContain('Stale 1');
+    expect(text).not.toContain('Stale');
+    expect(fixture.nativeElement.querySelector('.team-map')).toBeNull();
     expect(text).toContain('Chalakudy');
     expect(text).not.toContain('INC-9');
     expect(fixture.nativeElement.querySelector('form.loc')).toBeNull();
@@ -51,8 +52,7 @@ describe('CoordinatorTeamsComponent', () => {
     const cmp = fixture.componentInstance;
     cmp.setStrip('free');
     expect(cmp.filtered().map((team) => team.id)).toEqual(['b1']);
-    cmp.setStrip('stale');
-    cmp.setStrip('stale');
+    cmp.setStrip('free');
     expect(cmp.strip()).toBe('all');
     cmp.setStrip('busy');
     expect(cmp.filtered().map((team) => team.id)).toEqual(['d1', 'm1']);
@@ -65,7 +65,8 @@ describe('CoordinatorTeamsComponent', () => {
     fixture.detectChanges();
     expect(cmp.leg(rows[2])).toBe('1.11 km · about 3 min');
     expect(cmp.leg(rows[1])).toContain('km');
-    expect(cmp.leg(rows[1])).toContain('No nearby team');
+    expect(cmp.leg(rows[1])).toContain('min');
+    expect(cmp.leg(rows[1])).not.toContain('No nearby team');
   });
 
   it('draws a line from the open case to each candidate team', () => {
@@ -90,6 +91,9 @@ describe('CoordinatorTeamsComponent', () => {
     fixture.detectChanges();
     const line = fixture.nativeElement.querySelector('.team-map line') as SVGLineElement | null;
     expect(line).not.toBeNull();
+    expect(cmp.teamPins().length).toBe(3);
+    const ys = cmp.teamPins().map((pin) => pin.y);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(40);
     expect(fixture.nativeElement.querySelector('.team-map')?.textContent).toContain('1.11 km · about 3 min');
   });
 

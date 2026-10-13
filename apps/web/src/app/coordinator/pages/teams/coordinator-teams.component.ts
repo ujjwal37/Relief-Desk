@@ -19,7 +19,7 @@ const AREAS: Record<string, string> = {
   ward_12: 'Kalpetta',
 };
 
-type Strip = 'all' | 'free' | 'busy' | 'stale';
+type Strip = 'all' | 'free' | 'busy';
 
 /** Great-circle kilometres, rounded like the case-card distance. */
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -59,7 +59,6 @@ export class CoordinatorTeamsComponent implements OnInit {
     return {
       free: rows.filter((team) => this.isFree(team)).length,
       busy: rows.filter((team) => !this.isFree(team)).length,
-      stale: rows.filter((team) => this.stale(team)).length,
     };
   });
 
@@ -74,7 +73,6 @@ export class CoordinatorTeamsComponent implements OnInit {
     const rows = this.resources().filter((team) => {
       if (mode === 'free') return this.isFree(team);
       if (mode === 'busy') return !this.isFree(team);
-      if (mode === 'stale') return this.stale(team);
       return true;
     });
     return [...rows].sort((a, b) => {
@@ -144,7 +142,7 @@ export class CoordinatorTeamsComponent implements OnInit {
     return team.area_name || AREAS[team.ward_id] || team.ward_id;
   }
 
-  /** Distance and ETA to the open case. Every team shows kilometres; a far team also says there is no nearby team. */
+  /** Distance and ETA to the open case. "No nearby team" stays on the case card only. */
   leg(team: StoredResource): string {
     this.lang.currentLang();
     const req = this.focus();
@@ -153,12 +151,6 @@ export class CoordinatorTeamsComponent implements OnInit {
     const km = quoted?.breakdown?.distance_km ?? distanceKm(req.lat, req.lng, team.lat, team.lng);
     const minutes = quoted?.eta_minutes ?? Math.max(1, Math.round((km / 20) * 60));
     const eta = this.lang.translate('coord.etaMin').replace('{n}', String(minutes));
-    if (this.isFree(team) && km <= 15 && minutes <= 90) {
-      return `${km} km · ${eta}`;
-    }
-    if (quoted?.no_nearby || km > 30 || minutes > 90) {
-      return `${km} km · ${this.lang.translate('coord.noNearbyTeam')}`;
-    }
     return `${km} km · ${eta}`;
   }
 
@@ -194,20 +186,16 @@ export class CoordinatorTeamsComponent implements OnInit {
     return this.project(req.lat, req.lng);
   });
 
-  readonly teamPins = computed(() => {
-    const ids = new Set(this.matches().map((row) => row.resource_id));
-    return this.resources()
-      .filter((team) => ids.has(team.id))
-      .map((team) => ({ id: team.id, ...this.project(team.lat, team.lng), kind: team.kind }));
-  });
+  readonly teamPins = computed(() => this.resources().map((team) => ({
+    id: team.id,
+    ...this.project(team.lat, team.lng),
+    kind: team.kind,
+  })));
 
   private project(lat: number, lng: number): { x: number; y: number } {
     const req = this.focus();
-    const teams = this.matches()
-      .map((row) => this.resources().find((team) => team.id === row.resource_id))
-      .filter((team): team is StoredResource => !!team);
-    const lats = [req?.lat, ...teams.map((team) => team.lat)].filter((n): n is number => n != null);
-    const lngs = [req?.lng, ...teams.map((team) => team.lng)].filter((n): n is number => n != null);
+    const lats = [req?.lat, ...this.resources().map((team) => team.lat)].filter((n): n is number => n != null);
+    const lngs = [req?.lng, ...this.resources().map((team) => team.lng)].filter((n): n is number => n != null);
     const minLa = Math.min(...lats);
     const maxLa = Math.max(...lats);
     const minLo = Math.min(...lngs);

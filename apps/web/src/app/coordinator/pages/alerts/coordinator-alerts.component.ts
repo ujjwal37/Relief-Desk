@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnomalyAlert, ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
@@ -104,6 +104,8 @@ const CELLS = withLabelOffsets(RAW_CELLS);
 export class CoordinatorAlertsComponent implements OnInit {
   private api = inject(ApiClientService);
   private lang = inject(LanguageService);
+  /** Overview shows the list beside its own map. The alerts route keeps this map. */
+  readonly listOnly = input(false);
 
   readonly W = W;
   readonly H = H;

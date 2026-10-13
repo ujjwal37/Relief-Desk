@@ -39,6 +39,20 @@ describe('AskDeskComponent', () => {
     expect(c.viaText(answer as any)).toBe('gemini-3.5-flash-lite');
   });
 
+  it('shows example cards until the first answer, then keeps a thread', () => {
+    const fixture = TestBed.createComponent(AskDeskComponent);
+    fixture.componentRef.setInput('fullPage', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('ux.exampleA1');
+    expect(fixture.nativeElement.querySelectorAll('.example').length).toBe(3);
+    fixture.componentInstance.question = 'elderly in Aluva';
+    fixture.componentInstance.ask();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.thread().length).toBe(1);
+    expect(fixture.nativeElement.textContent).toContain('INC-001');
+    expect(fixture.nativeElement.querySelector('.example')).toBeNull();
+  });
+
   it('labels rule answers', () => {
     const c = TestBed.createComponent(AskDeskComponent).componentInstance;
     expect(c.viaText({ ...answer, ai: { provider: 'fallback', model: null } } as any)).toBe('ux.deskByRules');

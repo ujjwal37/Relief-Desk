@@ -57,6 +57,8 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   @Input() center: { lat: number; lng: number } = { lat: 10.50, lng: 76.30 };
   /** Bump this to pan again even when the centre numbers did not change. */
   @Input() focusToken = 0;
+  /** Fit every pin when there is no case-to-team line. Lines still win when present. */
+  @Input() fitAll = false;
   @Output() pinSelect = new EventEmitter<string>();
 
   @ViewChild('canvas') canvas?: ElementRef<HTMLDivElement>;
@@ -154,12 +156,21 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
         return marker;
       });
       this.markers.push(...labels);
-      this.fitToLegs(maps);
+      this.fitView(maps);
     } catch {
       this.mode = 'svg';
       this.map = null;
       this.cdr.markForCheck();
     }
+  }
+
+  /** Lines frame the open case. Otherwise an overview map frames every pin. */
+  private fitView(maps: GoogleMapsNs): void {
+    if (this.legs.length) {
+      this.fitToLegs(maps);
+      return;
+    }
+    if (this.fitAll) this.fitPins(maps);
   }
 
   /** When a case is open, keep the case pin and its candidate teams in view. */
@@ -173,6 +184,18 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
     const anchor = this.legs[0].from;
     bounds.extend({ lat: anchor.lat + 0.012, lng: anchor.lng + 0.012 });
     bounds.extend({ lat: anchor.lat - 0.012, lng: anchor.lng - 0.012 });
+    this.map.fitBounds(bounds, 48);
+  }
+
+  private fitPins(maps: GoogleMapsNs): void {
+    if (!this.map?.fitBounds || !this.pins.length || !maps.LatLngBounds) return;
+    const bounds = new maps.LatLngBounds();
+    for (const pin of this.pins) bounds.extend({ lat: pin.lat, lng: pin.lng });
+    if (this.pins.length === 1) {
+      const pin = this.pins[0];
+      bounds.extend({ lat: pin.lat + 0.02, lng: pin.lng + 0.02 });
+      bounds.extend({ lat: pin.lat - 0.02, lng: pin.lng - 0.02 });
+    }
     this.map.fitBounds(bounds, 48);
   }
 }

@@ -10,7 +10,7 @@
   </svg>
 </ng-template>
 
-<div class="alerts-page">
+<div class="alerts-page" [class.list-only]="listOnly()">
   <section class="alert-list" aria-labelledby="alerts-heading">
     <h1 id="alerts-heading">{{ 'alerts.title' | rdTranslate }}</h1>
     <p class="sub">{{ 'alerts.subtitle' | rdTranslate }}</p>
@@ -34,12 +34,12 @@
         <button type="button" class="primary" [disabled]="it.alert.acknowledged" (click)="acknowledge(it.alert); $event.stopPropagation()">
           {{ it.alert.acknowledged ? ('alerts.ackDone' | rdTranslate) : ('alerts.acknowledge' | rdTranslate) }}
         </button>
-        <button type="button" class="secondary" *ngIf="it.at" (click)="viewOnMap(it.alert); $event.stopPropagation()">{{ 'alerts.viewMap' | rdTranslate }}</button>
+        <button type="button" class="secondary" *ngIf="it.at && !listOnly()" (click)="viewOnMap(it.alert); $event.stopPropagation()">{{ 'alerts.viewMap' | rdTranslate }}</button>
       </div>
     </article>
   </section>
 
-  <section class="map-panel" [attr.aria-label]="'alerts.mapAria' | rdTranslate">
+  <section class="map-panel" *ngIf="!listOnly()" [attr.aria-label]="'alerts.mapAria' | rdTranslate">
     <rd-map-provider class="mapbox" [pins]="googlePins()" [center]="center()" [focusToken]="focusNonce()" (pinSelect)="selectedId.set($event)">
       <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="city-map" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="'alerts.mapAria' | rdTranslate">
         <rect [attr.width]="W" [attr.height]="H" fill="var(--map-bg)"></rect>

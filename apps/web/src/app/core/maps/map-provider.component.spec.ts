@@ -100,6 +100,44 @@ describe('MapProviderComponent', () => {
     delete (window as unknown as { google?: unknown }).google;
   });
 
+  it('fits bounds to every pin when the overview map has no lines', async () => {
+    api.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
+    const fixture = await create(api);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const provider = fixture.debugElement.children[0].componentInstance as MapProviderComponent;
+    const fitBounds = jasmine.createSpy('fitBounds');
+    const extended: { lat: number; lng: number }[] = [];
+    const canvas = document.createElement('div');
+    (provider as unknown as { canvas: { nativeElement: HTMLElement } }).canvas = { nativeElement: canvas };
+    (provider as unknown as { mode: string }).mode = 'google';
+    (window as unknown as { google: unknown }).google = {
+      maps: {
+        Map: class { fitBounds = fitBounds; },
+        LatLngBounds: class {
+          extend(pos: { lat: number; lng: number }) { extended.push(pos); }
+        },
+        Marker: class {
+          setMap() {}
+          addListener() {}
+        },
+        Polyline: class { setMap() {} },
+        SymbolPath: { CIRCLE: 0 },
+      },
+    };
+    provider.fitAll = true;
+    provider.pins = [
+      { id: 'a', lat: 9.43, lng: 76.35, title: 'A' },
+      { id: 'b', lat: 11.6, lng: 76.08, title: 'B' },
+    ];
+    provider.legs = [];
+    (provider as unknown as { draw: () => void }).draw();
+    expect(fitBounds).toHaveBeenCalled();
+    expect(extended.some((point) => point.lat === 9.43)).toBeTrue();
+    expect(extended.some((point) => point.lat === 11.6)).toBeTrue();
+    delete (window as unknown as { google?: unknown }).google;
+  });
+
   it('keeps the SVG fallback when the browser is offline', async () => {
     spyOnProperty(navigator, 'onLine', 'get').and.returnValue(false);
     const fixture = await create(api);

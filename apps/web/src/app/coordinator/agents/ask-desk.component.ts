@@ -34,14 +34,66 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
   imports: [FormsModule, RdTranslatePipe, TraceStepComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="ask-desk card" [class.page]="fullPage()" aria-labelledby="ask-desk-h">
-      <h2 id="ask-desk-h">{{ 'ux.deskTitle' | rdTranslate }}</h2>
-      <p class="hint">{{ 'ux.deskHint' | rdTranslate }}</p>
-      <div class="suggestions">
-        @for (key of suggestions; track key) {
-          <button type="button" (click)="useSuggestion(key)">{{ key | rdTranslate }}</button>
+    <section class="ask-desk card" [class.page]="fullPage()" [class.has-thread]="thread().length > 0" aria-labelledby="ask-desk-h">
+      @if (!fullPage()) {
+        <h2 id="ask-desk-h">{{ 'ux.deskTitle' | rdTranslate }}</h2>
+        <p class="hint">{{ 'ux.deskHint' | rdTranslate }}</p>
+      } @else {
+        <h2 id="ask-desk-h" class="sr">{{ 'ux.deskTitle' | rdTranslate }}</h2>
+      }
+      <div class="thread">
+        @if (fullPage() && !thread().length) {
+          <div class="examples">
+            @for (ex of examples; track ex.q) {
+              <button type="button" class="example" (click)="useSuggestion(ex.q)">
+                <span class="tag">{{ 'ux.exampleLabel' | rdTranslate }}</span>
+                <strong>{{ ex.q | rdTranslate }}</strong>
+                <p>{{ ex.a | rdTranslate }}</p>
+              </button>
+            }
+          </div>
+        }
+        @for (turn of thread(); track $index; let last = $last) {
+          <p class="bubble user">{{ turn.question }}</p>
+          <div class="bubble desk">
+            <p class="reason">
+              <strong>{{ matchesText(turn.answer.total) }}</strong> · {{ turn.answer.reason }}
+              <span class="via">{{ viaText(turn.answer) }}</span>
+            </p>
+            @if (!turn.answer.cases.length) {
+              <p class="none">{{ 'ux.deskNone' | rdTranslate }}</p>
+            }
+            <ul class="cards">
+              @for (c of turn.answer.cases; track c.id) {
+                <li>
+                  <button type="button" class="case" (click)="picked.emit(c.id)">
+                    <span class="id">{{ c.id }}</span>
+                    <span class="type">{{ ('incidentType.' + c.type) | rdTranslate }}</span>
+                    @if (c.ward_name) { <span class="ward">{{ c.ward_name }}</span> }
+                    @if (c.people_count) { <span class="ppl">{{ peopleText(c.people_count) }}</span> }
+                    <span class="sum">{{ c.summary }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+            @if (last) {
+              <button type="button" class="link" (click)="showTrace.set(!showTrace())" [attr.aria-expanded]="showTrace()">
+                {{ 'ux.deskShowTrace' | rdTranslate }}
+              </button>
+              @if (showTrace()) {
+                <div class="trace">
+                  @for (s of steps(); track s.agent; let i = $index) {
+                    <app-trace-step [step]="s" [nameKey]="stepKey(i)" [open]="true" />
+                  }
+                </div>
+              }
+            }
+          </div>
         }
       </div>
+      @if (error()) {
+        <p class="err" role="alert">{{ 'ux.deskError' | rdTranslate }}</p>
+      }
       <form class="row" (ngSubmit)="ask()">
         <input
           name="q"
@@ -54,66 +106,51 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
           {{ (busy() ? 'ux.deskAsking' : 'ux.deskAsk') | rdTranslate }}
         </button>
       </form>
-      @if (error()) {
-        <p class="err" role="alert">{{ 'ux.deskError' | rdTranslate }}</p>
-      }
-      @if (answer(); as a) {
-        <div class="answer" aria-live="polite">
-          <p class="reason">
-            <strong>{{ matchesText(a.total) }}</strong> · {{ a.reason }}
-            <span class="via">{{ viaText(a) }}</span>
-          </p>
-          @if (!a.cases.length) {
-            <p class="none">{{ 'ux.deskNone' | rdTranslate }}</p>
-          }
-          <ul class="cards">
-            @for (c of a.cases; track c.id) {
-              <li>
-                <button type="button" class="case" (click)="picked.emit(c.id)">
-                  <span class="id">{{ c.id }}</span>
-                  <span class="type">{{ ('incidentType.' + c.type) | rdTranslate }}</span>
-                  @if (c.ward_name) { <span class="ward">{{ c.ward_name }}</span> }
-                  @if (c.people_count) { <span class="ppl">{{ peopleText(c.people_count) }}</span> }
-                  <span class="sum">{{ c.summary }}</span>
-                </button>
-              </li>
-            }
-          </ul>
-          <button type="button" class="link" (click)="showTrace.set(!showTrace())" [attr.aria-expanded]="showTrace()">
-            {{ 'ux.deskShowTrace' | rdTranslate }}
-          </button>
-          @if (showTrace()) {
-            <div class="trace">
-              @for (s of steps(); track s.agent; let i = $index) {
-                <app-trace-step [step]="s" [nameKey]="stepKey(i)" [open]="true" />
-              }
-            </div>
-          }
-        </div>
-      }
+      <div class="suggestions">
+        @for (key of suggestions; track key) {
+          <button type="button" (click)="useSuggestion(key)">{{ key | rdTranslate }}</button>
+        }
+      </div>
     </section>
   `,
   styles: [`
+    :host { display: block; height: 100%; }
     .ask-desk { padding: 12px 14px; margin-bottom: 12px; }
     h2 { font-size: 1rem; margin: 0 0 2px; }
+    .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
     .hint { margin: 0 0 8px; font-size: .8rem; opacity: .75; }
     .row { display: flex; gap: 8px; }
-    .row input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,.2); font: inherit; }
-    .row .btn { flex-shrink: 0; }
-    .reason { margin: 10px 0 6px; font-size: .9rem; }
+    .row input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border, rgba(0,0,0,.2)); background: var(--surface, #fff); color: inherit; font: inherit; }
+    .row .btn { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--brand, #0b6e4f); color: var(--on-brand, #fff); font: 700 15px inherit; cursor: pointer; }
+    .row .btn:disabled { opacity: .55; cursor: default; }
+    .reason { margin: 0 0 6px; font-size: .9rem; }
     .via { display: block; font-size: .75rem; opacity: .7; }
     .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
     .trace { max-height: 320px; overflow-y: auto; }
     .case { width: 100%; text-align: left; display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 8px 10px;
-            border-radius: 8px; border: 1px solid rgba(0,0,0,.12); background: transparent; cursor: pointer; font: inherit; }
+            border-radius: 8px; border: 1px solid var(--border, rgba(0,0,0,.12)); background: transparent; color: inherit; cursor: pointer; font: inherit; }
     .case:hover, .case:focus-visible { border-color: currentColor; }
     .id { font-weight: 600; } .type, .ward, .ppl { font-size: .8rem; opacity: .8; }
     .sum { flex-basis: 100%; font-size: .82rem; }
-    .link { background: none; border: 0; padding: 6px 0; text-decoration: underline; cursor: pointer; font: inherit; font-size: .8rem; }
-    .err { color: #b3261e; }
-    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
-    .suggestions button { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(0,0,0,.2); background: transparent; cursor: pointer; font: inherit; }
+    .link { background: none; border: 0; padding: 6px 0; text-decoration: underline; cursor: pointer; font: inherit; font-size: .8rem; color: inherit; }
+    .err { color: var(--sev-crit, #b3261e); }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
+    .suggestions button { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border, rgba(0,0,0,.2)); background: var(--surface, transparent); color: inherit; cursor: pointer; font: inherit; }
+    .bubble.user { margin: 0; align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: 16px 16px 4px 16px; background: var(--brand-tint, #e7f5ef); font-weight: 650; }
+    .bubble.desk { align-self: stretch; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--border, rgba(0,0,0,.12)); background: var(--surface, #fff); }
+    .thread { display: flex; flex-direction: column; gap: 10px; }
+    .page { position: relative; display: flex; flex-direction: column; justify-content: center; height: 100%; min-height: 0; margin: 0; padding: 8px 0 12px; background: transparent; border: 0; box-shadow: none; }
+    .page .thread { flex: 0 1 auto; min-height: 0; max-height: 48%; overflow: auto; }
+    .page.has-thread { justify-content: flex-end; }
+    .page.has-thread .thread { flex: 1; max-height: none; justify-content: flex-start; }
     .page .cards, .page .trace { max-height: none; }
+    .page .row input { min-height: 56px; border-radius: 28px; padding: 0 20px; font-size: 17px; }
+    .page .suggestions { justify-content: center; }
+    .examples { display: grid; gap: 10px; width: min(560px, 100%); margin: 0 auto 8px; }
+    .example { text-align: left; border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; background: var(--surface); color: inherit; cursor: pointer; font: inherit; }
+    .example strong { display: block; margin: 2px 0; }
+    .example p { margin: 0; color: var(--text-2); font-size: 14px; }
+    .tag { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
   `],
 })
 export class AskDeskComponent {
@@ -122,9 +159,15 @@ export class AskDeskComponent {
   readonly fullPage = input(false);
   readonly picked = output<string>();
   readonly suggestions = ['ux.suggestWaiting', 'ux.suggestElderly', 'ux.suggestBoats'];
+  readonly examples = [
+    { q: 'ux.suggestWaiting', a: 'ux.exampleA1' },
+    { q: 'ux.suggestElderly', a: 'ux.exampleA2' },
+    { q: 'ux.suggestBoats', a: 'ux.exampleA3' },
+  ];
   readonly busy = signal(false);
   readonly error = signal(false);
   readonly answer = signal<DeskAnswer | null>(null);
+  readonly thread = signal<{ question: string; answer: DeskAnswer }[]>([]);
   readonly showTrace = signal(false);
   question = '';
 
@@ -141,6 +184,8 @@ export class AskDeskComponent {
     this.api.askDesk(q, this.lang.currentLang()).subscribe({
       next: (a: DeskAnswer) => {
         this.answer.set(a);
+        this.thread.update((rows) => [...rows, { question: q, answer: a }]);
+        this.question = '';
         this.busy.set(false);
       },
       error: () => {

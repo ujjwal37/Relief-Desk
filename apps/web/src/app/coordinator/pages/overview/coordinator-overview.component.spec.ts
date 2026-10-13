@@ -35,7 +35,9 @@ describe('CoordinatorOverviewComponent map filters', () => {
 
   it('filters by urgency, team type, and free teams, and lists only visible kinds', () => {
     expect(component.pins().map((pin) => pin.id).sort()).toEqual(['boat', 'med', 'now', 'soon']);
-    const legend = () => (fixture.nativeElement.querySelector('.omap .legend') as HTMLElement).textContent || '';
+    expect(fixture.nativeElement.querySelectorAll('rd-map-provider').length).toBe(1);
+    expect(fixture.nativeElement.querySelector('.omap')).toBeNull();
+    const legend = () => (fixture.nativeElement.querySelector('.map-stage .legend') as HTMLElement).textContent || '';
     expect(legend()).toContain('Needs help now');
     expect(legend()).toContain('Help soon');
     expect(legend()).toContain('Boat');
