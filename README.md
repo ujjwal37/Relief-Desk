@@ -136,6 +136,16 @@ A timeout, a 429, or invalid JSON after one repair retry uses the deterministic 
 
 Each report makes one model call: the same JSON reply carries the facts, the type, and the English and Hindi text. Calls wait in a priority queue, critical cases first and Ask the desk ahead of reports. `AI_CONCURRENCY` (default 2) is how many run at once; set it to 1 for a local model that serves one call at a time. A full queue does not fall back to rules. The case shows "AI analysing…" until its turn. Merges and possible duplicates are decided before that call, from embeddings or from local similarity and rules, so they show within seconds. Approve does not wait on the queue.
 
+### Test provider: NVIDIA NIM or another OpenAI-compatible API (local testing only)
+
+`LLM_PROVIDER=openai_compat` sends the intake call and Ask the desk to an OpenAI-compatible chat API instead of Gemini. The default is NVIDIA NIM (`OPENAI_COMPAT_BASE_URL=https://integrate.api.nvidia.com/v1`, `OPENAI_COMPAT_MODEL=meta/llama-3.3-70b-instruct`). Put `OPENAI_COMPAT_API_KEY` only in `services/api/.env`; `.env.example` holds a placeholder. A server on `localhost` runs without a key.
+
+- Intake asks for JSON mode (`response_format: json_object`). A server that rejects that gets the same prompt without it, and an invalid reply gets one repair, then rules.
+- Ask the desk forces one `search_cases` tool call. A server without tool support gets the same schema as a JSON request.
+- Duplicate retrieval uses `OPENAI_COMPAT_EMBED_MODEL` (for example `nvidia/llama-3.2-nv-embedqa-1b-v2`) when it is set, otherwise local similarity and rules. Gemini embeddings are not called in this mode.
+- The trace, the case card and Ask the desk say "Test model (NVIDIA)" (or `OPENAI_COMPAT_LABEL`), never Gemini. Replies are cached in memory only, so `data/ai_cache` stays Gemini output.
+- `make bench` refuses this provider. `python bench/run_bench.py --allow-test-provider` runs a smoke test, writes `bench/results/test-provider/` (gitignored), and leaves `latest.json` and `RESULTS.md` alone. The Gemini column stays unmeasured. `make record-ai` always refuses it.
+
 `npx playwright test` starts its own API on port 8100 with `AI_MODE=fallback` and its own web server on 4300, so a dev server on 8000 or 4200 is never reused.
 
 ## Deploy

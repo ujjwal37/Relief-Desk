@@ -19,11 +19,21 @@ def health_check():
 @router.get("/api/health/ai")
 def ai_health():
     """Provider, cache hit rate, and quota. Does not include the API key."""
+    from app.llm import openai_compat as oc
+
     looked = llm_client.cache_hits + llm_client.cache_misses
     rate = (llm_client.cache_hits / looked) if looked else 0.0
+    if oc.enabled():
+        provider, model, label = oc.PROVIDER, oc.model(), oc.label()
+    elif llm_client.gemini_live():
+        provider, model, label = "gemini", settings.GEMINI_MODEL, "Gemini"
+    else:
+        provider, model, label = "fallback", settings.GEMINI_MODEL, "Rules"
     return {
-        "provider": "gemini" if llm_client.gemini_live() else "fallback",
-        "model": settings.GEMINI_MODEL,
+        "provider": provider,
+        "model": model,
+        "label": label,
+        "embed_model": (oc.embed_model() or None) if oc.requested() else settings.GEMINI_EMBED_MODEL,
         "cache_hit_rate": round(rate, 3),
         "quota": {
             "daily_cap": llm_client.daily_cap,

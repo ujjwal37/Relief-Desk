@@ -25,9 +25,10 @@ def require_real_key(key: str) -> str:
 
 
 def _never_antigravity() -> None:
-    from app.llm.antigravity import assert_not_antigravity
+    """data/ai_cache holds Gemini API replies only: no test provider, with or without a flag."""
+    from app.llm.providers import assert_gemini_only
 
-    assert_not_antigravity("record-ai")
+    assert_gemini_only("record-ai")
 
 
 def record_seeded_reports() -> int:

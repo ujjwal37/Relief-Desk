@@ -250,6 +250,11 @@ class LLMClient:
         cache_key = self.cache_key(system_instruction, user_prompt)
         mode = (settings.AI_MODE or "auto").lower()
 
+        from app.llm import openai_compat as oc
+
+        if oc.enabled():
+            return self._via_openai_compat(system_instruction, user_prompt, validator, max_retries, started)
+
         cached = self.get_cached(cache_key)
         cache_ok = False
         if cached:
@@ -380,6 +385,57 @@ class LLMClient:
             cached=False,
         )
         self._remember(usage)
+        self._local_cache[key] = text
+        return text
+
+    def _via_openai_compat(self, system_instruction, user_prompt, validator, max_retries, started) -> str:
+        """Test provider (NVIDIA NIM or a local OpenAI-compatible server). Memory cache only."""
+        from app.llm import openai_compat as oc
+
+        key = f"{oc.PROVIDER}:{oc.model()}:{self.cache_key(system_instruction, user_prompt)}"
+        remembered = self._local_cache.get(key)
+        if remembered is not None:
+            self.cache_hits += 1
+            self._remember(AiCall(
+                provider=oc.PROVIDER,
+                model=oc.model(),
+                latency_ms=int((time.perf_counter() - started) * 1000),
+                cached=True,
+            ))
+            return remembered
+        self.cache_misses += 1
+        prompt = user_prompt
+        repairs_left = max_retries
+        tokens: Optional[int] = None
+        try:
+            while True:
+                with self.guard.slots.slot():
+                    text, used = oc.chat_json(system_instruction, prompt)
+                tokens = (tokens or 0) + used if used is not None else tokens
+                if not validator:
+                    break
+                try:
+                    validator(text)
+                    break
+                except Exception as val_err:
+                    logger.warning("Test model reply failed validation (%s). Repairs left: %d", val_err, repairs_left)
+                    if repairs_left <= 0:
+                        return self._fallback(user_prompt, "invalid_json", started)
+                    repairs_left -= 1
+                    prompt = (
+                        f"{user_prompt}\n\nPREVIOUS OUTPUT WAS INVALID JSON OR FAILED VALIDATION:\n"
+                        f"{val_err}\nReturn one JSON object only."
+                    )
+        except Exception as exc:
+            logger.error("Test model call failed (%s). Falling back.", str(exc)[:200])
+            return self._fallback(user_prompt, oc.failure_reason(exc), started)
+        self._remember(AiCall(
+            provider=oc.PROVIDER,
+            model=oc.model(),
+            latency_ms=int((time.perf_counter() - started) * 1000),
+            tokens=tokens,
+            cached=False,
+        ))
         self._local_cache[key] = text
         return text
 

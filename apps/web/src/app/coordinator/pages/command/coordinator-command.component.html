@@ -195,7 +195,7 @@
             @if (req.analysis_status === 'analysing') { <p class="ai-read">{{ 'coord.traceWorking' | rdTranslate }}</p> }
             <p class="ai-read">
               <span class="cap">{{ 'coord.aiReading' | rdTranslate }}</span>
-              <span class="ai-src" [class.live]="aiKind(req) === 'gemini'">{{ (aiKind(req) === 'gemini' ? 'coord.aiGemini' : aiKind(req) === 'recorded' ? 'coord.aiRecorded' : 'coord.aiOffline') | rdTranslate }}</span>
+              <span class="ai-src" [class.live]="aiKind(req) === 'gemini'" data-testid="ai-source">{{ aiSourceText(req) }}</span>
             </p>
             @if ((req.merged_count || 1) > 1) { <p class="more">{{ tr('coord.moreReports', (req.merged_count || 1) - 1) }}</p> }
           </div>

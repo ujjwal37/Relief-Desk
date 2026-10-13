@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { LanguageService, RdTranslatePipe } from '@rd/shared';
+import { testProviderWord } from './provider-label';
 
 export interface TraceStepView {
   agent: string;
@@ -7,6 +8,7 @@ export interface TraceStepView {
   output: string | null;
   model: string | null;
   provider: string | null;
+  vendor?: string | null;
   latencyMs: number | null;
   input: string | null;
   tools: string[];
@@ -39,10 +41,12 @@ export class TraceStepComponent {
     return this.lang.translate('ux.seconds').replace('{n}', (ms / 1000).toFixed(1));
   }
 
-  /** One word: Rules, Gemini, or Recorded. Empty fields stay off the card. */
+  /** One word: Rules, Gemini, Recorded, or Test model (vendor). Empty fields stay off the card. */
   badgeWord(): string {
     this.lang.currentLang();
     const step = this.step();
+    const test = testProviderWord(step.provider, step.vendor, (key) => this.lang.translate(key));
+    if (test) return test;
     if (step.provider === 'cache' || step.provider === 'replay') return this.lang.translate('ux.badgeRecordedShort');
     if (step.provider === 'tool' || step.provider === 'fallback' || !step.model) return this.lang.translate('ux.badgeRules');
     return this.lang.translate('ux.badgeGemini');

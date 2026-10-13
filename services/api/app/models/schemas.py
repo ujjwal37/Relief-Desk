@@ -5,7 +5,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class AiCall(BaseModel):
-    """One model attempt. provider is gemini, cache, or fallback."""
+    """One model attempt. provider is gemini, cache, fallback, or a test provider
+    (antigravity-local, openai_compat) that is never shown as Gemini."""
 
     provider: str = "fallback"
     model: Optional[str] = None
@@ -15,12 +16,14 @@ class AiCall(BaseModel):
     fallback_reason: Optional[str] = None
 
     def badge(self) -> str:
+        if self.provider == "openai_compat":
+            return "test"
+        if self.provider == "antigravity-local":
+            return "local"
         if self.provider == "cache" or self.cached:
             return "recorded"
         if self.provider == "gemini":
             return "gemini"
-        if self.provider == "antigravity-local":
-            return "local"
         return "offline"
 
 

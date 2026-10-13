@@ -27,10 +27,22 @@ class Settings(BaseSettings):
     # auto: call Gemini when a real key is set. replay: serve data/ai_cache.
     # fallback: never call the network. DEMO_MODE does not skip a real key.
     AI_MODE: str = "auto"
-    # Manual testing only: "antigravity" routes live calls to the local Antigravity CLI (agy).
+    # Manual testing only: "antigravity" routes live calls to the local Antigravity CLI (agy),
+    # "openai_compat" to an OpenAI-compatible chat API such as NVIDIA NIM. Neither is ever
+    # scored by the benchmark or written to data/ai_cache.
     LLM_PROVIDER: str = ""
     ANTIGRAVITY_BIN: str = ""
     ANTIGRAVITY_TIMEOUT_S: float = 40.0
+    OPENAI_COMPAT_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
+    OPENAI_COMPAT_API_KEY: str = ""
+    OPENAI_COMPAT_MODEL: str = "meta/llama-3.3-70b-instruct"
+    # Empty means no embedding call: duplicates use local similarity and rules.
+    OPENAI_COMPAT_EMBED_MODEL: str = ""
+    # NIM retrieval embedders require input_type. Empty sends none (plain OpenAI servers reject it).
+    OPENAI_COMPAT_EMBED_INPUT_TYPE: str = "query"
+    OPENAI_COMPAT_TIMEOUT_S: float = 30.0
+    # Name in the trace label "Test model (<name>)". Empty derives it from the base URL host.
+    OPENAI_COMPAT_LABEL: str = ""
     DEMO_MODE: bool = True
     # small: two cases and a few teams. full: the flood pack (benchmark and record_ai read the files directly).
     DEMO_SEED: str = "small"

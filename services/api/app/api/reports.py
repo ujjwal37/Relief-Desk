@@ -386,8 +386,11 @@ def _dedupe_and_rank(req_obj: StoredRequest, extracted: ExtractedRequest, words:
 def _translation_for(report_text: str, analysis: ExtractedRequest, ai_usage) -> TranslationResult:
     text_en = getattr(analysis, "text_en", None)
     if text_en and ai_usage.provider != "fallback":
+        from app.llm.providers import TEST_PROVIDERS
+
         return translation_service.from_model(
             report_text, text_en, getattr(analysis, "text_hi", None), getattr(analysis, "translation_confidence", None),
+            persist=ai_usage.provider not in TEST_PROVIDERS,
         )
     return translation_service.translate_report(report_text, allow_model=False)
 
@@ -409,7 +412,8 @@ def _refine_with_model(
         analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
         ai_usage = llm_client.last_ai.model_copy()
     trans_res = _translation_for(report_text, analysis, ai_usage)
-    ai_source = {"gemini": "gemini", "cache": "recorded", "antigravity-local": "antigravity-local"}.get(
+    ai_source = {"gemini": "gemini", "cache": "recorded", "antigravity-local": "antigravity-local",
+                 "openai_compat": "openai_compat"}.get(
         ai_usage.provider, "offline_fallback"
     )
     machine_summary = _apply_card(analysis, payload, report_text)

@@ -177,7 +177,10 @@ def _trace_step(
     latency_ms: Optional[int] = None,
     tokens: Optional[int] = None,
 ) -> dict:
-    """One trace row. provider is gemini, cache, fallback or tool. model is set only when a model ran."""
+    """One trace row. provider is gemini, cache, fallback, tool, or a test provider such as
+    openai_compat. model is set only when a model ran. provider_label never says Gemini for a test model."""
+    from app.llm.providers import display_name, vendor
+
     measured = max(0, int(round((time.perf_counter() - started) * 1000)))
     return {
         "agent": agent,
@@ -185,6 +188,8 @@ def _trace_step(
         "input_summary": (summary or "")[:180],
         "output": (output or "")[:400],
         "provider": provider,
+        "provider_label": display_name(provider) if model else "Rules",
+        "vendor": vendor(provider),
         "model": model,
         "latency_ms": latency_ms if latency_ms is not None else measured,
         "tokens": tokens,
@@ -197,7 +202,7 @@ def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
     """The Intake row reports the model call that actually happened, in English for the coordinator."""
     ai = req.ai
     provider = (ai.provider if ai else None) or ("gemini" if req.ai_source == "gemini" else "fallback")
-    ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local") else None
+    ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local", "openai_compat") else None
     english = (req.translations or {}).get("en") or req.ai_translation or req.summary or summary or req.type.value
     return _trace_step(
         "Intake",
@@ -257,7 +262,9 @@ def finish(request_id: str) -> None:
     kind = {"medical": "medical", "food": "food", "shelter": "shelter"}.get(req.type.value, "boat")
     capacity = check_capacity(kind)
     match_at = time.perf_counter()
-    provider = "gemini" if llm_client.gemini_live() else "fallback"
+    ran = req.ai if req.ai and req.ai.provider != "fallback" else None
+    provider = ran.provider if ran else ("gemini" if llm_client.gemini_live() else "fallback")
+    model = (ran.model if ran else None) or settings.GEMINI_MODEL
     summary = (req.raw_text or "")[:180]
     explanation = strip_advice(
         f"The urgency score is {scored.score}. "
@@ -266,7 +273,7 @@ def finish(request_id: str) -> None:
     explanation = f"{explanation} This note is not medical or legal advice."
     req.analysis = {
         "provider": provider,
-        "model": settings.GEMINI_MODEL,
+        "model": model,
         "intake": (req.raw_text or "")[:240],
         "dedupe": _dedupe_output(req),
         "triage": {"score": scored.score, "reason": scored.reason},

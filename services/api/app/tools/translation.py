@@ -61,8 +61,10 @@ class TranslationService:
             return "hinglish"
         return "en"
 
-    def from_model(self, text: str, text_en: str, text_hi: Optional[str], confidence: Optional[float]) -> TranslationResult:
-        """Keep the translation that came back inside the one intake reply, cached by text hash."""
+    def from_model(self, text: str, text_en: str, text_hi: Optional[str], confidence: Optional[float],
+                   persist: bool = True) -> TranslationResult:
+        """Keep the translation that came back inside the one intake reply, cached by text hash.
+        persist=False (a test provider) keeps it in memory, so the disk cache stays Gemini or rules."""
         clean_text = (text or "").strip()
         hindi = (text_hi or "").strip() or clean_text
         conf = float(confidence) if confidence is not None else 0.9
@@ -75,7 +77,11 @@ class TranslationService:
             is_low_confidence=conf < 0.70,
         )
         if clean_text:
-            self._save_cache(hashlib.sha256(clean_text.encode("utf-8")).hexdigest(), res)
+            key = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
+            if persist:
+                self._save_cache(key, res)
+            else:
+                self._memory_cache[key] = res
         return res
 
     def translate_report(self, text: str, allow_model: bool = True) -> TranslationResult:

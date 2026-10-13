@@ -43,6 +43,25 @@ describe('AgentTraceDrawerComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.details').length).toBe(5);
   });
 
+  it('names a test provider honestly and never as Gemini', () => {
+    const local = TestBed.createComponent(AgentTraceDrawerComponent);
+    local.componentRef.setInput('request', {
+      id: 'INC-009',
+      ai_source: 'openai_compat',
+      ai: { provider: 'openai_compat', model: 'meta/llama-3.3-70b-instruct', cached: true },
+      trace: [
+        { agent: 'Intake', status: 'complete', output: 'rescue', model: 'meta/llama-3.3-70b-instruct', provider: 'openai_compat', vendor: 'NVIDIA', latency_ms: 900, tool_calls: [] },
+        { agent: 'Triage', status: 'complete', output: 'score 90', model: null, provider: 'tool', latency_ms: 3, tool_calls: [] },
+      ],
+    } as unknown as StoredRequest);
+    local.detectChanges();
+    expect(local.nativeElement.querySelector('.run-badge')?.textContent).toContain('Test model (NVIDIA)');
+    expect(local.nativeElement.querySelector('[data-testid="trace-test-word"]')?.textContent).toContain('Test model (NVIDIA)');
+    const intake = local.nativeElement.querySelector('app-trace-step')?.textContent as string;
+    expect(intake).toContain('Test model (NVIDIA)');
+    expect(intake).not.toContain('Gemini');
+  });
+
   it('keeps a single step expanded', () => {
     const buttons = fixture.nativeElement.querySelectorAll('.details') as NodeListOf<HTMLButtonElement>;
     buttons[0].click();

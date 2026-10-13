@@ -1,5 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
 import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
+import { testProviderWord } from './provider-label';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
 
 const ORDER = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'] as const;
@@ -28,9 +29,24 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
   readonly retry = output<void>();
   readonly expanded = signal<string | null>(null);
 
-  /** Rules, Gemini, or Recorded. A step provider wins over the case-level offline label. */
+  /** Test model (vendor) when a test provider ran any step. Null for Gemini, recorded and rules runs. */
+  readonly testWord = computed(() => {
+    this.lang.currentLang();
+    const t = (key: string) => this.lang.translate(key);
+    for (const step of this.steps()) {
+      const word = testProviderWord(step.provider, step.vendor, t);
+      if (word) return word;
+    }
+    const req = this.request();
+    const intake = (req.trace || []).find((row) => row.agent === 'Intake');
+    return testProviderWord(req.ai?.provider || req.ai_source, intake?.vendor, t);
+  });
+
+  /** Rules, Gemini, Recorded, or Test model. A step provider wins over the case-level offline label. */
   readonly headerWord = computed(() => {
     this.lang.currentLang();
+    const test = this.testWord();
+    if (test) return test;
     const providers = this.steps().map((step) => step.provider).filter((provider): provider is string => !!provider);
     if (providers.some((provider) => provider === 'cache' || provider === 'replay')) return this.lang.translate('ux.badgeRecordedShort');
     if (providers.some((provider) => provider === 'gemini')) return this.lang.translate('ux.badgeGemini');
@@ -87,7 +103,8 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
       status,
       output: raw?.output || null,
       model: raw?.model || null,
-      provider: (raw as { provider?: string } | undefined)?.provider || null,
+      provider: raw?.provider || null,
+      vendor: raw?.vendor || null,
       latencyMs: typeof raw?.latency_ms === 'number' ? raw.latency_ms : null,
       input: raw?.input_summary || null,
       tools: (raw?.tool_calls || []).map((tool) => this.toolText(tool)),

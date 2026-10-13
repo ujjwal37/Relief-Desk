@@ -19,6 +19,7 @@ import { AgentTraceDrawerComponent } from '../../agents/agent-trace-drawer.compo
 import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
+import { testProviderWord } from '../../agents/provider-label';
 import { JustReportedStripComponent } from '../../just-reported-strip.component';
 import { LIVE_CHANNEL } from '../../../core/live-report';
 import { DeskStore } from '../../../core/desk-store';
@@ -464,10 +465,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.langService.currentLang();
     return legTitle(this.travel(prop), (key) => this.langService.translate(key));
   }
-  aiKind(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' {
+  aiKind(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' | 'test' {
+    if (this.testWord(req)) return 'test';
     if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'recorded';
     if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') return 'gemini';
     return 'fallback';
+  }
+  /** Who read this report, e.g. "Test model (NVIDIA)". Never Gemini for a test provider. */
+  aiSourceText(req: StoredRequest): string {
+    this.langService.currentLang();
+    const kind = this.aiKind(req);
+    if (kind === 'test') return this.testWord(req) || '';
+    return this.langService.translate(kind === 'gemini' ? 'coord.aiGemini' : kind === 'recorded' ? 'coord.aiRecorded' : 'coord.aiOffline');
+  }
+  private testWord(req: StoredRequest): string | null {
+    const intake = (req.trace || []).find((row) => row.agent === 'Intake');
+    return testProviderWord(req.ai?.provider || req.ai_source, intake?.vendor, (key) => this.langService.translate(key));
   }
   etaText(prop: MatchProposal): string {
     this.langService.currentLang();

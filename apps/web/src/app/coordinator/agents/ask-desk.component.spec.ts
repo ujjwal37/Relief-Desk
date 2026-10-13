@@ -63,4 +63,12 @@ describe('AskDeskComponent', () => {
     const c = TestBed.createComponent(AskDeskComponent).componentInstance;
     expect(c.viaText({ ...answer, ai: { provider: 'fallback', model: null } } as any)).toBe('ux.deskByRules');
   });
+
+  it('labels a test provider answer with its vendor, never Gemini', () => {
+    lang.translate = (k: string) => (k === 'ux.badgeTest' ? 'Test model ({name})' : k);
+    const c = TestBed.createComponent(AskDeskComponent).componentInstance;
+    const via = c.viaText({ ...answer, ai: { provider: 'openai_compat', model: 'meta/llama-3.3-70b-instruct', vendor: 'NVIDIA' } } as any);
+    lang.translate = (k: string) => k;
+    expect(via).toBe('meta/llama-3.3-70b-instruct · Test model (NVIDIA)');
+  });
 });

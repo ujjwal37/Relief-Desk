@@ -559,14 +559,21 @@ class DedupeAgent:
         score = self._embed_scores.get(request_id or "")
         if score is None:
             return []
-        return [f"gemini-embedding-001 SEMANTIC_SIMILARITY 768d cosine {score}"]
+        from app.llm.embeddings import describe
+
+        return [f"{describe()} {score}"]
 
     def _ask_gemini(self, raw_text: str, new_req: ExtractedRequest, candidates: List[StoredRequest]) -> Optional[DedupeDecision]:
         """Ask Gemini to judge duplicate, update, or distinct. None means use the lexical decision."""
+        from app.llm import openai_compat as oc
         from app.llm.antigravity import antigravity_requested
 
         # Antigravity does not call Gemini embeddings. The lexical rules decide duplicates.
-        if antigravity_requested() or not candidates or not getattr(self.client, "gemini_live", lambda: False)():
+        if antigravity_requested() or not candidates:
+            return None
+        if oc.requested() and not oc.enabled():
+            return None
+        if not oc.requested() and not getattr(self.client, "gemini_live", lambda: False)():
             return None
         summary = [
             {
@@ -603,6 +610,14 @@ class DedupeAgent:
         decision.evidence.extend(self._embed_evidence(decision.target_request_id))
         return decision
 
+    def _judge_name(self) -> str:
+        from app.llm.providers import display_name
+
+        usage = getattr(self.client, "last_ai", None)
+        provider = getattr(usage, "provider", None)
+        provider = provider if isinstance(provider, str) and provider else "gemini"
+        return f"{display_name(provider)} judge" if provider != "fallback" else "Rules judge"
+
     def _decision_from_judge(self, raw: str, new_req: ExtractedRequest) -> Optional[DedupeDecision]:
         clean = raw.strip()
         if clean.startswith("```json"):
@@ -630,7 +645,7 @@ class DedupeAgent:
             decision=mapped,
             target_request_id=payload.get("target_request_id"),
             changed_fields=changed,
-            evidence=evidence or ["Gemini judge compared the two reports."],
+            evidence=evidence or [f"{self._judge_name()} compared the two reports."],
             confidence=float(payload.get("confidence") or 0.8),
         )
 

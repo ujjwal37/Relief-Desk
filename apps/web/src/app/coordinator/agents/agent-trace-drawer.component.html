@@ -30,5 +30,6 @@
     <span class="word">{{ 'ux.badgeRules' | rdTranslate }}</span>
     <span class="word">{{ 'ux.badgeGemini' | rdTranslate }}</span>
     <span class="word">{{ 'ux.badgeRecordedShort' | rdTranslate }}</span>
+    @if (testWord()) { <span class="word" data-testid="trace-test-word">{{ testWord() }}</span> }
   </footer>
 </div>

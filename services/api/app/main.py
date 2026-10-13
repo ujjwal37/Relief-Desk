@@ -28,6 +28,14 @@ logger = logging.getLogger("relief_desk.api")
 async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s...", settings.PROJECT_NAME, settings.VERSION)
     logger.info("Gemini enabled: %s (Model: %s)", settings.GEMINI_ENABLED, settings.GEMINI_MODEL)
+    from app.llm import openai_compat as oc
+
+    if oc.requested():
+        logger.info(
+            "LLM_PROVIDER=openai_compat: %s, model %s, embeddings %s, %s. Local testing only; never Gemini numbers.",
+            oc.label(), oc.model(), oc.embed_model() or "off (local similarity)",
+            "on" if oc.enabled() else "off (no key, or AI_MODE replay/fallback)",
+        )
     logger.info("Demo mode: %s", settings.DEMO_MODE)
     yield
     logger.info("Shutting down %s...", settings.PROJECT_NAME)

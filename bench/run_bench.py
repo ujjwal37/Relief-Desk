@@ -74,7 +74,15 @@ def run_benchmark(
     out_dir: Path = None,
     gemini_rpm: float = 15.0,
     gemini_limit: int = None,
+    allow_test_provider: bool = False,
 ) -> Dict[str, Any]:
+    from app.llm.providers import active_test_provider, assert_gemini_only, display_name
+
+    try:
+        assert_gemini_only("benchmark", allow_test_provider=allow_test_provider)
+    except RuntimeError as exc:
+        raise SystemExit(str(exc)) from exc
+    test_provider = active_test_provider()
     msgs_file = dataset_dir / "messages.jsonl"
     lbls_file = dataset_dir / "labels.jsonl"
 
@@ -561,8 +569,19 @@ def run_benchmark(
         "frozen_test_count": len(split_meta.get("test_ids") or []),
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
+    if test_provider:
+        from app.config import settings as _settings
+
+        results["submission"] = False
+        results["test_provider"] = {
+            "provider": test_provider,
+            "label": display_name(test_provider),
+            "model": _settings.OPENAI_COMPAT_MODEL,
+            "note": "Local smoke run. The Relief Desk column used this test model, not Gemini. Not a submission number.",
+        }
     run_day = results["created_at"][:10]
-    gemini = evaluate_gemini(messages, all_labels, run_day, rpm=gemini_rpm, limit=gemini_limit)
+    gemini = evaluate_gemini(messages, all_labels, run_day, rpm=gemini_rpm, limit=gemini_limit,
+                             allow_test_provider=allow_test_provider)
     gemini["baseline_type_accuracy_pct"] = results["metrics"]["type_accuracy_pct"]["baseline_keyword"]
     gemini["baseline_ward_accuracy_pct"] = results["metrics"]["place_ward_accuracy_pct"]["baseline_keyword"]
     gemini["rules_type_accuracy_pct"] = results["metrics"]["type_accuracy_pct"]["relief_desk"]
@@ -604,6 +623,10 @@ def run_benchmark(
 
     # 4. Save Artifacts
     target_out_dir = out_dir or (PROJECT_ROOT / "bench" / "results")
+    submission_dir = (PROJECT_ROOT / "bench" / "results").resolve()
+    if test_provider and Path(target_out_dir).resolve() == submission_dir:
+        # latest.json and RESULTS.md feed the Accuracy page and the submission: Gemini only.
+        target_out_dir = submission_dir / "test-provider"
     target_out_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -619,6 +642,14 @@ def run_benchmark(
         with open(jp, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
 
+    test_line = ""
+    if test_provider:
+        tp = results["test_provider"]
+        test_line = (
+            f"- **TEST PROVIDER RUN, NOT A SUBMISSION NUMBER**: {tp['label']} ({tp['model']}) "
+            "answered the Relief Desk column.\n"
+        )
+
     # Write Markdown
     md_content = f"""# Relief Desk Benchmark Results (BUILD_BRIEF.md Section 9.3)
 
@@ -627,7 +658,7 @@ def run_benchmark(
 - **Seed**: {seed}
 - **Generated At**: {results['created_at']}
 - **Status**: Synthetic labels. The Gemini column is filled only when a live or cached model call is scored.
-
+{test_line}
 ## Comparative Metrics Table
 
 | Metric | Relief Desk | Baseline | Target |
@@ -718,6 +749,11 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=str, default="bench/results")
     parser.add_argument("--gemini-rpm", type=float, default=14.0, help="pace live Gemini calls (free tier is 15/min)")
     parser.add_argument("--gemini-limit", type=int, default=None, help="score only the first N messages with Gemini")
+    parser.add_argument(
+        "--allow-test-provider",
+        action="store_true",
+        help="run with LLM_PROVIDER=openai_compat for a local smoke test; writes bench/results/test-provider, never a submission number",
+    )
     args = parser.parse_args()
 
     run_benchmark(
@@ -727,4 +763,5 @@ if __name__ == "__main__":
         out_dir=Path(args.out),
         gemini_rpm=args.gemini_rpm,
         gemini_limit=args.gemini_limit,
+        allow_test_provider=args.allow_test_provider,
     )

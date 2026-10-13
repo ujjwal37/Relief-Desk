@@ -162,6 +162,36 @@ def _call_function(question: str, timeout_s: float):
     return dict(calls[0].args or {}), tokens
 
 
+def _test_model_filters(question: str, key: str, post=None) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+    """openai_compat: one forced search_cases tool call, or the same schema as JSON when the
+    server has no tool support. Cached in memory by question hash. `post` is for tests."""
+    from app.llm import client as llm
+    from app.llm import openai_compat as oc
+    from app.llm.ai_queue import DESK
+
+    c = llm.llm_client
+    cache_key = f"{oc.PROVIDER}:{oc.model()}:{key}"
+    meta: Dict[str, Any] = {"provider": oc.PROVIDER, "model": oc.model(), "vendor": oc.vendor(),
+                            "latency_ms": 0, "tokens": None, "fallback_reason": None}
+    started = time.monotonic()
+    remembered = c._local_cache.get(cache_key)
+    if remembered is not None:
+        meta.update(latency_ms=int((time.monotonic() - started) * 1000), mode="cache")
+        return clean_filters(json.loads(remembered)), meta
+    try:
+        with c.guard.slots.slot(DESK):
+            started = time.monotonic()
+            args, tokens, mode = oc.call_function(system_prompt(), question, FUNCTION, post=post)
+        filters = clean_filters(args)
+    except Exception as exc:
+        meta.update(provider="fallback", model=None, vendor=None, fallback_reason=oc.failure_reason(exc),
+                    latency_ms=int((time.monotonic() - started) * 1000))
+        return None, meta
+    c._local_cache[cache_key] = json.dumps(filters)
+    meta.update(tokens=tokens, mode=mode, latency_ms=int((time.monotonic() - started) * 1000))
+    return filters, meta
+
+
 def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
     """One function call. Returns (filters or None, ai metadata). `call` is for tests."""
     from app.llm import client as llm
@@ -171,8 +201,11 @@ def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], 
     c = llm.llm_client
     meta: Dict[str, Any] = {"provider": "fallback", "model": None, "latency_ms": 0, "tokens": None, "fallback_reason": None}
     from app.llm import antigravity as ag
+    from app.llm import openai_compat as oc
 
     key = c.cache_key("desk_query:" + system_prompt(), question.strip())
+    if call is None and oc.enabled():
+        return _test_model_filters(question, key)
     if call is None and ag.antigravity_enabled():
         started = time.monotonic()
         remembered = c._local_cache.get(key)
@@ -278,8 +311,11 @@ def ask(question: str, requests: Iterable[Any], call=None) -> Dict[str, Any]:
     t_search = int((time.monotonic() - t1) * 1000)
     shown = {k: v for k, v in filters.items() if k != "reason"}
     as_json = json.dumps(shown, ensure_ascii=False)
+    from app.llm.providers import display_name
+
     trace = [
         {"agent": "Understand question", "status": "complete", "provider": ai["provider"], "model": ai.get("model"),
+         "provider_label": display_name(ai["provider"]) if ai.get("model") else "Rules", "vendor": ai.get("vendor"),
          "latency_ms": ai.get("latency_ms") or t_parse, "tokens": ai.get("tokens"),
          "input": question, "output": as_json, "note": ai.get("fallback_reason")},
         {"agent": "Search cases (read-only)", "status": "complete", "provider": "tool", "model": None,

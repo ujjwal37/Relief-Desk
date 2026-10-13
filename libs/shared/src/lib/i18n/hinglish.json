@@ -689,6 +689,7 @@
     "badgeRecordedShort": "Recorded (Gemini)",
     "badgeOffline": "Offline fallback",
     "badgeLocal": "Local test model (Antigravity)",
+    "badgeTest": "Test model ({name})",
     "resetDemo": "Demo reset karo",
     "resetDemoConfirm": "Do cases wala synthetic demo phir se load karein? Is session ke merge, hold aur dispatch undo ho jayenge. Audit log rahega.",
     "resetDemoDone": "Do cases wala demo phir se load ho gaya.",

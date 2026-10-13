@@ -54,4 +54,12 @@ describe('TraceStepComponent', () => {
     expect(text).not.toContain('No tools');
     expect(text).not.toContain('Not recorded');
   });
+
+  it('shows a test provider as Test model (vendor), even when cached', () => {
+    fixture.componentRef.setInput('step', { ...STEP, provider: 'openai_compat', vendor: 'NVIDIA', model: 'meta/llama-3.3-70b-instruct' });
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Test model (NVIDIA)');
+    expect(text).not.toContain('Gemini');
+  });
 });

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
+import { testProviderWord } from './provider-label';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
 
 export interface DeskCase {
@@ -21,7 +22,7 @@ export interface DeskAnswer {
   reason: string;
   total: number;
   cases: DeskCase[];
-  ai: { provider: string; model: string | null; fallback_reason?: string | null };
+  ai: { provider: string; model: string | null; vendor?: string | null; fallback_reason?: string | null };
   trace: Array<Record<string, any>>;
 }
 
@@ -208,6 +209,7 @@ export class AskDeskComponent {
       output: t['output'] ?? null,
       model: t['model'] ?? null,
       provider: t['provider'] ?? null,
+      vendor: t['vendor'] ?? null,
       latencyMs: typeof t['latency_ms'] === 'number' ? t['latency_ms'] : null,
       input: t['input'] ?? null,
       tools: [],
@@ -234,7 +236,8 @@ export class AskDeskComponent {
   viaText(a: DeskAnswer): string {
     this.lang.currentLang();
     if (a.ai.provider === 'gemini') return a.ai.model || '';
-    if (a.ai.provider === 'antigravity-local') return `${a.ai.model || ''} · ${this.lang.translate('ux.badgeLocal')}`;
+    const test = testProviderWord(a.ai.provider, a.ai.vendor, (key) => this.lang.translate(key));
+    if (test) return `${a.ai.model || ''} · ${test}`;
     if (a.ai.provider === 'cache') return `${a.ai.model || ''} · ${this.lang.translate('ux.badgeRecorded')}`;
     return this.lang.translate('ux.deskByRules');
   }

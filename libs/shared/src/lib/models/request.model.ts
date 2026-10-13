@@ -177,10 +177,10 @@ export interface StoredRequest {
   /** The confirmed card summary. A case title falls back to it while the model works. */
   summary?: string | null;
   ai_translation?: string | null;
-  /** "gemini" live, "recorded" cache, or "offline_fallback". */
-  ai_source?: 'gemini' | 'recorded' | 'offline_fallback' | 'antigravity-local';
+  /** "gemini" live, "recorded" cache, "offline_fallback", or a test provider that is never shown as Gemini. */
+  ai_source?: 'gemini' | 'recorded' | 'offline_fallback' | 'antigravity-local' | 'openai_compat';
   ai?: {
-    provider: 'gemini' | 'cache' | 'fallback' | 'antigravity-local';
+    provider: 'gemini' | 'cache' | 'fallback' | 'antigravity-local' | 'openai_compat';
     model?: string | null;
     latency_ms?: number;
     tokens?: number | null;
@@ -198,6 +198,11 @@ export interface StoredRequest {
     status: string;
     input_summary?: string;
     output?: string;
+    provider?: string | null;
+    /** English name of who answered, e.g. "Test model (NVIDIA)". */
+    provider_label?: string | null;
+    /** The name inside "Test model (...)" for a test provider. */
+    vendor?: string | null;
     model?: string;
     latency_ms?: number;
     tokens?: number | null;
