@@ -11,7 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { HostListener, effect } from '@angular/core';
+import { HostListener, effect, untracked } from '@angular/core';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { SevChipComponent } from '../../../core/components/sev-chip.component';
 import { AgentBadgeComponent } from '../../agents/agent-badge.component';
@@ -22,6 +22,8 @@ import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '..
 import { MergedChipComponent } from '../../agents/merged-chip.component';
 import { JustReportedStripComponent } from '../../just-reported-strip.component';
 import { LIVE_CHANNEL } from '../../../core/live-report';
+import { DeskStore } from '../../../core/desk-store';
+import { LiveEventsService } from '../../../core/live-events.service';
 import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
@@ -554,6 +556,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (e.key === 'a') (document.querySelector('.btn-approve') as HTMLElement | null)?.focus();
   }
 
+  private readonly desk = inject(DeskStore);
+  private readonly live = inject(LiveEventsService);
+
   readonly availableBoatsCount = computed<number>(() => {
     const boats = this.resources().filter((res) => res.kind === 'boat');
     return boats.filter((b) => b.capacity_remaining > 0).length || 4;
@@ -570,6 +575,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       const ui = this.langService.currentLang();
       const mapped = ui === 'en' || ui === 'ml' ? 'en' : 'hi';
       this.selectedTranslationLang.set(mapped);
+    });
+    effect(() => {
+      if (!this.desk.casesReady()) return;
+      const incoming = this.desk.requests();
+      untracked(() => this.applyQueue(incoming, false));
+    });
+    effect(() => {
+      if (!this.desk.teamsReady()) return;
+      this.resources.set(this.desk.resources());
     });
   }
 
@@ -639,10 +653,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.stopQueuePoll();
     this.pollTimer = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
+      if (this.live.state() === 'live') return;
       this.loadRequests(true);
       this.loadResources();
       this.loadAssist();
-    }, 4000);
+    }, 5000);
   }
 
   private stopQueuePoll(): void {

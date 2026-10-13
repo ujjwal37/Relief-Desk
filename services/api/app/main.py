@@ -16,6 +16,7 @@ from app.api.alerts import router as alerts_router
 from app.api.benchmark import router as benchmark_router
 from app.api.demo import router as demo_router
 from app.api.desk import router as desk_router
+from app.api.events import router as events_router
 
 logging.basicConfig(
     level=settings.LOG_LEVEL,
@@ -60,6 +61,7 @@ app.include_router(alerts_router)
 app.include_router(benchmark_router)
 app.include_router(demo_router)
 app.include_router(desk_router)
+app.include_router(events_router)
 
 @app.get("/")
 def root():

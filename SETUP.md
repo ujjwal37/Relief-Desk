@@ -167,7 +167,7 @@ cd services/api && source .venv/bin/activate && uvicorn app.main:app --reload --
 ng serve web --port 4200
 # demo mode with phone frame: http://localhost:4200/coordinator?demo=1
 ```
-Proxy `/api` to `localhost:8000` with `proxy.conf.json`.
+Proxy `/api` to `localhost:8000` with `apps/web/proxy.conf.js`. `/api/events` is not buffered.
 
 ## 8. Sanity checks (all must pass before TASKS T-001 is DONE)
 - [ ] `curl localhost:8000/healthz` returns `{"status":"ok"}` (and does not call Gemini).

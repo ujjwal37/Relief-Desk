@@ -90,6 +90,11 @@ class StorageService:
         )
         self._audit_log.append(entry)
         logger.info("AUDIT [%s] %s on %s by %s", entry.ts, action, target, actor)
+        try:
+            from app.tools.events import emit_audit
+            emit_audit(action, target, after)
+        except Exception:
+            logger.debug("Event bus did not publish %s", action, exc_info=True)
         return entry
 
     def get_audit_trail(self, target: Optional[str] = None) -> List[AuditEntry]:

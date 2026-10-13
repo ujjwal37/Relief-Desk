@@ -83,6 +83,8 @@ describe('StatusComponent', () => {
     fixture.detectChanges();
   });
 
+  afterEach(() => fixture.destroy());
+
   it('keeps watching until the request is finished', () => {
     expect(component.stillWaiting('new')).toBeTrue();
     expect(component.stillWaiting('dispatched')).toBeTrue();

@@ -255,6 +255,8 @@
     "guide": "1 Report aati hai. 2 AI sort karta hai, merge karta hai aur team suggest karta hai. 3 Aap approve karte ho.",
     "guideDismiss": "Hatao",
     "live": "Live",
+    "liveRetry": "Phir jud rahe hain",
+    "liveOff": "Live nahi",
     "menu": "Account menu",
     "scenario": "Scenario",
     "signOut": "Bahar niklein",

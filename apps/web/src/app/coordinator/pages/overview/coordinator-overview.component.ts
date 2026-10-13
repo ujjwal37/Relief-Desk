@@ -4,6 +4,7 @@ import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, Stor
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { legTitle, quoteFromProposal, teamTone } from '../../../core/maps/map-markers';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
+import { DeskStore } from '../../../core/desk-store';
 import { CoordinatorAlertsComponent } from '../alerts/coordinator-alerts.component';
 import { JustReportedStripComponent } from '../../just-reported-strip.component';
 
@@ -119,6 +120,7 @@ export class CoordinatorOverviewComponent implements OnInit {
   private readonly lang = inject(LanguageService);
   private readonly ui = inject(CoordUiService);
   private readonly router = inject(Router);
+  private readonly desk = inject(DeskStore);
   readonly matches = signal<MatchProposal[]>([]);
 
   constructor() {
@@ -133,6 +135,19 @@ export class CoordinatorOverviewComponent implements OnInit {
         error: () => this.matches.set([]),
       });
       onCleanup(() => sub.unsubscribe());
+    });
+    effect(() => {
+      if (!this.desk.casesReady()) return;
+      const rows = this.desk.requests();
+      this.requests.set(rows);
+      this.open.set(rows.filter((row) => !OPEN.has(row.status)).length);
+      this.dispatched.set(rows.filter((row) => SENT.has(row.status)).length);
+    });
+    effect(() => {
+      if (!this.desk.teamsReady()) return;
+      const rows = this.desk.resources();
+      this.resources.set(rows);
+      this.freeTeams.set(rows.filter((row) => row.status === 'available' && row.capacity_remaining > 0).length);
     });
   }
   readonly open = signal(0);

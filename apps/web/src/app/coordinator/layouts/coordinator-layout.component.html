@@ -22,7 +22,7 @@
       </div>
 
       <div class="right">
-        <span class="live"><i></i>{{ 'coord.live' | rdTranslate }}</span>
+        <span class="live" data-testid="live-badge" [class.retry]="live.state() === 'reconnecting'" [class.off]="live.state() === 'offline'"><i></i>{{ liveLabel() | rdTranslate }}</span>
         <div class="menu-wrap">
           <button type="button" class="avatar" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate">{{ initial() }}</button>
           @if (menuOpen()) {

@@ -255,6 +255,8 @@
     "guide": "1 A report arrives. 2 AI sorts, merges and suggests a team. 3 You approve.",
     "guideDismiss": "Dismiss",
     "live": "Live",
+    "liveRetry": "Reconnecting",
+    "liveOff": "Not live",
     "menu": "Account menu",
     "scenario": "Scenario",
     "signOut": "Sign out",

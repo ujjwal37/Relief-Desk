@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnomalyAlert, ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { DeskStore } from '../../../core/desk-store';
 
 type Kind = 'spike' | 'silent_zone' | 'resource_gap' | 'conflict' | 'stale';
 interface Ward { id: string; name: string; district: string; lat: number; lng: number; }
@@ -104,6 +105,14 @@ const CELLS = withLabelOffsets(RAW_CELLS);
 export class CoordinatorAlertsComponent implements OnInit {
   private api = inject(ApiClientService);
   private lang = inject(LanguageService);
+  private desk = inject(DeskStore);
+
+  constructor() {
+    effect(() => {
+      if (!this.desk.alertsReady()) return;
+      this.alerts.set(this.desk.alerts());
+    });
+  }
   /** Overview shows the list beside its own map. The alerts route keeps this map. */
   readonly listOnly = input(false);
 

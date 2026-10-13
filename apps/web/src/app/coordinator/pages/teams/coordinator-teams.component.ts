@@ -5,6 +5,7 @@ import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, Stor
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { CHECKIN_LATE_MIN, haversineKm, legTitle, quoteFromProposal, teamTone, TravelQuote } from '../../../core/maps/map-markers';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
+import { DeskStore } from '../../../core/desk-store';
 
 const AREAS: Record<string, string> = {
   ward_1: 'Kainakary',
@@ -38,6 +39,7 @@ export class CoordinatorTeamsComponent implements OnInit {
   private api = inject(ApiClientService);
   private lang = inject(LanguageService);
   private ui = inject(CoordUiService);
+  private desk = inject(DeskStore);
 
   readonly resources = signal<StoredResource[]>([]);
   readonly requests = signal<StoredRequest[]>([]);
@@ -60,6 +62,14 @@ export class CoordinatorTeamsComponent implements OnInit {
         error: () => this.matches.set([]),
       });
       onCleanup(() => sub.unsubscribe());
+    });
+    effect(() => {
+      if (!this.desk.casesReady()) return;
+      this.requests.set(this.desk.requests());
+    });
+    effect(() => {
+      if (!this.desk.teamsReady()) return;
+      this.resources.set(this.desk.resources());
     });
   }
 

@@ -4,6 +4,7 @@ import { filter } from 'rxjs';
 import { ApiClientService, AuthService, LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, ThemeMode, ThemeService } from '@rd/shared';
 import { ScenarioService } from '../../core/services/scenario.service';
 import { CoordUiService } from '../../core/services/coord-ui.service';
+import { LiveEventsService } from '../../core/live-events.service';
 import { TourComponent } from '../../core/components/tour.component';
 
 @Component({
@@ -16,6 +17,7 @@ import { TourComponent } from '../../core/components/tour.component';
 })
 export class CoordinatorLayoutComponent implements OnDestroy {
   readonly authService = inject(AuthService);
+  readonly live = inject(LiveEventsService);
   readonly ui = inject(CoordUiService);
   readonly theme = inject(ThemeService);
   readonly lang = inject(LanguageService);
@@ -37,6 +39,12 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' }, { m: 'system', k: 'settings.themeSystem' },
   ];
   readonly initial = computed(() => (this.authService.currentUser()?.email || 'D').charAt(0).toUpperCase());
+  readonly liveLabel = computed(() => {
+    const state = this.live.state();
+    if (state === 'live') return 'coord.live';
+    if (state === 'offline') return 'coord.liveOff';
+    return 'coord.liveRetry';
+  });
   readonly path = signal('');
   readonly dispatchedOn = computed(() => /(?:\?|&)status=dispatched(?:&|$)/.test(this.path()));
   readonly casesOn = computed(() => {
@@ -63,6 +71,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.stopQuery = () => { sub.unsubscribe(); nav.unsubscribe(); };
     this.scenarioService.ensureLoaded();
     this.ui.loadAlerts();
+    this.live.connectDesk();
     this.syncCompactNav();
     this.guideOpen.set(!this.guideDismissed());
   }
@@ -104,6 +113,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.media?.removeEventListener('change', this.onMedia);
     this.stopQuery?.();
+    this.live.stop();
   }
 
   toggleDemo(): void {

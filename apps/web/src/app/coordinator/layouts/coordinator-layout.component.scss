@@ -28,6 +28,10 @@
 .tour-btn { height:44px; padding:0 14px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); font:600 14px var(--rd-font-family); cursor:pointer; white-space:nowrap; }
 .live { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; background:var(--brand-tint); color:var(--brand); font-weight:700; font-size:13px; white-space:nowrap; }
 .live i { width:8px; height:8px; border-radius:50%; background:var(--brand); }
+.live.retry { background:var(--sev-high-bg, #fff4e5); color:var(--sev-high, #8f5a00); }
+.live.retry i { background:currentColor; }
+.live.off { background:var(--surface-2, #eef1ef); color:var(--ink-soft, #5b645e); }
+.live.off i { background:currentColor; }
 .menu-wrap { position:relative; }
 .avatar { width:44px; height:44px; border-radius:50%; border:0; background:var(--brand); color:var(--on-brand); font:800 16px var(--rd-font-family); cursor:pointer; }
 .menu-back { position:fixed; inset:0; z-index:90; }

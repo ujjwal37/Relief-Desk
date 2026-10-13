@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiClientService, LanguageService, RecentReport } from '@rd/shared';
 import { LIVE_CHANNEL, LIVE_REPORT } from '../core/live-report';
+import { LiveEventsService } from '../core/live-events.service';
 import { arrivalPlace, arrivalType, visibleReports } from './just-reported';
 
 /** Shared list so Cases and Overview show the same arrivals, and a toast only once. */
@@ -8,6 +9,7 @@ import { arrivalPlace, arrivalType, visibleReports } from './just-reported';
 export class JustReportedService {
   private readonly api = inject(ApiClientService);
   private readonly lang = inject(LanguageService);
+  private readonly live = inject(LiveEventsService);
   readonly items = signal<RecentReport[]>([]);
   readonly toast = signal<string | null>(null);
   private seen = new Set<string>();
@@ -17,11 +19,21 @@ export class JustReportedService {
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   private channel?: { close: () => void };
 
+  constructor() {
+    this.live.kinds.subscribe((kind) => {
+      if (this.users === 0) return;
+      if (kind === 'cases' || kind === 'recent' || kind === 'all') this.refresh();
+    });
+  }
+
   retain(): void {
     this.users += 1;
     if (this.users !== 1) return;
     this.refresh();
-    this.timer = setInterval(() => this.refresh(), 4000);
+    this.timer = setInterval(() => {
+      if (this.live.state() === 'live') return;
+      this.refresh();
+    }, 5000);
     try {
       const channel = new BroadcastChannel(LIVE_CHANNEL);
       channel.onmessage = (event) => {
