@@ -61,8 +61,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
           <p class="bubble user">{{ turn.question }}</p>
           <div class="bubble desk">
             <p class="reason">
-              <strong>{{ matchesText(turn.answer.total) }}</strong> · {{ turn.answer.reason }}
-              <span class="via">{{ viaText(turn.answer) }}</span>
+              <strong>{{ turn.answer.reason }}</strong>
             </p>
             @if (!turn.answer.cases.length) {
               <p class="none">{{ 'ux.deskNone' | rdTranslate }}</p>
@@ -82,7 +81,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
             </ul>
             @if (last) {
               <button type="button" class="link" (click)="showTrace.set(!showTrace())" [attr.aria-expanded]="showTrace()">
-                {{ 'ux.deskShowTrace' | rdTranslate }}
+                {{ howAnswered(turn.answer) }}
               </button>
               @if (showTrace()) {
                 <div class="trace">
@@ -127,7 +126,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .row input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border, rgba(0,0,0,.2)); background: var(--surface, #fff); color: inherit; font: inherit; }
     .row .btn { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: var(--r2); border: 0; background: var(--brand); color: var(--on-brand); font: 700 15px inherit; cursor: pointer; }
     .row .btn:disabled { opacity: .55; cursor: default; }
-    .reason { margin: 0 0 6px; font-size: .9rem; }
+    .reason { margin: 0 0 6px; font-size: 14px; } .reason strong { font-weight: 600; }
     .via { display: block; font-size: .75rem; opacity: .7; }
     .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
     .trace { max-height: 320px; overflow-y: auto; }
@@ -140,7 +139,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .err { color: var(--sev-crit); }
     .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
     .suggestions button { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border, rgba(0,0,0,.2)); background: var(--surface, transparent); color: inherit; cursor: pointer; font: inherit; }
-    .bubble.user { margin: 0; align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: var(--r3) var(--r3) var(--r1) var(--r3); background: var(--brand-tint); font-weight: 650; }
+    .bubble.user { margin: 0; align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: var(--r3) var(--r3) var(--r1) var(--r3); background: var(--brand-tint); font-weight: 600; }
     .bubble.desk { align-self: stretch; padding: 12px 14px; border-radius: var(--r3); border: 1px solid var(--border); background: var(--surface); }
     .thread { display: flex; flex-direction: column; gap: 10px; }
     .page { position: relative; display: flex; flex-direction: column; justify-content: center; height: 100%; min-height: 0; margin: 0; padding: 8px 0 12px; background: transparent; border: 0; box-shadow: none; }
@@ -151,7 +150,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .page .cards, .page .trace { max-height: none; }
     .page .row input { min-height: 48px; border-radius: var(--r2); padding: 0 16px; font-size: 15px; }
     .page .suggestions { justify-content: center; }
-    .hello { margin: 0 0 16px; text-align: center; font-size: 28px; font-weight: 650; line-height: 1.25; }
+    .hello { margin: 0 0 16px; text-align: center; font-size: 28px; font-weight: 600; line-height: 1.25; }
     .empty { width: min(720px, 100%); margin: 0 auto 12px; }
     .examples { display: grid; gap: 10px; width: min(560px, 100%); margin: 0 auto; }
     .example { text-align: left; border: 1px solid var(--border); border-radius: var(--r3); padding: 12px 14px; background: var(--surface); color: inherit; cursor: pointer; font: inherit; box-shadow: var(--e1); }
@@ -231,6 +230,12 @@ export class AskDeskComponent {
   peopleText(n: number): string {
     this.lang.currentLang();
     return this.lang.translate('ux.deskPeople').replace('{n}', String(n));
+  }
+
+  howAnswered(a: DeskAnswer): string {
+    this.lang.currentLang();
+    const n = a.trace?.length || 2;
+    return this.lang.translate('ux.deskHowAnswered').replace('{n}', String(n));
   }
 
   viaText(a: DeskAnswer): string {

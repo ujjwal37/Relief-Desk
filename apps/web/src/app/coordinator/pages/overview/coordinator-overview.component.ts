@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, StoredRequest, StoredResource, urgencyBand } from '@rd/shared';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { legTitle, quoteFromProposal, teamTone } from '../../../core/maps/map-markers';
@@ -7,6 +7,7 @@ import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { DeskStore } from '../../../core/desk-store';
 import { CoordinatorAlertsComponent } from '../alerts/coordinator-alerts.component';
 import { JustReportedStripComponent } from '../../just-reported-strip.component';
+import { teamsFreeCounts, teamsFreeLabel } from '../../team-status';
 
 const DONE = new Set(['completed', 'resolved', 'closed']);
 const SENT = new Set(['approved', 'dispatched', 'in_progress']);
@@ -23,17 +24,12 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
 @Component({
   selector: 'app-coordinator-overview',
   standalone: true,
-  imports: [RouterLink, RdTranslatePipe, CoordinatorAlertsComponent, MapProviderComponent, JustReportedStripComponent],
+  imports: [RdTranslatePipe, CoordinatorAlertsComponent, MapProviderComponent, JustReportedStripComponent],
   template: `
     <app-just-reported (picked)="openReported($event)" />
     <section class="summary" aria-labelledby="overview-h">
       <h1 id="overview-h">{{ 'coord.overview' | rdTranslate }}</h1>
-      <p>{{ 'coord.overviewLead' | rdTranslate }}</p>
-      <div class="nums">
-        <a routerLink="/coordinator/command">{{ open() }} {{ 'coord.cases' | rdTranslate }}</a>
-        <a routerLink="/coordinator/command" [queryParams]="{ status: 'dispatched' }" queryParamsHandling="merge">{{ dispatched() }} {{ 'coord.filterDispatched' | rdTranslate }}</a>
-        <a routerLink="/coordinator/teams">{{ freeTeams() }} {{ 'coord.teams' | rdTranslate }}</a>
-      </div>
+      <p class="lead-line">{{ overviewLine() }}</p>
     </section>
     <div class="stage">
       <section class="map-stage" [attr.aria-label]="'ui.map' | rdTranslate">
@@ -52,6 +48,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
           <button type="button" [class.on]="freeOnly()" [attr.aria-pressed]="freeOnly()" (click)="freeOnly.set(!freeOnly())">{{ 'coord.mapFree' | rdTranslate }}</button>
         </div>
         <div class="legend" [attr.aria-label]="'ui.mapKey' | rdTranslate">
+          <span class="grp"><i class="disc">{{ criticalCount() }}</i>{{ 'coord.legendGroup' | rdTranslate }}</span>
           @for (band of legendBands(); track band) {
             <span><i class="d" [class.crit]="band === 'critical'" [class.high]="band === 'high'" [class.med]="band === 'medium'" [class.low]="band === 'low'"></i>{{ ('coord.band.' + band) | rdTranslate }}</span>
           }
@@ -66,14 +63,9 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
   styles: [`
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
     .summary { flex: none; padding: 12px 16px 8px; }
-    h1 { margin: 0; font-size: 22px; font-weight: 800; }
-    p { margin: 4px 0 8px; color: var(--text-2); font-size: 15px; }
-    .nums { display: flex; flex-wrap: wrap; gap: 8px; }
-    .nums a {
-      min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px;
-      border-radius: 999px; background: var(--surface); border: 1px solid var(--border);
-      color: var(--text); text-decoration: none; font-weight: 700;
-    }
+    h1 { margin: 0; font: var(--t-page, 600 24px/30px var(--rd-font-family)); }
+    .lead-line { margin: 6px 0 8px; color: var(--text); font: 500 14px/20px var(--rd-font-family); }
+    p { margin: 4px 0 8px; color: var(--text-2); font-size: 14px; }
     .stage {
       flex: 1; min-height: 0; display: grid;
       grid-template-columns: minmax(0, 1fr) 380px;
@@ -106,10 +98,12 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     .crit { background: var(--sev-crit); } .high { background: var(--sev-high); }
     .med { background: var(--sev-med); } .low { background: var(--sev-low); }
     .sq { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .disc { width: 18px; height: 18px; border-radius: 50%; background: var(--sev-crit); color: #fff; display: grid; place-items: center; font: 600 11px/1 var(--rd-font-family); font-variant-numeric: tabular-nums; }
     @media (max-width: 900px) {
       :host { overflow: auto; }
       .stage { grid-template-columns: 1fr; overflow: visible; }
       .map-stage { min-height: 420px; }
+      .legend { max-width: calc(100% - 16px); padding: 4px 8px; font-size: 12px; }
       app-coordinator-alerts { width: auto; height: auto; max-height: none; overflow: visible; }
     }
   `],
@@ -147,7 +141,7 @@ export class CoordinatorOverviewComponent implements OnInit {
       if (!this.desk.teamsReady()) return;
       const rows = this.desk.resources();
       this.resources.set(rows);
-      this.freeTeams.set(rows.filter((row) => row.status === 'available' && row.capacity_remaining > 0).length);
+      this.freeTeams.set(teamsFreeCounts(rows).free);
     });
   }
   readonly open = signal(0);
@@ -262,12 +256,23 @@ export class CoordinatorOverviewComponent implements OnInit {
     this.api.getResources().subscribe({
       next: (rows: StoredResource[]) => {
         this.resources.set(rows);
-        this.freeTeams.set(rows.filter((row) => row.status === 'available' && row.capacity_remaining > 0).length);
+        this.freeTeams.set(teamsFreeCounts(rows).free);
       },
     });
   }
 
   fillKind(kind: string): string {
     return ({ boat: 'var(--brand)', medical: 'var(--sev-crit)', food: 'var(--sev-high)', shelter: 'var(--ok)' } as Record<string, string>)[kind] || 'var(--brand)';
+  }
+
+  criticalCount(): number {
+    return this.requests().filter((row) => !OPEN.has(row.status) && urgencyBand(row.urgency_score) === 'critical').length;
+  }
+
+  overviewLine(): string {
+    this.lang.currentLang();
+    const n = this.criticalCount();
+    const teams = teamsFreeLabel((key) => this.lang.translate(key), this.resources());
+    return this.lang.translate('coord.needHelpNow').replace('{n}', String(n)) + ' · ' + teams;
   }
 }

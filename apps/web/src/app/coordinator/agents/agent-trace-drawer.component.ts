@@ -5,11 +5,11 @@ import { TraceStepComponent, TraceStepView } from './trace-step.component';
 
 const ORDER = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'] as const;
 const NAMES: Record<string, string> = {
-  Intake: 'ux.agentIntake',
-  Dedupe: 'ux.agentDedupe',
-  Triage: 'ux.agentTriage',
-  Matching: 'ux.agentMatching',
-  Explainer: 'ux.agentExplainer',
+  Intake: 'flow.intake',
+  Dedupe: 'flow.dedupe',
+  Triage: 'flow.urgency',
+  Matching: 'flow.matching',
+  Explainer: 'flow.explain',
 };
 
 @Component({
@@ -28,65 +28,101 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
   readonly closed = output<void>();
   readonly retry = output<void>();
   readonly expanded = signal<string | null>(null);
-  readonly techOpen = signal(false);
-
-  readonly story = computed(() => {
-    this.lang.currentLang();
-    const t = (key: string) => this.lang.translate(key);
-    return [
-      { key: 'read', title: t('ux.stepRead'), note: t('ux.stepReadNote') },
-      { key: 'dedupe', title: t('ux.stepDedupe'), note: t('ux.stepDedupeNote') },
-      { key: 'rank', title: t('ux.stepRank'), note: t('ux.stepRankNote') },
-      { key: 'team', title: t('ux.stepTeam'), note: t('ux.stepTeamNote') },
-    ];
-  });
-
-  /** Test model (vendor) when a test provider ran any step. Null for Gemini, recorded and rules runs. */
-  readonly testWord = computed(() => {
-    this.lang.currentLang();
-    const t = (key: string) => this.lang.translate(key);
-    for (const step of this.steps()) {
-      const word = testProviderWord(step.provider, step.vendor, t);
-      if (word) return word;
-    }
-    const req = this.request();
-    const intake = (req.trace || []).find((row) => row.agent === 'Intake');
-    return testProviderWord(req.ai?.provider || req.ai_source, intake?.vendor, t);
-  });
-
-  /** Rules, Gemini, Recorded, or Test model. A step provider wins over the case-level offline label. */
-  readonly headerWord = computed(() => {
-    this.lang.currentLang();
-    const test = this.testWord();
-    if (test) return test;
-    const providers = this.steps().map((step) => step.provider).filter((provider): provider is string => !!provider);
-    if (providers.some((provider) => provider === 'cache' || provider === 'replay')) return this.lang.translate('ux.badgeRecordedShort');
-    if (providers.some((provider) => provider === 'gemini')) return this.lang.translate('ux.badgeGemini');
-    if (providers.some((provider) => provider === 'tool' || provider === 'fallback')) return this.lang.translate('ux.badgeRules');
-    if (this.steps().some((step) => step.model)) return this.lang.translate('ux.badgeGemini');
-    const req = this.request();
-    if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return this.lang.translate('ux.badgeRecordedShort');
-    if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') return this.lang.translate('ux.badgeGemini');
-    return this.lang.translate('ux.badgeRules');
-  });
 
   readonly steps = computed(() => {
+    this.lang.currentLang();
     const byName = new Map((this.request().trace || []).map((step) => [step.agent, step]));
     return ORDER.map((agent) => this.toView(agent, byName.get(agent)));
   });
 
-  readonly parallel = computed(() => this.steps().filter((step) => step.agent === 'Dedupe' || step.agent === 'Triage'));
-  readonly solo = computed(() => this.steps().filter((step) => step.agent !== 'Dedupe' && step.agent !== 'Triage'));
+  readonly intakeStep = computed(() => this.steps().filter((step) => step.agent === 'Intake' && this.visible(step)));
+  readonly parallel = computed(() => this.steps().filter((step) => (step.agent === 'Dedupe' || step.agent === 'Triage') && this.visible(step)));
+  readonly afterParallel = computed(() => this.steps().filter((step) => (step.agent === 'Matching' || step.agent === 'Explainer') && this.visible(step)));
+
+  readonly runState = computed(() => {
+    const req = this.request();
+    const steps = this.steps();
+    if (!req.trace?.length) return 'empty' as const;
+    const analysis = String(req.analysis_status || '');
+    if (analysis === 'analysing' || steps.some((step) => step.status === 'running')) return 'loading' as const;
+    if (analysis === 'failed' || analysis === 'error' || steps.some((step) => step.status === 'error')) {
+      return 'failed' as const;
+    }
+    if (this.rulesCount() > 0) return 'fallback' as const;
+    return 'done' as const;
+  });
+
+  readonly headerWord = computed(() => {
+    this.lang.currentLang();
+    const req = this.request();
+    const intake = (req.trace || []).find((row) => row.agent === 'Intake');
+    if (testProviderWord(req.ai?.provider || req.ai_source, intake?.vendor, (key) => this.lang.translate(key))) {
+      return this.lang.translate('flow.badgeTest');
+    }
+    for (const step of this.steps()) {
+      if (testProviderWord(step.provider, step.vendor, (key) => this.lang.translate(key))) {
+        return this.lang.translate('flow.badgeTest');
+      }
+    }
+    if (this.steps().some((step) => step.provider === 'gemini' && step.status === 'done')) {
+      return this.lang.translate('flow.badgeGemini');
+    }
+    if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') {
+      return this.lang.translate('flow.badgeGemini');
+    }
+    return this.lang.translate('flow.badgeRules');
+  });
+
+  readonly headline = computed(() => {
+    this.lang.currentLang();
+    const n = this.steps().filter((step) => step.status !== 'waiting').length || this.steps().length;
+    return this.lang.translate('flow.headline').replace('{n}', String(n));
+  });
+
+  readonly contextLine = computed(() => {
+    this.lang.currentLang();
+    const req = this.request();
+    const title = (req.summary || req.place_text || req.id).slice(0, 48);
+    return this.lang.translate('flow.forCase').replace('{id}', req.id).replace('{title}', title);
+  });
 
   readonly totalText = computed(() => {
     this.lang.currentLang();
-    const steps = this.steps();
-    if (steps.some((step) => step.latencyMs == null)) return null;
-    const of = (agent: string) => steps.find((step) => step.agent === agent)?.latencyMs || 0;
+    const starts = (this.request().trace || []).map((step) => Date.parse(String((step as { started_at?: string }).started_at || ''))).filter((n) => Number.isFinite(n));
+    const ends = (this.request().trace || []).map((step) => Date.parse(String((step as { ended_at?: string }).ended_at || ''))).filter((n) => Number.isFinite(n));
+    if (starts.length && ends.length) {
+      const ms = Math.max(0, Math.max(...ends) - Math.min(...starts));
+      if (ms > 0) return this.lang.translate('ux.seconds').replace('{n}', (ms / 1000).toFixed(1));
+    }
+    const listed = this.steps();
+    if (listed.some((step) => step.latencyMs == null)) return null;
+    const of = (agent: string) => listed.find((step) => step.agent === agent)?.latencyMs || 0;
     const ms = of('Intake') + Math.max(of('Dedupe'), of('Triage')) + of('Matching') + of('Explainer');
-    if (ms < 1000) return this.lang.translate('ux.ms').replace('{n}', String(Math.round(ms)));
+    if (ms <= 0) return null;
     return this.lang.translate('ux.seconds').replace('{n}', (ms / 1000).toFixed(1));
   });
+
+  fallbackText(): string {
+    this.lang.currentLang();
+    return this.lang.translate('flow.fallbackBanner').replace('{n}', String(this.rulesCount()));
+  }
+
+  loadingText(): string {
+    this.lang.currentLang();
+    const steps = this.steps();
+    const done = steps.filter((step) => step.status === 'done' || step.status === 'fallback').length;
+    const k = Math.min(5, done + 1);
+    const time = this.totalText() || this.lang.translate('ux.seconds').replace('{n}', '0');
+    return this.lang.translate('flow.loading').replace('{k}', String(k)).replace('{n}', '5').replace('{t}', time.replace(/[^\d.]/g, '') || '0');
+  }
+
+  nameKey(agent: string): string {
+    return NAMES[agent] || 'flow.intake';
+  }
+
+  toggle(agent: string): void {
+    this.expanded.update((current) => (current === agent ? null : agent));
+  }
 
   ngAfterViewInit(): void {
     queueMicrotask(() => {
@@ -95,39 +131,128 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
     });
   }
 
-  nameKey(agent: string): string {
-    return NAMES[agent] || 'ux.notRecorded';
-  }
-
-  toggle(agent: string): void {
-    this.expanded.update((current) => (current === agent ? null : agent));
-  }
-
   @HostListener('document:keydown.escape')
   onEsc(): void {
     this.closed.emit();
   }
 
+  @HostListener('keydown', ['$event'])
+  onTab(event: KeyboardEvent): void {
+    if (event.key !== 'Tab') return;
+    const root = this.host.nativeElement.querySelector('.drawer') as HTMLElement | null;
+    if (!root) return;
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+      .filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+    if (!nodes.length) return;
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  private rulesCount(): number {
+    return this.steps().filter((step) => step.badge === 'rules').length;
+  }
+
+  private visible(step: TraceStepView): boolean {
+    if (this.runState() === 'failed' && step.status === 'waiting') return false;
+    return true;
+  }
+
   private toView(agent: string, raw?: NonNullable<StoredRequest['trace']>[number]): TraceStepView {
     const status = this.statusOf(raw?.status, raw);
+    const tools = (raw?.tool_calls || []).map((tool) => this.toolText(tool)).filter((row) => this.kept(row));
+    const input = this.kept(raw?.input_summary) ? String(raw?.input_summary) : null;
+    const output = this.kept(raw?.output) ? String(raw?.output) : null;
+    const prompt = this.kept((raw as { prompt?: string } | undefined)?.prompt) ? String((raw as { prompt?: string }).prompt) : null;
+    const model = this.kept(raw?.model) ? String(raw?.model) : null;
+    const latencyMs = typeof raw?.latency_ms === 'number' && raw.latency_ms > 0 ? raw.latency_ms : null;
+    const note = status === 'fallback'
+      ? (this.kept(this.request().ai?.fallback_reason) ? String(this.request().ai?.fallback_reason) : null)
+      : status === 'error' && this.kept(raw?.output) ? String(raw?.output) : null;
+    const badge = this.stepBadge(raw);
     return {
       agent,
       status,
-      output: raw?.output || null,
-      model: raw?.model || null,
+      output,
+      model,
       provider: raw?.provider || null,
       vendor: raw?.vendor || null,
-      latencyMs: typeof raw?.latency_ms === 'number' ? raw.latency_ms : null,
-      input: raw?.input_summary || null,
-      tools: (raw?.tool_calls || []).map((tool) => this.toolText(tool)),
-      asked: raw?.input_summary || null,
-      raw: raw?.output || null,
-      note: status === 'fallback'
-        ? (this.request().ai?.fallback_reason || raw?.output || null)
-        : status === 'error'
-          ? (raw?.output || null)
-          : null,
+      latencyMs,
+      input,
+      tools,
+      asked: prompt,
+      raw: output,
+      note,
+      sentence: this.sentence(agent, raw),
+      badge,
+      hasDetails: !!(input || prompt || tools.length || output || (model && latencyMs) || note),
     };
+  }
+
+  private stepBadge(raw?: NonNullable<StoredRequest['trace']>[number]): 'gemini' | 'rules' | 'test' {
+    const test = testProviderWord(raw?.provider, raw?.vendor, (key) => this.lang.translate(key));
+    if (test) return 'test';
+    if (raw?.provider === 'gemini' && raw?.status !== 'fallback' && raw?.status !== 'error') return 'gemini';
+    return 'rules';
+  }
+
+  private sentence(agent: string, raw?: NonNullable<StoredRequest['trace']>[number]): string {
+    const t = (key: string) => this.lang.translate(key);
+    const req = this.request();
+    const parsed = this.parse(raw?.output);
+    const cap = (text: string) => (text.length > 90 ? text.slice(0, 89).trim() : text);
+    if (agent === 'Intake') {
+      const need = String(parsed['need'] || parsed['type'] || req.type || t('coord.queueNeedBoat'));
+      const people = String(parsed['people'] || req.people_count || 1);
+      return cap(t('flow.sentIntake').replace('{need}', need).replace('{people}', people));
+    }
+    if (agent === 'Dedupe') {
+      const id = String(parsed['id'] || req.possible_duplicate?.target_id || '');
+      if (id) return cap(t('flow.sentDedupeHit').replace('{id}', id));
+      return cap(t('flow.sentDedupeClear'));
+    }
+    if (agent === 'Triage') {
+      const band = String(parsed['band'] || (req.urgency_reason || '').split(':')[0] || 'critical');
+      const reason = String(parsed['reason'] || req.urgency_reason || '');
+      return cap(t('flow.sentUrgency').replace('{band}', band).replace('{reason}', reason || band));
+    }
+    if (agent === 'Matching') {
+      const team = String(parsed['team'] || parsed['resource_name'] || req.assigned_resource_id || raw?.output || 'team');
+      const km = String(parsed['km'] || parsed['distance_km'] || '—');
+      const capab = String(parsed['capability'] || parsed['kind'] || req.type || '');
+      const seats = String(parsed['seats'] || parsed['capacity'] || '1');
+      return cap(t('flow.sentMatch').replace('{team}', team).replace('{km}', km).replace('{capability}', capab).replace('{seats}', seats));
+    }
+    return cap(t('flow.sentExplain'));
+  }
+
+  private parse(output: unknown): Record<string, string> {
+    if (!output) return {};
+    if (typeof output === 'object') return output as Record<string, string>;
+    const text = String(output);
+    try {
+      const json = JSON.parse(text);
+      return json && typeof json === 'object' ? json as Record<string, string> : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private kept(value: unknown): boolean {
+    if (value == null) return false;
+    if (typeof value === 'number') return value > 0;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object') return Object.keys(value as object).length > 0;
+    const text = String(value).trim();
+    if (!text) return false;
+    const lower = text.toLowerCase();
+    return lower !== 'not recorded' && lower !== 'no tools' && lower !== 'null';
   }
 
   private toolText(tool: unknown): string {

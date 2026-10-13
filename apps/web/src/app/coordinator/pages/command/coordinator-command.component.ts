@@ -13,6 +13,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { HostListener, effect, untracked } from '@angular/core';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
+import { SevChipComponent } from '../../../core/components/sev-chip.component';
 import { AgentBadgeComponent } from '../../agents/agent-badge.component';
 import { AgentTraceDrawerComponent } from '../../agents/agent-trace-drawer.component';
 import { AssistBannerComponent } from '../../agents/assist-banner.component';
@@ -27,6 +28,7 @@ import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { etaMinutes, etaPhrase, legTitle, quoteFromProposal, teamTone, TONE_COLOR, vehiclePath, TravelQuote } from '../../../core/maps/map-markers';
+import { teamsFreeCounts, teamsFreeLabel } from '../../team-status';
 import {
   ApiClientService,
   RdTranslatePipe,
@@ -67,6 +69,7 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
     FormsModule,
     RouterLink,
     MapProviderComponent,
+    SevChipComponent,
     RdTranslatePipe,
     AgentBadgeComponent,
     AgentTraceDrawerComponent,
@@ -203,6 +206,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly openSection = signal<'why' | 'reports' | null>(null);
   readonly showOriginal = signal(false);
   readonly moreOpen = signal(false);
+  readonly rejectOpen = signal(false);
+  readonly approving = signal(false);
+  readonly choseTeam = signal(false);
+  readonly offline = signal(typeof navigator !== 'undefined' && navigator.onLine === false);
   readonly vehiclePath = vehiclePath;
   readonly traceRequestId = signal<string | null>(null);
   readonly assistOpen = signal(false);
@@ -301,13 +308,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     };
   });
   readonly criticalCount = computed<number>(() => this.counts().critical);
-  readonly teamsFree = computed(() => {
-    const teams = this.resources();
-    return {
-      free: teams.filter((r) => r.status === 'available' && r.capacity_remaining > 0).length,
-      total: teams.length,
-    };
-  });
+  readonly teamsFree = computed(() => teamsFreeCounts(this.resources()));
+  teamsFreeLine(): string {
+    this.langService.currentLang();
+    return teamsFreeLabel((key) => this.langService.translate(key), this.resources());
+  }
   readonly quietCount = computed(() => this.ui.alerts().filter((a) => a.kind === 'silent_zone').length);
   /** Schematic district outlines in lat/lng, south to north, around the seeded wards. */
   private readonly districtRings: { id: string; ring: [number, number][] }[] = [
@@ -500,6 +505,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   isCompleted(r: StoredRequest): boolean {
     return r.status === 'completed' || r.status === 'resolved' || r.status === 'closed';
   }
+  dispatchStep(r: StoredRequest): number {
+    const status = String(r.status);
+    if (status === 'in_progress' || status === 'on_scene') return 3;
+    if (status === 'accepted' || status === 'en_route') return 2;
+    if (this.isDispatched(r)) return 1;
+    return 0;
+  }
   fitPct(p: MatchProposal): number { return Math.round(p.score); }
   queueNeed(r: StoredRequest): string {
     this.langService.currentLang();
@@ -532,21 +544,42 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       : '';
     return [ward, r.place_text].filter(Boolean).join(' · ');
   }
+  dupTitle(r: StoredRequest): string {
+    this.langService.currentLang();
+    return this.langService.translate('coord.dupOf').replace('{id}', r.possible_duplicate?.target_id || '');
+  }
+  needsDupReview(r: StoredRequest): boolean {
+    const decision = String((r as StoredRequest & { dedupe_decision?: string }).dedupe_decision || '').toLowerCase();
+    return decision === 'review';
+  }
+  factLine(r: StoredRequest): string {
+    this.langService.currentLang();
+    const people = `${r.people_count || 1} ${this.langService.translate('coord.people')}`;
+    const ward = r.ward_id ? r.ward_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '';
+    const extra = r.hazard ? r.hazard.replace(/_/g, ' ') : (r.place_text || '');
+    return [people, ward, extra].filter(Boolean).join(' · ');
+  }
   hasVulnerable(r: StoredRequest): boolean {
     const flags = r.vulnerable;
     return !!(flags && (flags.child || flags.elderly || flags.disabled || flags.pregnant || flags.medical_need));
   }
-  sendTeamLabel(name: string): string {
+  sendTeamLabel(_name?: string): string {
     this.langService.currentLang();
-    return this.langService.translate('coord.sendTeam').replace('{team}', name);
+    return this.langService.translate('coord.send');
   }
   whyLine(prop: MatchProposal): string {
     this.langService.currentLang();
-    const lang = this.langService.currentLang();
-    const raw = ((lang === 'hi' || lang === 'hinglish') && prop.explanation_hi ? prop.explanation_hi : prop.explanation) || '';
-    const first = (raw.split(/(?<=[.।!?])\s+/)[0] || raw).replace(/\s+/g, ' ').trim();
-    if (first && !INTERNAL.test(first)) return first;
-    return this.langService.translate('coord.whyFallback');
+    if (this.choseTeam()) return this.langService.translate('coord.whyChose');
+    const b = prop.breakdown;
+    const ranked = [
+      { n: b?.distance_score || 0, t: this.langService.translate('coord.whyClosest') },
+      { n: b?.capacity_fit_score || 0, t: this.langService.translate('coord.whySeats') },
+      { n: b?.urgency_score || 0, t: this.langService.translate('coord.whyUrgent') },
+      { n: b?.vulnerability_fit_score || 0, t: this.langService.translate('coord.whyVuln') },
+    ].sort((a, b2) => b2.n - a.n).slice(0, 2).map((row) => row.t);
+    const built = ranked.join(' · ');
+    if (built.length > 90) return built.slice(0, 89).trim();
+    return built || this.langService.translate('coord.whyFallback');
   }
   waitTime(r: StoredRequest): string {
     this.langService.currentLang();
@@ -609,8 +642,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
   toggleSection(s: 'why' | 'reports'): void { this.openSection.set(this.openSection() === s ? null : s); }
   setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void { this.bandFilter.set(f); this.writeFilters(); }
-  pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); }
+  pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); this.choseTeam.set(true); }
   closeWeights(): void { this.ui.weightsOpen.set(false); }
+
+  @HostListener('window:offline')
+  onOffline(): void { this.offline.set(true); }
+  @HostListener('window:online')
+  onOnline(): void { this.offline.set(false); }
 
   @HostListener('document:keydown', ['$event'])
   onKey(e: KeyboardEvent): void {
@@ -635,7 +673,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   constructor() {
     effect((onCleanup) => {
       if (this.actionToast()) {
-        const id = setTimeout(() => this.actionToast.set(null), 5000);
+        const id = setTimeout(() => this.actionToast.set(null), 8000);
         onCleanup(() => clearTimeout(id));
       }
     });
@@ -1049,6 +1087,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.showOriginal.set(false);
     this.moreOpen.set(false);
     this.changeOpen.set(false);
+    this.rejectOpen.set(false);
+    this.choseTeam.set(false);
+    this.approving.set(false);
     this.loadMatches(id);
     if (openSheet && this.narrow()) this.sheetOpen.set(true);
   }
@@ -1157,12 +1198,18 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
 
   approveMatch(prop: MatchProposal, allowOvercommit = false): void {
+    if (this.approving()) return;
+    this.approving.set(true);
     this.apiClient.approveMatch(prop.match_id, allowOvercommit).subscribe({
       next: (approved) => {
+        this.approving.set(false);
         this.actionToast.set({
-          text: this.langService.translate('coord.dispatchApproved').replace('{team}', prop.resource_name),
+          text: this.langService.translate('coord.sentUndo')
+            .replace('{team}', prop.resource_name)
+            .replace('{id}', prop.request_id),
           type: 'success',
         });
+        setTimeout(() => this.clearToast(), 8000);
 
         // Update local request status
         const target = this.requests().find((r) => r.id === prop.request_id);
@@ -1183,8 +1230,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
         // Reload matches for updated state
         this.loadMatches(prop.request_id);
+        const next = this.filteredRequests().find((row) => row.id !== prop.request_id && !this.isDispatched(row) && !this.isCompleted(row));
+        if (next) this.selectRequest(next.id);
       },
       error: (err) => {
+        this.approving.set(false);
         if (err.status === 400 && err.error?.detail?.includes('Overcommit')) {
           this.pendingMatch = prop;
           this.isOvercommitModalOpen.set(true);
@@ -1248,7 +1298,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   openRejectModal(prop: MatchProposal): void {
     this.pendingMatch = prop;
     this.rejectReasonText = '';
-    this.isRejectModalOpen.set(true);
+    this.rejectOpen.set(true);
+    this.isRejectModalOpen.set(false);
   }
 
   closeRejectModal(): void {
@@ -1267,6 +1318,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
             type: 'warning',
           });
           this.closeRejectModal();
+          this.rejectOpen.set(false);
           this.loadMatches(match.request_id);
         },
         error: (err) => {

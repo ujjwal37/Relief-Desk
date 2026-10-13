@@ -9,6 +9,11 @@ h1 { margin:0; font-size:22px; font-weight:800; }
   font:700 13px/1 var(--rd-font-family);
 }
 .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.kpi { margin:8px 0 0; font:600 32px/36px var(--rd-font-family); font-variant-numeric:tabular-nums; }
+.table-wrap { overflow:auto; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+.cases { width:100%; border-collapse:collapse; font:400 14px/20px var(--rd-font-family); }
+.cases th, .cases td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--border); }
+.cases th { font:500 13px/18px var(--rd-font-family); color:var(--muted); }
 .metric, .failures { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; box-shadow:var(--e1); min-width:0; }
 .metric h2, .failures h2 { margin:0 0 4px; font-size:17px; }
 .means, .key, .base, .miss, .failures p, .failures li { margin:0 0 6px; color:var(--text-2); font-size:13px; line-height:1.4; }
@@ -36,4 +41,5 @@ h1 { margin:0; font-size:22px; font-weight:800; }
 @media (max-width: 800px) {
   .grid { grid-template-columns:1fr; }
   .bench-page { padding:12px; }
+  .table-wrap { display:none; }
 }

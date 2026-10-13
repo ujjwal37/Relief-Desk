@@ -19,11 +19,11 @@
       <button type="button" class="edit-btn" (click)="startEdit('type')">{{ editing() === 'type' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}</button>
     </div>
 
-    <div class="kv">
+    <div class="kv loc">
       <span class="k">{{ 'confirm.location' | rdTranslate }}</span>
       <span class="v" *ngIf="editing() !== 'location'">{{ card.place_text || '—' }}</span>
       <input *ngIf="editing() === 'location'" class="edit-control" type="text" [ngModel]="card.place_text" (ngModelChange)="setPlace($event)" [attr.aria-label]="'confirm.location' | rdTranslate" />
-      <button type="button" class="edit-btn" (click)="startEdit('location')">{{ editing() === 'location' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}</button>
+      <button type="button" class="edit-btn" (click)="startEdit('location')">{{ editing() === 'location' ? ('confirm.done' | rdTranslate) : ('confirm.change' | rdTranslate) }}</button>
     </div>
 
     <div class="kv">

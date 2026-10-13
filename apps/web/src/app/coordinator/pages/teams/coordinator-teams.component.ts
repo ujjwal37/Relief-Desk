@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, StoredRequest, StoredResource, urgencyBand } from '@rd/shared';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { CHECKIN_LATE_MIN, haversineKm, legTitle, quoteFromProposal, teamTone, TravelQuote } from '../../../core/maps/map-markers';
+import { teamBucket } from '../../team-status';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { DeskStore } from '../../../core/desk-store';
 
@@ -108,10 +109,8 @@ export class CoordinatorTeamsComponent implements OnInit {
     this.openId.set(this.openId() === id ? null : id);
   }
 
-  /** On a case, otherwise free. A missed check-in is never free. */
   bucket(team: StoredResource): Bucket {
-    const tone = teamTone(team, this.now());
-    return tone === 'stale' ? 'notUpdated' : tone;
+    return teamBucket(team, this.now());
   }
 
   onCase(team: StoredResource): boolean {
@@ -138,9 +137,16 @@ export class CoordinatorTeamsComponent implements OnInit {
     return team.area_name || AREAS[team.ward_id] || team.ward_id;
   }
 
-  /** The line label when this team is a candidate; otherwise the nearest open case, with the same ETA words. */
+  /** Busy teams: On {INC} · {d} km. Otherwise the candidate line or nearest open case. */
   leg(team: StoredResource): string {
     this.lang.currentLang();
+    if (this.bucket(team) === 'busy' && team.assigned_request_id) {
+      const req = this.requests().find((row) => row.id === team.assigned_request_id);
+      const km = req?.lat != null && req.lng != null
+        ? Math.min(50, Math.round(haversineKm(req.lat, req.lng, team.lat, team.lng)))
+        : 0;
+      return this.lang.translate('coord.onCaseKm').replace('{id}', team.assigned_request_id).replace('{d}', String(km));
+    }
     const drawn = this.teamLegs().find((row) => row.id === team.id);
     if (drawn) return drawn.title;
     const quote = this.nearestQuote(team);

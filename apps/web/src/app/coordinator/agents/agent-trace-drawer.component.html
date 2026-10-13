@@ -2,53 +2,46 @@
 <div class="drawer" [class.sheet]="mobile()" role="dialog" aria-modal="true" aria-labelledby="trace-title">
   @if (mobile()) { <div class="grab" aria-hidden="true"></div> }
   <header>
-    <div>
-      <h2 id="trace-title">{{ 'ux.traceTitle' | rdTranslate }}</h2>
-      <p>{{ 'ux.traceSub' | rdTranslate }}</p>
-    </div>
+    <h2 id="trace-title">{{ 'flow.title' | rdTranslate }}</h2>
     <button type="button" class="x" (click)="closed.emit()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
   </header>
-  <ol class="story">
-    @for (row of story(); track row.key) {
-      <li>
-        <span class="check" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12.5l4.2 4.2L19 7"/></svg>
-        </span>
-        <div>
-          <strong>{{ row.title }}</strong>
-          <p>{{ row.note }}</p>
-        </div>
-      </li>
+
+  @if (runState() === 'empty') {
+    <p class="empty">{{ 'flow.noTrace' | rdTranslate }}</p>
+    <p class="empty-sub">{{ 'flow.noTraceOld' | rdTranslate }}</p>
+  } @else {
+    <p class="headline">
+      <strong>{{ headline() }}</strong>
+      @if (totalText()) { <span> · {{ totalText() }}</span> }
+      <span class="word run-badge">{{ headerWord() }}</span>
+    </p>
+    <p class="context">{{ contextLine() }}</p>
+
+    @if (runState() === 'failed') {
+      <p class="banner fail">{{ 'flow.failed' | rdTranslate }}</p>
     }
-  </ol>
-  <p class="provider"><span class="word run-badge">{{ headerWord() }}</span></p>
-  <button type="button" class="tech-toggle" [attr.aria-expanded]="techOpen()" (click)="techOpen.set(!techOpen())">
-    {{ (techOpen() ? 'ux.hideTechnical' : 'ux.showTechnical') | rdTranslate }}
-  </button>
-  <div class="tech" [hidden]="!techOpen()">
-    <div class="run">
-      <span class="word">{{ headerWord() }}</span>
-      <span>{{ 'ux.time' | rdTranslate }} {{ totalText() || ('ux.notRecorded' | rdTranslate) }}</span>
-    </div>
-    <div class="line">
-      @for (step of solo(); track step.agent) {
-        @if (step.agent === 'Matching') {
-          <div class="parallel">
-            <p>{{ 'ux.inParallel' | rdTranslate }}</p>
-            @for (side of parallel(); track side.agent) {
-              <app-trace-step [step]="side" [nameKey]="nameKey(side.agent)" [open]="expanded() === side.agent" (toggled)="toggle(side.agent)" (retry)="retry.emit()" />
-            }
-          </div>
-        }
+    @if (runState() === 'fallback') {
+      <p class="banner warn">{{ fallbackText() }}</p>
+    }
+    @if (runState() === 'loading') {
+      <p class="banner load">{{ loadingText() }}</p>
+    }
+
+    <ol class="steps">
+      @for (step of intakeStep(); track step.agent) {
         <app-trace-step [step]="step" [nameKey]="nameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
       }
-    </div>
-    <footer>
-      <p>{{ 'ux.legend' | rdTranslate }}</p>
-      <span class="word">{{ 'ux.badgeRules' | rdTranslate }}</span>
-      <span class="word">{{ 'ux.badgeGemini' | rdTranslate }}</span>
-      <span class="word">{{ 'ux.badgeRecordedShort' | rdTranslate }}</span>
-      @if (testWord()) { <span class="word" data-testid="trace-test-word">{{ testWord() }}</span> }
-    </footer>
-  </div>
+      <li class="parallel" [attr.aria-label]="'flow.parallel' | rdTranslate">
+        <p class="same">{{ 'flow.parallel' | rdTranslate }}</p>
+        @for (side of parallel(); track side.agent) {
+          <app-trace-step [step]="side" [nameKey]="nameKey(side.agent)" [open]="expanded() === side.agent" (toggled)="toggle(side.agent)" (retry)="retry.emit()" />
+        }
+      </li>
+      @for (step of afterParallel(); track step.agent) {
+        <app-trace-step [step]="step" [nameKey]="nameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
+      }
+    </ol>
+  }
+
+  <p class="human">{{ 'flow.humanNote' | rdTranslate }}</p>
 </div>
