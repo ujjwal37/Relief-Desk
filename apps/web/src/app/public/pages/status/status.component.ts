@@ -94,7 +94,7 @@ export class StatusComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** The stream is the update. A 5s poll runs only while that stream is down. */
+  /** The stream is the update. A 2.5s poll runs only while that stream is down, inside the 3s approve budget. */
   private watch(id: string): void {
     this.startPoll();
     if (!this.currentToken || this.watchedId === id) return;
@@ -115,7 +115,7 @@ export class StatusComponent implements OnInit, OnDestroy {
         return;
       }
       this.fetchStatus(id, this.currentToken, true);
-    }, 5000);
+    }, 2500);
   }
 
   private stopPoll(): void {

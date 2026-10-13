@@ -174,6 +174,8 @@ export interface StoredRequest {
   merged_into?: string | null;
   flags?: string[];
   raw_text?: string | null;
+  /** The confirmed card summary. A case title falls back to it while the model works. */
+  summary?: string | null;
   ai_translation?: string | null;
   /** "gemini" live, "recorded" cache, or "offline_fallback". */
   ai_source?: 'gemini' | 'recorded' | 'offline_fallback' | 'antigravity-local';

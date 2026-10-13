@@ -332,6 +332,22 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.getTranslationText(multiLangReq)).toBe('घर में पानी घुस गया है।');
   });
 
+  it('titles a case still being analysed with its summary, never the scoring note', () => {
+    component.setTranslationLang('en');
+    const analysing: StoredRequest = {
+      ...mockRequests[0],
+      ai_translation: null,
+      translations: {},
+      urgency_reason: 'Vulnerable flags: child, elderly (Urgency score: 44.7)',
+      summary: '5 people needing rescue | at Gandhi School | Vulnerable: child | Hazard: water_rising',
+      analysis_status: 'analysing',
+    };
+    expect(component.getTranslationText(analysing)).toBe('5 people needing rescue at Gandhi School');
+    expect(component.getTranslationText({ ...analysing, summary: null })).toBe(analysing.raw_text as string);
+    expect(component.getTranslationText({ ...analysing, summary: null, raw_text: 'Vulnerable flags: child (Urgency score: 44.7)' }))
+      .toBe(analysing.place_text as string);
+  });
+
   it('merges a new report into the open queue and keeps the selected case', () => {
     expect(component.selectedRequestId()).toBe('INC-001');
     const live = {

@@ -1325,9 +1325,24 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (!req) return fallback;
     const ui = this.langService.currentLang();
     const map = req.translations || {};
-    if (ui === 'hinglish' && map['hinglish']) return map['hinglish'];
     const lang = ui === 'hinglish' ? 'hi' : this.selectedTranslationLang();
-    if (map[lang]) return map[lang];
-    return req.ai_translation || req.urgency_reason || req.place_text || fallback;
+    const picks = [ui === 'hinglish' ? map['hinglish'] : '', map[lang], req.ai_translation, req.summary, req.raw_text];
+    for (const pick of picks) {
+      const text = reportLine(pick);
+      if (text) return text;
+    }
+    return req.place_text || fallback;
   }
+}
+
+const INTERNAL = /urgency score|vulnerable flags/i;
+
+/** A case title is what the reporter said. Scoring notes and the card's "| Vulnerable: …" tail never show. */
+export function reportLine(text: string | null | undefined): string {
+  const kept = (text || '')
+    .split(' | ')
+    .filter((part) => !/^\s*(vulnerable|hazard):/i.test(part))
+    .join(' ')
+    .trim();
+  return kept && !INTERNAL.test(kept) ? kept : '';
 }
