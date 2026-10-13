@@ -2,6 +2,9 @@
   @if (actionToast()) {
     <div class="toast" role="status" data-testid="dispatch-banner" [class.ok]="actionToast()?.type === 'success'" [class.warn]="actionToast()?.type === 'warning'">
       <span>{{ actionToast()?.text }}</span>
+      @if (actionToast()?.undo) {
+        <button type="button" class="toast-undo" (click)="undoLastSend()">{{ 'coord.undo' | rdTranslate }}</button>
+      }
       <button type="button" (click)="clearToast()" [attr.aria-label]="'ui.close' | rdTranslate">✕</button>
     </div>
   }
@@ -154,7 +157,7 @@
           <h2>{{ getTranslationText(req) }}</h2>
           <p class="fact-line">{{ factLine(req) }}</p>
           @if (isLowTranslationConfidence(req)) {
-            <p class="check-line">{{ 'coord.lowTrans' | rdTranslate }} · {{ getTranslationConfidencePercent(req) }}%</p>
+            <p class="check-line">{{ checkThisLine(req) }}</p>
           }
           @if (needsDupReview(req)) {
             <div class="dup-review" data-testid="dup-review">
@@ -256,9 +259,16 @@
               </div>
             }
 
-            @if (candidateMatches().length) {
+            @if (req.possible_duplicate; as hint) {
+              <div class="dup-evidence">
+                <p class="cap">{{ 'coord.possibleDuplicate' | rdTranslate }}</p>
+                <p>{{ hint.target_id }}{{ dupEvidence(req) ? ' · ' + dupEvidence(req) : '' }}</p>
+              </div>
+            }
+
+            @if (otherTeams().length) {
               <ul class="candidates">
-                @for (m of candidateMatches(); track m.resource_id) {
+                @for (m of otherTeams(); track m.resource_id) {
                   <li [class.on]="highlightId() === m.resource_id" (mouseenter)="highlightId.set(m.resource_id)" (mouseleave)="highlightId.set(null)">
                     <span>{{ m.resource_name }}</span>
                     <span class="eta">{{ legLabel(m) }}</span>
@@ -299,13 +309,18 @@
           @if (needsDupReview(req)) { <p class="dup-note">{{ 'coord.decideDupFirst' | rdTranslate }}</p> }
           @if (changeOpen()) {
             <div class="chooser" role="listbox" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">
-              @for (m of matches(); track m.match_id; let i = $index) {
+              @for (m of chooserMatches(); track m.match_id; let i = $index) {
                 <button type="button" role="option" [class.on]="i === matchIdx()" (click)="pickMatch(i)" (mouseenter)="highlightId.set(m.resource_id)" (mouseleave)="highlightId.set(null)">{{ m.resource_name }} <em>{{ legLabel(m) }}</em> · {{ 'coord.sendThisTeam' | rdTranslate }}</button>
               }
             </div>
           }
           @if (rejectOpen() && activeProposal(); as rejectProp) {
             <div class="reject-inline">
+              <div class="reject-picks">
+                @for (key of rejectReasons; track key) {
+                  <button type="button" [class.on]="rejectReasonText === (key | rdTranslate)" (click)="pickRejectReason(key)">{{ key | rdTranslate }}</button>
+                }
+              </div>
               <input type="text" class="reject-input" [(ngModel)]="rejectReasonText" [placeholder]="'ui.rjPh' | rdTranslate" />
               <button type="button" class="btn-quiet" (click)="closeRejectModal(); rejectOpen.set(false)">{{ 'ui.cancel' | rdTranslate }}</button>
               <button type="button" class="btn-sec" (click)="confirmReject()">{{ 'ui.rjGo' | rdTranslate }}</button>

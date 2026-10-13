@@ -1197,3 +1197,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs` — 797 keys, Hindi translated. `npx ng build web --configuration=development` — passed. Screenshots at 1366 of Home, How it decided, Overview, Teams, Accuracy, Home Hindi, and public report at 390.
 - Notes / risks / not done: Front-end only. Seed counts (INC-008 undispatched, 15/8/16) are API data and were not changed. Undo toast has no undo API. Map-provider pins were not edited (handoff: no core/maps). TASKS.md has no UX row. `.env` was not changed. No e2e or unit suite this pass.
 - Next (suggested task id): none
+
+### 2026-10-14 01:40 IST — Cursor
+- What changed: Right panel now follows the ux10 spec on the existing Home desk. Default stays six elements (24px severity + id/age, clamped title + fact line, Send card with Why ≤90, collapsed More details, sticky Approve 52px, Choose another team + Reject, “Nothing is sent until you approve”). Duplicate review shows when `dedupe_decision` is review, or when the stored case has `possible_duplicate` and no other decision — Approve is dimmed/disabled until Merge or Keep separate. More details holds the next three teams, raw reports, counts-differ, duplicate evidence, and score bars. Choose another is a top-5 list; Reject is an inline reason picker on the existing reject API. The 8s toast keeps Undo and re-selects the sent case (no undo-dispatch endpoint). Low-confidence uses “Check this one: …”. EN+HI keys added.
+- Files: apps/web/src/app/coordinator/pages/command/coordinator-command.component.{html,ts,scss}, libs/shared/src/lib/i18n/{en,hi,hinglish,ml}.json, WORKDONE.md
+- How verified: `node scripts/check-i18n.mjs`. `npx ng build web --configuration=development`. Screenshots at 1366 of the default panel, duplicate review, Hindi, and How it decided.
+- Notes / risks / not done: Front-end only. No new backend endpoints. Undo cannot reverse a dispatch. TASKS.md has no UX10 row. No e2e or unit suite this pass. `.env` was not changed.
+- Next (suggested task id): none

@@ -135,6 +135,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }
     return top;
   });
+  /** Next-best teams for More details — excludes the Send card pick. */
+  readonly otherTeams = computed<MatchProposal[]>(() => {
+    const active = this.activeProposal()?.resource_id;
+    return this.matches().filter((row) => row.resource_id !== active).slice(0, 3);
+  });
+  readonly chooserMatches = computed<MatchProposal[]>(() => this.matches().slice(0, 5));
+  readonly rejectReasons = ['coord.rjRoad', 'coord.rjElsewhere', 'coord.rjWrong'] as const;
   /** Lines from the selected case to its top three teams. Drawn on the schematic and on Google Maps. */
   readonly mapLegs = computed<MapLeg[]>(() => {
     const req = this.selectedRequest();
@@ -235,7 +242,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly isWeightsDrawerOpen = signal<boolean>(false);
   readonly isOvercommitModalOpen = signal<boolean>(false);
   readonly isRejectModalOpen = signal<boolean>(false);
-  readonly actionToast = signal<{ text: string; type: 'success' | 'warning' } | null>(null);
+  readonly actionToast = signal<{ text: string; type: 'success' | 'warning'; undo?: boolean } | null>(null);
+  readonly lastSentId = signal<string | null>(null);
   readonly selectedTranslationLang = signal<'en' | 'hi'>('en');
 
   private initialSelectDone = false;
@@ -550,7 +558,23 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
   needsDupReview(r: StoredRequest): boolean {
     const decision = String((r as StoredRequest & { dedupe_decision?: string }).dedupe_decision || '').toLowerCase();
-    return decision === 'review';
+    if (decision === 'review') return true;
+    if (decision && decision !== 'review') return false;
+    return !!r.possible_duplicate?.target_id;
+  }
+  checkThisLine(r: StoredRequest): string {
+    this.langService.currentLang();
+    return this.langService.translate('coord.checkThis').replace('{n}', String(this.getTranslationConfidencePercent(r)));
+  }
+  dupEvidence(r: StoredRequest): string {
+    const hint = r.possible_duplicate;
+    if (!hint) return '';
+    this.langService.currentLang();
+    const parts: string[] = [];
+    if (hint.similarity != null && hint.similarity > 0) parts.push(`${Math.round(hint.similarity * 100)}%`);
+    if (hint.distance_km != null && hint.distance_km > 0) parts.push(`${Number(hint.distance_km).toFixed(1)} km`);
+    if (hint.minutes != null && hint.minutes > 0) parts.push(`${Math.round(hint.minutes)} min`);
+    return parts.join(' · ');
   }
   factLine(r: StoredRequest): string {
     this.langService.currentLang();
@@ -598,7 +622,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const time = mins >= 60 ? `${Math.round(mins / 60)} h` : `${mins} min`;
     return this.langService.translate('coord.waitChip').replace('{time}', time).replace('{n}', String(pts));
   }
-  ageLabel(r: StoredRequest): string { return this.agoPhrase(r.created_at, 'reported'); }
+  ageLabel(r: StoredRequest): string {
+    this.langService.currentLang();
+    if (!r.created_at) return '';
+    const m = Math.max(0, Math.round((Date.now() - new Date(r.created_at).getTime()) / 60000));
+    if (m < 1) return this.langService.translate('coord.justNow');
+    if (m < 60) return this.langService.translate('coord.minAgo').replace('{n}', String(m));
+    return this.langService.translate('coord.reportedHour').replace('{n}', String(Math.round(m / 60)));
+  }
   updatedLabel(r: StoredRequest): string { return this.agoPhrase(r.updated_at, 'updated'); }
   fullStamp(iso?: string | null): string {
     if (!iso) return '';
@@ -1203,11 +1234,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.apiClient.approveMatch(prop.match_id, allowOvercommit).subscribe({
       next: (approved) => {
         this.approving.set(false);
+        this.lastSentId.set(prop.request_id);
         this.actionToast.set({
           text: this.langService.translate('coord.sentUndo')
             .replace('{team}', prop.resource_name)
             .replace('{id}', prop.request_id),
           type: 'success',
+          undo: true,
         });
         setTimeout(() => this.clearToast(), 8000);
 
@@ -1301,6 +1334,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.rejectOpen.set(true);
     this.isRejectModalOpen.set(false);
   }
+  pickRejectReason(key: string): void {
+    this.rejectReasonText = this.langService.translate(key);
+  }
 
   closeRejectModal(): void {
     this.isRejectModalOpen.set(false);
@@ -1351,9 +1387,19 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   keepSeparate(req: StoredRequest): void {
     this.apiClient.keepSeparate(req.id).subscribe({
-      next: () => this.loadRequests(),
+      next: () => {
+        this.requests.set(this.requests().map((row) => (
+          row.id === req.id ? { ...row, possible_duplicate: null } : row
+        )));
+        this.loadRequests();
+      },
       error: (err) => console.error('Error keeping reports separate:', err),
     });
+  }
+  undoLastSend(): void {
+    const id = this.lastSentId();
+    this.clearToast();
+    if (id) this.selectRequest(id);
   }
 
   splitCluster(requestId: string): void {
