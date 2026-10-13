@@ -14,10 +14,16 @@ export interface LangOption {
 
 export const SUPPORTED_LANGUAGES: LangOption[] = [
   { code: 'en', label: 'English', nativeName: 'EN' },
-  { code: 'hi', label: 'Hindi', nativeName: 'हिन्दी' },
+  { code: 'hi', label: 'Hindi', nativeName: 'हिंदी' },
   { code: 'hinglish', label: 'Hinglish', nativeName: 'Hinglish' },
   { code: 'ml', label: 'Malayalam', nativeName: 'മലയാളം' },
 ];
+
+/** Shown without opening More. */
+export const PRIMARY_LANGUAGES: LangOption[] = SUPPORTED_LANGUAGES.filter((l) => l.code === 'en' || l.code === 'hi');
+
+/** Hinglish and Malayalam stay available behind More. */
+export const MORE_LANGUAGES: LangOption[] = SUPPORTED_LANGUAGES.filter((l) => l.code === 'hinglish' || l.code === 'ml');
 
 const DICTIONARIES: Record<SupportedLang, any> = {
   en: enJson,
@@ -34,7 +40,7 @@ export class LanguageService {
 
   constructor() {
     const stored = localStorage.getItem('rd_preferred_lang');
-    const saved = (stored === 'ta' ? 'ml' : stored) as SupportedLang;
+    const saved = (stored === 'ta' ? 'en' : stored) as SupportedLang;
     if (saved && DICTIONARIES[saved]) {
       this.setLanguage(saved);
     }

@@ -13,9 +13,11 @@ def test_detect_language():
     assert translation_service.detect_language("शिव मंदिर के पास 4 लोग फंसे हैं") == "hi"
     assert translation_service.detect_language("पानी बढ़ रहा है") == "hi"
 
-    # Tamil
-    assert translation_service.detect_language("சிவன் கோவில் அருகே 4 பேர் சிக்கியுள்ளனர்") == "ta"
-    assert translation_service.detect_language("வெள்ளத்தில் சிக்கியுள்ளோம்") == "ta"
+    # Malayalam
+    assert translation_service.detect_language("വെള്ളം ഉയരുന്നു, സഹായം വേണം") == "ml"
+
+    # Tamil script is not a supported language
+    assert translation_service.detect_language("வெள்ளத்தில் சிக்கியுள்ளோம்") == "en"
 
     # Hinglish
     assert translation_service.detect_language("shiva temple ke paas paani badh raha hai jaldi bachao") == "hinglish"
@@ -37,7 +39,7 @@ def test_translate_report_hindi():
     assert not res.is_low_confidence
     assert "en" in res.translations
     assert "hi" in res.translations
-    assert "ta" in res.translations
+    assert "ta" not in res.translations
 
 
 def test_translate_report_hinglish():
@@ -51,15 +53,14 @@ def test_translate_report_hinglish():
     assert not res.is_low_confidence
 
 
-def test_translate_report_tamil():
-    text_ta = "சிவன் கோவில் அருகே 4 பேர் சிக்கியுள்ளனர், தயவுசெய்து உடனடியாக படகு அனுப்பவும்."
-    res = translation_service.translate_report(text_ta)
+def test_tamil_script_is_not_a_supported_language():
+    text = "சிவன் கோவில் அருகே 4 பேர் சிக்கியுள்ளனர், தயவுசெய்து உடனடியாக படகு அனுப்பவும்."
+    res = translation_service.translate_report(text)
 
     assert isinstance(res, TranslationResult)
-    assert res.detected_language == "ta"
-    assert "Shiva Temple" in res.text_en or "rescue" in res.text_en.lower()
+    assert res.detected_language == "en"
+    assert "ta" not in res.translations
     assert res.confidence >= 0.80
-    assert not res.is_low_confidence
 
 
 def test_translation_caching():

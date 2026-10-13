@@ -128,6 +128,14 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByRole('heading', { name: 'Cases' })).toBeVisible();
       await expect(page.getByText('Synthetic scenario inspired by Kerala floods')).toBeVisible();
       await expect(page.locator('button.case').first()).toBeVisible();
+      const hindiCase = page.getByRole('option', { name: /3 children and 2/ });
+      await hindiCase.scrollIntoViewIfNeeded();
+      await hindiCase.click();
+      await page.getByRole('button', { name: 'Show original' }).click();
+      await expect(page.getByText('तुरंत नाव भेजो')).toBeVisible();
+      if (viewport.name === 'mobile') {
+        await page.getByRole('button', { name: 'Back to cases' }).click();
+      }
 
       if (viewport.name === 'mobile') {
         await expect(page.getByRole('tab', { name: 'Cases' })).toBeVisible();
@@ -249,16 +257,16 @@ test.describe('public and coordinator demo', () => {
       await page.getByRole('button', { name: 'Done' }).click();
       await shot(page, `${viewport.name}-dark`);
       await page.getByRole('button', { name: 'Settings' }).click();
+      await expect(page.getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Hinglish' })).toHaveCount(0);
+      await page.getByTestId('lang-more').click();
+      await expect(page.getByRole('button', { name: 'Malayalam' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Hinglish' })).toBeVisible();
       await page.getByRole('button', { name: 'Light', exact: true }).click();
       await page.getByRole('button', { name: 'Hindi' }).click();
       await page.getByRole('button', { name: 'हो गया' }).click();
       await expect(page.getByRole('link', { name: 'मुझे मदद चाहिए' })).toBeVisible();
       await shot(page, `${viewport.name}-hindi`);
-      await page.getByRole('button', { name: 'सेटिंग्स' }).click();
-      await page.getByRole('button', { name: 'Malayalam' }).click();
-      await page.getByRole('button', { name: 'കഴിഞ്ഞു' }).click();
-      await expect(page.getByRole('link', { name: 'എനിക്ക് സഹായം വേണം' })).toBeVisible();
-      await shot(page, `${viewport.name}-malayalam`);
       await noHorizontalOverflow(page);
     });
   }

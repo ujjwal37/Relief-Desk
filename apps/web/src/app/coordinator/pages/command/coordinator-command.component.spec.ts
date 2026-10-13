@@ -285,9 +285,8 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.currentWeights().w_vulnerability).toBe(45);
   });
 
-  it('should accurately detect original languages (Hindi, Tamil, Hinglish, English)', () => {
+  it('should accurately detect original languages (Hindi, Malayalam, Hinglish, English)', () => {
     expect(component.detectOriginalLanguage('पानी बहुत तेजी से बढ़ रहा है')).toBe('Hindi');
-    expect(component.detectOriginalLanguage('வெள்ளத்தில் சிக்கியுள்ளோம் காப்பாற்றுங்கள்')).toBe('Tamil');
     expect(component.detectOriginalLanguage('വെള്ളം ഉയരുന്നു, സഹായം വേണം')).toBe('Malayalam');
     expect(component.detectOriginalLanguage('paani badh raha hai bachao jaldi')).toBe('Hinglish');
     expect(component.detectOriginalLanguage('Flood water rising rapidly please send boat')).toBe('English');
@@ -317,7 +316,6 @@ describe('CoordinatorCommandComponent', () => {
       translations: {
         en: 'Water entered the house.',
         hi: 'घर में पानी घुस गया है।',
-        ta: 'வீட்டிற்குள் தண்ணீர் புகுந்தது.',
       },
     };
 
@@ -326,9 +324,6 @@ describe('CoordinatorCommandComponent', () => {
 
     component.setTranslationLang('hi');
     expect(component.getTranslationText(multiLangReq)).toBe('घर में पानी घुस गया है।');
-
-    component.setTranslationLang('ta');
-    expect(component.getTranslationText(multiLangReq)).toBe('வீட்டிற்குள் தண்ணீர் புகுந்தது.');
   });
 
   it('merges a new report into the open queue and keeps the selected case', () => {

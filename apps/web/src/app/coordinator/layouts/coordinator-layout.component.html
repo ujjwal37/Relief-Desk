@@ -48,10 +48,18 @@
               </div>
               <h3>{{ 'settings.language' | rdTranslate }}</h3>
               <div class="seg two">
-                @for (l of langs; track l.code) {
-                  <button type="button" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" (click)="lang.setLanguage(l.code)">{{ l.label }}</button>
+                @for (l of primaryLangs; track l.code) {
+                  <button type="button" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="lang.setLanguage(l.code)">{{ l.nativeName }}</button>
                 }
               </div>
+              <button type="button" class="item" data-testid="lang-more" [attr.aria-expanded]="langMore()" (click)="langMore.set(!langMore())">{{ 'settings.moreLangs' | rdTranslate }}</button>
+              @if (langMore()) {
+                <div class="seg two">
+                  @for (l of moreLangs; track l.code) {
+                    <button type="button" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="lang.setLanguage(l.code)">{{ l.label }}</button>
+                  }
+                </div>
+              }
               <button type="button" class="item" (click)="resetDemo()">{{ 'ux.resetDemo' | rdTranslate }}</button>
               <button type="button" class="item" (click)="loadFullScenario()">{{ 'ux.loadFull' | rdTranslate }}</button>
               <button type="button" class="item" (click)="openWeights()">{{ 'coord.weights' | rdTranslate }}</button>

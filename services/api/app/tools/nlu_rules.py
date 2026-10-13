@@ -12,23 +12,15 @@ from typing import Dict, Optional
 _CHILD = (
     "bachcha", "baccha", "bachha", "bachhe", "bacche", "bache", "bachcha",
     "child", "children", "baby", "kid", "kids", "बच्चा", "बच्चे", "बच्ची", "बालक",
-    "குழந்தை", "குழந்தைகள்", "சிறுவன்", "சிறுமி", "குழந்தைக்கு",
 )
 _ELDERLY = (
     "bujurg", "buzurg", "budha", "budhiya", "elderly", "senior", "dada", "dadi",
     "बुजुर्ग", "बूढ़", "बुजुर्ग", "दादी", "दादा",
-    "முதியவர்", "முதியவரு", "முதிய", "வயதான", "பாட்டி", "தாத்தா", "வயோதிகர்",
 )
-_PREGNANT = ("pregnant", "pregnancy", "garbhvati", "गर्भवती", "प्रेग्नेंट", "கர்ப்பிணி")
-_DISABLED = ("disabled", "handicap", "wheelchair", "divyang", "दिव्यांग", "अपंग", "மாற்றுத்திறன்")
+_PREGNANT = ("pregnant", "pregnancy", "garbhvati", "गर्भवती", "प्रेग्नेंट")
+_DISABLED = ("disabled", "handicap", "wheelchair", "divyang", "दिव्यांग", "अपंग")
 _MEDICAL = (
     "medical", "oxygen", "insulin", "doctor", "hospital", "ऑक्सीजन", "दवा", "बीमार",
-    "ஆக்சிஜன்", "மருத்துவம்", "மருத்துவர்", "நோயாளி", "மருந்து", "ஆஸ்துமா",
-)
-_TA_DIGITS = str.maketrans("௦௧௨௩௪௫௬௭௮௯", "0123456789")
-_TA_NUMBER_WORDS = (
-    ("பத்து", 10), ("ஒன்பது", 9), ("எட்டு", 8), ("ஏழு", 7), ("ஆறு", 6),
-    ("ஐந்து", 5), ("நான்கு", 4), ("மூன்று", 3), ("இரண்டு", 2), ("ஒன்று", 1), ("ஒரு", 1),
 )
 _STOP = {
     "par", "pe", "per", "mein", "me", "mai", "hai", "hain", "ke", "ki", "aur",
@@ -39,7 +31,7 @@ _STOP = {
 def _has_any(text: str, words: tuple) -> bool:
     lower = text.lower()
     for word in words:
-        if re.search(r"[\u0900-\u097F\u0B80-\u0BFF]", word):
+        if re.search(r"[\u0900-\u097F]", word):
             if word in text:
                 return True
             continue
@@ -121,9 +113,9 @@ def _group_people_count(text: str) -> Optional[int]:
 def people_count(text: str) -> Optional[int]:
     if not text:
         return None
-    normalized = text.translate(_TA_DIGITS)
+    normalized = text
     match = re.search(
-        r"(\d+)\s*(?:log|लोग|people|persons|insaan|பேர்|பேர்கள்|நபர்|நபர்கள்)(?!\w)",
+        r"(\d+)\s*(?:log|लोग|people|persons|insaan)(?!\w)",
         normalized,
         flags=re.IGNORECASE,
     )
@@ -140,9 +132,6 @@ def people_count(text: str) -> Optional[int]:
     grouped = _group_people_count(normalized)
     if grouped:
         return grouped
-    for word, count in _TA_NUMBER_WORDS:
-        if re.search(rf"{word}\s*(?:பேர்|பேர்கள்|நபர்|நபர்கள்)", text):
-            return count
     return None
 
 

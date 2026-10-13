@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { ApiClientService, AuthService, LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, ThemeMode, ThemeService } from '@rd/shared';
+import { ApiClientService, AuthService, LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, ThemeMode, ThemeService } from '@rd/shared';
 import { ScenarioService } from '../../core/services/scenario.service';
 import { CoordUiService } from '../../core/services/coord-ui.service';
 import { TourComponent } from '../../core/components/tour.component';
@@ -30,7 +30,9 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   readonly guideOpen = signal(false);
   private api = inject(ApiClientService);
   readonly compactNav = signal(false);
-  readonly langs = SUPPORTED_LANGUAGES;
+  readonly primaryLangs = PRIMARY_LANGUAGES;
+  readonly moreLangs = MORE_LANGUAGES;
+  readonly langMore = signal(false);
   readonly themes: { m: ThemeMode; k: string }[] = [
     { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' }, { m: 'system', k: 'settings.themeSystem' },
   ];
@@ -47,6 +49,9 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   private stopQuery?: () => void;
 
   constructor() {
+    effect(() => {
+      if (!this.menuOpen()) this.langMore.set(false);
+    });
     this.theme.ensureDefault('light');
     this.media = window.matchMedia('(min-width: 600px)');
     this.wideEnough.set(this.media.matches);

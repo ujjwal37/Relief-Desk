@@ -835,26 +835,31 @@ class StorageService:
                 )
 
                 sample_reports = item.get("sample_reports", [])
-                raw_text = None
-                ai_translation = None
                 translations_map: Dict[str, str] = {}
+                en_text = None
+                hi_text = None
                 for sr in sample_reports:
                     s_lang = sr.get("lang")
                     s_txt = sr.get("text")
-                    if s_lang and s_txt:
-                        translations_map[s_lang] = s_txt
-                    if s_lang in ("hi", "hinglish", "ta"):
-                        raw_text = s_txt
-                    elif s_lang == "en":
-                        ai_translation = s_txt
-                if not raw_text and sample_reports:
-                    raw_text = sample_reports[0].get("text")
+                    if not s_lang or not s_txt or s_lang == "ta":
+                        continue
+                    translations_map[s_lang] = s_txt
+                    if s_lang == "en":
+                        en_text = s_txt
+                    elif s_lang == "hi":
+                        hi_text = s_txt
+                # The desk reads English. One seeded case keeps its Hindi line.
+                show_hindi = item.get("id") == "INC-001"
+                raw_text = hi_text if show_hindi and hi_text else en_text
+                ai_translation = en_text or item.get("description", "")
+                if not raw_text:
+                    raw_text = next((sr.get("text") for sr in sample_reports if sr.get("lang") not in (None, "ta")), None)
                 if not ai_translation:
                     ai_translation = item.get("description", "")
                 if "en" not in translations_map and ai_translation:
                     translations_map["en"] = ai_translation
-                if "hi" not in translations_map and raw_text:
-                    translations_map["hi"] = raw_text
+                if show_hindi and hi_text:
+                    translations_map["hi"] = hi_text
 
                 flags_list = list(item.get("flags", []))
 

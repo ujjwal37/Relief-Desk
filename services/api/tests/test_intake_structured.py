@@ -12,7 +12,7 @@ client = TestClient(app)
 SPAM = "FREE MONEY click bit.ly win iphone send OTP"
 
 
-def test_hinglish_and_tamil_extract_the_structured_fields():
+def test_hinglish_extracts_the_structured_fields():
     hinglish = intake_agent.parse_report(
         "Champakulam School ke paas 4 log chhat par hain, boat bhejo",
         language_hint="hinglish",
@@ -26,12 +26,6 @@ def test_hinglish_and_tamil_extract_the_structured_fields():
     assert hinglish.confidence.type > 0
     assert hinglish.hoax_score == 0
     assert "Champakulam" in (hinglish.original_text or "")
-
-    tamil = intake_agent.parse_report("வராப்புழாவில் 5 பேர் சிக்கியுள்ளனர்", language_hint="ta")
-    assert tamil.people.count == 5
-    assert tamil.language.value == "ta"
-    assert tamil.original_text.startswith("வராப்புழாவில்")
-    assert tamil.hoax_score == 0
 
 
 def test_spam_sample_is_scored_and_kept_out_of_needs_help():

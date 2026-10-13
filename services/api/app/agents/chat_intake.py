@@ -36,7 +36,7 @@ _READY = {
     "en": "Details are ready. Review the card below and tap Send.",
     "hi": "विवरण तैयार है। नीचे दिए कार्ड की जाँच करें और भेजें।",
     "hinglish": "Details ready hain. Neeche wala card check karke bhej dijiye.",
-    "ta": "விவரங்கள் தயார். கீழே உள்ள அட்டையை பார்த்து அனுப்புங்கள்.",
+    "ml": "വിവരങ്ങൾ തയ്യാർ. താഴെയുള്ള കാർഡ് പരിശോധിച്ച് അയയ്ക്കുക.",
 }
 
 
@@ -63,7 +63,7 @@ def pack_notice(scenario, lang: str) -> str:
 def reply_is_only_safety_lines(reply: str) -> bool:
     catalog = []
     for line in scenario_registry._safety_lines.values():
-        for lang in ("en", "hi", "hinglish", "ta"):
+        for lang in ("en", "hi", "hinglish", "ml"):
             text = line.get(lang)
             if text:
                 catalog.append(text)

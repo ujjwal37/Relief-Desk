@@ -53,7 +53,7 @@ class SupportedLanguage(str, Enum):
     HI = "hi"
     HINGLISH = "hinglish"
     EN = "en"
-    TA = "ta"
+    ML = "ml"
 
 
 class DedupeDecisionType(str, Enum):

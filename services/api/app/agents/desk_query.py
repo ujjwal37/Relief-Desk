@@ -18,20 +18,20 @@ VULNERABLE = ["child", "elderly", "disabled", "pregnant", "medical_need"]
 OPEN = {RequestStatus.NEW.value, RequestStatus.NEEDS_RECHECK.value, RequestStatus.MATCHED.value}
 
 TYPE_WORDS = {
-    "rescue": ["rescue", "trapped", "stranded", "boat", "roof", "बचाव", "फंसे", "bachao", "phanse", "மீட்பு", "രക്ഷ"],
-    "food": ["food", "water", "hungry", "खाना", "पानी", "khana", "paani", "உணவு", "ഭക്ഷണം"],
-    "medical": ["medical", "medicine", "insulin", "doctor", "injured", "दवा", "dawai", "dawa", "मेडिकल", "மருந்து", "മരുന്ന്"],
-    "shelter": ["shelter", "camp", "आश्रय", "आसरा", "முகாம்", "ക്യാമ്പ്"],
+    "rescue": ["rescue", "trapped", "stranded", "boat", "roof", "बचाव", "फंसे", "bachao", "phanse", "രക്ഷ"],
+    "food": ["food", "water", "hungry", "खाना", "पानी", "khana", "paani", "ഭക്ഷണം"],
+    "medical": ["medical", "medicine", "insulin", "doctor", "injured", "दवा", "dawai", "dawa", "मेडिकल", "മരുന്ന്"],
+    "shelter": ["shelter", "camp", "आश्रय", "आसरा", "ക്യാമ്പ്"],
 }
 VULN_WORDS = {
-    "elderly": ["elderly", "old", "senior", "aged", "बुजुर्ग", "बूढ़े", "buzurg", "bujurg", "budhe", "முதியோர்", "வயதான", "പ്രായമായ"],
-    "child": ["child", "children", "kid", "baby", "infant", "बच्चे", "बच्चा", "bacche", "bachche", "குழந்தை", "കുട്ടി"],
-    "pregnant": ["pregnant", "गर्भवती", "garbhvati", "கர்ப்பிணி", "ഗർഭിണി"],
-    "disabled": ["disabled", "wheelchair", "विकलांग", "divyang", "மாற்றுத்திறனாளி"],
+    "elderly": ["elderly", "old", "senior", "aged", "बुजुर्ग", "बूढ़े", "buzurg", "bujurg", "budhe", "പ്രായമായ"],
+    "child": ["child", "children", "kid", "baby", "infant", "बच्चे", "बच्चा", "bacche", "bachche", "കുട്ടി"],
+    "pregnant": ["pregnant", "गर्भवती", "garbhvati", "ഗർഭിണി"],
+    "disabled": ["disabled", "wheelchair", "विकलांग", "divyang"],
     "medical_need": ["dialysis", "oxygen", "bedridden"],
 }
 WAITING_WORDS = ["waiting", "still", "open", "pending", "unassigned", "not yet", "इंतज़ार", "इंतजार", "intezaar",
-                 "intezar", "baaki", "बाकी", "காத்திருக்", "കാത്തിരി"]
+                 "intezar", "baaki", "बाकी", "കാത്തിരി"]
 
 FUNCTION = {
     "name": "search_cases",
@@ -64,7 +64,7 @@ def ward_catalogue() -> str:
 def system_prompt() -> str:
     return (
         "You turn a flood-relief coordinator's question into one call to search_cases. "
-        "The question may be in English, Hindi, Hinglish, Malayalam or Tamil. "
+        "The question may be in English, Hindi, Hinglish or Malayalam. "
         "Map place names to ward ids, and a district name to all of its wards. Wards: "
         + ward_catalogue()
         + ". 'Waiting', 'still', 'pending' or 'not yet helped' means waiting_only=true. "

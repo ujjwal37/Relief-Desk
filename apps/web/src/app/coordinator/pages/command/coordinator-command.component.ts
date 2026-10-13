@@ -201,7 +201,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly isOvercommitModalOpen = signal<boolean>(false);
   readonly isRejectModalOpen = signal<boolean>(false);
   readonly actionToast = signal<{ text: string; type: 'success' | 'warning' } | null>(null);
-  readonly selectedTranslationLang = signal<'en' | 'hi' | 'ta'>('en');
+  readonly selectedTranslationLang = signal<'en' | 'hi'>('en');
 
   private initialSelectDone = false;
   private focusRequestId: string | null = null;
@@ -1142,8 +1142,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     // Devanagari range
     if (/[\u0900-\u097F]/.test(text)) return 'Hindi';
     if (/[\u0D00-\u0D7F]/.test(text)) return 'Malayalam';
-    // Tamil range: seeded reports still use Tamil script
-    if (/[\u0B80-\u0BFF]/.test(text)) return 'Tamil';
     // Hinglish keywords
     const hinglishMarkers = [
       'paani', 'pani', 'badh', 'raha', 'hai', 'hain', 'ke', 'paas', 'chat',
@@ -1170,7 +1168,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return Math.round(req.translation_confidence * 100);
   }
 
-  setTranslationLang(lang: 'en' | 'hi' | 'ta'): void {
+  setTranslationLang(lang: 'en' | 'hi'): void {
     this.selectedTranslationLang.set(lang);
   }
 

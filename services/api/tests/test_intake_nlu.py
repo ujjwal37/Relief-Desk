@@ -31,26 +31,6 @@ def test_hindi_place_ward_and_child():
     assert extracted.vulnerable.elderly is True
 
 
-def test_tamil_count_child_and_medical():
-    counted = intake_agent.parse_report(
-        "வராப்புழாவில் 5 பேர் சிக்கியுள்ளனர், ஒரு குழந்தை உள்ளது",
-        language_hint="ta",
-    )
-    assert counted.people.count == 5
-    assert counted.vulnerable.child is True
-
-    words = intake_agent.parse_report(
-        "ஐந்து பேர் சிக்கியுள்ளனர். முதியவருக்கு ஆக்சிஜன் தேவை.",
-        language_hint="ta",
-    )
-    assert words.people.count == 5
-    assert words.vulnerable.elderly is True
-    assert words.vulnerable.medical_need is True
-
-    tamil_digits = intake_agent.parse_report("௫ பேர் படகு வேண்டும்", language_hint="ta")
-    assert tamil_digits.people.count == 5
-
-
 def test_landmark_sentence_keeps_the_ward():
     extracted = intake_agent.parse_report(LANDMARK, language_hint="en")
     assert extracted.place_text is not None

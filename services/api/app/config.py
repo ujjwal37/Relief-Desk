@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     FIREBASE_AUTH_EMULATOR_HOST: Optional[str] = None
     RATE_LIMIT_REPORTS_PER_HOUR: int = 10
     DEFAULT_LANG: str = "en"
-    SUPPORTED_LANGS: List[str] = ["en", "hi", "hinglish", "ta"]
+    SUPPORTED_LANGS: List[str] = ["en", "hi", "hinglish", "ml"]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

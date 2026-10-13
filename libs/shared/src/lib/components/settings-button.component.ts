@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
-import { LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, SupportedLang } from '../services/language.service';
+import { LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, SupportedLang } from '../services/language.service';
 import { ThemeMode, ThemeService } from '../services/theme.service';
 
 /** Globe button that opens a bottom sheet (language + theme). Shared by public and coordinator apps. */
@@ -20,10 +20,20 @@ import { ThemeMode, ThemeService } from '../services/theme.service';
         <h2>{{ 'settings.title' | rdTranslate }}</h2>
         <h3>{{ 'settings.language' | rdTranslate }}</h3>
         <div class="opts">
-          @for (l of langs; track l.code) {
-            <button type="button" class="opt" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" (click)="setLang(l.code)">
-              {{ l.label }} <span class="native">{{ l.nativeName }}</span>
+          @for (l of primaryLangs; track l.code) {
+            <button type="button" class="opt" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="setLang(l.code)">
+              {{ l.nativeName }}
             </button>
+          }
+          <button type="button" class="opt more" data-testid="lang-more" [attr.aria-expanded]="moreOpen()" (click)="moreOpen.set(!moreOpen())">
+            {{ 'settings.moreLangs' | rdTranslate }}
+          </button>
+          @if (moreOpen()) {
+            @for (l of moreLangs; track l.code) {
+              <button type="button" class="opt" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="setLang(l.code)">
+                {{ l.label }} <span class="native">{{ l.nativeName }}</span>
+              </button>
+            }
           }
         </div>
         <h3>{{ 'settings.theme' | rdTranslate }}</h3>
@@ -63,7 +73,9 @@ import { ThemeMode, ThemeService } from '../services/theme.service';
 export class SettingsButtonComponent {
   readonly lang = inject(LanguageService);
   readonly theme = inject(ThemeService);
-  readonly langs = SUPPORTED_LANGUAGES;
+  readonly primaryLangs = PRIMARY_LANGUAGES;
+  readonly moreLangs = MORE_LANGUAGES;
+  readonly moreOpen = signal(false);
   readonly themes: { m: ThemeMode; k: string }[] = [
     { m: 'system', k: 'settings.themeSystem' }, { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' },
   ];
@@ -79,7 +91,7 @@ export class SettingsButtonComponent {
     this.isOpen.set(true);
     setTimeout(() => this.sheet()?.nativeElement.focus());
   }
-  close(): void { this.isOpen.set(false); this.opener?.focus(); }
+  close(): void { this.isOpen.set(false); this.moreOpen.set(false); this.opener?.focus(); }
   setLang(c: SupportedLang): void { this.lang.setLanguage(c); }
   @HostListener('document:keydown.escape') onEsc(): void { if (this.isOpen()) this.close(); }
 }

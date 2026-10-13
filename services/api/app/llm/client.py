@@ -421,8 +421,8 @@ class LLMClient:
             lang = "hinglish"
         if re.search(r"[\u0900-\u097F]", report_text):
             lang = "hi"
-        elif re.search(r"[\u0B80-\u0BFF]", report_text):
-            lang = "ta"
+        elif re.search(r"[\u0D00-\u0D7F]", report_text):
+            lang = "ml"
 
         # People extraction
         people_count = None

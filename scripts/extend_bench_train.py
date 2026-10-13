@@ -47,10 +47,10 @@ def main() -> None:
         raise SystemExit("gazetteer did not yield 12 landmarks")
 
     kinds = [
-        ("rescue", "stranded, send a boat", "फंसे हैं, नाव भेजो", "chhat par hain, boat bhejo", "சிக்கியுள்ளனர், படகு அனுப்புங்கள்"),
-        ("medical", "need medicine and a doctor", "दवा और डॉक्टर चाहिए", "dawai aur doctor chahiye", "மருந்தும் மருத்துவரும் வேண்டும்"),
-        ("food", "need ration packets", "राशन पैकेट चाहिए", "ration packets chahiye", "ரேஷன் பாக்கெட் வேண்டும்"),
-        ("shelter", "need shelter, roof collapsed", "आश्रय चाहिए, घर डूब गया", "jagah chahiye, ghar doob gaya", "தங்குமிடம் வேண்டும்"),
+        ("rescue", "stranded, send a boat", "फंसे हैं, नाव भेजो", "chhat par hain, boat bhejo"),
+        ("medical", "need medicine and a doctor", "दवा और डॉक्टर चाहिए", "dawai aur doctor chahiye"),
+        ("food", "need ration packets", "राशन पैकेट चाहिए", "ration packets chahiye"),
+        ("shelter", "need shelter, roof collapsed", "आश्रय चाहिए, घर डूब गया", "jagah chahiye, ghar doob gaya"),
     ]
     extra_rows = []
     extra_labels = []
@@ -73,7 +73,7 @@ def main() -> None:
     for i, place in enumerate(places):
         name = place["aliases_en"][0]
         people = 2 + (i % 6)
-        for kind, en, hi, hing, ta in kinds:
+        for kind, en, hi, hing in kinds:
             vuln = {"child": i % 2 == 0, "elderly": i % 3 == 0, "disabled": False, "pregnant": False, "medical_need": kind == "medical"}
             ground = {
                 "type": kind,
@@ -89,11 +89,9 @@ def main() -> None:
             care_en = " Children present." if vuln["child"] else ""
             care_hi = " बच्चे भी हैं।" if vuln["child"] else ""
             care_h = " bache hain." if vuln["child"] else ""
-            care_ta = " குழந்தைகள் உள்ளனர்." if vuln["child"] else ""
             add(f"{people} people {en} near {name}.{care_en}", "en", "single_incident", ground)
             add(f"{name} के पास {people} लोग {hi}।{care_hi}", "hi", "single_incident", ground)
             add(f"{name} ke paas {people} log {hing}.{care_h}", "hinglish", "single_incident", ground)
-            add(f"{name} அருகில் {people} பேர் {ta}.{care_ta}", "ta", "single_incident", ground)
 
     # Reworded pairs and a short update, still train-only.
     for i in range(4):
