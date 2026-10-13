@@ -7,8 +7,8 @@
       </a>
 
       <nav class="tabs" [class.wrap]="compactNav()" [attr.aria-label]="'ui.coordNav' | rdTranslate">
-        <a routerLink="/coordinator/overview" routerLinkActive="on">{{ 'coord.overview' | rdTranslate }}</a>
-        <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge" [class.on]="casesOn()">{{ 'coord.cases' | rdTranslate }}</a>
+        <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge" [class.on]="homeOn()">{{ 'coord.home' | rdTranslate }}</a>
+        <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge">{{ 'coord.cases' | rdTranslate }}</a>
         <a routerLink="/coordinator/command" [queryParams]="{ status: 'dispatched' }" queryParamsHandling="merge" [class.on]="dispatchedOn()">{{ 'coord.filterDispatched' | rdTranslate }}</a>
         <a class="wide-only" routerLink="/coordinator/teams" routerLinkActive="on">{{ 'coord.teams' | rdTranslate }}</a>
         <a routerLink="/coordinator/agent" routerLinkActive="on">{{ 'coord.agent' | rdTranslate }}</a>
@@ -29,6 +29,7 @@
             <div class="menu-back" (click)="menuOpen.set(false)"></div>
             <div class="menu" role="menu">
               <p class="who">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</p>
+              <a class="item" routerLink="/coordinator/overview" (click)="menuOpen.set(false)">{{ 'coord.overview' | rdTranslate }}</a>
               <a class="item" routerLink="/coordinator/teams" (click)="menuOpen.set(false)">{{ 'coord.teams' | rdTranslate }}</a>
               <a class="item" routerLink="/coordinator/alerts" (click)="menuOpen.set(false)">{{ 'coord.alerts' | rdTranslate }}
                 @if (ui.alerts().length) { <span class="count">{{ ui.alerts().length }}</span> }

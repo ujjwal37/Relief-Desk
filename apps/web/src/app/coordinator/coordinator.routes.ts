@@ -18,6 +18,11 @@ export const COORDINATOR_ROUTES: Routes = [
         pathMatch: 'full',
       },
       {
+        path: 'home',
+        redirectTo: 'command',
+        pathMatch: 'full',
+      },
+      {
         path: 'overview',
         loadComponent: () => import('./pages/overview/coordinator-overview.component').then(m => m.CoordinatorOverviewComponent),
       },

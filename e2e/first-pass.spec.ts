@@ -125,6 +125,9 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByRole('button', { name: 'Enter as demo coordinator' })).toBeVisible();
       await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
       await page.waitForURL(/\/coordinator\/command/);
+      const homeTab = page.locator('nav.tabs a').first();
+      await expect(homeTab).toHaveText('Home');
+      await expect(homeTab).toHaveClass(/on/);
       await expect(page.getByRole('heading', { name: 'Cases' })).toBeVisible();
       await expect(page.getByText('Synthetic scenario inspired by Kerala floods')).toBeVisible();
       await expect(page.locator('button.case').first()).toBeVisible();

@@ -243,6 +243,7 @@
   },
   "coord": {
     "cases": "Cases",
+    "home": "Home",
     "overview": "Overview",
     "overviewLead": "What is waiting, what is already on the way, and which alerts need a look.",
     "agent": "Agent",

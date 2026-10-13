@@ -3,7 +3,7 @@
 .alert-list { display:flex; flex-direction:column; gap:10px; }
 h1 { margin:0; font-size:22px; font-weight:800; } .sub { margin:0 0 4px; color:var(--text-2); font-size:15px; }
 .alerts-page.list-only { display:flex; flex-direction:column; min-height:0; height:100%; padding:12px; overflow:auto; box-sizing:border-box; }
-.alert-row { --c:var(--sev-high); --ct:var(--sev-high-t); background:var(--surface); border:1px solid var(--border); border-left:5px solid var(--c); border-radius:14px; padding:12px 14px; cursor:pointer; box-shadow:var(--e1); }
+.alert-row { --c:var(--sev-high); --ct:var(--sev-high-t); background:var(--card); border:1px solid var(--border); border-left:4px solid var(--c); border-radius:var(--r3); padding:12px 14px; cursor:pointer; box-shadow:var(--e1); }
 .k-spike { --c:var(--sev-crit); --ct:var(--sev-crit-t); } .k-silent_zone { --c:var(--sev-high); --ct:var(--sev-high-t); }
 .k-resource_gap { --c:var(--brand); --ct:var(--brand-tint); } .k-conflict { --c:var(--sev-med); --ct:var(--sev-med-t); } .k-stale { --c:var(--sev-low); --ct:var(--surface-2); }
 .alert-row.selected { outline:2px solid var(--brand); outline-offset:1px; } .alert-row.done { opacity:.65; }
@@ -21,9 +21,9 @@ h1 { margin:0; font-size:22px; font-weight:800; } .sub { margin:0 0 4px; color:v
 .primary { background:var(--brand); color:var(--on-brand); border:0; } .primary:disabled { background:var(--surface-2); color:var(--text-2); cursor:default; }
 .secondary { background:var(--surface); color:var(--text); border:1.5px solid var(--border); }
 .error { background:var(--sev-crit-t); color:var(--sev-crit); border-radius:12px; padding:12px 14px; font-weight:600; button { margin-left:10px; min-height:40px; padding:0 14px; border-radius:10px; border:0; background:var(--sev-crit); color:var(--surface); font-weight:700; cursor:pointer; } }
-.empty { text-align:center; color:var(--text-2); padding:24px; background:var(--surface); border:1px dashed var(--border); border-radius:14px; }
+.empty { text-align:center; color:var(--text-2); padding:24px; background:var(--surface); border:1px dashed var(--border); border-radius:var(--r3); }
 
-.map-panel { position:relative; background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; min-height:480px; box-shadow:var(--e1); display:flex; flex-direction:column; }
+.map-panel { position:relative; background:var(--surface); border:1px solid var(--border); border-radius:var(--r3); overflow:hidden; min-height:480px; box-shadow:var(--e1); display:flex; flex-direction:column; }
 .mapbox { flex:1; min-height:360px; position:relative; }
 .city-map { position:absolute; inset:0; width:100%; height:100%; }
 .world { transition:transform 450ms var(--ease, ease); transform-origin:0 0; }

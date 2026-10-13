@@ -21,3 +21,7 @@ html, body {
 * {
   box-sizing: border-box;
 }
+
+button, input, textarea, select {
+  font-family: inherit;
+}

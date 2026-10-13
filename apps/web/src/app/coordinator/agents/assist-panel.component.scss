@@ -3,9 +3,9 @@
 .panel {
   position: absolute; top: 48px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 24px));
   max-height: calc(100% - 72px); overflow: auto; background: var(--surface); color: var(--text);
-  border: 1px solid var(--border); border-radius: 16px; padding: 16px;
+  border: 1px solid var(--border); border-radius: var(--r3); padding: 16px;
 }
-.panel.sheet { top: auto; bottom: 0; left: 0; transform: none; width: 100%; max-height: calc(100% - 64px); border-radius: 20px 20px 0 0; }
+.panel.sheet { top: auto; bottom: 0; left: 0; transform: none; width: 100%; max-height: calc(100% - 64px); border-radius: var(--r4) var(--r4) 0 0; }
 .grab { width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 0 auto 8px; }
 header { display: flex; align-items: center; gap: 8px; }
 h2 { margin: 0; font-size: 22px; flex: 1; }

@@ -19,6 +19,9 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   await page.goto('/coordinator/login');
   await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await page.waitForURL(/\/coordinator\/command/);
+  const homeTab = page.locator('nav.tabs a').first();
+  await expect(homeTab).toHaveText('Home');
+  await expect(homeTab).toHaveClass(/on/);
   // The first open case can sit far from the Kuttanad teams. Open a Ward 1 case so the lines show minutes.
   await page.locator('button.case').filter({ hasText: /Ward 1 ·/ }).first().click();
   const eta = page.locator('.candidates .eta').first();
@@ -38,7 +41,13 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   }
   await page.screenshot({ path: path.join(SHOTS, '1366-cases-map.png'), fullPage: false });
 
-  await page.getByRole('link', { name: 'Overview', exact: true }).click();
+  const overviewNav = page.locator('nav.tabs').getByRole('link', { name: 'Overview', exact: true });
+  if (await overviewNav.count() && await overviewNav.isVisible()) {
+    await overviewNav.click();
+  } else {
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.locator('.menu').getByRole('link', { name: 'Overview', exact: true }).click();
+  }
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
   await expect(page.locator('.nums')).toContainText(/\d+ Cases/);
   await expect(page.locator('.nums')).toContainText(/Dispatched/);

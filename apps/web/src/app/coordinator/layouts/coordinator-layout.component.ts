@@ -47,7 +47,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   });
   readonly path = signal('');
   readonly dispatchedOn = computed(() => /(?:\?|&)status=dispatched(?:&|$)/.test(this.path()));
-  readonly casesOn = computed(() => {
+  readonly homeOn = computed(() => {
     const path = this.path().split('?')[0];
     return (path === '/coordinator/command' || path.startsWith('/coordinator/command/')) && !this.dispatchedOn();
   });
@@ -121,7 +121,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.router.navigate([], { relativeTo: this.route, queryParams: { demo: this.demoOn() ? null : '1' }, queryParamsHandling: 'merge' });
   }
 
-  /** Search filters the Cases queue, so typing on another tab opens Cases with the query kept. */
+  /** Search filters the Home queue, so typing on another tab opens Home with the query kept. */
   onSearch(event: Event): void {
     this.ui.searchQuery.set((event.target as HTMLInputElement).value);
     if (!this.router.url.startsWith('/coordinator/command')) {

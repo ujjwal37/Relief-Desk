@@ -81,7 +81,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     }
     app-coordinator-alerts { width: 380px; min-height: 0; height: 100%; overflow: hidden; display: block; }
     .map-stage {
-      position: relative; min-height: 0; border-radius: 16px; overflow: hidden;
+      position: relative; min-height: 0; border-radius: var(--r3); overflow: hidden;
       border: 1px solid var(--border); background: var(--map-bg);
     }
     rd-map-provider { position: absolute; top: 56px; right: 0; bottom: 0; left: 0; display: block; }

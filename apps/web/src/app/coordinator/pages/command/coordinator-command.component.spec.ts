@@ -526,7 +526,7 @@ describe('CoordinatorCommandComponent', () => {
     row.dispatchEvent(new Event('mouseenter'));
     fixture.detectChanges();
     expect(provider.highlightId).toBe('res_boat_02');
-    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke')).toBe('#0b6e4f');
+    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke')).toBe('#047857');
     expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke-width')).toBe('6');
   });
 

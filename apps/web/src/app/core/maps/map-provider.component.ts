@@ -71,7 +71,7 @@ export interface MapLeg {
   styles: [`
     :host { display: block; width: 100%; height: 100%; min-height: 250px; position: relative; }
     .rd-google-map, .rd-schematic { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 250px; display: block; }
-    .rd-leg { font-size: 13px; font-weight: 700; fill: #1c2430; }
+    .rd-leg { font-size: 13px; font-weight: 700; fill: #0f1720; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -160,7 +160,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     const suggested = new Set(this.legs.filter((leg) => leg.suggested).map((leg) => `${leg.to.lat},${leg.to.lng}`));
     return this.pins.map((pin) => {
       const onLeg = suggested.has(`${pin.lat},${pin.lng}`);
-      const fill = pin.tone ? TONE_COLOR[pin.tone] : (onLeg ? '#0b6e4f' : '#1c2430');
+      const fill = pin.tone ? TONE_COLOR[pin.tone] : (onLeg ? '#047857' : '#0f1720');
       return {
         id: pin.id,
         ...this.toSvg(pin.lat, pin.lng, frame),
@@ -186,7 +186,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         lx: (from.x + to.x) / 2,
         ly: (from.y + to.y) / 2 - 8,
         title: leg.title,
-        stroke: leg.suggested ? '#0b6e4f' : '#5c6570',
+        stroke: leg.suggested ? '#047857' : '#6b7280',
         width: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
       };
     });
@@ -246,7 +246,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         return new maps.Polyline({
           map: this.map,
           path: [leg.from, leg.to],
-          strokeColor: leg.suggested ? '#0b6e4f' : '#5c6570',
+          strokeColor: leg.suggested ? '#047857' : '#6b7280',
           strokeWeight: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
           geodesic: true,
         });
@@ -256,7 +256,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         position: { lat: (leg.from.lat + leg.to.lat) / 2, lng: (leg.from.lng + leg.to.lng) / 2 },
         label: {
           text: leg.title,
-          color: leg.suggested ? '#0b6e4f' : '#1c2430',
+          color: leg.suggested ? '#047857' : '#0f1720',
           fontSize: '12px',
           fontWeight: '700',
         },

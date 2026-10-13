@@ -101,7 +101,7 @@
               <text class="dlabel" [attr.x]="d.lx" [attr.y]="d.ly" text-anchor="middle">{{ ('coord.district.' + d.id) | rdTranslate }}</text>
             }
             @for (leg of focusLegs(); track leg.id) {
-              <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#0b6e4f' : '#5c6570'" [attr.stroke-width]="leg.suggested ? (highlightId() === leg.id ? 6 : 4) : (highlightId() === leg.id ? 5 : 2)" stroke-linecap="round"/>
+              <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#047857' : '#6b7280'" [attr.stroke-width]="leg.suggested ? (highlightId() === leg.id ? 6 : 4) : (highlightId() === leg.id ? 5 : 2)" stroke-linecap="round"/>
               <text class="leg" [class.on]="leg.suggested" [attr.x]="leg.lx" [attr.y]="leg.ly" text-anchor="middle">{{ leg.label }}</text>
             }
             @if (movementTrail()) {
@@ -110,7 +110,7 @@
             @for (p of drawnPins(); track p.id) {
               @if (p.kind === 'team') {
                 <g class="pin" [class.dim]="p.dim" [class.suggested]="p.suggested" [attr.opacity]="p.dim ? null : p.fade" [attr.transform]="'translate(' + p.x + ' ' + p.y + ')'">
-                  <circle r="12" [attr.fill]="p.fill" [attr.stroke]="p.suggested ? '#0b6e4f' : 'var(--surface)'" [attr.stroke-width]="p.suggested ? 3 : 2"/>
+                  <circle r="12" [attr.fill]="p.fill" [attr.stroke]="p.suggested ? '#047857' : 'var(--surface)'" [attr.stroke-width]="p.suggested ? 3 : 2"/>
                   <path [attr.d]="p.path" fill="#fff" transform="translate(-12 -12)"/>
                 </g>
               }

@@ -5,13 +5,13 @@ export type PinTone = 'free' | 'busy' | 'stale' | 'critical' | 'high' | 'medium'
 
 /** Free is green, busy and not-updated are grey. Case tones match the urgency chips. */
 export const TONE_COLOR: Record<PinTone, string> = {
-  free: '#0b6e4f',
-  busy: '#5c6570',
-  stale: '#5c6570',
-  critical: '#B3261E',
-  high: '#8F5A00',
-  medium: '#2A5C8A',
-  low: '#5B645E',
+  free: '#047857',
+  busy: '#6b7280',
+  stale: '#6b7280',
+  critical: '#dc2626',
+  high: '#d97706',
+  medium: '#2563eb',
+  low: '#64748b',
 };
 
 /** 24×24 glyphs, drawn in white on the coloured pin. */
@@ -94,7 +94,7 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
 export function markerDataUrl(pin: { marker?: string; vehicle?: string; tone?: string }): string | null {
   if (!pin.marker && !pin.vehicle && !pin.tone) return null;
   const tone = (pin.tone || 'free') as PinTone;
-  const fill = TONE_COLOR[tone] || '#1c2430';
+  const fill = TONE_COLOR[tone] || '#0f1720';
   const opacity = tone === 'stale' ? 0.4 : 1;
   const path = pin.vehicle ? VEHICLE_PATHS[pin.vehicle as VehicleKind] : '';
   const glyph = path ? `<path d="${path}" fill="#ffffff" transform="translate(4 4)"/>` : '';

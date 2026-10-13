@@ -243,6 +243,7 @@
   },
   "coord": {
     "cases": "Maamle",
+    "home": "Home",
     "overview": "Summary",
     "overviewLead": "Kya wait kar raha hai, kya raaste mein hai, aur kaun si chetavani dekhni hai.",
     "agent": "Agent",

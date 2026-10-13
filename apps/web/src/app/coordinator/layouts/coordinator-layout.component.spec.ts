@@ -82,9 +82,10 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     expect(rows.size).toBeLessThanOrEqual(2);
     expect(getComputedStyle(nav).overflow).not.toBe('auto');
     const labels = Array.from(nav.querySelectorAll('a, button')).map((el) => (el.textContent || '').trim());
-    expect(labels.some((label) => label.includes('Overview'))).toBeTrue();
+    expect(labels.some((label) => label.includes('Home'))).toBeTrue();
     expect(labels.some((label) => label.includes('Cases'))).toBeTrue();
     expect(labels.some((label) => label.includes('Agent'))).toBeTrue();
+    expect(labels.join(' ')).not.toContain('Overview');
     expect(labels.join(' ')).not.toContain('Accuracy report');
     (fixture.nativeElement.querySelector('.avatar') as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -92,9 +93,13 @@ describe('CoordinatorLayoutComponent demo phone', () => {
       ((link as HTMLElement).textContent || '').includes('Accuracy report'),
     ) as HTMLElement;
     expect(accuracy).toBeTruthy();
+    const overview = Array.from(fixture.nativeElement.querySelectorAll('.menu a')).find((link) =>
+      ((link as HTMLElement).textContent || '').includes('Overview'),
+    ) as HTMLElement;
+    expect(overview).toBeTruthy();
   });
 
-  it('opens Cases when the top search box is used from another tab', async () => {
+  it('opens Home when the top search box is used from another tab', async () => {
     const fixture = await setup(null, true);
     const router = TestBed.inject(Router);
     spyOnProperty(router, 'url', 'get').and.returnValue('/coordinator/teams');

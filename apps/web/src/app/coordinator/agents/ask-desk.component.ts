@@ -125,7 +125,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .hint { margin: 0 0 8px; font-size: .8rem; opacity: .75; }
     .row { display: flex; gap: 8px; }
     .row input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border, rgba(0,0,0,.2)); background: var(--surface, #fff); color: inherit; font: inherit; }
-    .row .btn { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--brand, #0b6e4f); color: var(--on-brand, #fff); font: 700 15px inherit; cursor: pointer; }
+    .row .btn { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: var(--r2); border: 0; background: var(--brand); color: var(--on-brand); font: 700 15px inherit; cursor: pointer; }
     .row .btn:disabled { opacity: .55; cursor: default; }
     .reason { margin: 0 0 6px; font-size: .9rem; }
     .via { display: block; font-size: .75rem; opacity: .7; }
@@ -137,11 +137,11 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .id { font-weight: 600; } .type, .ward, .ppl { font-size: .8rem; opacity: .8; }
     .sum { flex-basis: 100%; font-size: .82rem; }
     .link { background: none; border: 0; padding: 6px 0; text-decoration: underline; cursor: pointer; font: inherit; font-size: .8rem; color: inherit; }
-    .err { color: var(--sev-crit, #b3261e); }
+    .err { color: var(--sev-crit); }
     .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
     .suggestions button { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border, rgba(0,0,0,.2)); background: var(--surface, transparent); color: inherit; cursor: pointer; font: inherit; }
-    .bubble.user { margin: 0; align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: 16px 16px 4px 16px; background: var(--brand-tint, #e7f5ef); font-weight: 650; }
-    .bubble.desk { align-self: stretch; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--border, rgba(0,0,0,.12)); background: var(--surface, #fff); }
+    .bubble.user { margin: 0; align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: var(--r3) var(--r3) var(--r1) var(--r3); background: var(--brand-tint); font-weight: 650; }
+    .bubble.desk { align-self: stretch; padding: 12px 14px; border-radius: var(--r3); border: 1px solid var(--border); background: var(--surface); }
     .thread { display: flex; flex-direction: column; gap: 10px; }
     .page { position: relative; display: flex; flex-direction: column; justify-content: center; height: 100%; min-height: 0; margin: 0; padding: 8px 0 12px; background: transparent; border: 0; box-shadow: none; }
     .page .thread { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
@@ -149,12 +149,12 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .page.has-thread .thread { flex: 1; overflow: auto; }
     .page .composer, .page .suggestions { flex: none; }
     .page .cards, .page .trace { max-height: none; }
-    .page .row input { min-height: 56px; border-radius: 28px; padding: 0 20px; font-size: 17px; }
+    .page .row input { min-height: 48px; border-radius: var(--r2); padding: 0 16px; font-size: 15px; }
     .page .suggestions { justify-content: center; }
     .hello { margin: 0 0 16px; text-align: center; font-size: 28px; font-weight: 650; line-height: 1.25; }
     .empty { width: min(720px, 100%); margin: 0 auto 12px; }
     .examples { display: grid; gap: 10px; width: min(560px, 100%); margin: 0 auto; }
-    .example { text-align: left; border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; background: var(--surface); color: inherit; cursor: pointer; font: inherit; }
+    .example { text-align: left; border: 1px solid var(--border); border-radius: var(--r3); padding: 12px 14px; background: var(--surface); color: inherit; cursor: pointer; font: inherit; box-shadow: var(--e1); }
     .example strong { display: block; margin: 2px 0; }
     .example p { margin: 0; color: var(--text-2); font-size: 14px; }
     .tag { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }

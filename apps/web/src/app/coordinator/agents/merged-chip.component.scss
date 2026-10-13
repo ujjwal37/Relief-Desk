@@ -9,7 +9,7 @@
   background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px;
   box-shadow: var(--e3); padding: 12px;
 }
-.pop.sheet { position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: auto; border-radius: 20px 20px 0 0; }
+.pop.sheet { position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: auto; border-radius: var(--r4) var(--r4) 0 0; }
 h2 { margin: 0 32px 8px 0; font-size: 17px; }
 blockquote { margin: 0 0 8px; padding: 8px; background: var(--surface-2); border-radius: 8px; }
 blockquote p { margin: 0 0 4px; font-size: 15px; }
