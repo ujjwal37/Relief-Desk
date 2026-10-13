@@ -1,6 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { resetDemo } from './reset-demo';
+
+test.beforeEach(async ({ request }) => {
+  await resetDemo(request);
+});
 
 const SHOTS = '/opt/cursor/artifacts/screenshots';
 

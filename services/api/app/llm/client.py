@@ -3,8 +3,10 @@ import json
 import logging
 import re
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
+from zoneinfo import ZoneInfo
 from app.config import settings
 from app.llm.guards import Guard, scrub_pii
 from app.models.schemas import AiCall
@@ -31,6 +33,22 @@ def _is_quota(exc: BaseException) -> bool:
         return True
     text = str(exc).lower()
     return "429" in text or "resource_exhausted" in text or "quota" in text
+
+
+def _is_daily_quota(exc: BaseException) -> bool:
+    """True for a per-day RESOURCE_EXHAUSTED. A short per-minute 429 is not this."""
+    if not _is_quota(exc):
+        return False
+    flat = re.sub(r"[\s_\-]", "", str(exc).lower())
+    return "perday" in flat or "daily" in flat
+
+
+def seconds_until_pacific_midnight() -> float:
+    """Gemini daily quota resets at midnight Pacific. Stay open until then."""
+    pacific = ZoneInfo("America/Los_Angeles")
+    now = datetime.now(pacific)
+    nxt = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return max(60.0, (nxt - now).total_seconds())
 
 
 def _is_transient(exc: BaseException) -> bool:
@@ -261,12 +279,24 @@ class LLMClient:
                 self.set_cached(cache_key, text, source="gemini", model=usage.model, tokens=usage.tokens)
                 return text
         except Exception as exc:
-            self.guard.record_failure()
-            reason = "quota" if _is_quota(exc) else ("timeout" if isinstance(exc, TimeoutError) else "error")
+            reason = self.note_failure(exc)
             if reason != "quota":
                 self.guard.backoff(0)
             logger.error("Live Gemini call failed (%s). Falling back.", exc)
             return self._fallback(user_prompt, reason, started)
+
+    def note_failure(self, exc: BaseException) -> str:
+        """Count a live failure. A per-day 429 opens the circuit until the reset and is not retried."""
+        if _is_daily_quota(exc):
+            self.guard.trip(seconds_until_pacific_midnight())
+            logger.warning("Gemini daily quota is exhausted. Circuit open until the Pacific midnight reset.")
+            return "quota"
+        self.guard.record_failure()
+        if _is_quota(exc):
+            return "quota"
+        if isinstance(exc, TimeoutError):
+            return "timeout"
+        return "error"
 
     def _via_antigravity(self, system_instruction, user_prompt, validator, started) -> str:
         """Manual-testing provider. Not cached, so data/ai_cache stays Gemini API output only."""
@@ -311,7 +341,12 @@ class LLMClient:
 
         return genai.Client(
             api_key=settings.GEMINI_API_KEY,
-            http_options={"timeout": int(timeout_s * 1000)},
+            http_options={
+                "timeout": int(timeout_s * 1000),
+                # One attempt. The SDK's default backoff on 429 is about 20s, and a
+                # per-day quota will not recover inside that wait.
+                "retry_options": {"attempts": 1},
+            },
         )
 
     def _call_gemini(self, system_instruction: str, user_prompt: str, timeout_s: Optional[float] = None) -> str:

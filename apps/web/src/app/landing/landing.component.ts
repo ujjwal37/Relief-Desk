@@ -16,12 +16,6 @@ export class LandingComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
 
-  constructor() {
-    if (window.matchMedia('(max-width: 599px)').matches) {
-      void this.router.navigateByUrl('/report');
-    }
-  }
-
   async openDemo(event?: Event): Promise<void> {
     event?.preventDefault();
     if (await this.auth.loginDemo()) {

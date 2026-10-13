@@ -23,6 +23,14 @@ export interface MapPin {
   title: string;
 }
 
+export interface MapLeg {
+  id: string;
+  from: { lat: number; lng: number };
+  to: { lat: number; lng: number };
+  title: string;
+  suggested?: boolean;
+}
+
 @Component({
   selector: 'rd-map-provider',
   standalone: true,
@@ -45,6 +53,7 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   private cdr = inject(ChangeDetectorRef);
 
   @Input() pins: MapPin[] = [];
+  @Input() legs: MapLeg[] = [];
   @Input() center: { lat: number; lng: number } = { lat: 10.50, lng: 76.30 };
   /** Bump this to pan again even when the centre numbers did not change. */
   @Input() focusToken = 0;
@@ -55,6 +64,7 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   mode: 'google' | 'svg' = 'svg';
   private map: { panTo?: (pos: { lat: number; lng: number }) => void } | null = null;
   private markers: { setMap?: (map: null) => void }[] = [];
+  private lines: { setMap?: (map: null) => void }[] = [];
   private lastCenter: { lat: number; lng: number } | null = null;
   private lastToken = 0;
 
@@ -114,6 +124,14 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
         this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
       }
       this.markers.forEach((marker) => marker.setMap?.(null));
+      this.lines.forEach((line) => line.setMap?.(null));
+      this.lines = this.legs.map((leg) => new maps.Polyline({
+        map: this.map,
+        path: [leg.from, leg.to],
+        strokeColor: leg.suggested ? '#0b6e4f' : '#5c6570',
+        strokeWeight: leg.suggested ? 4 : 2,
+        geodesic: true,
+      }));
       this.markers = this.pins.map((pin) => {
         const marker = new maps.Marker({
           map: this.map,
@@ -134,4 +152,5 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
 interface GoogleMapsNs {
   Map: new (el: HTMLElement, opts: Record<string, unknown>) => { panTo?: (pos: { lat: number; lng: number }) => void };
   Marker: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void; addListener?: (event: string, fn: () => void) => void };
+  Polyline: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void };
 }

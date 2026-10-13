@@ -23,7 +23,7 @@ import { MergedChipComponent } from '../../agents/merged-chip.component';
 import { LIVE_CHANNEL } from '../../../core/live-report';
 import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
-import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import {
   ApiClientService,
   RdTranslatePipe,
@@ -107,6 +107,25 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       pins.push({ id: res.id, lat: res.lat, lng: res.lng, title: res.name });
     }
     return pins;
+  });
+  /** Lines from the selected case to its candidate teams. Drawn on the schematic and on Google Maps. */
+  readonly mapLegs = computed<MapLeg[]>(() => {
+    const req = this.selectedRequest();
+    if (!req || req.lat == null || req.lng == null) return [];
+    const suggested = this.activeProposal()?.resource_id;
+    const legs: MapLeg[] = [];
+    for (const prop of this.matches()) {
+      const team = this.resources().find((row) => row.id === prop.resource_id);
+      if (!team) continue;
+      legs.push({
+        id: prop.resource_id,
+        from: { lat: req.lat, lng: req.lng },
+        to: { lat: team.lat, lng: team.lng },
+        title: `${prop.breakdown.distance_km} km · ${this.etaText(prop)}`,
+        suggested: prop.resource_id === suggested,
+      });
+    }
+    return legs;
   });
   readonly filterType = signal<string>('all');
   readonly areaFilter = signal<string>('all');

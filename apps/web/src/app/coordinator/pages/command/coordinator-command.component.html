@@ -91,7 +91,7 @@
       </div>
 
       <div class="map-card">
-        <rd-map-provider [pins]="mapPins()" (pinSelect)="selectRequest($event, true)">
+        <rd-map-provider [pins]="mapPins()" [legs]="mapLegs()" (pinSelect)="selectRequest($event, true)">
           <svg viewBox="0 0 600 480" class="svgmap" preserveAspectRatio="xMidYMid slice" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
             <rect width="600" height="480" fill="var(--map-bg)"/>
             @for (d of mapDistricts(); track d.id) {

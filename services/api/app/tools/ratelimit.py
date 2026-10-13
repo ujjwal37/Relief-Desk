@@ -25,6 +25,9 @@ class RateLimiter:
         self._history[source_id] = history
 
         count = len(history)
+        # Demo runs resubmit from the same phone. The anonymous cap would hide later reports.
+        if settings.DEMO_MODE:
+            return False, count
         is_limited = count > self.max_per_hour
         if is_limited:
             logger.warning(

@@ -207,10 +207,7 @@ def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], 
         args, tokens = fut.result(timeout=timeout_s)
         c.guard.record_success()
     except Exception as exc:  # quota, timeout, SDK error: the rules answer instead
-        c.guard.record_failure()
-        text = str(exc)
-        meta["fallback_reason"] = "quota" if ("429" in text or "RESOURCE_EXHAUSTED" in text) else (
-            "timeout" if "Timeout" in type(exc).__name__ else "error")
+        meta["fallback_reason"] = c.note_failure(exc)
         meta["latency_ms"] = int((time.monotonic() - started) * 1000)
         return None, meta
     filters = clean_filters(args)

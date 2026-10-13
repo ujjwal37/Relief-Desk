@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { ApiClientService, StoredRequest, StoredResource } from '@rd/shared';
+import { ApiClientService, MatchProposal, StoredRequest, StoredResource } from '@rd/shared';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { CoordinatorTeamsComponent } from './coordinator-teams.component';
 
@@ -16,14 +16,16 @@ describe('CoordinatorTeamsComponent', () => {
   ];
 
   beforeEach(async () => {
-    const api = jasmine.createSpyObj('ApiClientService', ['getResources', 'getRequests', 'updateResourceLocation']);
+    const api = jasmine.createSpyObj('ApiClientService', ['getResources', 'getRequests', 'getRequestMatches', 'updateResourceLocation']);
     api.getResources.and.returnValue(of(rows));
     api.getRequests.and.returnValue(of([]));
+    api.getRequestMatches.and.returnValue(of([]));
     api.updateResourceLocation.and.returnValue(of({ ...rows[2], lat: 9.5, lng: 76.3, simulated: false }));
     await TestBed.configureTestingModule({
       imports: [CoordinatorTeamsComponent],
       providers: [{ provide: ApiClientService, useValue: api }, provideRouter([])],
     }).compileComponents();
+    TestBed.inject(CoordUiService).selectedCaseId.set('');
     fixture = TestBed.createComponent(CoordinatorTeamsComponent);
     fixture.detectChanges();
   });
@@ -62,7 +64,33 @@ describe('CoordinatorTeamsComponent', () => {
     cmp.requests.set([{ id: 'INC-1', lat: 10.3, lng: 76.2 } as StoredRequest]);
     fixture.detectChanges();
     expect(cmp.leg(rows[2])).toBe('1.11 km · about 3 min');
-    expect(cmp.leg(rows[1])).toBe('No nearby team');
+    expect(cmp.leg(rows[1])).toContain('km');
+    expect(cmp.leg(rows[1])).toContain('No nearby team');
+  });
+
+  it('draws a line from the open case to each candidate team', () => {
+    const cmp = fixture.componentInstance;
+    TestBed.inject(CoordUiService).selectedCaseId.set('INC-1');
+    cmp.requests.set([{ id: 'INC-1', lat: 10.3, lng: 76.2 } as StoredRequest]);
+    cmp.matches.set([{
+      match_id: 'm',
+      request_id: 'INC-1',
+      resource_id: 'b1',
+      resource_name: 'Boat One',
+      resource_kind: 'boat',
+      resource_ward: 'ward_7',
+      capacity_total: 12,
+      capacity_remaining: 4,
+      score: 80,
+      breakdown: { distance_km: 1.11, distance_score: 20, capacity_fit_score: 20, urgency_score: 20, vulnerability_fit_score: 10 },
+      state: 'proposed',
+      overcommit_warning: false,
+      eta_minutes: 3,
+    } as MatchProposal]);
+    fixture.detectChanges();
+    const line = fixture.nativeElement.querySelector('.team-map line') as SVGLineElement | null;
+    expect(line).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.team-map')?.textContent).toContain('1.11 km · about 3 min');
   });
 
   it('opens seats, history, and the location action', () => {

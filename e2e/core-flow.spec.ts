@@ -1,4 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { resetDemo } from './reset-demo';
+
+test.beforeEach(async ({ request }) => {
+  await resetDemo(request);
+});
 
 /**
  * The judge's minute: a phone report shows on the desk, the decision is visible,

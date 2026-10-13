@@ -930,6 +930,8 @@ class StorageService:
         self._resources.clear()
         self._matches.clear()
         self._idempotent.clear()
+        from app.tools.ratelimit import rate_limiter
+        rate_limiter.reset()
         if mode == "full":
             resources = self.load_seed_resources()
             incidents = self.load_seed_incidents()

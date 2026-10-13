@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ApiClientService, LanguageService, RdTranslatePipe, StoredRequest, StoredResource } from '@rd/shared';
+import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, StoredRequest, StoredResource } from '@rd/shared';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 
 const AREAS: Record<string, string> = {
@@ -48,6 +48,7 @@ export class CoordinatorTeamsComponent implements OnInit {
 
   readonly resources = signal<StoredResource[]>([]);
   readonly requests = signal<StoredRequest[]>([]);
+  readonly matches = signal<MatchProposal[]>([]);
   readonly strip = signal<Strip>('all');
   readonly openId = signal<string | null>(null);
   readonly now = signal(Date.now());
@@ -89,8 +90,28 @@ export class CoordinatorTeamsComponent implements OnInit {
       error: () => this.resources.set([]),
     });
     this.api.getRequests().subscribe({
-      next: (rows) => this.requests.set(rows),
+      next: (rows) => {
+        this.requests.set(rows);
+        if (!this.ui.selectedCaseId()) {
+          const open = rows.filter((row) => !row.merged_into && row.status !== 'completed' && row.status !== 'resolved' && row.status !== 'closed');
+          const pick = [...open].sort((a, b) => (b.urgency_score || 0) - (a.urgency_score || 0))[0];
+          if (pick) this.ui.selectedCaseId.set(pick.id);
+        }
+        this.loadMatches();
+      },
       error: () => this.requests.set([]),
+    });
+  }
+
+  private loadMatches(): void {
+    const id = this.ui.selectedCaseId();
+    if (!id) {
+      this.matches.set([]);
+      return;
+    }
+    this.api.getRequestMatches(id, 5).subscribe({
+      next: (rows) => this.matches.set(rows),
+      error: () => this.matches.set([]),
     });
   }
 
@@ -123,16 +144,77 @@ export class CoordinatorTeamsComponent implements OnInit {
     return team.area_name || AREAS[team.ward_id] || team.ward_id;
   }
 
-  /** Distance and ETA to the open case, or the ward when no case is selected. */
+  /** Distance and ETA to the open case. Every team shows kilometres; a far team also says there is no nearby team. */
   leg(team: StoredResource): string {
     this.lang.currentLang();
     const req = this.focus();
     if (req?.lat == null || req?.lng == null) return this.area(team);
-    const km = distanceKm(req.lat, req.lng, team.lat, team.lng);
-    const minutes = km > 30 ? null : Math.max(1, Math.round((km / 20) * 60));
-    if (minutes == null || minutes > 90) return this.lang.translate('coord.noNearbyTeam');
+    const quoted = this.matches().find((row) => row.resource_id === team.id);
+    const km = quoted?.breakdown?.distance_km ?? distanceKm(req.lat, req.lng, team.lat, team.lng);
+    const minutes = quoted?.eta_minutes ?? Math.max(1, Math.round((km / 20) * 60));
     const eta = this.lang.translate('coord.etaMin').replace('{n}', String(minutes));
+    if (quoted?.no_nearby || km > 30 || minutes > 90) {
+      return `${km} km · ${this.lang.translate('coord.noNearbyTeam')}`;
+    }
     return `${km} km · ${eta}`;
+  }
+
+  /** Schematic lines from the open case to the teams the matcher suggested. */
+  readonly mapLegs = computed(() => {
+    const req = this.focus();
+    if (!req || req.lat == null || req.lng == null) return [];
+    const suggested = this.matches()[0]?.resource_id;
+    const legs: { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; label: string; suggested: boolean }[] = [];
+    const origin = this.project(req.lat, req.lng);
+    for (const prop of this.matches()) {
+      const team = this.resources().find((row) => row.id === prop.resource_id);
+      if (!team) continue;
+      const at = this.project(team.lat, team.lng);
+      legs.push({
+        id: prop.resource_id,
+        x1: origin.x,
+        y1: origin.y,
+        x2: at.x,
+        y2: at.y,
+        lx: (origin.x + at.x) / 2,
+        ly: (origin.y + at.y) / 2 - 6,
+        label: this.leg(team),
+        suggested: prop.resource_id === suggested,
+      });
+    }
+    return legs;
+  });
+
+  readonly casePin = computed(() => {
+    const req = this.focus();
+    if (!req || req.lat == null || req.lng == null) return null;
+    return this.project(req.lat, req.lng);
+  });
+
+  readonly teamPins = computed(() => {
+    const ids = new Set(this.matches().map((row) => row.resource_id));
+    return this.resources()
+      .filter((team) => ids.has(team.id))
+      .map((team) => ({ id: team.id, ...this.project(team.lat, team.lng), kind: team.kind }));
+  });
+
+  private project(lat: number, lng: number): { x: number; y: number } {
+    const req = this.focus();
+    const teams = this.matches()
+      .map((row) => this.resources().find((team) => team.id === row.resource_id))
+      .filter((team): team is StoredResource => !!team);
+    const lats = [req?.lat, ...teams.map((team) => team.lat)].filter((n): n is number => n != null);
+    const lngs = [req?.lng, ...teams.map((team) => team.lng)].filter((n): n is number => n != null);
+    const minLa = Math.min(...lats);
+    const maxLa = Math.max(...lats);
+    const minLo = Math.min(...lngs);
+    const maxLo = Math.max(...lngs);
+    const padLa = Math.max(0.02, (maxLa - minLa) * 0.25);
+    const padLo = Math.max(0.02, (maxLo - minLo) * 0.25);
+    return {
+      x: 28 + ((lng - (minLo - padLo)) / Math.max(1e-6, maxLo + padLo - (minLo - padLo))) * 544,
+      y: 24 + (1 - (lat - (minLa - padLa)) / Math.max(1e-6, maxLa + padLa - (minLa - padLa))) * 200,
+    };
   }
 
   minutesAgo(team: StoredResource): number {

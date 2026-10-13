@@ -33,7 +33,17 @@ class Guard:
     def circuit_open(self) -> bool:
         if self.failures < self.fail_limit:
             return False
-        return (self.now() - self.opened_at) < self.open_for
+        if (self.now() - self.opened_at) < self.open_for:
+            return True
+        self.failures = 0
+        self.open_for = 30.0
+        return False
+
+    def trip(self, seconds: float) -> None:
+        """Open the circuit now, and keep it open for `seconds` (the daily reset)."""
+        self.failures = self.fail_limit
+        self.opened_at = self.now()
+        self.open_for = max(1.0, seconds)
 
     def wait_turn(self) -> None:
         with self._lock:

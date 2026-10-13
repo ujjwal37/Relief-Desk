@@ -20,7 +20,11 @@ h1 { margin:8px 0 8px; font-size:34px; line-height:1.1; font-weight:800; letter-
 .sos-title { font-size:36px; font-weight:800; line-height:1.1; letter-spacing:-.02em; }
 .sos-sub { font-size:17px; line-height:1.4; opacity:.95; }
 .sos-foot { margin-top:8px; font-size:17px; font-weight:700; }
-.coord { display:none; }
+.coord { display:flex; flex-direction:column; justify-content:flex-end; gap:6px; position:relative; min-height:160px; padding:20px; border-radius:24px;
+  background:var(--surface); border:2px solid var(--border); box-shadow:var(--e1); }
+.chip { position:absolute; top:20px; right:20px; border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:13px; font-weight:700; color:var(--text-2); }
+.coord-title { font-size:28px; font-weight:800; letter-spacing:-.02em; }
+.coord-sub { font-size:16px; color:var(--text-2); }
 .rows { margin-top:12px; display:grid; gap:8px; }
 .row { display:flex; justify-content:space-between; align-items:center; min-height:64px; padding:0 20px; border-radius:16px; background:var(--surface);
   border:1px solid var(--border); font-size:18px; font-weight:600; box-shadow:var(--e1); }
@@ -38,12 +42,8 @@ h1 { margin:8px 0 8px; font-size:34px; line-height:1.1; font-weight:800; letter-
   .sos, .coord { min-height:220px; }
   .sos-title { font-size:30px; } .sos-icon { width:48px; height:48px; border-radius:14px; svg { width:28px; height:28px; } }
   .sos-icon, .badge { top:20px; } .sos-icon { left:20px; } .badge { right:20px; }
-  .coord { display:flex; flex-direction:column; justify-content:flex-end; gap:6px; position:relative; min-height:200px; padding:20px; border-radius:24px;
-    background:var(--surface); border:2px solid var(--border); box-shadow:var(--e1); }
+  .coord { min-height:200px; }
   .coord:hover { border-color:var(--brand); }
-  .chip { position:absolute; top:20px; right:20px; border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:13px; font-weight:700; color:var(--text-2); }
-  .coord-title { font-size:28px; font-weight:800; letter-spacing:-.02em; }
-  .coord-sub { font-size:16px; color:var(--text-2); }
   .rows { display:none; }
   .judge-desk { display:inline-block; margin-top:16px; padding:12px 0; color:var(--brand); font-weight:700; font-size:16px; text-decoration:underline; }
   .trust { display:flex; flex-wrap:wrap; gap:8px 24px; list-style:none; margin:8px 0 0; padding:0; font-size:15px; color:var(--text-2); li::before { content:'\2713 '; color:var(--brand); font-weight:800; } }

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { resetDemo } from './reset-demo';
 
 const SHOTS = '/opt/cursor/artifacts/screenshots';
 const AUTH = { Authorization: 'Bearer demo-coordinator-token' };
@@ -13,6 +14,10 @@ const VIEWPORTS = [
 
 test.beforeAll(() => {
   fs.mkdirSync(SHOTS, { recursive: true });
+});
+
+test.beforeEach(async ({ request }) => {
+  await resetDemo(request);
 });
 
 test.afterAll(async ({ request }) => {
