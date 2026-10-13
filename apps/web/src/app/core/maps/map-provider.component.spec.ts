@@ -17,6 +17,35 @@ class HostComponent {
   pins = [{ id: 'INC-001', lat: 26.85, lng: 80.92, title: 'Ward 7' }];
 }
 
+@Component({
+  standalone: true,
+  imports: [MapProviderComponent],
+  template: `<rd-map-provider [pins]="pins" [legs]="legs"></rd-map-provider>`,
+})
+class BareHostComponent {
+  pins = [
+    { id: 'case', lat: 10.3, lng: 76.2, title: 'Case' },
+    { id: 'team', lat: 10.31, lng: 76.21, title: 'Boat' },
+    { id: 'other', lat: 10.4, lng: 76.3, title: 'Kitchen' },
+  ];
+  legs = [
+    {
+      id: 'team',
+      from: { lat: 10.3, lng: 76.2 },
+      to: { lat: 10.31, lng: 76.21 },
+      title: '1 km',
+      suggested: true,
+    },
+    {
+      id: 'other',
+      from: { lat: 10.3, lng: 76.2 },
+      to: { lat: 10.4, lng: 76.3 },
+      title: '12 km',
+      suggested: false,
+    },
+  ];
+}
+
 describe('MapProviderComponent', () => {
   let api: jasmine.SpyObj<ApiClientService>;
 
@@ -136,6 +165,25 @@ describe('MapProviderComponent', () => {
     expect(extended.some((point) => point.lat === 9.43)).toBeTrue();
     expect(extended.some((point) => point.lat === 11.6)).toBeTrue();
     delete (window as unknown as { google?: unknown }).google;
+  });
+
+  it('draws the schematic itself when the page does not supply an svg', async () => {
+    api.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [BareHostComponent],
+      providers: [{ provide: ApiClientService, useValue: api }],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(BareHostComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const lines = [...fixture.nativeElement.querySelectorAll('.rd-schematic line')] as SVGLineElement[];
+    expect(lines.length).toBe(2);
+    expect(lines[0].getAttribute('stroke')).toBe('#0b6e4f');
+    expect(lines[1].getAttribute('stroke')).toBe('#5c6570');
+    expect(fixture.nativeElement.textContent).toContain('1 km');
+    expect(fixture.nativeElement.querySelector('svg:not(.rd-schematic)')).toBeNull();
   });
 
   it('keeps the SVG fallback when the browser is offline', async () => {

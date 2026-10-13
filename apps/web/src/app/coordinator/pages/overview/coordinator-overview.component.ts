@@ -33,18 +33,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     <div class="stage">
       <app-coordinator-alerts [listOnly]="true" />
       <section class="map-stage" [attr.aria-label]="'ui.map' | rdTranslate">
-        <rd-map-provider [pins]="mapPins()" [center]="mapCenter()" [fitAll]="true">
-          <svg viewBox="0 0 600 480" class="schematic" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
-            <rect width="600" height="480" fill="var(--map-bg)"/>
-            @for (p of pins(); track p.id) {
-              @if (p.kind === 'team') {
-                <rect [attr.x]="p.x - 9" [attr.y]="p.y - 9" width="18" height="18" rx="4" [attr.fill]="p.fill" stroke="var(--surface)" stroke-width="2"/>
-              } @else {
-                <circle [attr.cx]="p.x" [attr.cy]="p.y" r="9" [attr.fill]="p.fill" stroke="var(--surface)" stroke-width="2"/>
-              }
-            }
-          </svg>
-        </rd-map-provider>
+        <rd-map-provider [pins]="mapPins()" [center]="mapCenter()" [fitAll]="true"></rd-map-provider>
         <div class="chips" role="group" [attr.aria-label]="'coord.mapFilters' | rdTranslate">
           @for (band of urgencyChips; track band) {
             <button type="button" [class.on]="urgency() === band" [attr.aria-pressed]="urgency() === band" (click)="urgency.set(urgency() === band ? 'all' : band)">
@@ -91,7 +80,6 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
       border: 1px solid var(--border); background: var(--map-bg);
     }
     rd-map-provider { position: absolute; inset: 0; display: block; }
-    .schematic { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
     .chips {
       position: absolute; z-index: 2; top: 10px; left: 10px; max-width: 68%;
       display: flex; flex-wrap: wrap; gap: 6px; pointer-events: auto;
@@ -172,23 +160,12 @@ export class CoordinatorOverviewComponent implements OnInit {
     };
   });
 
-  readonly pins = computed(() => {
-    const { cases, teams } = this.placed();
-    const frame = this.frame([
-      ...cases.map((row) => ({ lat: row.lat, lng: row.lng })),
-      ...teams.map((row) => ({ lat: row.lat, lng: row.lng })),
-    ]);
-    return this.spread([
-      ...teams.map((row) => ({ id: row.id, kind: 'team' as const, team: row.kind, band: '' as const, fill: this.fillKind(row.kind), ...this.project(row.lat, row.lng, frame) })),
-      ...cases.map((row) => ({ id: row.id, kind: 'req' as const, team: '' as const, band: row.band, fill: this.fillBand(row.band), ...this.project(row.lat, row.lng, frame) })),
-    ]);
-  });
   readonly legendBands = computed(() => {
-    const present = new Set(this.pins().filter((pin) => pin.kind === 'req').map((pin) => pin.band));
+    const present = new Set(this.placed().cases.map((row) => row.band));
     return (['critical', 'high', 'medium', 'low'] as const).filter((band) => present.has(band));
   });
   readonly legendKinds = computed(() => {
-    const present = new Set(this.pins().filter((pin) => pin.kind === 'team').map((pin) => pin.team));
+    const present = new Set(this.placed().teams.map((row) => row.kind));
     return (['boat', 'medical', 'food', 'shelter'] as const).filter((kind) => present.has(kind));
   });
 
@@ -210,47 +187,5 @@ export class CoordinatorOverviewComponent implements OnInit {
 
   fillKind(kind: string): string {
     return ({ boat: 'var(--brand)', medical: 'var(--sev-crit)', food: 'var(--sev-high)', shelter: 'var(--ok)' } as Record<string, string>)[kind] || 'var(--brand)';
-  }
-
-  private fillBand(band: string): string {
-    return ({ critical: 'var(--sev-crit)', high: 'var(--sev-high)', medium: 'var(--sev-med)', low: 'var(--sev-low)' } as Record<string, string>)[band] || 'var(--sev-med)';
-  }
-  private frame(points: { lat: number; lng: number }[]): { minLa: number; maxLa: number; minLo: number; maxLo: number } {
-    if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
-    const lats = points.map((point) => point.lat);
-    const lngs = points.map((point) => point.lng);
-    const minLa = Math.min(...lats);
-    const maxLa = Math.max(...lats);
-    const minLo = Math.min(...lngs);
-    const maxLo = Math.max(...lngs);
-    return {
-      minLa: minLa - Math.max(0.02, (maxLa - minLa) * 0.15),
-      maxLa: maxLa + Math.max(0.02, (maxLa - minLa) * 0.15),
-      minLo: minLo - Math.max(0.02, (maxLo - minLo) * 0.15),
-      maxLo: maxLo + Math.max(0.02, (maxLo - minLo) * 0.15),
-    };
-  }
-  /** Keep pins that share a ward from drawing on top of each other. */
-  private spread<T extends { x: number; y: number }>(pins: T[]): T[] {
-    const placed: { x: number; y: number }[] = [];
-    return pins.map((pin) => {
-      let x = pin.x;
-      let y = pin.y;
-      for (let n = 0; n < 16 && placed.some((other) => Math.hypot(other.x - x, other.y - y) < 18); n++) {
-        const turn = n * 2.399;
-        const radius = 18 + n * 4;
-        x = Math.min(584, Math.max(16, pin.x + Math.cos(turn) * radius));
-        y = Math.min(464, Math.max(16, pin.y + Math.sin(turn) * radius));
-      }
-      placed.push({ x, y });
-      return { ...pin, x, y };
-    });
-  }
-
-  private project(lat: number, lng: number, frame: { minLa: number; maxLa: number; minLo: number; maxLo: number }): { x: number; y: number } {
-    return {
-      x: 36 + ((lng - frame.minLo) / Math.max(1e-6, frame.maxLo - frame.minLo)) * 528,
-      y: 48 + (1 - (lat - frame.minLa) / Math.max(1e-6, frame.maxLa - frame.minLa)) * 384,
-    };
   }
 }

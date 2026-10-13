@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { ApiClientService, MatchProposal, StoredRequest, StoredResource } from '@rd/shared';
+import { MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { CoordinatorTeamsComponent } from './coordinator-teams.component';
 
@@ -89,12 +91,27 @@ describe('CoordinatorTeamsComponent', () => {
       eta_minutes: 3,
     } as MatchProposal]);
     fixture.detectChanges();
-    const line = fixture.nativeElement.querySelector('.team-map line') as SVGLineElement | null;
+    expect(cmp.teamPins().map((pin) => pin.id).sort()).toEqual(['INC-1', 'b1', 'd1', 'm1']);
+    const lats = cmp.teamPins().map((pin) => pin.lat);
+    expect(Math.max(...lats)).toBe(12);
+    expect(Math.min(...lats)).toBe(10.3);
+    const legs = cmp.teamLegs();
+    expect(legs.length).toBe(1);
+    expect(legs[0].suggested).toBeTrue();
+    expect(legs[0].title).toContain('1.11 km · about 3 min');
+    expect(legs[0].from).toEqual({ lat: 10.3, lng: 76.2 });
+    expect(legs[0].to.lat).toBe(10.31);
+    const provider = fixture.debugElement.query(By.css('rd-map-provider')).componentInstance as MapProviderComponent;
+    expect(provider.pins.length).toBe(4);
+    expect(provider.legs.length).toBe(1);
+    expect(provider.legs[0].suggested).toBeTrue();
+    expect(provider.fitAll).toBeTrue();
+    expect(provider.focusToken).toBe(cmp.focusToken());
+    expect(fixture.nativeElement.querySelector('.team-map > svg')).toBeNull();
+    fixture.detectChanges();
+    const line = fixture.nativeElement.querySelector('rd-map-provider .rd-schematic line') as SVGLineElement | null;
     expect(line).not.toBeNull();
-    expect(cmp.teamPins().length).toBe(3);
-    const ys = cmp.teamPins().map((pin) => pin.y);
-    expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(40);
-    expect(fixture.nativeElement.querySelector('.team-map')?.textContent).toContain('1.11 km · about 3 min');
+    expect(line?.getAttribute('stroke')).toBe('#0b6e4f');
   });
 
   it('opens seats, history, and the location action', () => {

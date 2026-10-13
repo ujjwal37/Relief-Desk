@@ -26,7 +26,8 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   await expect(page.locator('.nums')).toContainText(/Dispatched/);
   await expect(page.locator('.nums')).toContainText(/Teams/);
   await expect(page.locator('rd-map-provider')).toHaveCount(1);
-  await expect(page.locator('.schematic circle, .rd-google-map')).not.toHaveCount(0);
+  await expect(page.locator('.map-stage .rd-schematic circle, .map-stage .rd-google-map')).not.toHaveCount(0);
+  await expect(page.locator('.map-stage svg:not(.rd-schematic)')).toHaveCount(0);
   await expect(page.locator('.omap')).toHaveCount(0);
   await expect(page.locator('.map-stage .chips button').first()).toBeVisible();
   const alerts = page.getByRole('heading', { name: 'Alerts' });
@@ -40,8 +41,13 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   await page.getByRole('link', { name: 'Teams', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Teams' })).toBeVisible();
   await expect(page.getByText(/Stale \d/)).toHaveCount(0);
-  await expect(page.locator('.team-map')).toBeVisible();
-  expect(await page.locator('.team-map rect[rx]').count()).toBeGreaterThan(2);
+  await expect(page.locator('.team-map rd-map-provider')).toBeVisible();
+  const google = await page.locator('.team-map .rd-google-map').count();
+  if (google) {
+    expect(google).toBe(1);
+  } else {
+    expect(await page.locator('.team-map .rd-schematic circle').count()).toBeGreaterThan(2);
+  }
   const legs = await page.locator('.list .leg').allTextContents();
   expect(legs.length).toBeGreaterThan(2);
   for (const leg of legs) expect(leg).not.toContain('No nearby team');

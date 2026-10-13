@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { CoordinatorCommandComponent } from './coordinator-command.component';
 import { ApiClientService, StoredRequest, MatchProposal, StoredResource, UrgencyWeights } from '@rd/shared';
+import { MapProviderComponent } from '../../../core/maps/map-provider.component';
 
 describe('CoordinatorCommandComponent', () => {
   let component: CoordinatorCommandComponent;
@@ -433,6 +435,12 @@ describe('CoordinatorCommandComponent', () => {
     expect(pins.find((pin) => pin.id === 'res_boat_02')?.suggested).toBeTrue();
     expect(pins.find((pin) => pin.id === 'res_shelter')?.dim).toBeTrue();
     expect(component.focusLegs().map((leg) => leg.label)).toEqual(['1.2 km · about 4 min']);
+    expect(component.mapLegs().map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
+    expect(component.mapLegs()[0].suggested).toBeTrue();
+    const provider = fixture.debugElement.query(By.css('rd-map-provider')).componentInstance as MapProviderComponent;
+    expect(provider.legs.map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
+    expect(provider.legs[0].suggested).toBeTrue();
+    expect(provider.fitAll).toBeFalse();
     const frame = component.mapFrame();
     expect(frame.minLa).toBeLessThan(26.85);
     expect(frame.maxLa).toBeGreaterThan(26.852);

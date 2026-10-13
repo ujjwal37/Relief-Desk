@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterContentInit,
   AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -12,6 +13,7 @@ import {
   Output,
   ViewChild,
   inject,
+  signal,
 } from '@angular/core';
 import { panIfMoved } from './map-center';
 import { MapProviderService } from './map-provider.service';
@@ -40,24 +42,42 @@ export interface MapLeg {
       <div #canvas class="rd-google-map" role="application" aria-label="Relief map"></div>
     } @else {
       <ng-content></ng-content>
+      @if (builtin()) {
+        <svg class="rd-schematic" viewBox="0 0 600 480" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Relief map">
+          <rect width="600" height="480" fill="var(--map-bg, #efeae0)"/>
+          @for (leg of schematicLegs(); track leg.id) {
+            <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#0b6e4f' : '#5c6570'" [attr.stroke-width]="leg.suggested ? 4 : 2" stroke-linecap="round"/>
+            @if (leg.title) {
+              <text class="rd-leg" [attr.x]="leg.lx" [attr.y]="leg.ly" text-anchor="middle">{{ leg.title }}</text>
+            }
+          }
+          @for (pin of schematicPins(); track pin.id) {
+            <circle [attr.cx]="pin.x" [attr.cy]="pin.y" r="8" [attr.fill]="pin.onLeg ? '#0b6e4f' : '#1c2430'" stroke="#fff" stroke-width="2"/>
+          }
+        </svg>
+      }
     }
   `,
   styles: [`
     :host { display: block; width: 100%; height: 100%; min-height: 250px; position: relative; }
-    .rd-google-map { width: 100%; height: 100%; min-height: 250px; }
+    .rd-google-map, .rd-schematic { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 250px; display: block; }
+    .rd-leg { font-size: 13px; font-weight: 700; fill: #1c2430; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy {
+export class MapProviderComponent implements AfterContentInit, AfterViewInit, OnChanges, OnDestroy {
   private maps = inject(MapProviderService);
   private cdr = inject(ChangeDetectorRef);
+  private host = inject(ElementRef<HTMLElement>);
+  /** Shown when Google Maps is off and the page did not supply its own schematic. */
+  readonly builtin = signal(false);
 
   @Input() pins: MapPin[] = [];
   @Input() legs: MapLeg[] = [];
   @Input() center: { lat: number; lng: number } = { lat: 10.50, lng: 76.30 };
   /** Bump this to pan again even when the centre numbers did not change. */
   @Input() focusToken = 0;
-  /** Fit every pin when there is no case-to-team line. Lines still win when present. */
+  /** Frame every pin and every line. When false, an open case's lines frame the map. */
   @Input() fitAll = false;
   @Output() pinSelect = new EventEmitter<string>();
 
@@ -70,9 +90,14 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   private lastCenter: { lat: number; lng: number } | null = null;
   private lastToken = 0;
 
+  ngAfterContentInit(): void {
+    this.refreshBuiltin();
+  }
+
   ngAfterViewInit(): void {
     this.maps.decide().then((mode) => {
       this.mode = mode;
+      this.refreshBuiltin();
       this.cdr.detectChanges();
       if (mode === 'google') {
         this.draw();
@@ -102,8 +127,74 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   private onOffline = (): void => {
     this.mode = 'svg';
     this.map = null;
+    this.refreshBuiltin();
     this.cdr.markForCheck();
   };
+
+  /** A page schematic (Cases) wins. Otherwise this provider draws pins and legs. */
+  private refreshBuiltin(): void {
+    if (this.mode === 'google') {
+      this.builtin.set(false);
+      return;
+    }
+    const foreign = [...this.host.nativeElement.querySelectorAll('svg')].some(
+      (node) => !node.classList.contains('rd-schematic'),
+    );
+    this.builtin.set(!foreign);
+  }
+
+  schematicPins(): { id: string; x: number; y: number; onLeg: boolean }[] {
+    const frame = this.schematicFrame();
+    const suggested = new Set(this.legs.filter((leg) => leg.suggested).map((leg) => `${leg.to.lat},${leg.to.lng}`));
+    return this.pins.map((pin) => ({
+      id: pin.id,
+      ...this.toSvg(pin.lat, pin.lng, frame),
+      onLeg: suggested.has(`${pin.lat},${pin.lng}`),
+    }));
+  }
+
+  schematicLegs(): { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; title: string; suggested: boolean }[] {
+    const frame = this.schematicFrame();
+    return this.legs.map((leg) => {
+      const from = this.toSvg(leg.from.lat, leg.from.lng, frame);
+      const to = this.toSvg(leg.to.lat, leg.to.lng, frame);
+      return {
+        id: leg.id,
+        x1: from.x,
+        y1: from.y,
+        x2: to.x,
+        y2: to.y,
+        lx: (from.x + to.x) / 2,
+        ly: (from.y + to.y) / 2 - 8,
+        title: leg.title,
+        suggested: !!leg.suggested,
+      };
+    });
+  }
+
+  private schematicFrame(): { minLa: number; maxLa: number; minLo: number; maxLo: number } {
+    const points = [
+      ...this.pins.map((pin) => ({ lat: pin.lat, lng: pin.lng })),
+      ...this.legs.flatMap((leg) => [leg.from, leg.to]),
+    ];
+    if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
+    const lats = points.map((point) => point.lat);
+    const lngs = points.map((point) => point.lng);
+    const minLa = Math.min(...lats);
+    const maxLa = Math.max(...lats);
+    const minLo = Math.min(...lngs);
+    const maxLo = Math.max(...lngs);
+    const padLa = Math.max(0.02, (maxLa - minLa) * 0.2);
+    const padLo = Math.max(0.02, (maxLo - minLo) * 0.2);
+    return { minLa: minLa - padLa, maxLa: maxLa + padLa, minLo: minLo - padLo, maxLo: maxLo + padLo };
+  }
+
+  private toSvg(lat: number, lng: number, frame: { minLa: number; maxLa: number; minLo: number; maxLo: number }): { x: number; y: number } {
+    return {
+      x: 28 + ((lng - frame.minLo) / Math.max(1e-6, frame.maxLo - frame.minLo)) * 544,
+      y: 28 + (1 - (lat - frame.minLa) / Math.max(1e-6, frame.maxLa - frame.minLa)) * 424,
+    };
+  }
 
   private draw(): void {
     const el = this.canvas?.nativeElement;
@@ -164,13 +255,17 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
     }
   }
 
-  /** Lines frame the open case. Otherwise an overview map frames every pin. */
+  /** A full pin set wins when asked. Otherwise lines frame the open case. */
   private fitView(maps: GoogleMapsNs): void {
+    if (this.fitAll && (this.pins.length || this.legs.length)) {
+      this.fitPins(maps);
+      return;
+    }
     if (this.legs.length) {
       this.fitToLegs(maps);
       return;
     }
-    if (this.fitAll) this.fitPins(maps);
+    if (this.pins.length) this.fitPins(maps);
   }
 
   /** When a case is open, keep the case pin and its candidate teams in view. */
@@ -188,11 +283,15 @@ export class MapProviderComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   private fitPins(maps: GoogleMapsNs): void {
-    if (!this.map?.fitBounds || !this.pins.length || !maps.LatLngBounds) return;
+    const points = [
+      ...this.pins.map((pin) => ({ lat: pin.lat, lng: pin.lng })),
+      ...this.legs.flatMap((leg) => [leg.from, leg.to]),
+    ];
+    if (!this.map?.fitBounds || !points.length || !maps.LatLngBounds) return;
     const bounds = new maps.LatLngBounds();
-    for (const pin of this.pins) bounds.extend({ lat: pin.lat, lng: pin.lng });
-    if (this.pins.length === 1) {
-      const pin = this.pins[0];
+    for (const point of points) bounds.extend(point);
+    if (points.length === 1) {
+      const pin = points[0];
       bounds.extend({ lat: pin.lat + 0.02, lng: pin.lng + 0.02 });
       bounds.extend({ lat: pin.lat - 0.02, lng: pin.lng - 0.02 });
     }

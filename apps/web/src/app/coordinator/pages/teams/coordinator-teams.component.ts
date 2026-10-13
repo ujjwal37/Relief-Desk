@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, StoredRequest, StoredResource } from '@rd/shared';
+import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 
 const AREAS: Record<string, string> = {
@@ -36,7 +37,7 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): num
 @Component({
   selector: 'app-coordinator-teams',
   standalone: true,
-  imports: [CommonModule, RouterLink, RdTranslatePipe],
+  imports: [CommonModule, RouterLink, RdTranslatePipe, MapProviderComponent],
   templateUrl: './coordinator-teams.component.html',
   styleUrl: './coordinator-teams.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,6 +54,8 @@ export class CoordinatorTeamsComponent implements OnInit {
   readonly openId = signal<string | null>(null);
   readonly now = signal(Date.now());
   readonly notice = signal('');
+  /** Bumped when the open case changes so Google pans even if the centre is unchanged. */
+  readonly focusToken = signal(0);
 
   readonly counts = computed(() => {
     const rows = this.resources();
@@ -81,6 +84,16 @@ export class CoordinatorTeamsComponent implements OnInit {
       return a.name.localeCompare(b.name);
     });
   });
+
+  constructor() {
+    let seen = '';
+    effect(() => {
+      const id = this.ui.selectedCaseId();
+      if (id === seen) return;
+      seen = id;
+      untracked(() => this.focusToken.update((n) => n + 1));
+    });
+  }
 
   ngOnInit(): void {
     this.api.getResources().subscribe({
@@ -154,59 +167,46 @@ export class CoordinatorTeamsComponent implements OnInit {
     return `${km} km · ${eta}`;
   }
 
-  /** Schematic lines from the open case to the teams the matcher suggested. */
-  readonly mapLegs = computed(() => {
+  /** Every team, plus the open case, in real coordinates. */
+  readonly teamPins = computed<MapPin[]>(() => {
+    const pins: MapPin[] = this.resources().map((team) => ({
+      id: team.id,
+      lat: team.lat,
+      lng: team.lng,
+      title: team.name,
+    }));
+    const req = this.focus();
+    if (req?.lat != null && req.lng != null) {
+      pins.unshift({ id: req.id, lat: req.lat, lng: req.lng, title: req.place_text || req.id });
+    }
+    return pins;
+  });
+
+  /** Lines from the open case to the teams the matcher suggested. The first is the suggested team. */
+  readonly teamLegs = computed<MapLeg[]>(() => {
     const req = this.focus();
     if (!req || req.lat == null || req.lng == null) return [];
     const suggested = this.matches()[0]?.resource_id;
-    const legs: { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; label: string; suggested: boolean }[] = [];
-    const origin = this.project(req.lat, req.lng);
+    const legs: MapLeg[] = [];
     for (const prop of this.matches()) {
       const team = this.resources().find((row) => row.id === prop.resource_id);
       if (!team) continue;
-      const at = this.project(team.lat, team.lng);
       legs.push({
         id: prop.resource_id,
-        x1: origin.x,
-        y1: origin.y,
-        x2: at.x,
-        y2: at.y,
-        lx: (origin.x + at.x) / 2,
-        ly: (origin.y + at.y) / 2 - 6,
-        label: this.leg(team),
+        from: { lat: req.lat, lng: req.lng },
+        to: { lat: team.lat, lng: team.lng },
+        title: this.leg(team),
         suggested: prop.resource_id === suggested,
       });
     }
     return legs;
   });
 
-  readonly casePin = computed(() => {
+  readonly mapCenter = computed(() => {
     const req = this.focus();
-    if (!req || req.lat == null || req.lng == null) return null;
-    return this.project(req.lat, req.lng);
+    if (req?.lat != null && req.lng != null) return { lat: req.lat, lng: req.lng };
+    return { lat: 9.47, lng: 76.39 };
   });
-
-  readonly teamPins = computed(() => this.resources().map((team) => ({
-    id: team.id,
-    ...this.project(team.lat, team.lng),
-    kind: team.kind,
-  })));
-
-  private project(lat: number, lng: number): { x: number; y: number } {
-    const req = this.focus();
-    const lats = [req?.lat, ...this.resources().map((team) => team.lat)].filter((n): n is number => n != null);
-    const lngs = [req?.lng, ...this.resources().map((team) => team.lng)].filter((n): n is number => n != null);
-    const minLa = Math.min(...lats);
-    const maxLa = Math.max(...lats);
-    const minLo = Math.min(...lngs);
-    const maxLo = Math.max(...lngs);
-    const padLa = Math.max(0.02, (maxLa - minLa) * 0.25);
-    const padLo = Math.max(0.02, (maxLo - minLo) * 0.25);
-    return {
-      x: 28 + ((lng - (minLo - padLo)) / Math.max(1e-6, maxLo + padLo - (minLo - padLo))) * 544,
-      y: 24 + (1 - (lat - (minLa - padLa)) / Math.max(1e-6, maxLa + padLa - (minLa - padLa))) * 200,
-    };
-  }
 
   minutesAgo(team: StoredResource): number {
     this.now();
