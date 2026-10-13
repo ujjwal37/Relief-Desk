@@ -69,6 +69,7 @@
                 @if (analysedLabel(req.id)) { <span class="sr-only">{{ analysedLabel(req.id) }}</span> }
               </button>
               <div class="hooks">
+                <button type="button" class="trace-chip" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
                 @if ((req.merged_count || 1) > 1) {
                   <app-merged-chip [count]="req.merged_count || 1" [requestId]="req.id" [mobile]="narrow()" (undo)="splitCluster(req.id)" />
                 }

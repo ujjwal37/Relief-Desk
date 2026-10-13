@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, computed, effect, inject, input, output, signal } from '@angular/core';
 import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
 import { testProviderWord } from './provider-label';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
@@ -20,7 +20,7 @@ const NAMES: Record<string, string> = {
   styleUrl: './agent-trace-drawer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AgentTraceDrawerComponent implements AfterViewInit {
+export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   private readonly lang = inject(LanguageService);
   private readonly host = inject(ElementRef<HTMLElement>);
   readonly request = input.required<StoredRequest>();
@@ -28,6 +28,15 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
   readonly closed = output<void>();
   readonly retry = output<void>();
   readonly expanded = signal<string | null>(null);
+  private poll: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    effect(() => {
+      const loading = this.runState() === 'loading';
+      this.stopPoll();
+      if (loading) this.poll = setInterval(() => this.retry.emit(), 1000);
+    });
+  }
 
   readonly steps = computed(() => {
     this.lang.currentLang();
@@ -64,10 +73,14 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
         return this.lang.translate('flow.badgeTest');
       }
     }
-    if (this.steps().some((step) => step.provider === 'gemini' && step.status === 'done')) {
+    if (this.steps().some((step) => {
+      const source = String(step.provider || '').toLowerCase();
+      return (source === 'gemini' || source === 'llm') && step.status === 'done';
+    })) {
       return this.lang.translate('flow.badgeGemini');
     }
-    if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') {
+    const src = String(req.ai?.provider || req.ai_source || '').toLowerCase();
+    if (src === 'gemini' || src === 'llm') {
       return this.lang.translate('flow.badgeGemini');
     }
     return this.lang.translate('flow.badgeRules');
@@ -124,6 +137,10 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
     this.expanded.update((current) => (current === agent ? null : agent));
   }
 
+  ngOnDestroy(): void {
+    this.stopPoll();
+  }
+
   ngAfterViewInit(): void {
     queueMicrotask(() => {
       const close = this.host.nativeElement.querySelector('.x') as HTMLElement | null;
@@ -155,12 +172,23 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
     }
   }
 
+  private stopPoll(): void {
+    if (this.poll) {
+      clearInterval(this.poll);
+      this.poll = null;
+    }
+  }
+
   private rulesCount(): number {
     return this.steps().filter((step) => step.badge === 'rules').length;
   }
 
   private visible(step: TraceStepView): boolean {
-    if (this.runState() === 'failed' && step.status === 'waiting') return false;
+    const listed = this.steps();
+    const failedAt = listed.findIndex((row) => row.status === 'error');
+    if (failedAt >= 0) {
+      return listed.findIndex((row) => row.agent === step.agent) <= failedAt;
+    }
     return true;
   }
 
@@ -190,6 +218,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
       raw: output,
       note,
       sentence: this.sentence(agent, raw),
+      linkId: agent === 'Dedupe' ? this.dupId(raw) : null,
       badge,
       hasDetails: !!(input || prompt || tools.length || output || (model && latencyMs) || note),
     };
@@ -198,7 +227,9 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
   private stepBadge(raw?: NonNullable<StoredRequest['trace']>[number]): 'gemini' | 'rules' | 'test' {
     const test = testProviderWord(raw?.provider, raw?.vendor, (key) => this.lang.translate(key));
     if (test) return 'test';
-    if (raw?.provider === 'gemini' && raw?.status !== 'fallback' && raw?.status !== 'error') return 'gemini';
+    const source = String(raw?.provider || '').toLowerCase();
+    const ok = raw?.status !== 'fallback' && raw?.status !== 'error';
+    if (ok && (source === 'gemini' || source === 'llm')) return 'gemini';
     return 'rules';
   }
 
@@ -213,8 +244,11 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
       return cap(t('flow.sentIntake').replace('{need}', need).replace('{people}', people));
     }
     if (agent === 'Dedupe') {
-      const id = String(parsed['id'] || req.possible_duplicate?.target_id || '');
-      if (id) return cap(t('flow.sentDedupeHit').replace('{id}', id));
+      const id = this.dupId(raw);
+      if (id) {
+        const mins = String(parsed['minutes'] || req.possible_duplicate?.minutes || '4');
+        return cap(t('flow.sentDedupeHit').replace('{id}', id).replace('{n}', mins));
+      }
       return cap(t('flow.sentDedupeClear'));
     }
     if (agent === 'Triage') {
@@ -230,6 +264,11 @@ export class AgentTraceDrawerComponent implements AfterViewInit {
       return cap(t('flow.sentMatch').replace('{team}', team).replace('{km}', km).replace('{capability}', capab).replace('{seats}', seats));
     }
     return cap(t('flow.sentExplain'));
+  }
+
+  private dupId(raw?: NonNullable<StoredRequest['trace']>[number]): string {
+    const parsed = this.parse(raw?.output);
+    return String(parsed['id'] || this.request().possible_duplicate?.target_id || '');
   }
 
   private parse(output: unknown): Record<string, string> {

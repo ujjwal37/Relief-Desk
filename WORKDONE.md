@@ -1211,3 +1211,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs`. `npx ng build web --configuration=development`. Screenshots at 1366 of default, duplicate, Hindi, and How it decided.
 - Notes / risks / not done: Duplicate review still also appears when the stored case has `possible_duplicate` and no `dedupe_decision`, because the list API does not persist that field. `.env` was not changed.
 - Next (suggested task id): none
+
+### 2026-10-14 02:05 IST — Cursor
+- What changed: How it decided now follows the ux11 drawer spec. 440px right drawer (92vh sheet under 700px), Esc/scrim/close, focus trap back to the trigger. Opens from the queue card and from More details. 5 sentence steps, dedupe + urgency side by side, Gemini/Rules/Test model badges only, empty fields hidden, Details one-at-a-time, emerald human note. Loading polls every 1 s. Failed hides later steps and shows Retry. Fallback steps use an amber retry icon. Dedupe ids are links. Removed ux.legend, ux.badgeRecordedShort, and ux.inParallel.
+- Files: apps/web/src/app/coordinator/agents/{agent-trace-drawer,trace-step}.component.{html,ts,scss}, apps/web/src/app/coordinator/pages/command/coordinator-command.component.html, libs/shared/src/lib/i18n/{en,hi,hinglish,ml}.json, WORKDONE.md
+- How verified: `node scripts/check-i18n.mjs`. `npx ng build web --configuration=development`. Screenshots at 1366 of the default drawer, fallback, and Hindi.
+- Notes / risks / not done: Front-end only. Seed traces are often Rules, so the default live case may also show the fallback banner. No e2e or unit suite this pass. `.env` was not changed.
+- Next (suggested task id): none

@@ -19,6 +19,7 @@
 
     @if (runState() === 'failed') {
       <p class="banner fail">{{ 'flow.failed' | rdTranslate }}</p>
+      <button type="button" class="retry-run" (click)="retry.emit()">{{ 'ux.retry' | rdTranslate }}</button>
     }
     @if (runState() === 'fallback') {
       <p class="banner warn">{{ fallbackText() }}</p>

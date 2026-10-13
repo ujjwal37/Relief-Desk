@@ -15,6 +15,7 @@ export interface TraceStepView {
   raw: string | null;
   note: string | null;
   sentence?: string;
+  linkId?: string | null;
   badge?: 'gemini' | 'rules' | 'test';
   hasDetails?: boolean;
 }
@@ -60,6 +61,18 @@ export class TraceStepComponent {
 
   sentence(): string {
     return this.step().sentence || '';
+  }
+  beforeLink(): string {
+    const id = this.step().linkId || '';
+    const text = this.sentence();
+    const at = text.indexOf(id);
+    return at >= 0 ? text.slice(0, at) : text;
+  }
+  afterLink(): string {
+    const id = this.step().linkId || '';
+    const text = this.sentence();
+    const at = text.indexOf(id);
+    return at >= 0 ? text.slice(at + id.length) : '';
   }
 
   showDetails(): boolean {
