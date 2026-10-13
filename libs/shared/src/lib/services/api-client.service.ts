@@ -8,6 +8,7 @@ import {
   ChatTurnResponse,
   UrgencyWeights,
   DedupeDecision,
+  RecentReport,
   StoredRequest,
   StoredResource,
   MatchProposal,
@@ -130,6 +131,11 @@ export class ApiClientService {
 
   getMapsConfig(): Observable<{ enabled: boolean; apiKey: string | null }> {
     return this.http.get<{ enabled: boolean; apiKey: string | null }>('/api/config/maps');
+  }
+
+  /** Citizen reports from the last 15 minutes, newest first. */
+  getRecentReports(minutes = 15): Observable<RecentReport[]> {
+    return this.http.get<RecentReport[]>(`/api/recent-reports?minutes=${minutes}`, this.getAuthHeaders());
   }
 
   getRequests(sort = 'urgency', packId?: string, updatedSince?: string): Observable<StoredRequest[]> {

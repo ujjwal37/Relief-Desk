@@ -142,9 +142,11 @@ describe('CoordinatorCommandComponent', () => {
       'planAssist',
       'resetDemo',
       'loadFullScenario',
+      'getRecentReports',
     ]);
 
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
+    apiClientSpy.getRecentReports.and.returnValue(of([]));
     apiClientSpy.getAssistProposals.and.returnValue(of({ proposals: [], shortages: [] }));
     apiClientSpy.planAssist.and.returnValue(of({ proposals: [], shortages: [] }));
     apiClientSpy.resetDemo.and.returnValue(of({ seed: 'small', incidents: 2 }));
@@ -340,7 +342,10 @@ describe('CoordinatorCommandComponent', () => {
     component.applyQueue([live], true);
     expect(component.requests().some((row) => row.id === 'INC-LIVE')).toBeTrue();
     expect(component.freshIds().has('INC-LIVE')).toBeTrue();
+    expect(component.flashIds().has('INC-LIVE')).toBeTrue();
     expect(component.selectedRequestId()).toBe('INC-001');
+    component.openReported('INC-LIVE');
+    expect(component.selectedRequestId()).toBe('INC-LIVE');
   });
 
   it('shows Gemini or Offline fallback on the AI reading', () => {

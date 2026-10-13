@@ -252,6 +252,13 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     storage_service.save_request(req_obj, actor="intake_pipeline")
     if raw_report.request_id is None:
         raw_report.request_id = req_id
+    raw_report.case_id = raw_report.request_id
+    raw_report.joined_existing = raw_report.case_id != req_id
+    raw_report.incident_type = req_obj.type.value
+    raw_report.place_text = req_obj.place_text
+    raw_report.ward_id = req_obj.ward_id
+    summary = (machine_summary or citizen_text or report_text or "").strip().replace("\n", " ")
+    raw_report.summary = summary[:160]
 
     # Handle cluster if duplicate
     if decision.decision.value == "duplicate" and decision.target_request_id:

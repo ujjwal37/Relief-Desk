@@ -48,6 +48,10 @@ test('a phone report reaches the desk, merges, and comes back approved', async (
 
   const row = desk.getByRole('option', { name: new RegExp(tag) });
   await expect(row).toBeVisible({ timeout: 20_000 });
+  const strip = desk.getByTestId('just-reported');
+  await expect(strip).toBeVisible();
+  await expect(strip).toContainText(tag);
+  await expect(strip.getByText('New', { exact: true }).first()).toBeVisible();
   await row.click();
   await shot(desk, 'phone-desk-arrived');
 

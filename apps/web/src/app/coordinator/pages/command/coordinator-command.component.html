@@ -6,6 +6,8 @@
     </div>
   }
 
+  <app-just-reported (picked)="openReported($event)" />
+
   @if (narrow()) {
     <div class="pane-toggle" role="tablist" [attr.aria-label]="'ui.main' | rdTranslate">
       <button type="button" role="tab" [class.on]="mobilePane() === 'cases'" [attr.aria-selected]="mobilePane() === 'cases'" (click)="setPane('cases')">{{ 'ui.cases' | rdTranslate }}</button>
@@ -36,7 +38,9 @@
       <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {
           @if (isAnalysing(req)) {
-            <app-analysing-card [request]="req" />
+            <div class="arriving" [class.row-flash]="flashIds().has(req.id)" [attr.data-case-id]="req.id">
+              <app-analysing-card [request]="req" />
+            </div>
           } @else if (isAnalysisFailed(req)) {
             <article class="case-wrap failed">
               <p class="title">{{ getTranslationText(req) || ('ux.notRecorded' | rdTranslate) }}</p>
@@ -44,7 +48,7 @@
               <button type="button" class="trace-chip" (click)="retryAnalysis()">{{ 'ux.retry' | rdTranslate }}</button>
             </article>
           } @else {
-            <div class="case-wrap" [class.sel]="selectedRequestId() === req.id" [attr.data-case-id]="req.id">
+            <div class="case-wrap" [class.sel]="selectedRequestId() === req.id" [class.row-flash]="flashIds().has(req.id)" [attr.data-case-id]="req.id">
               <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
                 <span class="row1">
                   <app-sev-chip [band]="bandOf(req.urgency_score)" />

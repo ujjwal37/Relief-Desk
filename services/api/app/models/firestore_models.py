@@ -38,6 +38,13 @@ class StoredReport(BaseModel):
     source_id: str = "anon"
     trust_level: str = "anonymous"  # "official" | "verified_volunteer" | "registered" | "anonymous"
     request_id: Optional[str] = None
+    # The case the desk should open. A merge points at the existing case.
+    case_id: Optional[str] = None
+    joined_existing: bool = False
+    incident_type: Optional[str] = None
+    summary: Optional[str] = None
+    place_text: Optional[str] = None
+    ward_id: Optional[str] = None
     status_token: Optional[str] = None
     flags: List[str] = Field(default_factory=list)
     synthetic: bool = True

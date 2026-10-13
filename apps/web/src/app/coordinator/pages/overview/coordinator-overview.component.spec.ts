@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { ApiClientService, LanguageService, MatchProposal, StoredRequest, StoredResource } from '@rd/shared';
 import { MapProviderComponent } from '../../../core/maps/map-provider.component';
@@ -22,8 +22,9 @@ describe('CoordinatorOverviewComponent map filters', () => {
   ];
 
   beforeEach(async () => {
-    const api = jasmine.createSpyObj('ApiClientService', ['getRequests', 'getResources', 'getAlerts', 'getRequestMatches']);
+    const api = jasmine.createSpyObj('ApiClientService', ['getRequests', 'getResources', 'getAlerts', 'getRequestMatches', 'getRecentReports']);
     api.getRequests.and.returnValue(of(cases));
+    api.getRecentReports.and.returnValue(of([]));
     api.getResources.and.returnValue(of(teams));
     api.getAlerts.and.returnValue(of([]));
     api.getRequestMatches.and.returnValue(of([]));
@@ -74,6 +75,14 @@ describe('CoordinatorOverviewComponent map filters', () => {
     expect(legend()).not.toContain('Medical');
     expect(provider().pins.find((pin) => pin.id === 'boat')?.vehicle).toBe('boat');
     expect(provider().pins.find((pin) => pin.id === 'now')?.tone).toBe('critical');
+  });
+
+  it('opens a just-reported case in the queue', () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate').and.resolveTo(true);
+    component.openReported('now');
+    expect(TestBed.inject(CoordUiService).selectedCaseId()).toBe('now');
+    expect(router.navigate).toHaveBeenCalledWith(['/coordinator/command'], { queryParams: { case: 'now' } });
   });
 
   it('fits the open case and its top teams when a case is selected', () => {

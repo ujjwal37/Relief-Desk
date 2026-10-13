@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -37,6 +37,52 @@ def _changed_since(req, updated_since: Optional[str]) -> bool:
     if got is None:
         return raw >= updated_since
     return got >= mark
+
+
+class RecentReportItem(BaseModel):
+    id: str
+    case_id: str
+    type: str
+    summary: str
+    ward_id: Optional[str] = None
+    place_text: Optional[str] = None
+    created_at: str
+    joined_existing: bool = False
+
+
+@router.get("/recent-reports", response_model=List[RecentReportItem], summary="Reports from the last few minutes")
+def recent_reports(
+    minutes: int = 15,
+    _coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
+    """Newest first. A merge still points at the case already in the queue."""
+    window = max(1, min(int(minutes or 15), 120))
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=window)
+    rows: List[RecentReportItem] = []
+    for report in storage_service.list_reports():
+        stamp = _parse_stamp(report.created_at)
+        if stamp is None or stamp < cutoff:
+            continue
+        case_id = report.case_id or report.request_id
+        if not case_id:
+            continue
+        summary = (report.summary or report.raw_text or "").strip().replace("\n", " ")
+        if len(summary) > 80:
+            summary = summary[:77].rstrip() + "…"
+        rows.append(
+            RecentReportItem(
+                id=report.id,
+                case_id=case_id,
+                type=report.incident_type or "other",
+                summary=summary,
+                ward_id=report.ward_id,
+                place_text=report.place_text,
+                created_at=report.created_at,
+                joined_existing=bool(report.joined_existing),
+            )
+        )
+    rows.sort(key=lambda row: row.created_at, reverse=True)
+    return rows[:20]
 
 
 class MergeRequestPayload(BaseModel):

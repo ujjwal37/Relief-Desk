@@ -244,6 +244,18 @@ export interface MatchProposal {
   overcommit_warning: boolean;
 }
 
+/** A citizen report from the last few minutes, for the desk's Just reported strip. */
+export interface RecentReport {
+  id: string;
+  case_id: string;
+  type: string;
+  summary: string;
+  ward_id: string | null;
+  place_text: string | null;
+  created_at: string;
+  joined_existing: boolean;
+}
+
 export interface StoredCluster {
   id: string;
   request_ids: string[];

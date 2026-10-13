@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, StoredRequest, StoredResource, urgencyBand } from '@rd/shared';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { legTitle, quoteFromProposal, teamTone } from '../../../core/maps/map-markers';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { CoordinatorAlertsComponent } from '../alerts/coordinator-alerts.component';
+import { JustReportedStripComponent } from '../../just-reported-strip.component';
 
 const DONE = new Set(['completed', 'resolved', 'closed']);
 const SENT = new Set(['approved', 'dispatched', 'in_progress']);
@@ -21,8 +22,9 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
 @Component({
   selector: 'app-coordinator-overview',
   standalone: true,
-  imports: [RouterLink, RdTranslatePipe, CoordinatorAlertsComponent, MapProviderComponent],
+  imports: [RouterLink, RdTranslatePipe, CoordinatorAlertsComponent, MapProviderComponent, JustReportedStripComponent],
   template: `
+    <app-just-reported (picked)="openReported($event)" />
     <section class="summary" aria-labelledby="overview-h">
       <h1 id="overview-h">{{ 'coord.overview' | rdTranslate }}</h1>
       <p>{{ 'coord.overviewLead' | rdTranslate }}</p>
@@ -116,6 +118,7 @@ export class CoordinatorOverviewComponent implements OnInit {
   private readonly api = inject(ApiClientService);
   private readonly lang = inject(LanguageService);
   private readonly ui = inject(CoordUiService);
+  private readonly router = inject(Router);
   readonly matches = signal<MatchProposal[]>([]);
 
   constructor() {
@@ -226,6 +229,12 @@ export class CoordinatorOverviewComponent implements OnInit {
     const present = new Set(this.placed().teams.map((row) => row.kind));
     return (['boat', 'medical', 'food', 'shelter'] as const).filter((kind) => present.has(kind));
   });
+
+  /** Open the case in the queue and pan the Cases map onto it. */
+  openReported(caseId: string): void {
+    this.ui.selectedCaseId.set(caseId);
+    void this.router.navigate(['/coordinator/command'], { queryParams: { case: caseId } });
+  }
 
   ngOnInit(): void {
     this.api.getRequests().subscribe({

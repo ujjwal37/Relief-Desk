@@ -20,6 +20,7 @@ import { AnalysingCardComponent } from '../../agents/analysing-card.component';
 import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
+import { JustReportedStripComponent } from '../../just-reported-strip.component';
 import { LIVE_CHANNEL } from '../../../core/live-report';
 import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
@@ -73,6 +74,7 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
     AssistBannerComponent,
     AssistPanelComponent,
     MergedChipComponent,
+    JustReportedStripComponent,
   ],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
@@ -160,6 +162,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private writingFilters = false;
   private filterSub: Subscription | null = null;
   readonly freshIds = signal<Set<string>>(new Set());
+  readonly flashIds = signal<Set<string>>(new Set());
+  private flashTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private queueWatermark = '';
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   readonly narrow = signal(false);
@@ -598,6 +602,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
     this.liveChannel?.close();
     if (this.analysedTimer) clearTimeout(this.analysedTimer);
+    for (const timer of this.flashTimers.values()) clearTimeout(timer);
+    this.flashTimers.clear();
   }
 
   private watchViewport(): void {
@@ -688,6 +694,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.noteFinished(previousStatus, next);
     const keep = this.selectedRequestId();
     this.requests.set(next);
+    if (previous.size) {
+      for (const row of next) {
+        if (!previous.has(row.id)) this.flashRow(row.id);
+      }
+    }
     this.freshIds.set(fresh);
     this.ui.lastRefresh.set(Date.now());
     const focus = this.focusRequestId;
@@ -911,6 +922,28 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (!Object.keys(left).length) this.analysedLive.set('');
       this.armAnalysed();
     }, wait + 30);
+  }
+
+  /** A Just reported chip: show that case in the queue and pan the map to it. */
+  openReported(caseId: string): void {
+    if (!this.filteredRequests().some((row) => row.id === caseId)) this.bandFilter.set('all');
+    this.selectRequest(caseId, true);
+    const reveal = (): void => document.querySelector(`[data-case-id="${caseId}"]`)?.scrollIntoView({ block: 'nearest' });
+    if (typeof queueMicrotask === 'function') queueMicrotask(reveal);
+  }
+
+  private flashRow(id: string): void {
+    const next = new Set(this.flashIds());
+    next.add(id);
+    this.flashIds.set(next);
+    const prev = this.flashTimers.get(id);
+    if (prev) clearTimeout(prev);
+    this.flashTimers.set(id, setTimeout(() => {
+      const left = new Set(this.flashIds());
+      left.delete(id);
+      this.flashIds.set(left);
+      this.flashTimers.delete(id);
+    }, 1400));
   }
 
   selectRequest(id: string, openSheet = false): void {
