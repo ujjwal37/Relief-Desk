@@ -187,9 +187,14 @@ class DedupeAgent:
         candidates: List[StoredRequest],
         new_lat: Optional[float] = None,
         new_lng: Optional[float] = None,
+        judge: bool = True,
     ) -> DedupeDecision:
-        """Evaluates whether the incoming report is a new request, duplicate, or fact update."""
-        live = self._ask_gemini(raw_text, new_req, candidates)
+        """Evaluates whether the incoming report is a new request, duplicate, or fact update.
+
+        judge=False is the report path: embeddings and rules decide inside the merge budget,
+        without waiting for a model slot.
+        """
+        live = self._ask_gemini(raw_text, new_req, candidates) if judge else None
         if live is not None and live.decision != DedupeDecisionType.DUPLICATE:
             return live
         if not candidates:

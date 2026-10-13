@@ -166,21 +166,31 @@ def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], 
     """One function call. Returns (filters or None, ai metadata). `call` is for tests."""
     from app.llm import client as llm
 
+    from app.llm.ai_queue import DESK
+
     c = llm.llm_client
     meta: Dict[str, Any] = {"provider": "fallback", "model": None, "latency_ms": 0, "tokens": None, "fallback_reason": None}
     from app.llm import antigravity as ag
 
+    key = c.cache_key("desk_query:" + system_prompt(), question.strip())
     if call is None and ag.antigravity_enabled():
         started = time.monotonic()
+        remembered = c._local_cache.get(key)
+        if remembered is not None:
+            meta.update(provider=ag.PROVIDER, model=ag.MODEL, latency_ms=int((time.monotonic() - started) * 1000))
+            return clean_filters(json.loads(remembered)), meta
         schema = json.dumps(FUNCTION["parameters"])
         try:
-            raw, tokens = ag.call_antigravity(
-                system_prompt(), f"Question: {question}\n\nReturn the search_cases arguments as one JSON object matching: {schema}")
+            # The coordinator is waiting on this answer, so it goes ahead of queued reports.
+            with c.guard.slots.slot(DESK):
+                raw, tokens = ag.call_antigravity(
+                    system_prompt(), f"Question: {question}\n\nReturn the search_cases arguments as one JSON object matching: {schema}")
             filters = clean_filters(json.loads(ag.extract_json(raw)))
         except Exception:
             meta["fallback_reason"] = "error"
             meta["latency_ms"] = int((time.monotonic() - started) * 1000)
             return None, meta
+        c._local_cache[key] = json.dumps(filters)
         meta.update(provider=ag.PROVIDER, model=ag.MODEL, tokens=tokens,
                     latency_ms=int((time.monotonic() - started) * 1000))
         return filters, meta
@@ -190,7 +200,6 @@ def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], 
     if c.guard.circuit_open():
         meta["fallback_reason"] = "circuit_open"
         return None, meta
-    key = c.cache_key("desk_query:" + system_prompt(), question.strip())
     cached = c.get_cached(key) if call is None else None
     if cached:
         try:
@@ -203,8 +212,10 @@ def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], 
     timeout_s = float(settings.GEMINI_TIMEOUT_S or 12.0)
     call = call or _call_function
     try:
-        fut = llm._GEMINI_POOL.submit(call, question, timeout_s)
-        args, tokens = fut.result(timeout=timeout_s)
+        with c.guard.slots.slot(DESK):
+            started = time.monotonic()
+            fut = llm._GEMINI_POOL.submit(call, question, timeout_s)
+            args, tokens = fut.result(timeout=timeout_s)
         c.guard.record_success()
     except Exception as exc:  # quota, timeout, SDK error: the rules answer instead
         meta["fallback_reason"] = c.note_failure(exc)

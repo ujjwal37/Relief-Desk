@@ -11,6 +11,7 @@ client = TestClient(app)
 
 HERO = "Gandhi school ke paas 5 log chat par hain, paani badh raha hai, 2 bache hain"
 PIN = {"lat": 26.852, "lng": 80.925}
+AUTH = {"Authorization": "Bearer demo-coordinator-token"}
 VOLATILE = {
     "id", "created_at", "updated_at", "report_ids", "merged_count", "merged_into", "cluster_id",
     "analysis", "analysis_status", "trace",
@@ -48,7 +49,6 @@ def test_chat_and_form_emit_byte_identical_request_json():
     assert chat_json == form_json
     assert chat_json.encode("utf-8") == form_json.encode("utf-8")
 
-    before = {req.id for req in storage_service.list_requests()}
     body = {
         "text": facts["summary"],
         "lang": "hinglish",
@@ -63,12 +63,15 @@ def test_chat_and_form_emit_byte_identical_request_json():
             "summary": facts["summary"],
         },
     }
-    chat_resp = client.post("/api/reports", json={**body, "channel": "text", "source_id": "contract_chat"})
-    form_resp = client.post("/api/reports", json={**body, "channel": "form", "source_id": "contract_form"})
-    assert chat_resp.status_code == 200
-    assert form_resp.status_code == 200
-
-    created = [req for req in storage_service.list_requests() if req.id not in before]
+    # Two identical reports would merge, and a merged report skips the model call.
+    # Each channel starts from the same freshly loaded desk instead.
+    created = []
+    for channel in ("text", "form"):
+        assert client.post("/api/demo/full", headers=AUTH).status_code == 200
+        before = {req.id for req in storage_service.list_requests()}
+        resp = client.post("/api/reports", json={**body, "channel": channel, "source_id": f"contract_{channel}"})
+        assert resp.status_code == 200
+        created.extend(req for req in storage_service.list_requests() if req.id not in before)
     assert len(created) == 2
     views = []
     for req in created:

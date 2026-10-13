@@ -41,7 +41,13 @@ def embed_texts(texts: List[str]) -> Optional[List[List[float]]]:
     except ImportError:
         return None
     try:
-        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        client = genai.Client(
+            api_key=settings.GEMINI_API_KEY,
+            http_options={
+                "timeout": int(float(settings.EMBED_TIMEOUT_S or 3.0) * 1000),
+                "retry_options": {"attempts": 1},
+            },
+        )
         result = client.models.embed_content(
             model=settings.GEMINI_EMBED_MODEL,
             contents=list(texts),

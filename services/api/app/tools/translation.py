@@ -61,9 +61,27 @@ class TranslationService:
             return "hinglish"
         return "en"
 
-    def translate_report(self, text: str) -> TranslationResult:
+    def from_model(self, text: str, text_en: str, text_hi: Optional[str], confidence: Optional[float]) -> TranslationResult:
+        """Keep the translation that came back inside the one intake reply, cached by text hash."""
+        clean_text = (text or "").strip()
+        hindi = (text_hi or "").strip() or clean_text
+        conf = float(confidence) if confidence is not None else 0.9
+        res = TranslationResult(
+            text_en=text_en.strip(),
+            text_hi=hindi,
+            translations={"en": text_en.strip(), "hi": hindi},
+            detected_language=self.detect_language(clean_text),
+            confidence=conf,
+            is_low_confidence=conf < 0.70,
+        )
+        if clean_text:
+            self._save_cache(hashlib.sha256(clean_text.encode("utf-8")).hexdigest(), res)
+        return res
+
+    def translate_report(self, text: str, allow_model: bool = True) -> TranslationResult:
         """Translates a free-text report into English and Hindi and scores confidence.
-        Translations are cached by hash so repeat inputs are instantaneous and zero-cost."""
+        Translations are cached by hash so repeat inputs are instantaneous and zero-cost.
+        The report path passes allow_model=False: its translation rides on the one intake call."""
         clean_text = text.strip()
         if not clean_text:
             return TranslationResult(
@@ -110,6 +128,9 @@ class TranslationService:
             )
             self._save_cache(cache_key, res)
             return res
+
+        if not allow_model:
+            return self._deterministic_fallback(clean_text, lang)
 
         # 3. If Gemini is enabled, execute live translation
         if llm_client.gemini_live():

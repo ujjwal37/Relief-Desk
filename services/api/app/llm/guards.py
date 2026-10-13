@@ -4,6 +4,8 @@ import threading
 import time
 from typing import Callable
 
+from app.llm.ai_queue import PrioritySlots
+
 PHONE = re.compile(r"(?<!\d)(?:\+91[\s-]?)?[6-9]\d{9}(?!\d)")
 EMAIL = re.compile(r"[\w.+-]+@[\w.-]+\.\w+")
 ADVICE = (
@@ -22,7 +24,7 @@ class Guard:
         self.gap = 60.0 / per_minute if per_minute else 0.0
         self._next = 0.0
         self._lock = threading.Lock()
-        self.semaphore = threading.Semaphore(max_in_flight)
+        self.slots = PrioritySlots(max_in_flight)
         self.fail_limit = fail_limit
         self.failures = 0
         self.opened_at = 0.0

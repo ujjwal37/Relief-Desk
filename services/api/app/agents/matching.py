@@ -45,8 +45,14 @@ class MatchProposal(BaseModel):
     wait_team_name: Optional[str] = None
 
 
-def _explain_together(request: StoredRequest, candidates: list) -> list:
-    """Each team's explanation is its own model call. They do not depend on each other."""
+def _explain_together(request: StoredRequest, candidates: list, use_model: bool = False) -> list:
+    """Team explanations come from the template by default.
+
+    Ranking runs on every case open and after every report, so a model call here would queue
+    behind intake on a slow model. use_model=True asks the Explainer for each team.
+    """
+    if not use_model:
+        return [explainer_agent.generate_template_fallback(request, res, breakdown) for res, breakdown, _ in candidates]
     if len(candidates) < 2:
         return [explainer_agent.explain(request, res, breakdown) for res, breakdown, _ in candidates]
     workers = min(4, len(candidates))

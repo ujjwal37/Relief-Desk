@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     GEMINI_ENABLED: bool = True
     GEMINI_DAILY_CALL_CAP: int = 2000
     GEMINI_TIMEOUT_S: float = 12.0
+    # Model calls that may run at once (Gemini or a local model). Extra calls wait in a
+    # priority queue, critical cases first. Set 1 for a local model that serves one call at a time.
+    AI_CONCURRENCY: int = 2
+    # Duplicate retrieval must answer inside the 5 s merge budget, or the lexical rules decide.
+    EMBED_TIMEOUT_S: float = 3.0
     # auto: call Gemini when a real key is set. replay: serve data/ai_cache.
     # fallback: never call the network. DEMO_MODE does not skip a real key.
     AI_MODE: str = "auto"

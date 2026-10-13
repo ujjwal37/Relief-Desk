@@ -75,7 +75,8 @@ class LLMClient:
         self._memory_cache: Dict[str, str] = {}
         self._memory_source: Dict[str, str] = {}
         self._memory_meta: Dict[str, Dict[str, Any]] = {}
-        self.guard = Guard()
+        self.guard = Guard(max_in_flight=settings.AI_CONCURRENCY)
+        self._local_cache: Dict[str, str] = {}
         self.cache_hits = 0
         self.cache_misses = 0
 
@@ -345,11 +346,23 @@ class LLMClient:
         return "error"
 
     def _via_antigravity(self, system_instruction, user_prompt, validator, started) -> str:
-        """Manual-testing provider. Not cached, so data/ai_cache stays Gemini API output only."""
+        """Manual-testing provider. Cached in memory only, so data/ai_cache stays Gemini API output only."""
         from app.llm import antigravity as ag
 
+        key = self.cache_key(system_instruction, user_prompt)
+        remembered = self._local_cache.get(key)
+        if remembered is not None:
+            self.cache_hits += 1
+            self._remember(AiCall(
+                provider=ag.PROVIDER,
+                model=ag.MODEL,
+                latency_ms=int((time.perf_counter() - started) * 1000),
+                cached=True,
+            ))
+            return remembered
         try:
-            raw, tokens = ag.call_antigravity(system_instruction, user_prompt)
+            with self.guard.slots.slot():
+                raw, tokens = ag.call_antigravity(system_instruction, user_prompt)
             try:
                 text = ag.extract_json(raw)
             except ValueError:
@@ -367,6 +380,7 @@ class LLMClient:
             cached=False,
         )
         self._remember(usage)
+        self._local_cache[key] = text
         return text
 
     def _call_with_retry(self, system_instruction: str, user_prompt: str) -> str:
@@ -398,17 +412,21 @@ class LLMClient:
     def _call_gemini(self, system_instruction: str, user_prompt: str, timeout_s: Optional[float] = None) -> str:
         """One live generate call. Raises on timeout, missing SDK, or an empty reply.
 
-        The call runs on a shared worker pool. On timeout we stop waiting and
-        release the concurrency slot at once; the worker thread is bounded by
-        the HTTP timeout on the client and is never joined by the request.
+        A full slot gate waits in priority order instead of failing, and the
+        timeout starts once this call holds a slot. The call runs on a shared
+        worker pool. On timeout we stop waiting and release the slot at once;
+        the worker thread is bounded by the HTTP timeout on the client.
         """
         from concurrent.futures import TimeoutError as FuturesTimeout
 
         timeout_s = float(timeout_s or settings.GEMINI_TIMEOUT_S or 12.0)
         self._last_tokens = None
-        self.guard.wait_turn()
-        if not self.guard.semaphore.acquire(timeout=timeout_s):
-            raise TimeoutError("Gemini concurrency limit")
+        self.guard.slots.acquire()
+        try:
+            self.guard.wait_turn()
+        except BaseException:
+            self.guard.slots.release()
+            raise
 
         def _run() -> str:
             client = self._make_genai_client(timeout_s)
@@ -430,7 +448,7 @@ class LLMClient:
                 future.cancel()
                 raise TimeoutError("Gemini timed out") from exc
         finally:
-            self.guard.semaphore.release()
+            self.guard.slots.release()
         if not text.strip():
             raise RuntimeError("Gemini returned an empty reply")
         return text

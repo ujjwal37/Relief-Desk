@@ -233,6 +233,17 @@ def mark_analysing(request_id: str) -> None:
     storage_service.save_request(req, actor="pipeline")
 
 
+def note_dedupe(req: StoredRequest) -> None:
+    """The duplicate check is decided before the model runs. Show it while Intake still works."""
+    if req.analysis_status != "analysing":
+        return
+    for step in req.trace or []:
+        if step.get("agent") == "Dedupe":
+            step["status"] = "complete"
+            step["output"] = _dedupe_output(req)[:400]
+            step["ts"] = datetime.now(timezone.utc).isoformat()
+
+
 def finish(request_id: str) -> None:
     """Run the deterministic tools. A live model is not required for the case to complete."""
     req = storage_service.get_request(request_id)

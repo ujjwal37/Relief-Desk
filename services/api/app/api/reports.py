@@ -1,12 +1,13 @@
 import logging
+import threading
 import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional, Tuple
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from app.agents.chat_intake import chat_intake_agent, ChatTurnResponse, ConfirmationCardData
 from app.agents.intake import extract_with_rules, intake_agent
+from app.llm.ai_queue import ai_priority, report_priority
 from app.agents.dedupe import dedupe_agent
 from app.tools.storage import storage_service
 from app.tools.scoring import scoring_engine
@@ -299,18 +300,6 @@ def _response_for(
     )
 
 
-def _parse_and_translate(report_text: str, lang: str):
-    """Intake parsing and translation only need the raw text, so they run together."""
-    def parse():
-        extracted = intake_agent.parse_report(report_text, language_hint=lang)
-        return extracted, llm_client.last_ai.model_copy()
-
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        parsed = pool.submit(parse)
-        translated = pool.submit(translation_service.translate_report, report_text)
-        return parsed.result(), translated.result()
-
-
 def _enrich_report(
     payload: ReportSubmitRequest,
     req_id: str,
@@ -321,15 +310,109 @@ def _enrich_report(
     transcript: Optional[str],
     asr_confidence: Optional[float],
 ) -> ReportSubmitResponse:
-    """Model parse, translation, dedupe, and ranking. Emits case.updated or case.merged when it saves."""
+    """Duplicate check first, from rules and embeddings, so a merge shows in seconds.
+
+    Then one model call (facts, type, translations) waits its turn in the priority queue
+    and refines the case. Each save emits case.updated or case.merged.
+    """
+    from app.agents.pipeline import finish
+
+    req_obj = storage_service.get_request(req_id)
+    raw_report = storage_service.get_report(report_id)
+    if req_obj is None or raw_report is None:
+        raise RuntimeError("report disappeared before enrichment")
+
+    ruled = extract_with_rules(report_text)
+    _apply_card(ruled, payload, report_text)
+    bounds = people_bounds(citizen_text or report_text)
+    if bounds and (req_obj.people_count or 0) < bounds[1]:
+        req_obj.people_count = bounds[1]
+    decision = _dedupe_and_rank(req_obj, ruled, payload.text or report_text)
+
+    if req_obj.merged_into:
+        # The case it joined already carries the facts. A merged report does not take a model slot.
+        target = storage_service.get_request(req_obj.merged_into)
+        if target is not None and target.analysis_status != "analysing":
+            finish(target.id)
+        finish(req_id)
+        stored = storage_service.get_request(req_id) or req_obj
+        return _response_for(raw_report, stored, decision.decision.value, flags, transcript, asr_confidence)
+
+    refined = _refine_with_model(payload, req_id, report_id, report_text, citizen_text, flags)
+    if refined is not None:
+        decision = refined
+    stored = storage_service.get_request(req_id) or req_obj
+    return _response_for(raw_report, stored, decision.decision.value, flags, transcript, asr_confidence)
+
+
+_dedupe_lock = threading.Lock()
+
+
+def _dedupe_and_rank(req_obj: StoredRequest, extracted: ExtractedRequest, words: str):
+    """No model call. A newer report joins an older case, never the other way round."""
+    from app.agents.matching import matching_agent
+    from app.agents.pipeline import note_dedupe
+
+    with _dedupe_lock:
+        mine = req_obj.created_at or ""
+        existing = [
+            row for row in storage_service.list_requests()
+            if row.id != req_obj.id and not row.merged_into and (row.created_at or "") <= mine
+        ]
+        candidates = dedupe_agent.prefilter_candidates(
+            new_req=extracted,
+            new_lat=req_obj.lat,
+            new_lng=req_obj.lng,
+            new_ward=req_obj.ward_id,
+            existing_requests=existing,
+        )
+        decision = dedupe_agent.evaluate(
+            words,
+            extracted,
+            candidates,
+            new_lat=req_obj.lat,
+            new_lng=req_obj.lng,
+            judge=False,
+        )
+        _apply_dedupe(req_obj, decision)
+        if not req_obj.merged_into and req_obj.analysis_status == "analysing":
+            note_dedupe(req_obj)
+            storage_service.save_request(req_obj, actor="dedupe_agent")
+    ranked = storage_service.get_request(req_obj.merged_into or req_obj.id) or req_obj
+    matching_agent.find_matches(ranked, top_n=3)
+    return decision
+
+
+def _translation_for(report_text: str, analysis: ExtractedRequest, ai_usage) -> TranslationResult:
+    text_en = getattr(analysis, "text_en", None)
+    if text_en and ai_usage.provider != "fallback":
+        return translation_service.from_model(
+            report_text, text_en, getattr(analysis, "text_hi", None), getattr(analysis, "translation_confidence", None),
+        )
+    return translation_service.translate_report(report_text, allow_model=False)
+
+
+def _refine_with_model(
+    payload: ReportSubmitRequest,
+    req_id: str,
+    report_id: str,
+    report_text: str,
+    citizen_text: str,
+    flags: List[str],
+):
+    """The one model call for this report. Critical cases get a slot first."""
     from app.agents.matching import matching_agent
     from app.agents.pipeline import finish
 
-    (extracted, ai_usage), trans_res = _parse_and_translate(report_text, payload.lang)
+    waiting = storage_service.get_request(req_id)
+    with ai_priority(report_priority(waiting.urgency_score if waiting else 0)):
+        analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
+        ai_usage = llm_client.last_ai.model_copy()
+    trans_res = _translation_for(report_text, analysis, ai_usage)
     ai_source = {"gemini": "gemini", "cache": "recorded", "antigravity-local": "antigravity-local"}.get(
         ai_usage.provider, "offline_fallback"
     )
-    machine_summary = _apply_card(extracted, payload, report_text)
+    machine_summary = _apply_card(analysis, payload, report_text)
     if trans_res.is_low_confidence and "low_translation_confidence" not in flags:
         flags.append("low_translation_confidence")
         flags.append("needs_human_review")
@@ -339,20 +422,28 @@ def _enrich_report(
     if req_obj is None or raw_report is None:
         raise RuntimeError("report disappeared before enrichment")
 
-    pin_lat, pin_lng, ward_id = _pin_for(payload, extracted, report_text)
-    req_obj.type = extracted.type
-    req_obj.place_text = extracted.place_text or req_obj.place_text
+    before = (req_obj.type, req_obj.place_text, req_obj.ward_id)
+    joined = (req_obj.merged_count or 1) > 1
+    pin_lat, pin_lng, ward_id = _pin_for(payload, analysis, report_text)
+    req_obj.type = analysis.type
+    req_obj.place_text = analysis.place_text or req_obj.place_text
     req_obj.ward_id = ward_id
     req_obj.lat = pin_lat
     req_obj.lng = pin_lng
-    req_obj.people_count = extracted.people.count or req_obj.people_count or 1
-    _remember_words(req_obj, raw_report.id, citizen_text or report_text)
+    counted = analysis.people.count or req_obj.people_count or 1
     bounds = people_bounds(citizen_text or report_text)
-    if bounds and (req_obj.people_count or 0) < bounds[1]:
-        req_obj.people_count = bounds[1]
-    req_obj.vulnerable = extracted.vulnerable
-    req_obj.hazard = extracted.hazard
-    req_obj.flags = list(flags)
+    if bounds and counted < bounds[1]:
+        counted = bounds[1]
+    # Reports that joined while the model worked may carry a larger count. Keep the largest.
+    req_obj.people_count = max(counted, req_obj.people_count or 1) if joined else counted
+    if joined:
+        for name, value in analysis.vulnerable.model_dump().items():
+            if value:
+                setattr(req_obj.vulnerable, name, True)
+    else:
+        req_obj.vulnerable = analysis.vulnerable
+    req_obj.hazard = analysis.hazard
+    req_obj.flags = sorted(set(req_obj.flags) | set(flags))
     req_obj.summary = machine_summary or req_obj.summary
     req_obj.ai_translation = trans_res.text_en
     req_obj.ai_source = ai_source
@@ -362,37 +453,25 @@ def _enrich_report(
     urgency_res = scoring_engine.compute_urgency(req_obj)
     req_obj.urgency_score = urgency_res.score
     req_obj.urgency_reason = urgency_res.reason
-
-    existing = [
-        row for row in storage_service.list_requests()
-        if row.id != req_id and not row.merged_into
-    ]
-    candidates = dedupe_agent.prefilter_candidates(
-        new_req=extracted,
-        new_lat=pin_lat,
-        new_lng=pin_lng,
-        new_ward=ward_id,
-        existing_requests=existing,
-    )
-    decision = dedupe_agent.evaluate(
-        payload.text or report_text,
-        extracted,
-        candidates,
-        new_lat=pin_lat,
-        new_lng=pin_lng,
-    )
     storage_service.save_request(req_obj, actor="intake_pipeline")
     _link_report(raw_report, req_obj, req_id, machine_summary, citizen_text or report_text)
-    _apply_dedupe(req_obj, decision)
 
-    ranked = storage_service.get_request(req_obj.merged_into or req_id) or req_obj
-    matching_agent.find_matches(ranked, top_n=3)
+    decision = None
+    moved = before != (req_obj.type, req_obj.place_text, req_obj.ward_id)
+    open_question = (
+        req_obj.merged_into
+        or joined
+        or req_obj.possible_duplicate is not None
+        or req_obj.dedupe_trace == "Kept separate."
+    )
+    if moved and not open_question:
+        decision = _dedupe_and_rank(req_obj, analysis, payload.text or report_text)
+    else:
+        matching_agent.find_matches(req_obj, top_n=3)
     finish(req_obj.merged_into or req_id)
-    # The new shell stays complete too, so a merged row does not sit on "analysing".
     if req_obj.merged_into and req_obj.merged_into != req_id:
         finish(req_id)
-    stored = storage_service.get_request(req_id) or req_obj
-    return _response_for(raw_report, stored, decision.decision.value, flags, transcript, asr_confidence)
+    return decision
 
 
 def _remember_words(req_obj: StoredRequest, report_id: str, text: str) -> None:

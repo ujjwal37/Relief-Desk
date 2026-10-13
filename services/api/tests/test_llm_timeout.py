@@ -39,7 +39,7 @@ def test_hanging_gemini_falls_back_within_15s(monkeypatch, tmp_path):
         return _HangingClient(release)
 
     monkeypatch.setattr(llm_client, "_make_genai_client", factory)
-    slots_before = llm_client.guard.semaphore._value
+    slots_before = llm_client.guard.slots.free
     started = time.perf_counter()
     try:
         llm_client.generate_content("system", f"ZXHANG{uuid.uuid4().hex[:8]} three people need a boat")
@@ -50,4 +50,4 @@ def test_hanging_gemini_falls_back_within_15s(monkeypatch, tmp_path):
     assert llm_client.last_ai.provider == "fallback"
     assert llm_client.last_ai.fallback_reason == "timeout"
     assert seen["timeout_s"] == 2.0
-    assert llm_client.guard.semaphore._value == slots_before
+    assert llm_client.guard.slots.free == slots_before

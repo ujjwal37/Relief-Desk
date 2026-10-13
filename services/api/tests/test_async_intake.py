@@ -27,10 +27,9 @@ def test_submit_returns_before_a_slow_model(monkeypatch):
         time.sleep(0.6)
         return extract_with_rules(raw_text)
 
-    def slow_translate(text):
+    def slow_translate(text, allow_model=True):
         with lock:
-            marks.append(("translate", time.perf_counter()))
-        time.sleep(0.6)
+            marks.append(("translate", allow_model))
         return TranslationResult(
             text_en=text,
             text_hi=text,
@@ -99,8 +98,9 @@ def test_submit_returns_before_a_slow_model(monkeypatch):
                 kinds.append(event["type"])
         assert "case.created" in kinds
         assert "case.updated" in kinds or "case.merged" in kinds
-        assert len(marks) == 2
-        assert abs(marks[0][1] - marks[1][1]) < 0.3
+        # One model call per report. The translation rides on it and never calls a model itself.
+        assert [name for name, _ in marks].count("parse") == 1
+        assert all(value is False for name, value in marks if name == "translate")
     finally:
         unsubscribe(box)
         wait_for_idle(3.0)
