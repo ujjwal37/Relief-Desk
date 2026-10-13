@@ -115,9 +115,10 @@ def shortages_for(email: str) -> List[dict]:
 
 
 def scoped_proposals(email: str) -> List[dict]:
+    """Only holds the dispatcher plan made. Ranked team candidates on each case are not assignments."""
     rows = []
     for match in storage_service.list_matches():
-        if match.state != MatchState.PROPOSED:
+        if match.state != MatchState.PROPOSED or not match.hold_expires_at:
             continue
         req = storage_service.get_request(match.request_id)
         if req is None or not visible_to(email, req.ward_id):
