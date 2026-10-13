@@ -124,7 +124,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .hint { margin: 0 0 8px; font-size: .8rem; opacity: .75; }
     .row { display: flex; gap: 8px; }
     .row input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border, rgba(0,0,0,.2)); background: var(--surface, #fff); color: inherit; font: inherit; }
-    .row .btn { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: var(--r2); border: 0; background: var(--brand); color: var(--on-brand); font: 700 15px inherit; cursor: pointer; }
+    .row .btn { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: var(--r2); border: 0; background: var(--brand); color: var(--on-brand); font: 600 14px inherit; cursor: pointer; }
     .row .btn:disabled { opacity: .55; cursor: default; }
     .reason { margin: 0 0 6px; font-size: 14px; } .reason strong { font-weight: 600; }
     .via { display: block; font-size: .75rem; opacity: .7; }
@@ -148,15 +148,15 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .page.has-thread .thread { flex: 1; overflow: auto; }
     .page .composer, .page .suggestions { flex: none; }
     .page .cards, .page .trace { max-height: none; }
-    .page .row input { min-height: 48px; border-radius: var(--r2); padding: 0 16px; font-size: 15px; }
+    .page .row input { min-height: 48px; border-radius: var(--r2); padding: 0 16px; font-size: 14px; }
     .page .suggestions { justify-content: center; }
-    .hello { margin: 0 0 16px; text-align: center; font-size: 28px; font-weight: 600; line-height: 1.25; }
+    .hello { margin: 0 0 16px; text-align: center; font-size: 32px; font-weight: 600; line-height: 1.25; }
     .empty { width: min(720px, 100%); margin: 0 auto 12px; }
     .examples { display: grid; gap: 10px; width: min(560px, 100%); margin: 0 auto; }
     .example { text-align: left; border: 1px solid var(--border); border-radius: var(--r3); padding: 12px 14px; background: var(--surface); color: inherit; cursor: pointer; font: inherit; box-shadow: var(--e1); }
     .example strong { display: block; margin: 2px 0; }
     .example p { margin: 0; color: var(--text-2); font-size: 14px; }
-    .tag { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
+    .tag { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
   `],
 })
 export class AskDeskComponent {

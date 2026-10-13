@@ -130,7 +130,7 @@
         <div class="legend" [attr.aria-label]="'ui.mapKey' | rdTranslate">
           @if (legendBands().length) {
             <span class="lg-grp"><b>{{ 'coord.legendCases' | rdTranslate }}</b>
-              <span class="grp"><i class="disc">{{ counts().critical || counts().total }}</i>{{ 'coord.legendGroup' | rdTranslate }}</span>
+              <span class="grp"><span class="disc">{{ counts().critical || counts().total }}</span>{{ 'coord.legendGroup' | rdTranslate }}</span>
               @for (band of legendBands(); track band) {
                 <span><i class="d" [class.crit]="band === 'critical'" [class.high]="band === 'high'" [class.med]="band === 'medium'" [class.low]="band === 'low'"></i>{{ ('coord.band.' + band) | rdTranslate }}</span>
               }

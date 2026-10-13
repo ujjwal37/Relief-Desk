@@ -11,7 +11,7 @@
 }
 .grab { width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 0 auto 8px; }
 header { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-h2 { margin: 0; font: 650 17px/22px var(--font-sans, var(--rd-font-family)); letter-spacing: -0.01em; }
+h2 { margin: 0; font: var(--t-title); letter-spacing: var(--t-title-ls); }
 .x {
   width: 36px; height: 36px; border: 0; background: transparent; color: var(--text);
   font-size: 18px; cursor: pointer; border-radius: 8px;

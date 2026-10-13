@@ -1218,3 +1218,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs`. `npx ng build web --configuration=development`. Screenshots at 1366 of the default drawer, fallback, and Hindi.
 - Notes / risks / not done: Front-end only. Seed traces are often Rules, so the default live case may also show the fallback banner. No e2e or unit suite this pass. `.env` was not changed.
 - Next (suggested task id): none
+
+### 2026-10-14 02:20 IST — Cursor
+- What changed: Type system pass. Geist stays; Inter is gone; Noto Devanagari/Tamil/Malayalam are fallbacks. `--t-*` / `--tp-*` tokens live in `styles.scss` and `theme.scss` and are mirrored in `_tokens.scss`. Body uses `--t-body`; the public shell uses `--tp-body`. Weights 650/700/800 snap to 600. Half-pixel coordinator sizes snap to the scale. Hindi wraps to two lines. Public report location Change sits on its own right-aligned line. Overview group disc is a 20px span so the count (including 9) renders.
+- Files: apps/web/src/{styles,theme}.scss, libs/shared/src/lib/tokens/_tokens.scss, apps/web/src/app/coordinator/pages/{command,overview} files, apps/web/src/app/coordinator/agents/{agent-trace-drawer,trace-step}.component.scss, apps/web/src/app/public/{pages/report,components/confirmation-card} files, other coordinator/public scss weight snaps, WORKDONE.md
+- How verified: `npx ng build web --configuration=development`. Screenshots at 1366 of Home, Overview group disc, public report location, and Home Hindi.
+- Notes / risks / not done: SVG map labels were left alone. Geist Mono is token-only (no woff2 in repo). No e2e or unit suite this pass. `.env` was not changed.
+- Next (suggested task id): none

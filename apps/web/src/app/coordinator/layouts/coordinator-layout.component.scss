@@ -34,16 +34,16 @@
 .live.off { background:var(--surface-2); color:var(--muted); }
 .live.off i { background:currentColor; }
 .menu-wrap { position:relative; }
-.avatar { width:32px; height:32px; border-radius:50%; border:0; background:var(--brand); color:var(--on-brand); font:700 13px var(--rd-font-family); cursor:pointer; }
+.avatar { width:32px; height:32px; border-radius:50%; border:0; background:var(--brand); color:var(--on-brand); font:600 13px var(--rd-font-family); cursor:pointer; }
 .menu-back { position:fixed; inset:0; z-index:90; }
 .menu { position:fixed; right:12px; top:56px; z-index:91; width:min(300px, calc(100vw - 24px)); background:var(--surface); border:1px solid var(--border); border-radius:var(--r3); box-shadow:var(--e3); padding:14px; max-height:calc(100vh - 80px); overflow:auto; }
 .who { margin:0 0 4px; font-size:13px; color:var(--text-2); word-break:break-all; }
-h3 { margin:12px 0 6px; font-size:13px; font-weight:700; color:var(--text-2); text-transform:none; }
+h3 { margin:12px 0 6px; font-size:13px; font-weight: 600; color:var(--text-2); text-transform:none; }
 .seg { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; background:var(--surface-2); padding:3px; border-radius:10px; }
 .seg.two { grid-template-columns:repeat(2,1fr); } .seg.stack { grid-template-columns:1fr; }
 .seg button { min-height:36px; border:0; border-radius:8px; background:transparent; color:var(--text); font:600 14px var(--rd-font-family); cursor:pointer; padding:0 8px; }
 .seg button.on { background:var(--surface); color:var(--brand); box-shadow:var(--e1); }
-.item { width:100%; text-align:left; min-height:44px; margin-top:8px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font:600 15px var(--rd-font-family); cursor:pointer; display:flex; align-items:center; gap:8px; text-decoration:none; box-sizing:border-box; }
+.item { width:100%; text-align:left; min-height:44px; margin-top:8px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font:600 14px var(--rd-font-family); cursor:pointer; display:flex; align-items:center; gap:8px; text-decoration:none; box-sizing:border-box; }
 .item.out { color:var(--sos-text); }
 .guide { flex:none; display:flex; align-items:center; gap:12px; margin:0; padding:6px 16px; background:var(--brand-tint); color:var(--text); font-size:12px; font-weight:600; line-height:1.35; }
 .guide button { margin-left:auto; min-height:36px; border:0; background:transparent; color:var(--brand); font:600 12px var(--rd-font-family); cursor:pointer; white-space:nowrap; }

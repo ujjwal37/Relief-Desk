@@ -73,7 +73,7 @@ import { JustReportedService } from './just-reported.service';
     .sum { display: block; font-weight: 600; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px; }
     .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; font-weight: 400; color: var(--muted); }
     .badge { background: var(--brand-tint); color: var(--brand); border-radius: var(--r2); padding: 0 6px; font-weight: 600; font-size: 12px; }
-    .merge { font-size: 12px; font-weight: 700; color: var(--text-2); }
+    .merge { font-size: 12px; font-weight: 600; color: var(--text-2); }
     .arrival-toast {
       position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 1600;
       max-width: min(560px, 92vw); background: var(--text); color: var(--bg);

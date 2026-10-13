@@ -27,7 +27,7 @@ import { ScenarioService } from '../services/scenario.service';
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text);
-      font-weight: 700;
+      font-weight: 600;
       padding: 8px 12px;
       cursor: pointer;
     }

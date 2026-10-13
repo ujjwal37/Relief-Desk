@@ -48,7 +48,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
           <button type="button" [class.on]="freeOnly()" [attr.aria-pressed]="freeOnly()" (click)="freeOnly.set(!freeOnly())">{{ 'coord.mapFree' | rdTranslate }}</button>
         </div>
         <div class="legend" [attr.aria-label]="'ui.mapKey' | rdTranslate">
-          <span class="grp"><i class="disc">{{ criticalCount() }}</i>{{ 'coord.legendGroup' | rdTranslate }}</span>
+          <span class="grp"><span class="disc">{{ criticalCount() }}</span>{{ 'coord.legendGroup' | rdTranslate }}</span>
           @for (band of legendBands(); track band) {
             <span><i class="d" [class.crit]="band === 'critical'" [class.high]="band === 'high'" [class.med]="band === 'medium'" [class.low]="band === 'low'"></i>{{ ('coord.band.' + band) | rdTranslate }}</span>
           }
@@ -63,7 +63,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
   styles: [`
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
     .summary { flex: none; padding: 12px 16px 8px; }
-    h1 { margin: 0; font: var(--t-page, 600 24px/30px var(--rd-font-family)); }
+    h1 { margin: 0; font: var(--t-page, 600 24px/30px var(--rd-font-family)); letter-spacing: var(--t-page-ls, -0.02em); }
     .lead-line { margin: 6px 0 8px; color: var(--text); font: 500 14px/20px var(--rd-font-family); }
     p { margin: 4px 0 8px; color: var(--text-2); font-size: 14px; }
     .stage {
@@ -85,20 +85,20 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     .chips button {
       min-height: 32px; padding: 0 10px; border-radius: 999px;
       border: 1px solid var(--border); background: var(--surface); color: var(--text);
-      font: 700 12px var(--rd-font-family); cursor: pointer;
+      font: 600 12px var(--rd-font-family); cursor: pointer;
     }
     .chips button.on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
     .legend {
       position: absolute; z-index: 2; bottom: 10px; left: 10px; display: flex; flex-wrap: wrap;
       max-width: 280px; gap: 6px 10px; background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 700;
+      border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 600;
     }
     .legend span { display: inline-flex; align-items: center; gap: 4px; }
     .d { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .crit { background: var(--sev-crit); } .high { background: var(--sev-high); }
     .med { background: var(--sev-med); } .low { background: var(--sev-low); }
     .sq { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-    .disc { width: 18px; height: 18px; border-radius: 50%; background: var(--sev-crit); color: #fff; display: grid; place-items: center; font: 600 11px/1 var(--rd-font-family); font-variant-numeric: tabular-nums; }
+    .disc { width: 20px; height: 20px; border-radius: 50%; background: var(--sev-crit); color: #fff; display: inline-grid; place-items: center; font: 600 12px/20px var(--rd-font-family); font-style: normal; font-variant-numeric: tabular-nums; overflow: visible; }
     @media (max-width: 900px) {
       :host { overflow: auto; }
       .stage { grid-template-columns: 1fr; overflow: visible; }

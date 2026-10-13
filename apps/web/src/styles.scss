@@ -21,6 +21,10 @@
   --t-panel: 600 18px/24px var(--font-sans);
   --t-page: 600 24px/30px var(--font-sans);
   --t-kpi: 600 32px/36px var(--font-sans);
+  --t-title-ls: -0.01em;
+  --t-panel-ls: -0.015em;
+  --t-page-ls: -0.02em;
+  --t-kpi-ls: -0.02em;
   --tp-meta: 400 14px/20px var(--font-sans);
   --tp-body: 400 16px/24px var(--font-sans);
   --tp-label: 600 16px/22px var(--font-sans);
@@ -52,6 +56,7 @@ html, body {
   background-color: var(--bg);
   color: var(--text);
   overflow-wrap: break-word;
+  font-variant-numeric: tabular-nums;
 }
 
 body, .antialiased {
@@ -101,4 +106,11 @@ ion-app, ion-content, ion-button, ion-item, ion-label {
   font-family: var(--font-sans) !important;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
+}
+
+.public-shell, app-public-layout, .report-view,
+app-public-layout ion-content, app-public-layout ion-button,
+app-public-layout ion-item, app-public-layout ion-label {
+  --ion-font-size: 16px;
+  font: var(--tp-body);
 }

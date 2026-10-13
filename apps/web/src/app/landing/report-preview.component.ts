@@ -22,7 +22,7 @@ import { CallPillComponent, RdTranslatePipe } from '@rd/shared';
     :host { display: block; min-height: 100vh; background: var(--bg); color: var(--text); }
     .stage { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 16px 24px; }
     header { width: min(100%, 840px); display: flex; justify-content: space-between; align-items: center; min-height: 56px; }
-    .brand { color: var(--text); font-weight: 800; font-size: 18px; text-decoration: none; }
+    .brand { color: var(--text); font-weight: 600; font-size: 18px; text-decoration: none; }
     .phone {
       width: 390px; max-width: 100%; height: min(844px, calc(100vh - 88px));
       border: 10px solid var(--text); border-radius: 36px; overflow: hidden; background: var(--surface); box-shadow: var(--e3);
