@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationCardData, LanguageService, RdTranslatePipe } from '@rd/shared';
+import { waitTipsFor } from '../../wait-tips';
 
 const INCIDENT_TYPES = ['rescue', 'food', 'medical', 'shelter', 'info', 'animal_attack', 'other'];
 const VULNERABLE_KEYS = ['child', 'elderly', 'disabled', 'pregnant', 'medical_need'] as const;
@@ -23,6 +24,7 @@ function cloneCard(card: ConfirmationCardData): ConfirmationCardData {
 })
 export class ConfirmationCardComponent {
   private lang = inject(LanguageService);
+  readonly waitTipsFor = waitTipsFor;
   @Input() busy = false;
   @Input() quote = '';
   @Input() showActions = true;

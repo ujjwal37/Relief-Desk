@@ -212,6 +212,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         event_id="event_kerala_flood",
         pack_id=payload.scenario_id,
         type=extracted.type,
+        picked_type=(payload.structured.incident_type if payload.structured else None),
         place_text=extracted.place_text or "Alappuzha",
         ward_id=ward_id,
         lat=pin_lat,

@@ -110,6 +110,44 @@ def test_demo_report_status():
     assert len(data["while_you_wait_tips"]) == 3
 
 
+def test_status_tips_follow_the_classified_type():
+    from app.tools.wait_tips import DOG, MEDICAL
+
+    medical = client.post(
+        "/api/reports",
+        json={
+            "text": "Father is diabetic near the school.",
+            "channel": "form",
+            "lang": "en",
+            "source_id": "tips_medical",
+            "scenario_id": "flood",
+            "structured": {"incident_type": "medical", "place_text": "Kainakary", "people_count": 1},
+        },
+    )
+    assert medical.status_code == 200
+    body = medical.json()
+    status_res = client.get(f"/api/reports/{body['report_id']}/status?token={body['status_token']}")
+    assert status_res.status_code == 200
+    assert status_res.json()["while_you_wait_tips"] == list(MEDICAL)
+
+    dog = client.post(
+        "/api/reports",
+        json={
+            "text": "Dog bite at Tips Yard 99, two people, keep this report distinct.",
+            "channel": "form",
+            "lang": "en",
+            "source_id": "tips_dog_distinct",
+            "location_pin": {"lat": 8.2, "lng": 77.9},
+            "scenario_id": "dog_attack",
+            "structured": {"incident_type": "animal_attack", "place_text": "Tips Yard 99", "people_count": 2},
+        },
+    )
+    assert dog.status_code == 200
+    body = dog.json()
+    status_res = client.get(f"/api/reports/{body['report_id']}/status?token={body['status_token']}")
+    assert status_res.json()["while_you_wait_tips"] == list(DOG)
+
+
 def test_submitted_report_status_lifecycle():
     """Submit a real report through POST /api/reports and follow its status lifecycle."""
     submit_res = client.post(

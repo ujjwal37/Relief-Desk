@@ -17,6 +17,7 @@
 .check { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 14px; border:1.5px solid var(--border); border-radius:999px; background:var(--surface); font-weight:600; font-size:16px; cursor:pointer; input { width:20px; height:20px; accent-color:var(--brand); } }
 .check.on { border-color:var(--brand); background:var(--brand-tint); }
 .safety { margin:12px 0 0; padding:10px 14px; border-radius:12px; background:var(--amber-tint); color:var(--amber); font-weight:600; font-size:15px; }
+.wait-tips { margin:12px 0 0; } .wait-tips h3 { margin:0 0 6px; font-size:16px; } .wait-tips ul { margin:0; padding-left:20px; font-size:15px; line-height:1.5; }
 .anon-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:16px; }
 .anon-toggle { flex:none; width:56px; height:32px; border-radius:999px; border:0; background:var(--border); position:relative; cursor:pointer; padding:0; &.on { background:var(--brand); } }
 .knob { position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:var(--surface); transition:transform 160ms var(--ease); box-shadow:var(--e1); } .on .knob { transform:translateX(24px); }

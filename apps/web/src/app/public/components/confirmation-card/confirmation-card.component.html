@@ -54,6 +54,13 @@
 
   <p class="safety" *ngIf="card.safety_line">{{ card.safety_line }}</p>
 
+  <section class="wait-tips">
+    <h3>{{ 'status.tips' | rdTranslate }}</h3>
+    <ul>
+      <li *ngFor="let tip of waitTipsFor(card.incident_type)">{{ tip | rdTranslate }}</li>
+    </ul>
+  </section>
+
   <div class="anon-row">
     <div>
       <strong>{{ 'confirm.anonymous' | rdTranslate }}</strong>

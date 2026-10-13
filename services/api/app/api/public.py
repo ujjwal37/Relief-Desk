@@ -15,6 +15,7 @@ from app.agents.matching import NEARBY_KM, eta_for_distance
 from app.models.firestore_models import MatchState, RequestStatus, StoredReport, StoredRequest
 from app.tools.storage import storage_service
 from app.tools.geo import grid_cell_id
+from app.tools.wait_tips import tips_for_request, wait_tips_for
 
 router = APIRouter(prefix="/api", tags=["Public Routes"])
 
@@ -276,11 +277,7 @@ def get_report_status(
                         description="You can confirm when help arrives",
                     ),
                 ],
-                while_you_wait_tips=[
-                    "Move to the highest safe place.",
-                    "Stay away from flood water and live wires.",
-                    "Keep your phone charged and stay reachable.",
-                ],
+                while_you_wait_tips=wait_tips_for("rescue"),
                 emergency_phone="112",
                 synthetic=True,
             )
@@ -370,11 +367,7 @@ def get_report_status(
         eta_display=eta_display,
         delivery_status="status.delivered" if fulfilled else ("status.onway" if approved else "status.waiting"),
         timeline=timeline,
-        while_you_wait_tips=[
-            "status.tipHigh",
-            "status.tipWires",
-            "status.tipPhone",
-        ],
+        while_you_wait_tips=tips_for_request(req),
         emergency_phone="112",
         synthetic=True,
     )

@@ -49,6 +49,8 @@ class StoredRequest(BaseModel):
     event_id: str = "event_kerala_flood"
     pack_id: str = "flood"
     type: IncidentType = IncidentType.OTHER
+    # The type the reporter picked. Tips use it until classification finishes.
+    picked_type: Optional[str] = None
     place_text: Optional[str] = None
     place_cell: Optional[str] = None
     ward_id: Optional[str] = None
