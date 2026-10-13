@@ -46,7 +46,7 @@ export class CoordinatorBenchmarkComponent implements OnInit {
   private lang = inject(LanguageService);
 
   readonly rows = signal<MetricRow[]>([]);
-  readonly cards = computed(() => this.rows().filter((row) => row.pct).slice(0, 2));
+  readonly cards = computed(() => this.rows().filter((row) => row.pct && row.relief).slice(0, 2));
   readonly tableRows = signal<{ caseId: string; aiUrgency: string; coordinator: string; aiTeam: string; result: string }[]>([]);
   readonly subtitle = signal('');
   readonly failures = signal<string[]>([]);

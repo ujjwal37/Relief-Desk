@@ -185,10 +185,8 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
 
   private visible(step: TraceStepView): boolean {
     const listed = this.steps();
-    const failedAt = listed.findIndex((row) => row.status === 'error');
-    if (failedAt >= 0) {
-      return listed.findIndex((row) => row.agent === step.agent) <= failedAt;
-    }
+    const failed = listed.some((row) => row.status === 'error');
+    if (failed) return step.status !== 'waiting';
     return true;
   }
 

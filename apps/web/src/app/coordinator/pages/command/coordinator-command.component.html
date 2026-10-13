@@ -33,7 +33,14 @@
       </div>
       <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {
-          @if (isAnalysisFailed(req)) {
+          @if (isCompleted(req) && bandFilter() === 'dispatched') {
+            <article class="case-wrap done">
+              <button type="button" role="option" class="case collapsed" [class.sel]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
+                <span class="title">{{ getTranslationText(req) }}</span>
+                <span class="id">{{ req.id }} · {{ 'coord.filterCompleted' | rdTranslate }}</span>
+              </button>
+            </article>
+          } @else if (isAnalysisFailed(req)) {
             <article class="case-wrap failed">
               <p class="title">{{ getTranslationText(req) || ('ux.notRecorded' | rdTranslate) }}</p>
               <app-agent-badge source="fallback" />
@@ -68,12 +75,11 @@
                 @if (isAnalysing(req)) { <span class="tag ai" data-testid="ai-analysing">{{ 'ux.aiAnalysing' | rdTranslate }}</span> }
                 @if (analysedLabel(req.id)) { <span class="sr-only">{{ analysedLabel(req.id) }}</span> }
               </button>
-              <div class="hooks">
-                <button type="button" class="trace-chip" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
-                @if ((req.merged_count || 1) > 1) {
+              @if ((req.merged_count || 1) > 1) {
+                <div class="hooks">
                   <app-merged-chip [count]="req.merged_count || 1" [requestId]="req.id" [mobile]="narrow()" (undo)="splitCluster(req.id)" />
-                }
-              </div>
+                </div>
+              }
             </div>
           }
         } @empty {
@@ -187,8 +193,14 @@
               @if (prop.wait_minutes) { <p class="warnline">{{ waitLabel(prop) }}</p> }
               @if (prop.capacity_remaining < (req.people_count || 1) || prop.overcommit_warning) { <p class="warnline">{{ 'coord.overcommit' | rdTranslate }}</p> }
             </div>
+            @if (!narrow()) {
+              <button type="button" class="how-link how-desk" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
+            }
           } @else {
             <div class="best send-card no-team"><p class="facts">{{ 'coord.noTeamNow' | rdTranslate }}</p></div>
+            @if (!narrow()) {
+              <button type="button" class="how-link how-desk" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
+            }
           }
 
           <button type="button" class="more-toggle" [attr.aria-expanded]="moreOpen()" (click)="moreOpen.set(!moreOpen())">
@@ -295,7 +307,9 @@
                 </div>
               }
             </div>
-            <button type="button" class="trace-chip" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
+            @if (narrow()) {
+              <button type="button" class="how-link how-phone" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
+            }
           </div>
         </div>
 

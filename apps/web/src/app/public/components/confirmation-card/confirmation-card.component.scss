@@ -8,9 +8,9 @@
 .nothing-sent { margin:0 0 14px; color:var(--text-2); font-size:16px; }
 .rows { background:var(--card); border:1px solid var(--border); border-radius:var(--r3); padding:4px 14px; box-shadow:var(--e1); }
 .kv { display:flex; align-items:center; gap:10px; min-height:56px; border-bottom:1px solid var(--border); &:last-child { border-bottom:0; } }
-.kv.loc { flex-wrap:wrap; }
-.kv.loc .v { flex:1 1 auto; white-space:normal; overflow:visible; text-overflow:unset; overflow-wrap:anywhere; }
-.kv.loc .edit-btn { flex:1 1 100%; margin-left:0; justify-content:flex-end; display:flex; }
+.kv.loc { flex-wrap:nowrap; }
+.kv.loc .v { flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.kv.loc .edit-btn { flex:none; margin-left:auto; }
 .k { flex:none; width:96px; font-size:16px; font-weight:600; color:var(--text-2); } .v { flex:1; min-width:0; font-weight:600; overflow-wrap:anywhere; }
 .type-chip, .urgency-chip { display:inline-block; background:var(--surface-2); border-radius:999px; padding:2px 12px; font-size:16px; font-weight: 600; text-transform:capitalize; } .urgency-chip { background:var(--sev-high-t); color:var(--sev-high); }
 .note { font-size:14px; color:var(--text-2); font-weight:500; }

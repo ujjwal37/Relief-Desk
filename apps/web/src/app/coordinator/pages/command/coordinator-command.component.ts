@@ -282,7 +282,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }
     const bf = this.bandFilter();
     if (bf === 'dispatched') {
-      list = list.filter((r) => this.isDispatched(r));
+      list = list.filter((r) => this.isDispatched(r) || this.isCompleted(r))
+        .sort((a, b) => Number(this.isCompleted(a)) - Number(this.isCompleted(b)));
     } else if (bf === 'completed') {
       list = list.filter((r) => this.isCompleted(r));
     } else {

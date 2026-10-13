@@ -1225,3 +1225,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `npx ng build web --configuration=development`. Screenshots at 1366 of Home, Overview group disc, public report location, and Home Hindi.
 - Notes / risks / not done: SVG map labels were left alone. Geist Mono is token-only (no woff2 in repo). No e2e or unit suite this pass. `.env` was not changed.
 - Next (suggested task id): none
+
+### 2026-10-14 02:55 IST — Cursor
+- What changed: Final UX handoff. How it decided is off queue cards — desktop link under Send, More details at 390. Public location Change stays on one line. Type tokens live only in `styles.scss`. Drawer failed steps list every finished step. Human note matches “Nothing is sent until you approve.” Accuracy table headers match the spec; empty metric cards are dropped. Overview and Accuracy sit on the wide nav. Teams counts use the shared Free/Busy/Not updated helper. Dispatched lists completed rows collapsed.
+- Files: apps/web/src/app/coordinator/pages/command/coordinator-command.component.{html,ts,scss}, apps/web/src/app/coordinator/layouts/coordinator-layout.component.html, apps/web/src/app/coordinator/agents/agent-trace-drawer.component.ts, apps/web/src/app/coordinator/pages/{teams,benchmark,overview} files, apps/web/src/app/public/{pages/report,components/confirmation-card} files, apps/web/src/theme.scss, libs/shared/src/lib/i18n/{en,hi,hinglish,ml}.json, WORKDONE.md
+- How verified: `node scripts/check-i18n.mjs`. `npx ng build web --configuration=development`. Screenshots at 1366 of Home, drawer, Overview, Teams, Accuracy, Home Hindi, dark, and public report at 390.
+- Notes / risks / not done: Front-end only. Seed counts (INC-008, 15/8/16) are API data and were not changed. Map-provider pins were not edited (handoff: no core/maps). TASKS.md has no UX handoff row. No e2e or unit suite this pass. `.env` was not changed.
+- Next (suggested task id): none

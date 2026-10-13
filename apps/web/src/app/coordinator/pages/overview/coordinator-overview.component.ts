@@ -103,7 +103,9 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
       :host { overflow: auto; }
       .stage { grid-template-columns: 1fr; overflow: visible; }
       .map-stage { min-height: 420px; }
-      .legend { max-width: calc(100% - 16px); padding: 4px 8px; font-size: 12px; }
+      .chips { height: auto; min-height: 44px; padding: 6px 8px; }
+      .legend { max-width: calc(100% - 16px); padding: 4px 8px; font-size: 12px; bottom: 8px; left: 8px; }
+      .disc { width: 18px; height: 18px; font: 600 12px/18px var(--rd-font-family); }
       app-coordinator-alerts { width: auto; height: auto; max-height: none; overflow: visible; }
     }
   `],

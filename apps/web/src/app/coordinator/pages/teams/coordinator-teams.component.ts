@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, StoredRequest, StoredResource, urgencyBand } from '@rd/shared';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { CHECKIN_LATE_MIN, haversineKm, legTitle, quoteFromProposal, teamTone, TravelQuote } from '../../../core/maps/map-markers';
-import { teamBucket } from '../../team-status';
+import { teamBucket, teamsFreeCounts } from '../../team-status';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { DeskStore } from '../../../core/desk-store';
 
@@ -75,12 +75,8 @@ export class CoordinatorTeamsComponent implements OnInit {
   }
 
   readonly counts = computed(() => {
-    const rows = this.resources();
-    return {
-      free: rows.filter((team) => this.bucket(team) === 'free').length,
-      busy: rows.filter((team) => this.bucket(team) === 'busy').length,
-      notUpdated: rows.filter((team) => this.bucket(team) === 'notUpdated').length,
-    };
+    const { free, busy, notUpdated } = teamsFreeCounts(this.resources(), this.now());
+    return { free, busy, notUpdated };
   });
 
   readonly filtered = computed(() => {
