@@ -1,6 +1,11 @@
 import { defineConfig } from '@playwright/test';
+import { API, API_PORT, WEB, WEB_PORT } from './e2e/ports';
 
-/** End-to-end checks for the synthetic Kerala demo. Uses the Chrome already on the machine. */
+/**
+ * End-to-end checks for the synthetic Kerala demo. Uses the Chrome already on the machine.
+ * Its own ports keep a live-AI dev server out of the run; LLM_PROVIDER is cleared so a local
+ * model in .env is not used either.
+ */
 export default defineConfig({
   testDir: 'e2e',
   timeout: 180_000,
@@ -10,22 +15,22 @@ export default defineConfig({
   retries: 0,
   reporter: [['list'], ['json', { outputFile: 'e2e/results.json' }]],
   use: {
-    baseURL: 'http://127.0.0.1:4200',
+    baseURL: WEB,
     channel: 'chrome',
     trace: 'retain-on-failure',
     screenshot: 'off',
   },
   webServer: [
     {
-      command: 'AI_MODE=fallback DEMO_SEED=full /tmp/rd-venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000',
+      command: `AI_MODE=fallback LLM_PROVIDER= DEMO_SEED=full /tmp/rd-venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port ${API_PORT}`,
       cwd: 'services/api',
-      url: 'http://127.0.0.1:8000/healthz',
+      url: `${API}/healthz`,
       reuseExistingServer: true,
       timeout: 60_000,
     },
     {
-      command: 'npx ng serve web --port 4200 --host 127.0.0.1',
-      url: 'http://127.0.0.1:4200',
+      command: `RD_API_TARGET=${API} npx ng serve web --port ${WEB_PORT} --host 127.0.0.1`,
+      url: WEB,
       reuseExistingServer: true,
       timeout: 180_000,
     },

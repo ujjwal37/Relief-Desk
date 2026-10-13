@@ -134,6 +134,10 @@ AI_MODE=auto
 
 A timeout, a 429, or invalid JSON after one repair retry uses the deterministic fallback and records `ai.fallback_reason`. CI mocks the client and does not call Gemini.
 
+Each report makes one model call: the same JSON reply carries the facts, the type, and the English and Hindi text. Calls wait in a priority queue, critical cases first and Ask the desk ahead of reports. `AI_CONCURRENCY` (default 2) is how many run at once; set it to 1 for a local model that serves one call at a time. A full queue does not fall back to rules. The case shows "AI analysing…" until its turn. Merges and possible duplicates are decided before that call, from embeddings or from local similarity and rules, so they show within seconds. Approve does not wait on the queue.
+
+`npx playwright test` starts its own API on port 8100 with `AI_MODE=fallback` and its own web server on 4300, so a dev server on 8000 or 4200 is never reused.
+
 ## Deploy
 
 There is no live Cloud Run URL in this repo. `deploy/cloudrun.md` is the recipe: a root `Dockerfile`, `GEMINI_API_KEY` injected from Secret Manager as an environment variable, and the note that case rows stay in process memory. Firestore is not the store this process writes.

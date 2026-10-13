@@ -128,7 +128,8 @@ test('a Hindi report uses Hindi labels, reaches the desk, and the status stays H
 
   await phone.locator('textarea').fill(hindi);
   await phone.getByRole('button', { name: 'भेजें', exact: true }).click();
-  await expect(phone.getByText('बचाव')).toBeVisible({ timeout: 20_000 });
+  // "बचाव" also appears in the chat and in tips. Read it from the card's type chip only.
+  await expect(phone.locator('rd-confirmation-card .type-chip')).toHaveText('बचाव', { timeout: 20_000 });
   await phone.getByRole('button', { name: 'अभी भेजें', exact: true }).click();
   await phone.waitForURL(/\/status/);
   await expect(phone.getByText('भेज दिया। एक संयोजक देखेगा।')).toBeVisible();

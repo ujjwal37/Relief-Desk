@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
+import { API } from './ports';
 import { resetDemo } from './reset-demo';
 
-const API = 'http://127.0.0.1:8000';
 const PIN = { lat: 8.11, lng: 77.21 };
 
 test.beforeEach(async ({ request }) => {

@@ -1,11 +1,11 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { API } from './ports';
 import { resetDemo } from './reset-demo';
 
 const SHOTS = '/opt/cursor/artifacts/screenshots';
 const AUTH = { Authorization: 'Bearer demo-coordinator-token' };
-const API = 'http://127.0.0.1:8000';
 
 const VIEWPORTS = [
   { name: 'desktop', width: 1440, height: 900 },

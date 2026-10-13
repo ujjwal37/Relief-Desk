@@ -1,11 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { API } from './ports';
 import { resetDemo } from './reset-demo';
 
 const SHOTS = '/opt/cursor/artifacts/screenshots';
 const AUTH = { Authorization: 'Bearer demo-coordinator-token' };
-const API = 'http://127.0.0.1:8000';
 
 const VIEWPORTS = [
   { name: 'desktop', width: 1440, height: 900 },
@@ -67,6 +67,8 @@ test.describe('agents visible', () => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await login(page);
       await noHorizontalOverflow(page);
+      // Ranked team candidates are not staff assignments. The banner waits for a dispatcher plan.
+      await expect(page.locator('app-assist-banner')).toHaveCount(0);
 
       await page.getByRole('button', { name: 'How it decided' }).first().click();
       const dialog = page.getByRole('dialog', { name: 'How it decided' });
