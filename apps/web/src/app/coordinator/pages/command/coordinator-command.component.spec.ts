@@ -465,6 +465,40 @@ describe('CoordinatorCommandComponent', () => {
     expect(legend).toContain('Boat');
     expect(legend).not.toContain('Shelter');
     expect(legend).not.toContain('Help soon');
+    const boat = component.mapPins().find((pin) => pin.id === 'res_boat_02');
+    expect(boat?.vehicle).toBe('boat');
+    expect(boat?.marker).toBe('team');
+    const glyph = fixture.nativeElement.querySelector('.svgmap .pin path') as SVGPathElement;
+    expect(glyph.getAttribute('d')).toContain('M2 14.5');
+    const row = fixture.nativeElement.querySelector('.candidates li') as HTMLElement;
+    expect(row.textContent).toContain('1.2 km · about 4 min');
+    expect((fixture.nativeElement.querySelector('.facts') as HTMLElement).textContent).toContain('1.2 km · about 4 min');
+    row.dispatchEvent(new Event('mouseenter'));
+    fixture.detectChanges();
+    expect(provider.highlightId).toBe('res_boat_02');
+    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke')).toBe('#0b6e4f');
+    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke-width')).toBe('6');
+  });
+
+  it('draws lines only to the top three teams', () => {
+    const extra = [1, 2, 3].map((n) => ({
+      ...mockProposal,
+      match_id: `m${n}`,
+      resource_id: `res_${n}`,
+      resource_name: `Team ${n}`,
+      breakdown: { ...mockProposal.breakdown, distance_km: n },
+      eta_minutes: n * 3,
+    }));
+    component.resources.set([
+      ...mockResources,
+      ...extra.map((prop, n) => ({ ...mockResources[0], id: prop.resource_id, name: prop.resource_name, lat: 26.86 + n / 100, lng: 80.94 })),
+    ]);
+    component.matches.set([mockProposal, ...extra]);
+    fixture.detectChanges();
+    expect(component.mapLegs().length).toBe(3);
+    expect(component.focusLegs().length).toBe(3);
+    expect(component.mapLegs().map((leg) => leg.id)).not.toContain('res_3');
+    expect(component.candidateMatches().length).toBe(3);
   });
 
   it('reloads the queue when the demo phone submits a report', () => {

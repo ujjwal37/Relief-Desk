@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ApiClientService, LanguageService, RdTranslatePipe, StoredRequest, StoredResource } from '@rd/shared';
-import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, StoredRequest, StoredResource, urgencyBand } from '@rd/shared';
+import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { CHECKIN_LATE_MIN, haversineKm, legTitle, quoteFromProposal, teamTone, TravelQuote } from '../../../core/maps/map-markers';
+import { CoordUiService } from '../../../core/services/coord-ui.service';
 
 const AREAS: Record<string, string> = {
   ward_1: 'Kainakary',
@@ -23,21 +25,6 @@ type Strip = 'all' | 'free' | 'busy' | 'notUpdated';
 type Bucket = 'free' | 'busy' | 'notUpdated';
 
 const CLOSED = new Set(['completed', 'resolved', 'closed']);
-/** A check-in older than this is "Not updated". */
-const CHECKIN_MIN = 120;
-const DISTANCE_CAP_KM = 50;
-
-/** Great-circle kilometres, rounded like the case-card distance. */
-function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const radius = 6371;
-  const p1 = (lat1 * Math.PI) / 180;
-  const p2 = (lat2 * Math.PI) / 180;
-  const dPhi = ((lat2 - lat1) * Math.PI) / 180;
-  const dLambda = ((lng2 - lng1) * Math.PI) / 180;
-  const a = Math.sin(dPhi / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dLambda / 2) ** 2;
-  const raw = radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(raw * 100) / 100;
-}
 
 @Component({
   selector: 'app-coordinator-teams',
@@ -50,13 +37,31 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): num
 export class CoordinatorTeamsComponent implements OnInit {
   private api = inject(ApiClientService);
   private lang = inject(LanguageService);
+  private ui = inject(CoordUiService);
 
   readonly resources = signal<StoredResource[]>([]);
   readonly requests = signal<StoredRequest[]>([]);
+  readonly matches = signal<MatchProposal[]>([]);
   readonly strip = signal<Strip>('all');
   readonly openId = signal<string | null>(null);
+  readonly highlightId = signal<string | null>(null);
   readonly now = signal(Date.now());
   readonly notice = signal('');
+
+  constructor() {
+    effect((onCleanup) => {
+      const id = this.ui.selectedCaseId();
+      if (!id) {
+        this.matches.set([]);
+        return;
+      }
+      const sub = this.api.getRequestMatches(id, 5).subscribe({
+        next: (rows) => this.matches.set(rows),
+        error: () => this.matches.set([]),
+      });
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
 
   readonly counts = computed(() => {
     const rows = this.resources();
@@ -95,9 +100,8 @@ export class CoordinatorTeamsComponent implements OnInit {
 
   /** On a case, otherwise free. A missed check-in is never free. */
   bucket(team: StoredResource): Bucket {
-    if (this.onCase(team)) return 'busy';
-    if (this.checkInLate(team)) return 'notUpdated';
-    return 'free';
+    const tone = teamTone(team, this.now());
+    return tone === 'stale' ? 'notUpdated' : tone;
   }
 
   onCase(team: StoredResource): boolean {
@@ -105,10 +109,10 @@ export class CoordinatorTeamsComponent implements OnInit {
     return team.status === 'busy' || team.status === 'dispatched' || team.status === 'en_route' || team.status === 'on_scene';
   }
 
-  /** No check-in, or the last one is over 2 hours old. */
+  /** No check-in, or the last one is over 2 hours old. A team on a case can still be late on the clock. */
   checkInLate(team: StoredResource): boolean {
     const minutes = this.minutesAgo(team);
-    return minutes == null || minutes > CHECKIN_MIN;
+    return minutes == null || minutes > CHECKIN_LATE_MIN;
   }
 
   statusLabel(team: StoredResource): string {
@@ -124,25 +128,73 @@ export class CoordinatorTeamsComponent implements OnInit {
     return team.area_name || AREAS[team.ward_id] || team.ward_id;
   }
 
-  /** Kilometres to the nearest open case. Anything past 50 km is shown as the cap. */
+  /** The line label when this team is a candidate; otherwise the nearest open case, with the same ETA words. */
   leg(team: StoredResource): string {
     this.lang.currentLang();
-    const open = this.requests().filter((row) => row.lat != null && row.lng != null && !row.merged_into && !CLOSED.has(row.status));
-    if (!open.length) return this.area(team);
-    const km = Math.min(...open.map((row) => distanceKm(row.lat as number, row.lng as number, team.lat, team.lng)));
-    if (km > DISTANCE_CAP_KM) return this.lang.translate('coord.distanceCap');
-    const minutes = Math.max(1, Math.round((km / 20) * 60));
-    const eta = this.lang.translate('coord.etaMin').replace('{n}', String(minutes));
-    return `${km} km · ${eta}`;
+    const drawn = this.teamLegs().find((row) => row.id === team.id);
+    if (drawn) return drawn.title;
+    const quote = this.nearestQuote(team);
+    if (!quote) return this.area(team);
+    return legTitle(quote, (key) => this.lang.translate(key));
   }
 
-  /** Every team. The map frames this set, not a single case. */
-  readonly teamPins = computed<MapPin[]>(() => this.resources().map((team) => ({
-    id: team.id,
-    lat: team.lat,
-    lng: team.lng,
-    title: team.name,
-  })));
+  private nearestQuote(team: StoredResource): TravelQuote | null {
+    const open = this.requests().filter((row) => row.lat != null && row.lng != null && !row.merged_into && !CLOSED.has(row.status));
+    if (!open.length) return null;
+    const km = Math.min(...open.map((row) => haversineKm(row.lat as number, row.lng as number, team.lat, team.lng)));
+    return { km, teamAvailable: team.status === 'available' };
+  }
+
+  /** Every team, plus the open case when one is selected. */
+  readonly teamPins = computed<MapPin[]>(() => {
+    const pins: MapPin[] = this.resources().map((team) => ({
+      id: team.id,
+      lat: team.lat,
+      lng: team.lng,
+      title: team.name,
+      marker: 'team' as const,
+      vehicle: team.kind,
+      tone: teamTone(team, this.now()),
+    }));
+    const req = this.requests().find((row) => row.id === this.ui.selectedCaseId());
+    if (req?.lat != null && req.lng != null) {
+      pins.unshift({
+        id: req.id,
+        lat: req.lat,
+        lng: req.lng,
+        title: req.place_text || req.id,
+        marker: 'case',
+        tone: urgencyBand(req.urgency_score),
+      });
+    }
+    return pins;
+  });
+
+  /** Top three candidates for the open case. Empty until a case is selected. */
+  readonly teamLegs = computed<MapLeg[]>(() => {
+    this.lang.currentLang();
+    const req = this.requests().find((row) => row.id === this.ui.selectedCaseId());
+    if (!req || req.lat == null || req.lng == null) return [];
+    const suggested = this.matches()[0]?.resource_id;
+    const legs: MapLeg[] = [];
+    for (const prop of this.matches().slice(0, 3)) {
+      const team = this.resources().find((row) => row.id === prop.resource_id);
+      if (!team) continue;
+      legs.push({
+        id: team.id,
+        from: { lat: req.lat, lng: req.lng },
+        to: { lat: team.lat, lng: team.lng },
+        title: legTitle(quoteFromProposal(prop, team.status === 'available'), (key) => this.lang.translate(key)),
+        suggested: team.id === suggested,
+      });
+    }
+    return legs;
+  });
+
+  readonly legendKinds = computed(() => {
+    const present = new Set(this.teamPins().map((pin) => pin.vehicle).filter((kind): kind is NonNullable<typeof kind> => !!kind));
+    return (['boat', 'medical', 'food', 'shelter'] as const).filter((kind) => present.has(kind));
+  });
 
   readonly mapCenter = computed(() => {
     const pins = this.teamPins();

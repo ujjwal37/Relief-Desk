@@ -7,7 +7,12 @@
   background: var(--surface); color: var(--text); font: 800 15px var(--rd-font-family); cursor: pointer;
 }
 .strip button.on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
-.team-map { height: 280px; margin: 0 0 12px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--map-bg); }
+.team-map { position: relative; height: 280px; margin: 0 0 12px; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--map-bg); }
+.legend {
+  position: absolute; z-index: 2; left: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 6px 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px;
+  font-size: 12px; font-weight: 700;
+}
 .team-map rd-map-provider { display: block; height: 100%; }
 .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .card { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; }

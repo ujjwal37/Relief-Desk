@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ApiClientService, RdTranslatePipe, StoredRequest, StoredResource, urgencyBand } from '@rd/shared';
-import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, StoredRequest, StoredResource, urgencyBand } from '@rd/shared';
+import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { legTitle, quoteFromProposal, teamTone } from '../../../core/maps/map-markers';
+import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { CoordinatorAlertsComponent } from '../alerts/coordinator-alerts.component';
 
 const DONE = new Set(['completed', 'resolved', 'closed']);
@@ -12,8 +14,8 @@ type UrgencyFilter = 'all' | 'critical' | 'high' | 'medium' | 'low';
 type KindFilter = 'all' | 'boat' | 'medical' | 'food' | 'shelter';
 type Band = 'critical' | 'high' | 'medium' | 'low';
 
-interface PlacedCase { id: string; lat: number; lng: number; band: Band; }
-interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind: string; }
+interface PlacedCase { id: string; lat: number; lng: number; band: Band; title: string; }
+interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind: StoredResource['kind']; tone: 'free' | 'busy' | 'stale'; }
 
 /** Counts on top, then the alerts list beside one map. The schematic is only the fallback. */
 @Component({
@@ -32,7 +34,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     </section>
     <div class="stage">
       <section class="map-stage" [attr.aria-label]="'ui.map' | rdTranslate">
-        <rd-map-provider [pins]="mapPins()" [center]="mapCenter()" [fitAll]="true"></rd-map-provider>
+        <rd-map-provider [pins]="mapPins()" [legs]="mapLegs()" [center]="mapCenter()" [fitAll]="mapLegs().length === 0"></rd-map-provider>
         <div class="chips" role="group" [attr.aria-label]="'coord.mapFilters' | rdTranslate">
           @for (band of urgencyChips; track band) {
             <button type="button" [class.on]="urgency() === band" [attr.aria-pressed]="urgency() === band" (click)="urgency.set(urgency() === band ? 'all' : band)">
@@ -112,6 +114,24 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
 })
 export class CoordinatorOverviewComponent implements OnInit {
   private readonly api = inject(ApiClientService);
+  private readonly lang = inject(LanguageService);
+  private readonly ui = inject(CoordUiService);
+  readonly matches = signal<MatchProposal[]>([]);
+
+  constructor() {
+    effect((onCleanup) => {
+      const id = this.ui.selectedCaseId();
+      if (!id) {
+        this.matches.set([]);
+        return;
+      }
+      const sub = this.api.getRequestMatches(id, 5).subscribe({
+        next: (rows) => this.matches.set(rows),
+        error: () => this.matches.set([]),
+      });
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
   readonly open = signal(0);
   readonly dispatched = signal(0);
   readonly freeTeams = signal(0);
@@ -135,21 +155,58 @@ export class CoordinatorOverviewComponent implements OnInit {
       lat: row.lat as number,
       lng: row.lng as number,
       band: urgencyBand(row.urgency_score),
+      title: row.place_text || row.id,
     }));
     const teams: PlacedTeam[] = this.resources().filter((row) => {
       if (kind !== 'all' && row.kind !== kind) return false;
       if (freeOnly && !(row.status === 'available' && row.capacity_remaining > 0)) return false;
       return row.lat != null && row.lng != null;
-    }).map((row) => ({ id: row.id, name: row.name, lat: row.lat, lng: row.lng, kind: row.kind }));
+    }).map((row) => ({ id: row.id, name: row.name, lat: row.lat, lng: row.lng, kind: row.kind, tone: teamTone(row) }));
     return { cases, teams };
   });
 
   readonly mapPins = computed<MapPin[]>(() => {
     const { cases, teams } = this.placed();
     return [
-      ...teams.map((row) => ({ id: row.id, lat: row.lat, lng: row.lng, title: row.name })),
-      ...cases.map((row) => ({ id: row.id, lat: row.lat, lng: row.lng, title: row.id })),
+      ...teams.map((row) => ({
+        id: row.id,
+        lat: row.lat,
+        lng: row.lng,
+        title: row.name,
+        marker: 'team' as const,
+        vehicle: row.kind,
+        tone: row.tone,
+      })),
+      ...cases.map((row) => ({
+        id: row.id,
+        lat: row.lat,
+        lng: row.lng,
+        title: row.title,
+        marker: 'case' as const,
+        tone: row.band,
+      })),
     ];
+  });
+
+  /** Lines to the top three teams once a case is open on the desk. */
+  readonly mapLegs = computed<MapLeg[]>(() => {
+    this.lang.currentLang();
+    const req = this.requests().find((row) => row.id === this.ui.selectedCaseId());
+    if (!req || req.lat == null || req.lng == null) return [];
+    const suggested = this.matches()[0]?.resource_id;
+    const legs: MapLeg[] = [];
+    for (const prop of this.matches().slice(0, 3)) {
+      const team = this.resources().find((row) => row.id === prop.resource_id);
+      if (!team) continue;
+      legs.push({
+        id: team.id,
+        from: { lat: req.lat, lng: req.lng },
+        to: { lat: team.lat, lng: team.lng },
+        title: legTitle(quoteFromProposal(prop, team.status === 'available'), (key) => this.lang.translate(key)),
+        suggested: team.id === suggested,
+      });
+    }
+    return legs;
   });
 
   readonly mapCenter = computed(() => {

@@ -24,6 +24,7 @@ import { LIVE_CHANNEL } from '../../../core/live-report';
 import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { etaMinutes, etaPhrase, legTitle, quoteFromProposal, teamTone, TONE_COLOR, vehiclePath, TravelQuote } from '../../../core/maps/map-markers';
 import {
   ApiClientService,
   RdTranslatePipe,
@@ -89,6 +90,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly requests = signal<StoredRequest[]>([]);
   readonly selectedRequestId = signal<string>('INC-001');
   readonly mapFocus = signal(0);
+  /** Team row under the pointer. Its line draws thicker. */
+  readonly highlightId = signal<string | null>(null);
   readonly matches = signal<MatchProposal[]>([]);
   readonly resources = signal<StoredResource[]>([]);
   readonly mapPins = computed<MapPin[]>(() => {
@@ -102,27 +105,46 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         lat: req.lat,
         lng: req.lng,
         title: req.place_text || req.id,
+        marker: 'case',
+        tone: urgencyBand(req.urgency_score),
       });
     }
     for (const res of this.resources()) {
-      pins.push({ id: res.id, lat: res.lat, lng: res.lng, title: res.name });
+      pins.push({
+        id: res.id,
+        lat: res.lat,
+        lng: res.lng,
+        title: res.name,
+        marker: 'team',
+        vehicle: res.kind,
+        tone: teamTone(res),
+      });
     }
     return pins;
   });
-  /** Lines from the selected case to its candidate teams. Drawn on the schematic and on Google Maps. */
+  /** The suggested team, then the next best, at most three. */
+  readonly candidateMatches = computed<MatchProposal[]>(() => {
+    const top = this.matches().slice(0, 3);
+    const active = this.activeProposal();
+    if (active && !top.some((row) => row.resource_id === active.resource_id)) {
+      return [...top.slice(0, 2), active];
+    }
+    return top;
+  });
+  /** Lines from the selected case to its top three teams. Drawn on the schematic and on Google Maps. */
   readonly mapLegs = computed<MapLeg[]>(() => {
     const req = this.selectedRequest();
     if (!req || req.lat == null || req.lng == null) return [];
     const suggested = this.activeProposal()?.resource_id;
     const legs: MapLeg[] = [];
-    for (const prop of this.matches()) {
+    for (const prop of this.candidateMatches()) {
       const team = this.resources().find((row) => row.id === prop.resource_id);
       if (!team) continue;
       legs.push({
         id: prop.resource_id,
         from: { lat: req.lat, lng: req.lng },
         to: { lat: team.lat, lng: team.lng },
-        title: `${prop.breakdown.distance_km} km · ${this.etaText(prop)}`,
+        title: this.legLabel(prop),
         suggested: prop.resource_id === suggested,
       });
     }
@@ -353,12 +375,33 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** Selected case plus its candidate teams stay bright. Everything else fades. */
   readonly drawnPins = computed(() => {
     const focus = this.selectedRequest();
-    const teamIds = new Set(this.matches().map((row) => row.resource_id));
+    const teamIds = new Set(this.candidateMatches().map((row) => row.resource_id));
     const suggested = this.activeProposal()?.resource_id;
     return this.svgPins().map((pin) => {
       const kept = !focus || pin.id === focus.id || (pin.kind === 'team' && teamIds.has(pin.id));
-      return { ...pin, dim: !kept, suggested: pin.kind === 'team' && pin.id === suggested && kept };
+      const resource = pin.kind === 'team' ? this.resources().find((row) => row.id === pin.id) : undefined;
+      const tone = resource ? teamTone(resource) : 'free';
+      return {
+        ...pin,
+        dim: !kept,
+        suggested: pin.kind === 'team' && pin.id === suggested && kept,
+        fill: resource ? TONE_COLOR[tone] : '',
+        path: vehiclePath(resource?.kind),
+        fade: tone === 'stale' ? 0.4 : 1,
+      };
     });
+  });
+  /** Zoom the district diagram onto the open case and its three teams. */
+  readonly mapViewBox = computed(() => {
+    const legs = this.focusLegs();
+    if (!legs.length) return '0 0 600 480';
+    const xs = legs.flatMap((leg) => [leg.x1, leg.x2]);
+    const ys = legs.flatMap((leg) => [leg.y1, leg.y2]);
+    const minX = Math.max(0, Math.min(...xs) - 80);
+    const minY = Math.max(0, Math.min(...ys) - 80);
+    const maxX = Math.min(600, Math.max(...xs) + 80);
+    const maxY = Math.min(480, Math.max(...ys) + 80);
+    return `${minX} ${minY} ${Math.max(120, maxX - minX)} ${Math.max(120, maxY - minY)}`;
   });
   readonly focusLegs = computed(() => {
     const req = this.selectedRequest();
@@ -366,7 +409,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const origin = this.project(req.lat, req.lng);
     const suggested = this.activeProposal()?.resource_id;
     const legs: { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; label: string; suggested: boolean }[] = [];
-    for (const prop of this.matches()) {
+    for (const prop of this.candidateMatches()) {
       const team = this.resources().find((row) => row.id === prop.resource_id);
       if (!team) continue;
       const at = this.project(team.lat, team.lng);
@@ -378,7 +421,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         y2: at.y,
         lx: (origin.x + at.x) / 2,
         ly: (origin.y + at.y) / 2 - 8,
-        label: `${prop.breakdown.distance_km} km · ${this.etaText(prop)}`,
+        label: this.legLabel(prop),
         suggested: prop.resource_id === suggested,
       });
     }
@@ -406,7 +449,16 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
 
   etaMinutes(km: number): number {
-    return Math.max(1, Math.round((km / 20) * 60));
+    return etaMinutes(km);
+  }
+  private travel(prop: MatchProposal): TravelQuote {
+    const team = this.resources().find((row) => row.id === prop.resource_id);
+    return quoteFromProposal(prop, team?.status === 'available');
+  }
+  /** Same string as the map line and the reporter quote. */
+  legLabel(prop: MatchProposal): string {
+    this.langService.currentLang();
+    return legTitle(this.travel(prop), (key) => this.langService.translate(key));
   }
   aiKind(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' {
     if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'recorded';
@@ -415,16 +467,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
   etaText(prop: MatchProposal): string {
     this.langService.currentLang();
-    const km = prop.breakdown?.distance_km ?? 0;
-    const minutes = prop.eta_minutes ?? this.etaMinutes(km);
-    const team = this.resources().find((row) => row.id === prop.resource_id);
-    if (team?.status === 'available' && km <= 15 && minutes <= 90) {
-      return this.langService.translate('coord.etaMin').replace('{n}', String(minutes));
-    }
-    if (prop.no_nearby || km > 30 || minutes > 90) {
-      return this.langService.translate('coord.noNearbyTeam');
-    }
-    return this.langService.translate('coord.etaMin').replace('{n}', String(minutes));
+    return etaPhrase(this.travel(prop), (key) => this.langService.translate(key));
   }
   assignedTeam(req: StoredRequest): StoredResource | undefined {
     return this.resources().find((team) => team.id === req.assigned_resource_id);

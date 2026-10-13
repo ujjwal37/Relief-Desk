@@ -19,6 +19,15 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   await page.goto('/coordinator/login');
   await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await page.waitForURL(/\/coordinator\/command/);
+  // The first open case can sit far from the Kuttanad teams. Open a Ward 1 case so the lines show minutes.
+  await page.locator('button.case').filter({ hasText: /Ward 1 ·/ }).first().click();
+  const line = page.locator('.svgmap text.leg').first();
+  await expect(line).toBeVisible();
+  await expect(line).toContainText(/km/);
+  await expect(line).toContainText(/min/);
+  await expect(page.locator('.svgmap .pin path').first()).toBeVisible();
+  await expect(page.locator('.candidates .eta').first()).toHaveText((await line.textContent()) || '');
+  await page.screenshot({ path: path.join(SHOTS, '1366-cases-map.png'), fullPage: false });
 
   await page.getByRole('link', { name: 'Overview', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();

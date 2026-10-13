@@ -91,15 +91,15 @@
       </div>
 
       <div class="map-card">
-        <rd-map-provider [pins]="mapPins()" [legs]="mapLegs()" [center]="mapCenter()" [focusToken]="mapFocus()" (pinSelect)="selectRequest($event, true)">
-          <svg viewBox="0 0 600 480" class="svgmap" preserveAspectRatio="xMidYMid slice" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
+        <rd-map-provider [pins]="mapPins()" [legs]="mapLegs()" [center]="mapCenter()" [focusToken]="mapFocus()" [highlightId]="highlightId()" (pinSelect)="selectRequest($event, true)">
+          <svg [attr.viewBox]="mapViewBox()" class="svgmap" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
             <rect width="600" height="480" fill="var(--map-bg)"/>
             @for (d of mapDistricts(); track d.id) {
               <polygon class="district" [attr.points]="d.points"></polygon>
               <text class="dlabel" [attr.x]="d.lx" [attr.y]="d.ly" text-anchor="middle">{{ ('coord.district.' + d.id) | rdTranslate }}</text>
             }
             @for (leg of focusLegs(); track leg.id) {
-              <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? 'var(--brand)' : 'var(--text-2)'" [attr.stroke-width]="leg.suggested ? 3 : 1.5" stroke-linecap="round"/>
+              <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#0b6e4f' : '#5c6570'" [attr.stroke-width]="leg.suggested ? (highlightId() === leg.id ? 6 : 4) : (highlightId() === leg.id ? 5 : 2)" stroke-linecap="round"/>
               <text class="leg" [class.on]="leg.suggested" [attr.x]="leg.lx" [attr.y]="leg.ly" text-anchor="middle">{{ leg.label }}</text>
             }
             @if (movementTrail()) {
@@ -107,9 +107,9 @@
             }
             @for (p of drawnPins(); track p.id) {
               @if (p.kind === 'team') {
-                <g class="pin" [class.dim]="p.dim" [class.suggested]="p.suggested" [attr.transform]="'translate(' + (p.x - 11) + ',' + (p.y - 11) + ')'">
-                  <rect width="22" height="22" rx="7" [attr.fill]="teamFill(p.team)" [attr.stroke]="p.suggested ? 'var(--brand)' : 'var(--surface)'" [attr.stroke-width]="p.suggested ? 3.5 : 2"/>
-                  <path d="M5 14l2 3h8l2-3zM11 5v7" stroke="var(--on-brand)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+                <g class="pin" [class.dim]="p.dim" [class.suggested]="p.suggested" [attr.opacity]="p.dim ? null : p.fade" [attr.transform]="'translate(' + p.x + ' ' + p.y + ')'">
+                  <circle r="12" [attr.fill]="p.fill" [attr.stroke]="p.suggested ? '#0b6e4f' : 'var(--surface)'" [attr.stroke-width]="p.suggested ? 3 : 2"/>
+                  <path [attr.d]="p.path" fill="#fff" transform="translate(-12 -12)"/>
                 </g>
               }
             }
@@ -195,7 +195,7 @@
               @if (req.assigned_resource_id) {
                 <a class="link" [routerLink]="['/team', req.assigned_resource_id]">{{ 'team.open' | rdTranslate }}</a>
               }
-              <div class="facts">{{ prop.breakdown.distance_km }} km · {{ etaText(prop) }} · {{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ ('coord.kind.' + prop.resource_kind) | rdTranslate }}
+              <div class="facts">{{ legLabel(prop) }} · {{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ ('coord.kind.' + prop.resource_kind) | rdTranslate }}
                 @if (prop.simulated || assignedTeam(req)?.simulated) { <span class="tag">{{ 'coord.simulated' | rdTranslate }}</span> }
               </div>
               @if (prop.capacity_remaining < (req.people_count || 1) || prop.overcommit_warning) { <p class="warnline">⚠ {{ 'coord.overcommit' | rdTranslate }}</p> }
@@ -215,6 +215,17 @@
             </div>
           } @else {
             <div class="best"><p class="facts">…</p></div>
+          }
+
+          @if (candidateMatches().length) {
+            <ul class="candidates">
+              @for (m of candidateMatches(); track m.resource_id) {
+                <li [class.on]="highlightId() === m.resource_id" (mouseenter)="highlightId.set(m.resource_id)" (mouseleave)="highlightId.set(null)">
+                  <span>{{ m.resource_name }}</span>
+                  <span class="eta">{{ legLabel(m) }}</span>
+                </li>
+              }
+            </ul>
           }
 
           <div class="acc">
@@ -238,7 +249,7 @@
           @if (changeOpen()) {
             <div class="chooser" role="listbox" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">
               @for (m of matches(); track m.match_id; let i = $index) {
-                <button type="button" role="option" [class.on]="i === matchIdx()" (click)="pickMatch(i)">{{ m.resource_name }} <em>{{ tr('coord.fit', fitPct(m)) }} · {{ m.breakdown.distance_km }} km</em></button>
+                <button type="button" role="option" [class.on]="i === matchIdx()" (click)="pickMatch(i)" (mouseenter)="highlightId.set(m.resource_id)" (mouseleave)="highlightId.set(null)">{{ m.resource_name }} <em>{{ tr('coord.fit', fitPct(m)) }} · {{ legLabel(m) }}</em></button>
               }
             </div>
           }

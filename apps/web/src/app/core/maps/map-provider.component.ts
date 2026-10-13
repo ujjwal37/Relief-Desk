@@ -16,6 +16,7 @@ import {
   signal,
 } from '@angular/core';
 import { panIfMoved } from './map-center';
+import { markerDataUrl, TONE_COLOR, vehiclePath, PinTone, VehicleKind } from './map-markers';
 import { MapProviderService } from './map-provider.service';
 
 export interface MapPin {
@@ -23,6 +24,10 @@ export interface MapPin {
   lat: number;
   lng: number;
   title: string;
+  /** Case pins take an urgency colour. Team pins take a vehicle glyph. */
+  marker?: 'case' | 'team';
+  vehicle?: VehicleKind;
+  tone?: PinTone;
 }
 
 export interface MapLeg {
@@ -46,13 +51,18 @@ export interface MapLeg {
         <svg class="rd-schematic" viewBox="0 0 600 480" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Relief map">
           <rect width="600" height="480" fill="var(--map-bg, #efeae0)"/>
           @for (leg of schematicLegs(); track leg.id) {
-            <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#0b6e4f' : '#5c6570'" [attr.stroke-width]="leg.suggested ? 4 : 2" stroke-linecap="round"/>
+            <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.stroke" [attr.stroke-width]="leg.width" stroke-linecap="round"/>
             @if (leg.title) {
               <text class="rd-leg" [attr.x]="leg.lx" [attr.y]="leg.ly" text-anchor="middle">{{ leg.title }}</text>
             }
           }
           @for (pin of schematicPins(); track pin.id) {
-            <circle [attr.cx]="pin.x" [attr.cy]="pin.y" r="8" [attr.fill]="pin.onLeg ? '#0b6e4f' : '#1c2430'" stroke="#fff" stroke-width="2"/>
+            <g [attr.transform]="'translate(' + pin.x + ' ' + pin.y + ')'" [attr.opacity]="pin.opacity">
+              <circle r="11" [attr.fill]="pin.fill" stroke="#fff" stroke-width="2"/>
+              @if (pin.path) {
+                <path [attr.d]="pin.path" fill="#fff" transform="translate(-12 -12)"/>
+              }
+            </g>
           }
         </svg>
       }
@@ -79,6 +89,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   @Input() focusToken = 0;
   /** Frame every pin and every line. When false, an open case's lines frame the map. */
   @Input() fitAll = false;
+  /** Team id whose line should draw thicker while its row is hovered. */
+  @Input() highlightId: string | null = null;
   @Output() pinSelect = new EventEmitter<string>();
 
   @ViewChild('canvas') canvas?: ElementRef<HTMLDivElement>;
@@ -143,21 +155,28 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     this.builtin.set(!foreign);
   }
 
-  schematicPins(): { id: string; x: number; y: number; onLeg: boolean }[] {
+  schematicPins(): { id: string; x: number; y: number; fill: string; opacity: number; path: string }[] {
     const frame = this.schematicFrame();
     const suggested = new Set(this.legs.filter((leg) => leg.suggested).map((leg) => `${leg.to.lat},${leg.to.lng}`));
-    return this.pins.map((pin) => ({
-      id: pin.id,
-      ...this.toSvg(pin.lat, pin.lng, frame),
-      onLeg: suggested.has(`${pin.lat},${pin.lng}`),
-    }));
+    return this.pins.map((pin) => {
+      const onLeg = suggested.has(`${pin.lat},${pin.lng}`);
+      const fill = pin.tone ? TONE_COLOR[pin.tone] : (onLeg ? '#0b6e4f' : '#1c2430');
+      return {
+        id: pin.id,
+        ...this.toSvg(pin.lat, pin.lng, frame),
+        fill,
+        opacity: pin.tone === 'stale' ? 0.4 : 1,
+        path: vehiclePath(pin.vehicle),
+      };
+    });
   }
 
-  schematicLegs(): { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; title: string; suggested: boolean }[] {
+  schematicLegs(): { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; title: string; stroke: string; width: number }[] {
     const frame = this.schematicFrame();
     return this.legs.map((leg) => {
       const from = this.toSvg(leg.from.lat, leg.from.lng, frame);
       const to = this.toSvg(leg.to.lat, leg.to.lng, frame);
+      const hot = !!this.highlightId && this.highlightId === leg.id;
       return {
         id: leg.id,
         x1: from.x,
@@ -167,16 +186,20 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         lx: (from.x + to.x) / 2,
         ly: (from.y + to.y) / 2 - 8,
         title: leg.title,
-        suggested: !!leg.suggested,
+        stroke: leg.suggested ? '#0b6e4f' : '#5c6570',
+        width: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
       };
     });
   }
 
   private schematicFrame(): { minLa: number; maxLa: number; minLo: number; maxLo: number } {
-    const points = [
-      ...this.pins.map((pin) => ({ lat: pin.lat, lng: pin.lng })),
-      ...this.legs.flatMap((leg) => [leg.from, leg.to]),
-    ];
+    const focused = !this.fitAll && this.legs.length > 0;
+    const points = focused
+      ? this.legs.flatMap((leg) => [leg.from, leg.to])
+      : [
+          ...this.pins.map((pin) => ({ lat: pin.lat, lng: pin.lng })),
+          ...this.legs.flatMap((leg) => [leg.from, leg.to]),
+        ];
     if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
     const lats = points.map((point) => point.lat);
     const lngs = points.map((point) => point.lng);
@@ -218,13 +241,16 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
       }
       this.markers.forEach((marker) => marker.setMap?.(null));
       this.lines.forEach((line) => line.setMap?.(null));
-      this.lines = this.legs.map((leg) => new maps.Polyline({
-        map: this.map,
-        path: [leg.from, leg.to],
-        strokeColor: leg.suggested ? '#0b6e4f' : '#5c6570',
-        strokeWeight: leg.suggested ? 4 : 2,
-        geodesic: true,
-      }));
+      this.lines = this.legs.map((leg) => {
+        const hot = !!this.highlightId && this.highlightId === leg.id;
+        return new maps.Polyline({
+          map: this.map,
+          path: [leg.from, leg.to],
+          strokeColor: leg.suggested ? '#0b6e4f' : '#5c6570',
+          strokeWeight: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
+          geodesic: true,
+        });
+      });
       const labels = this.legs.filter((leg) => leg.title).map((leg) => new maps.Marker({
         map: this.map,
         position: { lat: (leg.from.lat + leg.to.lat) / 2, lng: (leg.from.lng + leg.to.lng) / 2 },
@@ -238,10 +264,19 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         clickable: false,
       }));
       this.markers = this.pins.map((pin) => {
+        const url = markerDataUrl(pin);
+        const icon = url
+          ? {
+              url,
+              scaledSize: maps.Size ? new maps.Size(32, 32) : undefined,
+              anchor: maps.Point ? new maps.Point(16, 16) : undefined,
+            }
+          : undefined;
         const marker = new maps.Marker({
           map: this.map,
           position: { lat: pin.lat, lng: pin.lng },
           title: pin.title,
+          ...(icon ? { icon } : {}),
         });
         marker.addListener?.('click', () => this.pinSelect.emit(pin.id));
         return marker;
@@ -308,4 +343,6 @@ interface GoogleMapsNs {
   Marker: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void; addListener?: (event: string, fn: () => void) => void };
   Polyline: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void };
   SymbolPath?: { CIRCLE: number };
+  Size?: new (width: number, height: number) => { width: number; height: number };
+  Point?: new (x: number, y: number) => { x: number; y: number };
 }

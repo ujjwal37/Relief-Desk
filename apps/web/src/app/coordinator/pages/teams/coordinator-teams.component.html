@@ -10,13 +10,20 @@
   </div>
 
   <div class="team-map">
-    <rd-map-provider [pins]="teamPins()" [center]="mapCenter()" [fitAll]="true"></rd-map-provider>
+    <rd-map-provider [pins]="teamPins()" [legs]="teamLegs()" [center]="mapCenter()" [fitAll]="teamLegs().length === 0" [highlightId]="highlightId()"></rd-map-provider>
+    @if (legendKinds().length) {
+      <div class="legend" [attr.aria-label]="'ui.mapKey' | rdTranslate">
+        @for (kind of legendKinds(); track kind) {
+          <span>{{ kindLabel(kind) }}</span>
+        }
+      </div>
+    }
   </div>
   @if (notice()) { <p class="note" role="status">{{ notice() }}</p> }
   <ul class="list">
     @for (team of filtered(); track team.id) {
       <li class="card" [class.open]="openId() === team.id">
-        <button type="button" class="row" (click)="toggle(team.id)" [attr.aria-expanded]="openId() === team.id" [attr.aria-label]="team.name + ', ' + kindLabel(team.kind)">
+        <button type="button" class="row" (click)="toggle(team.id)" (mouseenter)="highlightId.set(team.id)" (mouseleave)="highlightId.set(null)" [attr.aria-expanded]="openId() === team.id" [attr.aria-label]="team.name + ', ' + kindLabel(team.kind)">
           <span class="icon" [style.color]="fill(team.kind)" aria-hidden="true">
             @switch (team.kind) {
               @case ('medical') {

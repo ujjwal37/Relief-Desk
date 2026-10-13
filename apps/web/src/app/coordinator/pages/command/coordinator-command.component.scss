@@ -69,6 +69,10 @@ h2 { margin:10px 0 4px; font-size:20px; line-height:1.3; font-weight:650; letter
 .best { border:1px solid var(--border); background:var(--surface); border-radius:14px; padding:12px 14px; margin-bottom:12px; box-shadow:inset 3px 0 0 var(--brand); }
 .best-head { display:flex; justify-content:space-between; align-items:baseline; } .fit { display:inline-flex; align-items:center; min-height:26px; padding:0 10px; border-radius:8px; background:var(--ok-t); color:var(--ok); font-size:13px; font-weight:700; }
 .team { font-size:17px; font-weight:650; margin-top:6px; } .facts { font-size:14px; color:var(--text-2); } .warnline { margin:6px 0 0; font-size:14px; font-weight:600; color:var(--sev-high); }
+.candidates { list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:6px; }
+.candidates li { display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:44px; padding:6px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+.candidates li.on, .candidates li:hover { border-color:#0b6e4f; background:var(--brand-tint); }
+.candidates .eta { font-weight:800; white-space:nowrap; }
 .acc { border-top:1px solid var(--border); } .acc:last-child { border-bottom:1px solid var(--border); }
 .acc-h { width:100%; display:flex; justify-content:space-between; align-items:center; min-height:46px; border:0; background:transparent; color:var(--text); font-size:15px; font-weight:600; cursor:pointer; padding:0 2px; } .chev { color:var(--text-2); }
 .acc-b { padding:0 2px 12px; } .bd { display:grid; grid-template-columns:96px 1fr 56px; gap:8px; align-items:center; font-size:13px; margin:6px 0; em { font-style:normal; text-align:right; color:var(--text-2); } }

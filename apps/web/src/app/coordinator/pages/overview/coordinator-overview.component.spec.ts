@@ -2,8 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { ApiClientService, LanguageService, StoredRequest, StoredResource } from '@rd/shared';
+import { ApiClientService, LanguageService, MatchProposal, StoredRequest, StoredResource } from '@rd/shared';
 import { MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { CoordinatorOverviewComponent } from './coordinator-overview.component';
 
 describe('CoordinatorOverviewComponent map filters', () => {
@@ -21,10 +22,11 @@ describe('CoordinatorOverviewComponent map filters', () => {
   ];
 
   beforeEach(async () => {
-    const api = jasmine.createSpyObj('ApiClientService', ['getRequests', 'getResources', 'getAlerts']);
+    const api = jasmine.createSpyObj('ApiClientService', ['getRequests', 'getResources', 'getAlerts', 'getRequestMatches']);
     api.getRequests.and.returnValue(of(cases));
     api.getResources.and.returnValue(of(teams));
     api.getAlerts.and.returnValue(of([]));
+    api.getRequestMatches.and.returnValue(of([]));
     await TestBed.configureTestingModule({
       imports: [CoordinatorOverviewComponent],
       providers: [provideRouter([]), { provide: ApiClientService, useValue: api }],
@@ -70,5 +72,33 @@ describe('CoordinatorOverviewComponent map filters', () => {
     expect(provider().pins.map((pin) => pin.id).sort()).toEqual(['boat', 'now']);
     expect(legend()).toContain('Boat');
     expect(legend()).not.toContain('Medical');
+    expect(provider().pins.find((pin) => pin.id === 'boat')?.vehicle).toBe('boat');
+    expect(provider().pins.find((pin) => pin.id === 'now')?.tone).toBe('critical');
+  });
+
+  it('fits the open case and its top teams when a case is selected', () => {
+    const api = TestBed.inject(ApiClientService) as jasmine.SpyObj<ApiClientService>;
+    api.getRequestMatches.and.returnValue(of([{
+      match_id: 'm',
+      request_id: 'now',
+      resource_id: 'boat',
+      resource_name: 'Boat',
+      resource_kind: 'boat',
+      resource_ward: 'ward_1',
+      capacity_total: 6,
+      capacity_remaining: 4,
+      score: 80,
+      breakdown: { distance_km: 1.2, distance_score: 1, capacity_fit_score: 1, urgency_score: 1, vulnerability_fit_score: 1, total_score: 80 },
+      state: 'proposed',
+      eta_minutes: 4,
+      overcommit_warning: false,
+    } as MatchProposal]));
+    TestBed.inject(CoordUiService).selectedCaseId.set('now');
+    fixture.detectChanges();
+    const provider = fixture.debugElement.query(By.css('rd-map-provider')).componentInstance as MapProviderComponent;
+    expect(provider.fitAll).toBeFalse();
+    expect(provider.legs.map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
+    expect(provider.legs[0].suggested).toBeTrue();
+    expect(component.mapLegs().length).toBe(1);
   });
 });

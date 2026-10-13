@@ -126,6 +126,17 @@ describe('MapProviderComponent', () => {
     expect(fitBounds).toHaveBeenCalled();
     expect(extended.some((point) => point.lat === 9.43 && point.lng === 76.398)).toBeTrue();
     expect(created.some((opts) => (opts['label'] as { text?: string } | undefined)?.text === '0.7 km · about 2 min')).toBeTrue();
+    const line = created.find((opts) => opts['strokeWeight'] != null);
+    expect(line?.['strokeColor']).toBe('#0b6e4f');
+    expect(line?.['strokeWeight']).toBe(4);
+    provider.highlightId = 'RES-BOAT-01';
+    provider.pins = [{ id: 'RES-BOAT-01', lat: 9.43, lng: 76.398, title: 'Boat', marker: 'team', vehicle: 'boat', tone: 'free' }];
+    (provider as unknown as { draw: () => void }).draw();
+    const hot = created.filter((opts) => opts['strokeWeight'] != null).pop();
+    expect(hot?.['strokeWeight']).toBe(6);
+    const icon = created.map((opts) => opts['icon'] as { url?: string } | undefined).find((row) => row?.url);
+    expect(decodeURIComponent(icon?.url || '')).toContain('#0b6e4f');
+    expect(decodeURIComponent(icon?.url || '')).toContain('M2 14.5');
     delete (window as unknown as { google?: unknown }).google;
   });
 

@@ -2,8 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { ApiClientService, StoredRequest, StoredResource } from '@rd/shared';
+import { ApiClientService, MatchProposal, StoredRequest, StoredResource } from '@rd/shared';
 import { MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { CoordinatorTeamsComponent } from './coordinator-teams.component';
 
 describe('CoordinatorTeamsComponent', () => {
@@ -22,6 +23,7 @@ describe('CoordinatorTeamsComponent', () => {
     const api = jasmine.createSpyObj('ApiClientService', ['getResources', 'getRequests', 'getRequestMatches', 'updateResourceLocation']);
     api.getResources.and.returnValue(of(rows));
     api.getRequests.and.returnValue(of([]));
+    api.getRequestMatches.and.returnValue(of([]));
     api.updateResourceLocation.and.returnValue(of({ ...rows[2], lat: 9.5, lng: 76.3, simulated: false }));
     await TestBed.configureTestingModule({
       imports: [CoordinatorTeamsComponent],
@@ -71,7 +73,7 @@ describe('CoordinatorTeamsComponent', () => {
     expect(cmp.filtered().map((team) => team.id)).toEqual(['s1']);
   });
 
-  it('measures distance to the nearest open case and caps it at 50 km', () => {
+  it('measures distance to the nearest open case with the case-card ETA', () => {
     const cmp = fixture.componentInstance;
     cmp.requests.set([
       { id: 'near', lat: 10.3, lng: 76.2, status: 'new' } as StoredRequest,
@@ -79,12 +81,46 @@ describe('CoordinatorTeamsComponent', () => {
     ]);
     fixture.detectChanges();
     expect(cmp.leg(rows[2])).toBe('1.11 km · about 3 min');
-    expect(cmp.leg(rows[1])).toBe('50+ km');
-    expect(cmp.leg(rows[1])).not.toContain('No nearby team');
-    for (const team of rows) {
-      const shown = Number((cmp.leg(team).match(/(\d+(?:\.\d+)?)/) || [])[1]);
-      expect(shown).toBeLessThanOrEqual(50);
-    }
+    expect(cmp.leg(rows[1])).toContain('No nearby team');
+    expect(cmp.leg(rows[1])).toContain('km');
+  });
+
+  it('draws the top three legs for the selected case and highlights the hovered row', () => {
+    const cmp = fixture.componentInstance;
+    const api = TestBed.inject(ApiClientService) as jasmine.SpyObj<ApiClientService>;
+    api.getRequestMatches.and.returnValue(of([{
+      match_id: 'm',
+      request_id: 'near',
+      resource_id: 'b1',
+      resource_name: 'Boat One',
+      resource_kind: 'boat',
+      resource_ward: 'ward_7',
+      capacity_total: 12,
+      capacity_remaining: 4,
+      score: 90,
+      breakdown: { distance_km: 1.2, distance_score: 1, capacity_fit_score: 1, urgency_score: 1, vulnerability_fit_score: 1, total_score: 90 },
+      state: 'proposed',
+      eta_minutes: 4,
+      overcommit_warning: false,
+    } as MatchProposal]));
+    cmp.requests.set([{ id: 'near', lat: 10.3, lng: 76.2, status: 'new', urgency_score: 90 } as StoredRequest]);
+    TestBed.inject(CoordUiService).selectedCaseId.set('near');
+    fixture.detectChanges();
+    expect(cmp.teamLegs().map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
+    expect(cmp.teamLegs()[0].suggested).toBeTrue();
+    expect(cmp.leg(rows[2])).toBe('1.2 km · about 4 min');
+    const provider = fixture.debugElement.query(By.css('rd-map-provider')).componentInstance as MapProviderComponent;
+    expect(provider.fitAll).toBeFalse();
+    expect(provider.legs.map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
+    expect(provider.pins.find((pin) => pin.id === 'b1')?.vehicle).toBe('boat');
+    expect(provider.pins.find((pin) => pin.id === 'b1')?.tone).toBe('free');
+    expect(provider.pins.find((pin) => pin.id === 'near')?.tone).toBe('critical');
+    const legend = (fixture.nativeElement.querySelector('.legend') as HTMLElement).textContent || '';
+    expect(legend).toContain('Boat');
+    expect(legend).toContain('Medical');
+    (fixture.nativeElement.querySelector('button.row') as HTMLButtonElement).dispatchEvent(new Event('mouseenter'));
+    fixture.detectChanges();
+    expect(provider.highlightId).toBe('b1');
   });
 
   it('frames every team on the map provider', () => {
