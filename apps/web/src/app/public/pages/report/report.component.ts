@@ -46,6 +46,16 @@ const EMPTY_VULNERABLE: Record<string, boolean> = {
 /** A chat turn that takes longer than this falls back to the form. */
 const CHAT_TURN_TIMEOUT_MS = 15000;
 
+interface SpeechRec {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript?: string }>> }) => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
 @Component({
   selector: 'app-report',
   standalone: true,
@@ -73,6 +83,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly kbOffset = signal<number>(0);
   private slowTimer: ReturnType<typeof setTimeout> | null = null;
   private voiceTimers: ReturnType<typeof setTimeout>[] = [];
+  private recognition: { stop: () => void } | null = null;
   private threadEnd = viewChild<ElementRef<HTMLElement>>('threadEnd');
   private lastCount = 0;
   private queuedLocally = false;
@@ -141,7 +152,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnDestroy(): void {
     window.visualViewport?.removeEventListener('resize', this.onViewport);
-    this.voiceTimers.forEach(clearTimeout);
+    this.closeVoice();
     if (this.slowTimer) clearTimeout(this.slowTimer);
   }
 
@@ -204,6 +215,29 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     el.style.height = Math.min(el.scrollHeight, 5 * 24 + 24) + 'px';
   }
 
+  /** BCP-47 locale for the mic and the text box. English and Hindi are the primary pair. */
+  inputLocale(): string {
+    const lang = this.langService.currentLang();
+    if (lang === 'hi' || lang === 'hinglish') return 'hi-IN';
+    if (lang === 'ml') return 'ml-IN';
+    return 'en-IN';
+  }
+
+  /** Canned line used when the browser has no speech recogniser. Matches the chosen language. */
+  sampleUtterance(): string {
+    const lang = this.langService.currentLang();
+    if (lang === 'hi') {
+      return 'वार्ड 7 में शिव मंदिर के पास 4 लोग फंसे हैं। पानी कमर तक है। एक बच्चा और बुजुर्ग हैं। नाव भेजिए।';
+    }
+    if (lang === 'hinglish') {
+      return 'Ward 7 Shiv Mandir ke paas 4 log fanse hain, paani kamar tak hai, ek bachcha hai, boat bhejo.';
+    }
+    if (lang === 'ml') {
+      return 'വാർഡ് 7 ശിവ ക്ഷേത്രത്തിന് സമീപം 4 പേർ കുടുങ്ങി. വെള്ളം ഉയരുന്നു. ബോട്ട് വേണം.';
+    }
+    return '4 people are trapped near Shiva Temple in Ward 7. The water is at waist level. There is a child and an elderly person. Please send a boat.';
+  }
+
   langLabel(): string {
     const t = this.transcript();
     if (/[\u0900-\u097F]/.test(t)) return 'हिंदी';
@@ -214,6 +248,12 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   closeVoice(): void {
     this.voiceTimers.forEach(clearTimeout);
     this.voiceTimers = [];
+    try {
+      this.recognition?.stop();
+    } catch {
+      // The recogniser may already have stopped.
+    }
+    this.recognition = null;
     this.voiceOpen.set(false);
     this.isRecording.set(false);
   }
@@ -323,9 +363,41 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.voiceOpen.set(true);
     this.isRecording.set(true);
     this.transcript.set('');
-    // Simulated live transcript (existing demo behaviour), revealed word by word.
-    const full = 'नमस्ते, हम वार्ड 7 में शिव मंदिर के पास फंसे हैं। पानी कमर तक आ गया है, घर में 4 लोग हैं, एक छोटा बच्चा और बुजुर्ग दादी हैं। कृपया जल्दी नाव भेजिए।';
-    const words = full.split(' ');
+    if (this.startRecognition()) return;
+    this.playSampleUtterance();
+  }
+
+  private startRecognition(): boolean {
+    const host = window as Window & {
+      SpeechRecognition?: new () => SpeechRec;
+      webkitSpeechRecognition?: new () => SpeechRec;
+    };
+    const Ctor = host.SpeechRecognition || host.webkitSpeechRecognition;
+    if (!Ctor) return false;
+    try {
+      const rec = new Ctor();
+      rec.lang = this.inputLocale();
+      rec.interimResults = true;
+      rec.continuous = false;
+      rec.onresult = (event) => {
+        let text = '';
+        for (let i = 0; i < event.results.length; i++) {
+          text += event.results[i][0]?.transcript || '';
+        }
+        this.transcript.set(text.trim());
+      };
+      rec.onerror = () => this.playSampleUtterance();
+      rec.start();
+      this.recognition = rec;
+      return true;
+    } catch {
+      this.recognition = null;
+      return false;
+    }
+  }
+
+  private playSampleUtterance(): void {
+    const words = this.sampleUtterance().split(' ');
     words.forEach((_, i) => {
       this.voiceTimers.push(setTimeout(() => this.transcript.set(words.slice(0, i + 1).join(' ')), 350 + i * 180));
     });

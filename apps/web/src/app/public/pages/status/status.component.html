@@ -60,7 +60,7 @@
 
     <section class="card tips">
       <h2>{{ 'status.tips' | rdTranslate }}</h2>
-      <ul>@for (tip of data.while_you_wait_tips; track $index) { <li>{{ tip }}</li> }</ul>
+      <ul>@for (tip of data.while_you_wait_tips; track $index) { <li>{{ tip | rdTranslate }}</li> }</ul>
     </section>
 
     <details class="card details">

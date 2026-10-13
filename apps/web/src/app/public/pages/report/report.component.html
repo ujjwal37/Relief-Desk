@@ -91,7 +91,7 @@
     <div class="composer-wrap">
       <p class="legal">{{ 'report.noMedical' | rdTranslate }}</p>
       <form class="composer" (submit)="$event.preventDefault(); sendUserMessage()">
-        <textarea #ta rows="1" [placeholder]="'report.placeholder2' | rdTranslate" [attr.aria-label]="'report.placeholder' | rdTranslate"
+        <textarea #ta rows="1" [attr.lang]="inputLocale()" [placeholder]="'report.placeholder2' | rdTranslate" [attr.aria-label]="'report.placeholder' | rdTranslate"
           [ngModel]="userInput()" (ngModelChange)="userInput.set($event)" [ngModelOptions]="{ standalone: true }" (input)="autoGrow(ta)"
           (keydown.enter)="onEnter($event)"></textarea>
         @if (userInput().trim()) {
@@ -108,7 +108,7 @@
   }
 
   @if (voiceOpen()) {
-    <div class="voice" role="dialog" aria-modal="true" [attr.aria-label]="'report.speak' | rdTranslate">
+    <div class="voice" role="dialog" aria-modal="true" [attr.lang]="inputLocale()" [attr.data-voice-locale]="inputLocale()" [attr.aria-label]="'report.speak' | rdTranslate">
       <button type="button" class="v-close" (click)="closeVoice()" [attr.aria-label]="'report.close' | rdTranslate">✕</button>
       <div class="orb" aria-hidden="true"></div>
       <div class="wave" aria-hidden="true">@for (b of [1,2,3,4,5,6,7,8,9,10,11,12]; track b) { <i [style.animation-delay.ms]="b * 70"></i> }</div>

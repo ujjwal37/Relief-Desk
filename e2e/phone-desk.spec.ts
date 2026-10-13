@@ -75,3 +75,76 @@ test('a phone report reaches the desk, merges, and comes back approved', async (
   await shot(phone, 'phone-desk-on-the-way');
   await context.close();
 });
+
+test('a Hindi report uses Hindi labels, reaches the desk, and the status stays Hindi', async ({ browser }) => {
+  const tag = `qx${Date.now().toString(36).replace(/[0-9]/g, 'a')}`;
+  const hindi = `वार्ड 12 में 6 लोग फंसे हैं, एक बच्चा भी है, पानी बढ़ रहा है, नाव भेजो। ${tag}`;
+  const context = await browser.newContext({
+    viewport: { width: 1366, height: 768 },
+    geolocation: { latitude: 9.498, longitude: 76.339 },
+    permissions: ['geolocation'],
+  });
+  await context.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  const desk = await context.newPage();
+  const phone = await context.newPage();
+  await phone.setViewportSize({ width: 390, height: 844 });
+
+  await desk.goto('/coordinator/login');
+  await desk.getByRole('button', { name: 'Enter as demo coordinator' }).click();
+  await desk.waitForURL(/\/coordinator\/command/);
+  await expect(desk.getByRole('heading', { name: 'Cases' })).toBeVisible();
+
+  await phone.goto('/report');
+  await expect(phone.locator('textarea')).toHaveAttribute('lang', 'en-IN');
+  await phone.getByRole('button', { name: 'Settings' }).click();
+  const sheet = phone.locator('.rd-sheet');
+  await expect(sheet.getByRole('button', { name: 'English' })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Hindi' })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Hinglish' })).toHaveCount(0);
+  await expect(sheet.getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
+  await sheet.getByTestId('lang-more').click();
+  await expect(sheet.getByRole('button', { name: 'Hinglish' })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Malayalam' })).toBeVisible();
+  await sheet.getByRole('button', { name: 'Hindi' }).click();
+  await phone.keyboard.press('Escape');
+  await expect(phone.locator('.rd-sheet')).toHaveCount(0);
+
+  await expect(phone.getByPlaceholder('बताइए क्या हुआ')).toBeVisible();
+  await expect(phone.getByRole('button', { name: 'बाढ़ या पानी बढ़ रहा है' })).toBeVisible();
+  await expect(phone.locator('textarea')).toHaveAttribute('lang', 'hi-IN');
+  await phone.getByRole('button', { name: 'बोलें' }).click();
+  await expect(phone.locator('.voice')).toHaveAttribute('data-voice-locale', 'hi-IN');
+  await phone.locator('.voice').getByRole('button', { name: 'बंद करें' }).click();
+
+  await phone.getByRole('button', { name: 'फ़ॉर्म चाहिए?' }).click();
+  await expect(phone.locator('label.field', { hasText: 'स्थान / लैंडमार्क' })).toBeVisible();
+  await expect(phone.getByRole('button', { name: 'पानी में फंसे हैं' })).toBeVisible();
+  await phone.goto('/report');
+  await expect(phone.getByPlaceholder('बताइए क्या हुआ')).toBeVisible();
+
+  await phone.locator('textarea').fill(hindi);
+  await phone.getByRole('button', { name: 'भेजें', exact: true }).click();
+  await expect(phone.getByText('बचाव')).toBeVisible({ timeout: 20_000 });
+  await phone.getByRole('button', { name: 'अभी भेजें', exact: true }).click();
+  await phone.waitForURL(/\/status/);
+  await expect(phone.getByText('भेज दिया। एक संयोजक देखेगा।')).toBeVisible();
+  await expect(phone.getByText('सबसे ऊँची सुरक्षित जगह पर जाएँ।')).toBeVisible();
+  const statusUrl = phone.url();
+
+  const row = desk.getByRole('option', { name: new RegExp(tag) });
+  await expect(row).toBeVisible({ timeout: 20_000 });
+  await row.scrollIntoViewIfNeeded();
+  await expect(row).toContainText('6');
+  await expect(row).toContainText(/Ward 12/);
+  await row.click();
+  await desk.getByRole('button', { name: 'Show original' }).click();
+  await expect(desk.locator('p.quote')).toContainText('6 लोग फंसे');
+  await expect(desk.locator('p.quote')).toContainText(tag);
+
+  const approve = desk.getByRole('button', { name: 'Approve and send' });
+  await expect(approve).toBeEnabled({ timeout: 20_000 });
+  await approve.click();
+  await phone.goto(statusUrl);
+  await expect(phone.getByText('टीम रास्ते में है।')).toBeVisible({ timeout: 20_000 });
+  await context.close();
+});

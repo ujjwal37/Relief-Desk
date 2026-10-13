@@ -156,7 +156,7 @@ class Gazetteer:
 
         The extracted place is often the clause after 'near' and drops the landmark.
         """
-        blob = f"{place_text or ''} {report_text or ''}"
+        blob = f"{place_text or ''} {report_text or ''}".translate(str.maketrans("०१२३४५६७८९", "0123456789"))
         numbered = re.search(r"(?:ward|वार्ड)\s*(\d+)", blob, flags=re.IGNORECASE)
         if numbered:
             candidate = f"ward_{int(numbered.group(1))}"

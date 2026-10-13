@@ -34,6 +34,7 @@ EXAMPLES (input -> "type", "secondary_needs"):
 - "nedumudi boat jetty ke paas 8 log chat par hain pani tezi se badh raha hai jaldi boat bhejo" -> "rescue", []
 - "vythiri bridge road is blocked with 3 feet waterlogging, traffic stopped" -> "info", []
 - "राहत शिविर में खाना खत्म हो गया है, 40 लोग भूखे हैं" -> "food", []
+- Hindi: a number before लोग or लोगों is the people count, and वार्ड plus a number is the ward. "वार्ड 12 में 6 लोग फंसे हैं, एक बच्चा भी है, पानी बढ़ रहा है, नाव भेजो" -> "rescue", people count 6, place_text includes "वार्ड 12"
 - "मेरी माँ को साँस लेने में तकलीफ है, पानी घर में घुस गया है, डॉक्टर चाहिए" -> "medical", ["rescue"]
 - "ഞങ്ങൾ വീടിന്റെ മുകളിൽ കുടുങ്ങി, വെള്ളം ഉയരുന്നു, ബോട്ട് വേണം" -> "rescue", []
 - "ക്യാമ്പ് നിറഞ്ഞു, ഇനി ആളുകളെ എടുക്കില്ല" -> "info", []

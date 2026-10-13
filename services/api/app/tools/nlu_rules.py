@@ -50,10 +50,23 @@ def vulnerable_flags(text: str) -> Dict[str, bool]:
     }
 
 
+_DEVA_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
+
+_HI_NUMBER_WORDS = {
+    "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "पाँच": 5,
+    "छह": 6, "छः": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
+}
+
+
+def _ascii_digits(text: str) -> str:
+    return text.translate(_DEVA_DIGITS)
+
+
 def extract_place(text: str) -> Optional[str]:
     """Pull a ward plus road, or a trailing landmark, out of a spoken report."""
     if not text:
         return None
+    text = _ascii_digits(text)
     ward = re.search(
         r"((?:ward|वार्ड)\s*\d+\b(?:\s+[\w\u0900-\u097F.]{2,}){0,4})",
         text,
@@ -113,9 +126,9 @@ def _group_people_count(text: str) -> Optional[int]:
 def people_count(text: str) -> Optional[int]:
     if not text:
         return None
-    normalized = text
+    normalized = _ascii_digits(text)
     match = re.search(
-        r"(\d+)\s*(?:log|लोग|people|persons|insaan)(?!\w)",
+        r"(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति)(?:ों|ें)?(?!\w)",
         normalized,
         flags=re.IGNORECASE,
     )
@@ -132,6 +145,13 @@ def people_count(text: str) -> Optional[int]:
     grouped = _group_people_count(normalized)
     if grouped:
         return grouped
+    spoken = "|".join(sorted(_HI_NUMBER_WORDS, key=len, reverse=True))
+    hindi = re.search(
+        rf"({spoken})\s*(?:लोग|व्यक्ति)(?:ों|ें)?(?!\w)",
+        normalized,
+    )
+    if hindi:
+        return _HI_NUMBER_WORDS[hindi.group(1)]
     return None
 
 
@@ -161,8 +181,9 @@ def infer_incident_type(text: str) -> Optional[str]:
     ):
         return "medical"
     if has_latin("bachao", "rescue", "stranded", "fanse", "rooftop") or has_phrase(
-        "chat par", "chhat par", "छत", "फंसे", "फंस", "fas gaye",
+        "chat par", "chhat par", "छत", "फंसे", "फँसे", "फंस", "fas gaye",
         "boat bhejo", "boat needed", "rescue boat", "send a boat", "boat chahiye",
+        "नाव", "बचाओ", "बचाव",
     ):
         return "rescue"
     if has_latin("beghar", "tarpaulin") or has_phrase(

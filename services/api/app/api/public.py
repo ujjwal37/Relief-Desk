@@ -371,9 +371,9 @@ def get_report_status(
         delivery_status="status.delivered" if fulfilled else ("status.onway" if approved else "status.waiting"),
         timeline=timeline,
         while_you_wait_tips=[
-            "Move to the highest safe place.",
-            "Stay away from flood water and live wires.",
-            "Keep your phone charged and stay reachable.",
+            "status.tipHigh",
+            "status.tipWires",
+            "status.tipPhone",
         ],
         emergency_phone="112",
         synthetic=True,

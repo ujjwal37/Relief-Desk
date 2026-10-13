@@ -17,7 +17,7 @@ Side-by-side demo mode: add `?demo=1` on desktop.
 In floods and other disasters, coordinators are buried in noisy messages: the same request arrives many times, updates get lost, rumours mix with real calls, and the most vulnerable people can be lost in a first-come-first-served queue. Reports of past floods in Kerala (2018) and Chennai (2015) describe duplicate entries, stale requests and a hoax. `<add sources before publishing>`
 
 ## What it does
-- **Report** by text in English or Hindi. Hinglish and Malayalam stay in the language menu under More. One canned Hindi voice note and the other sample notes are English. See what the system understood, then track status. Gemini Live voice is not built.
+- **Report** by text in English or Hindi. The phone form, example prompts, and the mic (`en-IN` or `hi-IN`) follow that choice. Hinglish and Malayalam stay in the language menu under More. One canned Hindi voice note and the other sample notes are English. See what the system understood, then track status in the same language. Gemini Live voice is not built.
 - **Understand:** Intake validates a structured request (type, place, people, vulnerable people, urgency) and keeps the original message. With a real `GEMINI_API_KEY`, that call goes to Gemini. With no key, the same fields come from the deterministic rules.
 - **Dedupe:** merges duplicates with visible evidence; treats "now 5 people" as an update that raises urgency; every merge can be undone or split.
 - **Rank:** vulnerability-weighted urgency with a plain-language reason, adjustable weights and an audit log.

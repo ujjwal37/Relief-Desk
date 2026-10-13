@@ -165,6 +165,43 @@ describe('ReportComponent confirmation gate', () => {
     });
   });
 
+  it('follows Hindi for labels, example chips, and the mic locale', () => {
+    const lang = TestBed.inject(LanguageService);
+    lang.setLanguage('hi');
+    fixture.detectChanges();
+    const box = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    expect(box.lang).toBe('hi-IN');
+    expect(box.placeholder).toBe('बताइए क्या हुआ');
+    expect(fixture.nativeElement.textContent).toContain('बाढ़ या पानी बढ़ रहा है');
+    expect(fixture.componentInstance.inputLocale()).toBe('hi-IN');
+    expect(fixture.componentInstance.sampleUtterance()).toContain('4 लोग');
+
+    (fixture.nativeElement.querySelector('.rd-set-btn') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const sheet = fixture.nativeElement.querySelector('.rd-sheet') as HTMLElement;
+    expect(sheet.textContent).toContain('EN');
+    expect(sheet.textContent).toContain('हिंदी');
+    expect(sheet.querySelector('[aria-label="Hinglish"]')).toBeNull();
+    (sheet.querySelector('[data-testid="lang-more"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(sheet.querySelector('[aria-label="Hinglish"]')).toBeTruthy();
+    expect(sheet.querySelector('[aria-label="Malayalam"]')).toBeTruthy();
+
+    fixture.componentInstance.openForm();
+    fixture.detectChanges();
+    const form = fixture.nativeElement.textContent as string;
+    expect(form).toContain('स्थान / लैंडमार्क');
+    expect(form).toContain('प्रभावित व्यक्तियों की संख्या');
+    expect(form).toContain('पानी में फंसे हैं');
+
+    lang.setLanguage('en');
+    fixture.componentInstance.mode.set('chat');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.inputLocale()).toBe('en-IN');
+    expect((fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement).lang).toBe('en-IN');
+    expect(fixture.componentInstance.sampleUtterance()).toContain('Ward 7');
+  });
+
   it('fast path stays at chip then Send now, with no login control', () => {
     expect(fixture.nativeElement.querySelector('input[type="password"]')).toBeNull();
     const chip = fixture.nativeElement.querySelector('.chip') as HTMLButtonElement;
