@@ -57,22 +57,22 @@ import { JustReportedService } from './just-reported.service';
   styles: [`
     :host { display: block; flex: none; }
     .just { padding: 8px 12px 0; }
-    h2 { margin: 0 0 6px; font-size: 13px; font-weight: 800; letter-spacing: 0.01em; }
+    h2 { margin: 0 0 6px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
     .row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
     .chip {
       flex: none; display: flex; gap: 8px; align-items: flex-start; max-width: 280px;
       min-height: 44px; text-align: left; border: 1px solid var(--border); border-radius: 12px;
       background: var(--surface); color: var(--text); padding: 6px 10px; cursor: pointer;
-      font: 600 13px/1.3 var(--rd-font-family);
+      font: 400 14px/1.4 var(--rd-font-family);
     }
     .ico { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--brand-tint); color: var(--brand); }
     .ico[data-type="medical"] { color: var(--sev-crit); background: var(--sev-crit-t); }
     .ico[data-type="food"] { color: var(--sev-high); background: var(--sev-high-t, var(--brand-tint)); }
     .ico[data-type="shelter"] { color: var(--ok); background: var(--ok-t); }
     .copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .sum { display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px; }
-    .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; font-weight: 600; color: var(--text-2); }
-    .badge { background: var(--brand-tint); color: var(--brand); border-radius: 999px; padding: 0 6px; font-weight: 800; }
+    .sum { display: block; font-weight: 600; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px; }
+    .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; font-weight: 400; color: var(--muted); }
+    .badge { background: var(--brand-tint); color: var(--brand); border-radius: var(--r2); padding: 0 6px; font-weight: 600; font-size: 12px; }
     .merge { font-size: 12px; font-weight: 700; color: var(--text-2); }
     .arrival-toast {
       position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 1600;
