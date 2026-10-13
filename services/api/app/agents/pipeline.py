@@ -257,14 +257,14 @@ def finish(request_id: str) -> None:
         "provider": provider,
         "model": settings.GEMINI_MODEL,
         "intake": (req.raw_text or "")[:240],
-        "dedupe": "duplicate" if req.merged_into else "distinct",
+        "dedupe": _dedupe_output(req),
         "triage": {"score": scored.score, "reason": scored.reason},
         "matching": capacity,
         "explainer": explanation,
     }
     req.trace = [
         _intake_row(req, summary, started),
-        _trace_step("Dedupe", "complete", summary, "duplicate" if req.merged_into else "distinct", [], started),
+        _trace_step("Dedupe", "complete", summary, _dedupe_output(req), [], started),
         _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], triage_at),
         _trace_step("Matching", "complete", summary, f"{capacity['available']} {kind} free", ["check_capacity"], match_at),
         _trace_step("Explainer", "complete", summary, explanation, [], match_at),
@@ -279,13 +279,31 @@ def finish(request_id: str) -> None:
     storage_service.save_request(req, actor="pipeline")
 
 
+def _dedupe_output(req: StoredRequest) -> str:
+    """The Duplicate check line: merge confidence, and a counts note when the reports disagree."""
+    if req.dedupe_trace:
+        note = req.dedupe_trace
+        if req.count_note and req.count_note not in note:
+            return f"{note}. {req.count_note}"
+        return note
+    if req.possible_duplicate is not None:
+        return req.possible_duplicate.note or "Possible duplicate, review"
+    if req.merged_into or (req.merged_count or 1) > 1:
+        base = "duplicate"
+    else:
+        base = "distinct"
+    if req.count_note:
+        return f"{base}. {req.count_note}"
+    return base
+
+
 def ensure_trace(req: StoredRequest) -> None:
     """Fill a missing trace from the scoring and capacity tools. Does not change the score."""
     if req.trace or req.analysis_status == "analysing":
         return
     summary = (req.raw_text or req.place_text or "")[:180]
     marks = [time.perf_counter()]
-    dedupe_out = "duplicate" if req.merged_into or (req.merged_count or 1) > 1 else "distinct"
+    dedupe_out = _dedupe_output(req)
     marks.append(time.perf_counter())
     scored = scoring_engine.compute_urgency(req)
     marks.append(time.perf_counter())

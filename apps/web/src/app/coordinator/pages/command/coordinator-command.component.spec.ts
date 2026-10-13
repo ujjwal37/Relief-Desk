@@ -135,6 +135,8 @@ describe('CoordinatorCommandComponent', () => {
       'markArrived',
       'completeRequest',
       'rejectMatch',
+      'mergeRequests',
+      'keepSeparate',
       'splitCluster',
       'getScenarios',
       'getMapsConfig',
@@ -613,5 +615,41 @@ describe('CoordinatorCommandComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-testid="ai-analysing"]')).toBeNull();
     expect(fixture.nativeElement.textContent as string).toContain('Analysed by 5 agents in');
+  });
+
+  it('shows conflicting counts, each report, and merge or keep-separate', () => {
+    apiClientSpy.mergeRequests.and.returnValue(of({ cluster_id: 'c1' }));
+    apiClientSpy.keepSeparate.and.returnValue(of({ id: 'INC-DUP' }));
+    const dup: StoredRequest = {
+      ...mockRequests[0],
+      id: 'INC-DUP',
+      people_count: 5,
+      count_spans: ['2-3', '4-5'],
+      count_note: 'Counts differ: 2-3 vs 4-5',
+      report_quotes: [
+        { report_id: 'r1', text: '2-3 people at Oakbend' },
+        { report_id: 'r2', text: '4-5 people at Oakbend' },
+      ],
+      possible_duplicate: {
+        target_id: 'INC-001',
+        confidence: 0.6,
+        similarity: 0.55,
+        distance_km: 0.8,
+        minutes: 12,
+        note: 'Possible duplicate, review',
+      },
+    };
+    component.applyQueue([dup], false);
+    component.selectRequest('INC-DUP');
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Counts differ: 2-3 vs 4-5');
+    expect(text).toContain('Possible duplicate, review');
+    expect(text).toContain('2-3 people at Oakbend');
+    expect(text).toContain('4-5 people at Oakbend');
+    (fixture.nativeElement.querySelector('[data-testid="merge-dup"]') as HTMLButtonElement).click();
+    expect(apiClientSpy.mergeRequests).toHaveBeenCalledWith('INC-001', 'INC-DUP', jasmine.any(Array));
+    (fixture.nativeElement.querySelector('[data-testid="keep-dup"]') as HTMLButtonElement).click();
+    expect(apiClientSpy.keepSeparate).toHaveBeenCalledWith('INC-DUP');
   });
 });

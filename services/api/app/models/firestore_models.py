@@ -51,6 +51,21 @@ class StoredReport(BaseModel):
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
+class ReportQuote(BaseModel):
+    report_id: str
+    text: str
+    people_span: Optional[str] = None
+
+
+class PossibleDuplicate(BaseModel):
+    target_id: str
+    confidence: float = 0.0
+    similarity: float = 0.0
+    distance_km: Optional[float] = None
+    minutes: Optional[float] = None
+    note: str = ""
+
+
 class StoredRequest(BaseModel):
     id: str
     event_id: str = "event_kerala_flood"
@@ -64,6 +79,13 @@ class StoredRequest(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     people_count: Optional[int] = None
+    # The citizen's own words for the count, such as "2-3" or "4".
+    people_span: Optional[str] = None
+    count_spans: List[str] = Field(default_factory=list)
+    count_note: Optional[str] = None
+    report_quotes: List[ReportQuote] = Field(default_factory=list)
+    dedupe_trace: Optional[str] = None
+    possible_duplicate: Optional[PossibleDuplicate] = None
     vulnerable: VulnerableFlags = Field(default_factory=VulnerableFlags)
     hazard: HazardType = HazardType.UNKNOWN
     urgency_score: float = 0.0

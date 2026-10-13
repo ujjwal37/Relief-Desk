@@ -59,6 +59,8 @@
                   @if (isDispatched(req)) { <span class="tag ok">{{ 'coord.filterDispatched' | rdTranslate }}</span> }
                   @if (isCompleted(req)) { <span class="tag ok">{{ 'coord.filterCompleted' | rdTranslate }}</span> }
                   @if (isAnalysing(req)) { <span class="tag ai" data-testid="ai-analysing">{{ 'ux.aiAnalysing' | rdTranslate }}</span> }
+                  @if (countSpans(req).length > 1) { <span class="tag warn" data-testid="counts-differ">{{ countsDiffer(req) }}</span> }
+                  @if (req.possible_duplicate) { <span class="tag warn" data-testid="possible-duplicate">{{ 'coord.possibleDuplicate' | rdTranslate }}</span> }
                   @if (freshIds().has(req.id)) { <span class="tag new">{{ 'coord.newJustNow' | rdTranslate }}</span> }
                   @if (analysedLabel(req.id)) { <span class="tag analysed"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8 6h11M8 12h11M8 18h7"/><circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>{{ analysedLabel(req.id) }}</span> }
                 </span>
@@ -168,6 +170,14 @@
             </button>
           </div>
           <p class="place">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text }} · {{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</p>
+          @if (countSpans(req).length > 1) { <p class="count-note" data-testid="counts-differ">{{ countsDiffer(req) }}</p> }
+          @if (req.possible_duplicate) {
+            <div class="dup-review" data-testid="dup-review">
+              <p>{{ 'coord.possibleDuplicate' | rdTranslate }}</p>
+              <button type="button" data-testid="merge-dup" (click)="confirmMerge(req)">{{ 'coord.mergeReports' | rdTranslate }}</button>
+              <button type="button" data-testid="keep-dup" (click)="keepSeparate(req)">{{ 'coord.keepSeparate' | rdTranslate }}</button>
+            </div>
+          }
 
           <div class="said">
             <div class="said-head">
@@ -175,7 +185,13 @@
               @if (isLowTranslationConfidence(req)) { <span class="tag warn">{{ 'coord.lowTrans' | rdTranslate }} ({{ getTranslationConfidencePercent(req) }}%)</span> }
               <button type="button" class="link" (click)="showOriginal.set(!showOriginal())">{{ (showOriginal() ? 'coord.showTranslation' : 'coord.showOriginal') | rdTranslate }}</button>
             </div>
-            <p class="quote">“{{ showOriginal() ? (req.raw_text || req.place_text) : getTranslationText(req) }}”</p>
+            @if ((req.report_quotes?.length || 0) > 1) {
+              @for (quote of req.report_quotes; track quote.report_id) {
+                <p class="quote" data-testid="report-quote">“{{ quote.text }}”</p>
+              }
+            } @else {
+              <p class="quote">“{{ showOriginal() ? (req.raw_text || req.place_text) : getTranslationText(req) }}”</p>
+            }
             @if (req.analysis_status === 'analysing') { <p class="ai-read">{{ 'coord.traceWorking' | rdTranslate }}</p> }
             <p class="ai-read">
               <span class="cap">{{ 'coord.aiReading' | rdTranslate }}</span>
@@ -233,7 +249,13 @@
             <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'reports'" (click)="toggleSection('reports')"><span>{{ (req.merged_count || 1) > 1 ? tr('coord.allReports', req.merged_count || 1) : ('coord.reportDetails' | rdTranslate) }}</span><span class="chev">{{ openSection() === 'reports' ? '⌃' : '⌄' }}</span></button>
             @if (openSection() === 'reports') {
               <div class="acc-b">
-                <p class="expl">“{{ req.raw_text || req.place_text }}”</p>
+                @if (req.report_quotes?.length) {
+                  @for (quote of req.report_quotes; track quote.report_id) {
+                    <p class="expl" data-testid="report-quote">“{{ quote.text }}”</p>
+                  }
+                } @else {
+                  <p class="expl">“{{ req.raw_text || req.place_text }}”</p>
+                }
                 <div class="conf">
                   <span>{{ 'ui.type' | rdTranslate }} {{ Math.round((req.confidence?.type || 0.96) * 100) }}%</span>
                   <span>{{ 'ui.place' | rdTranslate }} {{ Math.round((req.confidence?.place || 0.88) * 100) }}%</span>

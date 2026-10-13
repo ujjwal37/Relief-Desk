@@ -141,6 +141,20 @@ export interface StoredRequest {
   lat: number | null;
   lng: number | null;
   people_count: number | null;
+  /** Citizen wording such as "2-3" or "4". */
+  people_span?: string | null;
+  count_spans?: string[];
+  count_note?: string | null;
+  report_quotes?: { report_id: string; text: string; people_span?: string | null }[];
+  dedupe_trace?: string | null;
+  possible_duplicate?: {
+    target_id: string;
+    confidence: number;
+    similarity: number;
+    distance_km?: number | null;
+    minutes?: number | null;
+    note?: string;
+  } | null;
   vulnerable: VulnerableFlags;
   hazard: HazardType;
   urgency_score: number;

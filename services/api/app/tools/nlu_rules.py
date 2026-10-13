@@ -123,10 +123,50 @@ def _group_people_count(text: str) -> Optional[int]:
     return total if found and total > 0 else None
 
 
-def people_count(text: str) -> Optional[int]:
+def people_bounds(text: str) -> Optional[tuple]:
+    """(low, high, label) for '4 people' or '2-3 people'. The label keeps the words the citizen used."""
     if not text:
         return None
     normalized = _ascii_digits(text)
+    ranged = re.search(
+        r"(\d+)\s*(?:-|–|—|\bto\b)\s*(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति)(?:ों|ें)?(?!\w)",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+    if ranged:
+        low, high = sorted((int(ranged.group(1)), int(ranged.group(2))))
+        return low, high, f"{low}-{high}"
+    count = _people_count_single(normalized)
+    if count is None:
+        return None
+    return count, count, str(count)
+
+
+def people_count(text: str) -> Optional[int]:
+    """People needed. A range uses the upper bound, so '2-3 people' counts as 3."""
+    bounds = people_bounds(text)
+    return None if bounds is None else bounds[1]
+
+
+def span_upper(span: str) -> int:
+    numbers = [int(part) for part in re.findall(r"\d+", span or "")]
+    return max(numbers) if numbers else 0
+
+
+def counts_note(spans: list) -> Optional[str]:
+    """'Counts differ: 2-3 vs 4-5' when the reports do not name the same number."""
+    ordered = []
+    for span in spans:
+        if span and span not in ordered:
+            ordered.append(span)
+    if len(ordered) < 2:
+        return None
+    return "Counts differ: " + " vs ".join(ordered)
+
+
+def _people_count_single(normalized: str) -> Optional[int]:
+    if not normalized:
+        return None
     match = re.search(
         r"(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति)(?:ों|ें)?(?!\w)",
         normalized,

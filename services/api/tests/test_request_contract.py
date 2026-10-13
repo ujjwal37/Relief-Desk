@@ -14,6 +14,7 @@ PIN = {"lat": 26.852, "lng": 80.925}
 VOLATILE = {
     "id", "created_at", "updated_at", "report_ids", "merged_count", "merged_into", "cluster_id",
     "analysis", "analysis_status", "trace",
+    "report_quotes", "dedupe_trace", "possible_duplicate", "count_note", "count_spans", "people_span",
 }
 
 
@@ -74,5 +75,8 @@ def test_chat_and_form_emit_byte_identical_request_json():
         dumped = req.model_dump(mode="json")
         for key in VOLATILE:
             dumped.pop(key, None)
+        # The model call is instant in tests. A 1 ms clock tick is not a different request.
+        if isinstance(dumped.get("ai"), dict):
+            dumped["ai"]["latency_ms"] = 0
         views.append(json.dumps(dumped, sort_keys=True, separators=(",", ":")))
     assert views[0] == views[1]

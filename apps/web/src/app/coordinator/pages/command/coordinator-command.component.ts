@@ -1205,6 +1205,33 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }
   }
 
+  countSpans(req: StoredRequest): string[] {
+    const spans = (req.count_spans || []).filter((span) => !!span);
+    return spans.length > 1 ? spans : [];
+  }
+
+  countsDiffer(req: StoredRequest): string {
+    this.langService.currentLang();
+    const spans = this.countSpans(req).join(' vs ');
+    return this.langService.translate('coord.countsDiffer').replace('{spans}', spans);
+  }
+
+  confirmMerge(req: StoredRequest): void {
+    const hint = req.possible_duplicate;
+    if (!hint?.target_id) return;
+    this.apiClient.mergeRequests(hint.target_id, req.id, [hint.note || 'Coordinator confirmed the duplicate']).subscribe({
+      next: () => this.loadRequests(),
+      error: (err) => console.error('Error merging duplicate:', err),
+    });
+  }
+
+  keepSeparate(req: StoredRequest): void {
+    this.apiClient.keepSeparate(req.id).subscribe({
+      next: () => this.loadRequests(),
+      error: (err) => console.error('Error keeping reports separate:', err),
+    });
+  }
+
   splitCluster(requestId: string): void {
     this.apiClient.splitCluster(requestId).subscribe({
       next: (res) => {

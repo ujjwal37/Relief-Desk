@@ -132,6 +132,11 @@ class DedupeDecision(BaseModel):
     changed_fields: Dict[str, Any] = Field(default_factory=dict, description="Changed fields if decision is update")
     evidence: List[str] = Field(default_factory=list, description="List of concrete evidence reasons")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    similarity: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    distance_km: Optional[float] = None
+    minutes_apart: Optional[float] = None
+    # True when the pair is close but under the auto-merge threshold. The case stays separate.
+    review: bool = False
 
     @model_validator(mode="after")
     def validate_decision_rules(self) -> DedupeDecision:

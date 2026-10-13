@@ -90,6 +90,10 @@ export class ApiClientService {
     );
   }
 
+  keepSeparate(requestId: string): Observable<any> {
+    return this.http.post<any>(`/api/requests/${requestId}/keep-separate`, {}, this.getAuthHeaders());
+  }
+
   splitCluster(requestId: string): Observable<any> {
     return this.http.post<any>(`/api/requests/${requestId}/split`, {}, this.getAuthHeaders());
   }

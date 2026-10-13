@@ -13,10 +13,11 @@ from app.tools.scoring import scoring_engine
 from app.tools.ratelimit import rate_limiter
 from app.tools.asr import asr_service, VoiceNoteMetadata, ASRResult
 from app.tools.translation import translation_service, TranslationResult
-from app.models.firestore_models import StoredReport, StoredRequest, RequestStatus
+from app.models.firestore_models import PossibleDuplicate, ReportQuote, StoredReport, StoredRequest, RequestStatus
 from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.tools.request_contract import canonical_request_dict
-from app.tools.nlu_rules import extract_place, vulnerable_flags
+from app.tools.nlu_rules import extract_place, people_bounds, vulnerable_flags
+from app.agents.dedupe import confidence_phrase
 from app.tools.trust import detect_hoax_or_flood
 from app.tools.gazetteer import gazetteer
 from app.llm.client import llm_client
@@ -158,6 +159,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         lat=pin_lat,
         lng=pin_lng,
         people_count=extracted.people.count or 1,
+        people_span=(people_bounds(citizen_text or report_text) or (None, None, None))[2],
         vulnerable=extracted.vulnerable,
         hazard=extracted.hazard,
         status=RequestStatus.NEW,
@@ -166,6 +168,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         summary=machine_summary,
         analysis_status="analysing",
     )
+    _remember_words(req_obj, raw_report.id, citizen_text or report_text)
     urgency_res = scoring_engine.compute_urgency(req_obj)
     req_obj.urgency_score = urgency_res.score
     req_obj.urgency_reason = urgency_res.reason
@@ -343,6 +346,10 @@ def _enrich_report(
     req_obj.lat = pin_lat
     req_obj.lng = pin_lng
     req_obj.people_count = extracted.people.count or req_obj.people_count or 1
+    _remember_words(req_obj, raw_report.id, citizen_text or report_text)
+    bounds = people_bounds(citizen_text or report_text)
+    if bounds and (req_obj.people_count or 0) < bounds[1]:
+        req_obj.people_count = bounds[1]
     req_obj.vulnerable = extracted.vulnerable
     req_obj.hazard = extracted.hazard
     req_obj.flags = list(flags)
@@ -356,7 +363,10 @@ def _enrich_report(
     req_obj.urgency_score = urgency_res.score
     req_obj.urgency_reason = urgency_res.reason
 
-    existing = [row for row in storage_service.list_requests() if row.id != req_id]
+    existing = [
+        row for row in storage_service.list_requests()
+        if row.id != req_id and not row.merged_into
+    ]
     candidates = dedupe_agent.prefilter_candidates(
         new_req=extracted,
         new_lat=pin_lat,
@@ -364,28 +374,16 @@ def _enrich_report(
         new_ward=ward_id,
         existing_requests=existing,
     )
-    decision = dedupe_agent.evaluate(payload.text or report_text, extracted, candidates)
-    merged = False
-    if decision.decision.value == "duplicate" and decision.target_request_id:
-        target = storage_service.get_request(decision.target_request_id)
-        if target is not None and target.id != req_id:
-            target.merged_count = (target.merged_count or 1) + 1
-            if raw_report.id not in target.report_ids:
-                target.report_ids.append(raw_report.id)
-            storage_service.save_request(target, actor="dedupe_agent")
-            req_obj.merged_into = target.id
-            req_obj.merged_count = target.merged_count
-            raw_report.request_id = target.id
-            merged = True
-
+    decision = dedupe_agent.evaluate(
+        payload.text or report_text,
+        extracted,
+        candidates,
+        new_lat=pin_lat,
+        new_lng=pin_lng,
+    )
     storage_service.save_request(req_obj, actor="intake_pipeline")
     _link_report(raw_report, req_obj, req_id, machine_summary, citizen_text or report_text)
-    if merged and decision.target_request_id:
-        storage_service.create_cluster(
-            request_ids=[decision.target_request_id, req_id],
-            evidence=decision.evidence,
-            merged_by="auto_suggest",
-        )
+    _apply_dedupe(req_obj, decision)
 
     ranked = storage_service.get_request(req_obj.merged_into or req_id) or req_obj
     matching_agent.find_matches(ranked, top_n=3)
@@ -395,6 +393,74 @@ def _enrich_report(
         finish(req_id)
     stored = storage_service.get_request(req_id) or req_obj
     return _response_for(raw_report, stored, decision.decision.value, flags, transcript, asr_confidence)
+
+
+def _remember_words(req_obj: StoredRequest, report_id: str, text: str) -> None:
+    """Keep the citizen's sentence and the count as they wrote it ('2-3', not only 3)."""
+    words = (text or req_obj.raw_text or "").strip()
+    bounds = people_bounds(words)
+    span = bounds[2] if bounds else None
+    if span:
+        req_obj.people_span = span
+        req_obj.count_spans = [span]
+    if report_id and report_id not in req_obj.report_ids:
+        req_obj.report_ids.append(report_id)
+    if words:
+        req_obj.report_quotes = [
+            ReportQuote(report_id=report_id or req_obj.id, text=words[:500], people_span=span)
+        ]
+
+
+def _trace_for(decision, count_note: Optional[str], merged: bool) -> str:
+    if merged:
+        head = "Merged"
+    elif getattr(decision, "review", False):
+        head = "Possible duplicate, review"
+    else:
+        head = "Distinct"
+    parts = [head]
+    if decision.similarity is not None or decision.distance_km is not None or decision.minutes_apart is not None:
+        parts.append(confidence_phrase(decision.similarity, decision.distance_km, decision.minutes_apart))
+    if count_note and count_note not in " ".join(parts):
+        parts.append(count_note)
+    return ". ".join(parts)
+
+
+def _apply_dedupe(req_obj: StoredRequest, decision) -> None:
+    """Auto-merge above the threshold. Otherwise leave a review suggestion on this case."""
+    from app.tools.case_merge import fold_case
+
+    merged = False
+    if decision.decision.value == "duplicate" and decision.target_request_id:
+        target = storage_service.get_request(decision.target_request_id)
+        if target is not None and target.id != req_obj.id and not target.merged_into:
+            fold_case(target.id, req_obj.id, decision.evidence, merged_by="auto_suggest")
+            merged = True
+            target = storage_service.get_request(target.id) or target
+            fresh = storage_service.get_request(req_obj.id) or req_obj
+            line = _trace_for(decision, target.count_note, True)
+            target.dedupe_trace = line
+            fresh.dedupe_trace = line
+            fresh.merged_into = target.id
+            req_obj.merged_into = target.id
+            req_obj.merged_count = target.merged_count
+            storage_service.save_request(target, actor="dedupe_agent")
+            storage_service.save_request(fresh, actor="dedupe_agent")
+            return
+    if decision.review and decision.target_request_id:
+        line = _trace_for(decision, None, False)
+        req_obj.possible_duplicate = PossibleDuplicate(
+            target_id=decision.target_request_id,
+            confidence=float(decision.confidence or 0),
+            similarity=float(decision.similarity or 0),
+            distance_km=decision.distance_km,
+            minutes=decision.minutes_apart,
+            note=line,
+        )
+        req_obj.dedupe_trace = line
+    else:
+        req_obj.dedupe_trace = _trace_for(decision, req_obj.count_note, merged)
+    storage_service.save_request(req_obj, actor="dedupe_agent")
 
 
 def _mark_failed(req_id: str) -> None:
