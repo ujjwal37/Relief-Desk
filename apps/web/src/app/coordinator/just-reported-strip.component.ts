@@ -78,7 +78,7 @@ import { JustReportedService } from './just-reported.service';
       position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 1600;
       max-width: min(560px, 92vw); background: var(--text); color: var(--bg);
       padding: 12px 16px; border-radius: 12px; box-shadow: var(--e3);
-      font-size: 15px; font-weight: 700;
+      font-size: 14px; font-weight: 600;
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,

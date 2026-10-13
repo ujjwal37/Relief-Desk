@@ -20,7 +20,7 @@
 .top-nav:has(.tabs.wrap) .right { grid-area:avatar; }
 .top-nav:has(.tabs.wrap) .tabs { grid-area:tabs; }
 .tabs.wrap a, .tabs.wrap button.more-tab { flex:1 1 0; min-width:0; height:auto; min-height:40px; padding:4px 4px; justify-content:center; text-align:center; white-space:normal; line-height:1.15; font-size:14px; }
-.count { background:var(--sos); color:var(--on-sos); border-radius:999px; padding:1px 7px; font-size:13px; font-weight:700; }
+.count { background:var(--sos); color:var(--on-sos); border-radius:999px; padding:1px 7px; font-size:12px; font-weight:600; }
 .search { flex:1; max-width:340px; position:relative; display:flex; align-items:center; margin-left:auto; color:var(--muted); }
 .search svg { position:absolute; left:12px; }
 .search input { width:100%; height:36px; padding:0 34px 0 34px; border-radius:var(--r2); border:1px solid var(--border); background:var(--surface-2); color:var(--text); font:400 14px/1.5 var(--rd-font-family); }
@@ -45,8 +45,8 @@ h3 { margin:12px 0 6px; font-size:13px; font-weight:700; color:var(--text-2); te
 .seg button.on { background:var(--surface); color:var(--brand); box-shadow:var(--e1); }
 .item { width:100%; text-align:left; min-height:44px; margin-top:8px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font:600 15px var(--rd-font-family); cursor:pointer; display:flex; align-items:center; gap:8px; text-decoration:none; box-sizing:border-box; }
 .item.out { color:var(--sos-text); }
-.guide { flex:none; display:flex; align-items:center; gap:12px; margin:0; padding:6px 16px; background:var(--brand-tint); color:var(--text); font-size:13px; font-weight:700; line-height:1.35; }
-.guide button { margin-left:auto; min-height:36px; border:0; background:transparent; color:var(--brand); font:800 13px var(--rd-font-family); cursor:pointer; white-space:nowrap; }
+.guide { flex:none; display:flex; align-items:center; gap:12px; margin:0; padding:6px 16px; background:var(--brand-tint); color:var(--text); font-size:12px; font-weight:600; line-height:1.35; }
+.guide button { margin-left:auto; min-height:36px; border:0; background:transparent; color:var(--brand); font:600 12px var(--rd-font-family); cursor:pointer; white-space:nowrap; }
 .dashboard-body { flex:1; min-height:0; overflow:hidden; }
 .demo-phone { width:390px; flex:none; border-left:1px solid var(--border); background:var(--surface); }
 .demo-phone iframe { width:100%; height:100%; border:0; }

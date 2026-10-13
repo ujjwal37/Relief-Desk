@@ -1,6 +1,15 @@
 /* Relief Desk Global Styles */
 @use './theme';
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap');
+
+/* Same face next/font (geist / Geist) injects: variable woff2, swap, rlig+calt. */
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --rd-font-family: 'Geist', 'Inter', 'Noto Sans Devanagari', 'Noto Sans Malayalam', ui-sans-serif, system-ui, sans-serif;
@@ -11,10 +20,12 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-synthesis: none;
 }
 
 html, body, ion-app, ion-content, .ios, .md, :host {
   font-family: var(--rd-font-family);
+  font-feature-settings: 'rlig' 1, 'calt' 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -29,10 +40,12 @@ html, body {
   overflow-wrap: break-word;
 }
 
-body {
+body, .antialiased {
   font-size: 14px;
   line-height: 1.5;
   font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
@@ -41,13 +54,18 @@ body {
 
 button, input, textarea, select {
   font-family: inherit;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Ionic is not imported, but pin defaults so a later import cannot shrink type. */
 ion-app, ion-content, ion-button, ion-item, ion-label {
   --ion-font-family: var(--rd-font-family);
+  --ion-default-font: var(--rd-font-family);
   --ion-font-size: 14px;
+  --ion-text-color: var(--text);
   font-family: var(--rd-font-family) !important;
   font-size: 14px;
+  -webkit-font-smoothing: antialiased;
 }
