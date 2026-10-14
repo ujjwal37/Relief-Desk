@@ -841,7 +841,10 @@
     "margin": "Margin of error ±{n} points",
     "smallSample": "Yeh gap is chhote sample ke margin ke andar hai.",
     "scale": "0–100%",
-    "deskHowAnswered": "Maine kaise jawab diya · {n} steps"
+    "deskHowAnswered": "Maine kaise jawab diya · {n} steps",
+    "agentScope": "Case assistant",
+    "agentIntro": "Jagah, zaroorat, ya abhi bhi intezaar kar rahe logon ke requests khojein.",
+    "agentFootnote": "Jawab cases review karne mein madad karte hain. Dispatch ki manzoori case queue se dein."
   },
   "flow": {
     "title": "AI ne kaise decide kiya",

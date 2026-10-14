@@ -841,7 +841,10 @@
     "margin": "Margin of error ±{n} points",
     "smallSample": "This gap is inside the margin of error on a small sample.",
     "scale": "0–100%",
-    "deskHowAnswered": "How I answered · {n} steps"
+    "deskHowAnswered": "How I answered · {n} steps",
+    "agentScope": "Case assistant",
+    "agentIntro": "Find requests by place, need, or who is still waiting.",
+    "agentFootnote": "Answers help you review cases. Approve dispatches from the case queue."
   },
   "flow": {
     "title": "How it decided",

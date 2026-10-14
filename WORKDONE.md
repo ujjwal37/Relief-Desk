@@ -1246,3 +1246,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified (commands / screenshots): `npx ng build web --configuration=development`; Playwright checks at 1440px and 390px confirm both links are absent and the case queue Dispatched filter remains; `git diff --check`.
 - Notes / risks / not done: Navigation template only; no route, filtering, or dispatch logic changed. Existing test assertion updated; unit suite not run.
 - Next (suggested task id): none.
+
+### 2026-10-14 22:33 IST — UI-REF-03 — Codex (C frontend lane)
+- What changed: Removed duplicate suggestions beneath the Agent chat box. Added a wider framed workspace, visible Ask the desk heading and purpose, an introduction beside the three existing starter cards, concise mobile cards, and a composer anchored below the thread. Added three UI labels in all four catalogs and assertions for absent duplicate shortcuts.
+- Files: apps/web/src/app/coordinator/agents/ask-desk.component.{ts,spec.ts}; apps/web/src/app/coordinator/pages/agent/coordinator-agent.component.ts; libs/shared/src/lib/i18n/{en,hi,hinglish,ml}.json; docs/design/reviews/ui-ref-03/; TASKS.md; WORKDONE.md.
+- How verified (commands / screenshots): `npx ng build web --configuration=development`; `node scripts/check-i18n.mjs`; four AskDeskComponent Karma tests passed with an isolated temporary TypeScript config; five Playwright light/dark/desktop/mobile/Hindi checks confirm starters appear once and replies/composer still work using a synthetic mocked API response; component class source unchanged; `git diff --check`. Screenshots: docs/design/reviews/ui-ref-03/README.md.
+- Notes / risks / not done: Presentation only; API/service logic unchanged. Embedded Ask the desk shortcuts preserved. Normal test compilation hits a pre-existing incomplete Teams expectation at coordinator-command.component.spec.ts:248, so focused tests used an isolated config. No live model requests or dispatches made during verification.
+- Next (suggested task id): none.
