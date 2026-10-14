@@ -1253,3 +1253,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified (commands / screenshots): `npx ng build web --configuration=development`; `node scripts/check-i18n.mjs`; four AskDeskComponent Karma tests passed with an isolated temporary TypeScript config; five Playwright light/dark/desktop/mobile/Hindi checks confirm starters appear once and replies/composer still work using a synthetic mocked API response; component class source unchanged; `git diff --check`. Screenshots: docs/design/reviews/ui-ref-03/README.md.
 - Notes / risks / not done: Presentation only; API/service logic unchanged. Embedded Ask the desk shortcuts preserved. Normal test compilation hits a pre-existing incomplete Teams expectation at coordinator-command.component.spec.ts:248, so focused tests used an isolated config. No live model requests or dispatches made during verification.
 - Next (suggested task id): none.
+
+### 2026-10-14 22:41 IST — DEV-01 — Codex (C frontend lane)
+- What changed: Allowed whole-severely-sole.ngrok-free.app in the Angular dev-server allowedHosts option and restarted the web server on port 4200.
+- Files: angular.json; TASKS.md; WORKDONE.md.
+- How verified (commands / screenshots): Installed Angular schema confirms allowedHosts support; dev-server compilation succeeded; HTTP requests with the ngrok Host header return 200 for / and proxied /healthz; an unapproved.example Host header remains blocked with 403; `git diff --check`.
+- Notes / risks / not done: Exact hostname allowed; no wildcard. API and application logic unchanged. Local fix committed; not pushed.
+- Next (suggested task id): none.
