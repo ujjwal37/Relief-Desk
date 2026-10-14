@@ -1,4 +1,4 @@
-import fs from 'fs';
+﻿import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -6,20 +6,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const I18N_DIR = path.resolve(__dirname, '../libs/shared/src/lib/i18n');
-const LANGUAGES = ['en', 'hi', 'hinglish', 'ta'];
+const LANGUAGES = ['en', 'hi', 'hinglish', 'ml'];
 
-function flattenKeys(obj, prefix = '') {
-  let keys = [];
+function flatten(obj, prefix = '') {
+  const out = {};
   for (const [k, v] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${k}` : k;
     if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-      keys = keys.concat(flattenKeys(v, fullKey));
+      Object.assign(out, flatten(v, fullKey));
     } else {
-      keys.push(fullKey);
+      out[fullKey] = v;
     }
   }
-  return keys;
+  return out;
 }
+
+function flattenKeys(obj, prefix = '') {
+  return Object.keys(flatten(obj, prefix));
+}
+
+// Proper names, an example address, and a numeric scale may match English.
+const HI_SAME_AS_EN = new Set(['landing.cup', 'auth.emailPlaceholder', 'ux.scale']);
 
 let hasError = false;
 
@@ -31,7 +38,8 @@ if (!fs.existsSync(enFile)) {
 }
 
 const enData = JSON.parse(fs.readFileSync(enFile, 'utf-8'));
-const enKeys = new Set(flattenKeys(enData));
+const enFlat = flatten(enData);
+const enKeys = new Set(Object.keys(enFlat));
 
 console.log(`Base English keys count: ${enKeys.size}`);
 
@@ -44,7 +52,24 @@ for (const lang of LANGUAGES) {
   }
 
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  const keys = new Set(flattenKeys(data));
+  const flat = flatten(data);
+  const keys = new Set(Object.keys(flat));
+  if (lang === 'hi') {
+    const fallback = [];
+    for (const key of enKeys) {
+      const value = flat[key];
+      if (typeof value !== 'string') continue;
+      if (value === key) fallback.push(`${key} is the key itself`);
+      else if (value === enFlat[key] && !HI_SAME_AS_EN.has(key)) fallback.push(`${key} still matches English`);
+    }
+    if (fallback.length > 0) {
+      console.error(`\n[FAIL] hi.json has ${fallback.length} untranslated strings:`);
+      fallback.forEach((row) => console.error(`  - ${row}`));
+      hasError = true;
+    } else {
+      console.log('[PASS] hi.json values are translated (no fallback keys).');
+    }
+  }
 
   const missing = [...enKeys].filter((k) => !keys.has(k));
   if (missing.length > 0) {
@@ -61,5 +86,8 @@ if (hasError) {
   process.exit(1);
 } else {
   console.log('\nCI check-i18n PASSED: All languages have complete key parity!');
-  process.exit(0);
+  const { spawnSync } = await import('child_process');
+  const lint = spawnSync(process.execPath, [path.join(__dirname, 'lint-templates-i18n.mjs')], { stdio: 'inherit' });
+  process.exit(lint.status ?? 1);
 }
+

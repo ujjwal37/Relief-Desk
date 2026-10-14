@@ -1,23 +1,41 @@
+import { RdTranslatePipe } from '../services/language.service';
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LanguageService, SUPPORTED_LANGUAGES, SupportedLang } from '../services/language.service';
+import { LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, SupportedLang } from '../services/language.service';
 
 @Component({
   selector: 'rd-language-switcher',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RdTranslatePipe],
   template: `
-    <div class="rd-lang-switcher" role="group" aria-label="Language selection">
+    <div class="rd-lang-switcher" role="group" [attr.aria-label]="'ui.langSel' | rdTranslate">
       <button
-        *ngFor="let opt of languages"
+        *ngFor="let opt of primary"
         type="button"
         class="lang-chip"
         [class.active]="langService.currentLang() === opt.code"
         (click)="selectLanguage(opt.code)"
         [attr.aria-pressed]="langService.currentLang() === opt.code"
+        [attr.aria-label]="opt.label"
       >
         {{ opt.nativeName }}
       </button>
+      <details class="more">
+        <summary class="lang-chip">{{ 'settings.moreLangs' | rdTranslate }}</summary>
+        <div class="more-menu">
+          <button
+            *ngFor="let opt of more"
+            type="button"
+            class="lang-chip"
+            [class.active]="langService.currentLang() === opt.code"
+            (click)="selectLanguage(opt.code)"
+            [attr.aria-pressed]="langService.currentLang() === opt.code"
+            [attr.aria-label]="opt.label"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </details>
     </div>
   `,
   styles: [`
@@ -25,8 +43,8 @@ import { LanguageService, SUPPORTED_LANGUAGES, SupportedLang } from '../services
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
       border-radius: 9999px;
       padding: 3px 4px;
     }
@@ -34,7 +52,7 @@ import { LanguageService, SUPPORTED_LANGUAGES, SupportedLang } from '../services
     .lang-chip {
       background: transparent;
       border: none;
-      color: #e2e8f0;
+      color: var(--text);
       font-size: 0.85rem;
       font-weight: 700;
       min-height: 48px;
@@ -46,20 +64,39 @@ import { LanguageService, SUPPORTED_LANGUAGES, SupportedLang } from '../services
       font-family: inherit;
 
       &:hover {
-        color: #ffffff;
+        color: var(--brand);
       }
 
       &.active {
-        background: #0f6b5a;
-        color: #ffffff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        background: var(--brand);
+        color: var(--on-brand);
+        box-shadow: var(--e1);
       }
+    }
+
+    .more { position: relative; }
+    .more summary { list-style: none; }
+    .more summary::-webkit-details-marker { display: none; }
+    .more-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      display: grid;
+      gap: 4px;
+      min-width: 140px;
+      padding: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--e2);
+      z-index: 5;
     }
   `],
 })
 export class LanguageSwitcherComponent {
   readonly langService = inject(LanguageService);
-  readonly languages = SUPPORTED_LANGUAGES;
+  readonly primary = PRIMARY_LANGUAGES;
+  readonly more = MORE_LANGUAGES;
 
   selectLanguage(code: SupportedLang): void {
     this.langService.setLanguage(code);

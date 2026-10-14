@@ -8,7 +8,7 @@ export interface UserSession {
 }
 
 export const DEMO_COORDINATOR_EMAIL = 'demo-coordinator@reliefdesk.internal';
-export const DEMO_COORDINATOR_PASSWORD = 'RiverbendRelief2026!';
+export const DEMO_COORDINATOR_PASSWORD = 'KeralaRelief2026!';
 export const DEMO_COORDINATOR_TOKEN = 'demo-coordinator-token';
 
 @Injectable({
@@ -48,7 +48,7 @@ export class AuthService {
         email: DEMO_COORDINATOR_EMAIL,
         role: 'coordinator',
         token: DEMO_COORDINATOR_TOKEN,
-        displayName: 'Riverbend Emergency Coordinator',
+        displayName: 'Kerala Emergency Coordinator',
       };
       this.persistSession(session);
       return { success: true };

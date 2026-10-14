@@ -83,6 +83,15 @@ describe('StatusComponent', () => {
     fixture.detectChanges();
   });
 
+  afterEach(() => fixture.destroy());
+
+  it('keeps watching until the request is finished', () => {
+    expect(component.stillWaiting('new')).toBeTrue();
+    expect(component.stillWaiting('dispatched')).toBeTrue();
+    expect(component.stillWaiting('completed')).toBeFalse();
+    expect(component.stillWaiting('resolved')).toBeFalse();
+  });
+
   it('should create and load initial status', () => {
     expect(component).toBeTruthy();
     expect(component.statusData()?.report_id).toBe('R-0412');

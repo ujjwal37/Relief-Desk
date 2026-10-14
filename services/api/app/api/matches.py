@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from app.api.auth import get_current_coordinator, CoordinatorUser
-from app.models.firestore_models import StoredMatch, StoredResource, ResourceKind
+from app.models.firestore_models import StoredMatch, StoredRequest, StoredResource, ResourceKind
 from app.agents.matching import matching_agent, MatchProposal
 from app.tools.storage import storage_service
 
@@ -17,6 +17,11 @@ class ApproveMatchRequest(BaseModel):
 
 class RejectMatchRequest(BaseModel):
     reason: str
+
+
+class ResourceLocationRequest(BaseModel):
+    lat: float
+    lng: float
 
 
 @router.get(
@@ -81,6 +86,52 @@ def reject_match(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
 
 
+@router.post(
+    "/requests/{id}/arrived",
+    response_model=StoredRequest,
+    summary="Mark the assigned team as arrived",
+)
+def mark_request_arrived(
+    id: str,
+    user: CoordinatorUser = Depends(get_current_coordinator),
+):
+    try:
+        return storage_service.mark_arrived(id, actor=user.email)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.post(
+    "/requests/{id}/complete",
+    response_model=StoredRequest,
+    summary="Mark the case completed and release team capacity",
+)
+def complete_request(
+    id: str,
+    user: CoordinatorUser = Depends(get_current_coordinator),
+):
+    try:
+        return storage_service.complete_request(id, actor=user.email)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.post(
+    "/resources/{id}/location",
+    response_model=StoredResource,
+    summary="Set a team's last-known location by hand",
+)
+def update_resource_location(
+    id: str,
+    payload: ResourceLocationRequest,
+    user: CoordinatorUser = Depends(get_current_coordinator),
+):
+    try:
+        return storage_service.update_resource_location(id, payload.lat, payload.lng, actor=user.email)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
+
+
 @router.get(
     "/resources",
     response_model=List[StoredResource],
@@ -91,3 +142,43 @@ def list_resources(
     user: CoordinatorUser = Depends(get_current_coordinator),
 ):
     return storage_service.list_resources(kind=kind)
+
+
+class TeamActionRequest(BaseModel):
+    action: str
+
+
+@router.get(
+    "/team/{resource_id}",
+    response_model=StoredResource,
+    summary="One team, for the field confirm link",
+)
+def get_team(resource_id: str):
+    res = storage_service.get_resource(resource_id)
+    if not res:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+    return res
+
+
+@router.post(
+    "/team/{resource_id}",
+    response_model=StoredResource,
+    summary="At scene, done, or back available",
+)
+def confirm_team(resource_id: str, payload: TeamActionRequest):
+    try:
+        return storage_service.team_action(resource_id, payload.action, actor="team")
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.post(
+    "/team/{resource_id}/location",
+    response_model=StoredResource,
+    summary="Optional location share from the team phone",
+)
+def share_team_location(resource_id: str, payload: ResourceLocationRequest):
+    try:
+        return storage_service.update_resource_location(resource_id, payload.lat, payload.lng, actor="team")
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))

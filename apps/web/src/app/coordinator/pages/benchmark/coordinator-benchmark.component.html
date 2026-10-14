@@ -1,35 +1,51 @@
 <div class="bench-page">
-  <header class="card glow">
-    <div>
-      <h1>{{ 'benchmark.title' | rdTranslate }}</h1>
-      <p class="sub">{{ subtitle() }}</p>
-    </div>
-    <p class="synthetic">Synthetic data, our own labels</p>
+  <header>
+    <h1>{{ 'bench.title2' | rdTranslate }}</h1>
+    @if (example()) { <span class="example">{{ 'ux.exampleData' | rdTranslate }}</span> }
+    <p class="sub">{{ 'bench.sub' | rdTranslate }}</p>
   </header>
 
-  <p class="error" *ngIf="error()">{{ error() }}</p>
+  @if (error()) {
+    <div class="error" role="alert">{{ error() }} <button type="button" (click)="reload()">{{ 'bench.retry' | rdTranslate }}</button></div>
+  }
+  @if (!error() && rows().length === 0) { <div class="skel"><i></i><i></i></div> }
 
-  <div class="table-card card">
-    <table>
-      <thead>
-        <tr>
-          <th>Metric</th>
-          <th>Relief Desk</th>
-          <th>Baseline</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let row of rows()">
-          <td>{{ row.label }}</td>
-          <td class="ours">{{ row.relief }}</td>
-          <td>{{ row.baseline }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  @if (cards().length) {
+    <div class="grid cards">
+      @for (row of cards(); track row.key) {
+        <article class="metric">
+          <h2>{{ row.label | rdTranslate }}</h2>
+          <p class="means">{{ row.means | rdTranslate }}</p>
+          <p class="kpi">{{ row.relief || ('ux.notRecorded' | rdTranslate) }}</p>
+        </article>
+      }
+    </div>
+  }
 
-  <section class="card failures" *ngIf="failures().length">
-    <h2>Failure examples</h2>
-    <p *ngFor="let line of failures()">{{ line }}</p>
-  </section>
+  @if (tableRows().length) {
+    <div class="table-wrap">
+      <table class="cases">
+        <thead>
+          <tr>
+            <th>{{ 'bench.colCase' | rdTranslate }}</th>
+            <th>{{ 'bench.colAiUrgency' | rdTranslate }}</th>
+            <th>{{ 'bench.colCoordinator' | rdTranslate }}</th>
+            <th>{{ 'bench.colAiTeam' | rdTranslate }}</th>
+            <th>{{ 'bench.colResult' | rdTranslate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of tableRows(); track row.caseId) {
+            <tr>
+              <td>{{ row.caseId }}</td>
+              <td>{{ row.aiUrgency }}</td>
+              <td>{{ row.coordinator }}</td>
+              <td>{{ row.aiTeam }}</td>
+              <td>{{ row.result }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 </div>

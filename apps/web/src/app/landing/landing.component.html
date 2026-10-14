@@ -1,50 +1,76 @@
-<div class="landing-container">
-  <div class="emergency-alert-banner">
-    <div class="alert-content">
-      <span class="alert-icon">⚠️</span>
-      <span class="alert-text">{{ 'safety.banner' | rdTranslate }}</span>
-      <a href="tel:112" class="call-112-btn">{{ 'safety.call112' | rdTranslate }}</a>
-    </div>
-  </div>
-
-  <header class="landing-header">
-    <div class="brand">
-      <span class="brand-logo">🛡️</span>
-      <div class="brand-titles">
-        <h1>{{ 'landing.title' | rdTranslate }}</h1>
-        <p class="brand-tagline">{{ 'landing.subtitle' | rdTranslate }}</p>
-      </div>
-    </div>
-    <div class="header-actions">
-      <rd-language-switcher></rd-language-switcher>
-    </div>
+<div class="page">
+  <header class="top">
+    <a routerLink="/" class="brand" aria-label="Relief Desk">
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z" fill="var(--brand)"/><path d="M12 7v8M8 11h8" stroke="var(--on-brand)" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <span>{{ 'landing.title' | rdTranslate }}</span>
+    </a>
+    <div class="actions"><rd-call-pill /><rd-settings-button /></div>
   </header>
 
-  <main class="role-selector">
-    <div class="choice-cards">
-      <a routerLink="/report" class="card choice-card public-choice">
-        <div class="card-icon">🆘</div>
-        <div class="card-body">
-          <h2>{{ 'landing.helpTitle' | rdTranslate }}</h2>
-          <p class="desc-en">{{ 'landing.helpDesc' | rdTranslate }}</p>
-        </div>
-        <div class="action-arrow">→</div>
-      </a>
+  <main class="main">
+    <section class="left">
+      <h1 class="h1-mobile">{{ 'landing.h1' | rdTranslate }}</h1>
+      <h1 class="h1-desk">
+        <span>{{ 'landing.deskLine1' | rdTranslate }}</span>
+        <span>{{ 'landing.deskLine2' | rdTranslate }}</span>
+        <span class="accent">{{ 'landing.deskLine3' | rdTranslate }}</span>
+      </h1>
+      <p class="judge problem">{{ 'landing.problem' | rdTranslate }}</p>
+      <p class="judge does">{{ 'landing.does' | rdTranslate }}</p>
+      <p class="scenario">{{ 'landing.scenarioLabel' | rdTranslate }}</p>
 
-      <a routerLink="/coordinator/login" class="card choice-card coordinator-choice">
-        <div class="card-icon">📋</div>
-        <div class="card-body">
-          <h2>{{ 'landing.coordinatorTitle' | rdTranslate }}</h2>
-          <p class="desc-en">{{ 'landing.coordinatorDesc' | rdTranslate }}</p>
-        </div>
-        <div class="action-arrow">→</div>
-      </a>
-    </div>
+      <div class="cards">
+        <a class="sos" href="/report-preview" target="_blank" rel="noopener">
+          <span class="sos-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg></span>
+          <span class="badge">{{ 'landing.noSignup' | rdTranslate }}</span>
+          <span class="sos-title">{{ 'landing.needHelp' | rdTranslate }}</span>
+          <span class="sos-sub">{{ 'landing.needHelpSub' | rdTranslate }}</span>
+          <span class="sos-foot">{{ 'landing.voiceText' | rdTranslate }} <span aria-hidden="true">→</span></span>
+        </a>
 
-    <div class="quick-links">
-      <a routerLink="/status" class="sub-link">{{ 'nav.status' | rdTranslate }}</a>
-      <span class="dot">•</span>
-      <a routerLink="/nearby" class="sub-link">{{ 'nav.nearby' | rdTranslate }}</a>
-    </div>
+        <a routerLink="/coordinator/login" class="coord">
+          <span class="chip">{{ 'landing.signIn' | rdTranslate }}</span>
+          <span class="coord-title">{{ 'landing.coordCard' | rdTranslate }}</span>
+          <span class="coord-sub">{{ 'landing.coordCardSub' | rdTranslate }} <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+
+      <div class="rows">
+        <a routerLink="/status" class="row"><span>{{ 'landing.checkRequest' | rdTranslate }}</span><span aria-hidden="true">›</span></a>
+        <a routerLink="/nearby" class="row"><span>{{ 'landing.alertsNear' | rdTranslate }}</span><span aria-hidden="true">›</span></a>
+      </div>
+
+      <a href="#" class="judge-desk" (click)="openDemo($event)">{{ 'landing.judgeLink' | rdTranslate }}</a>
+
+      <ul class="trust">
+        <li>{{ 'landing.trustOffline' | rdTranslate }}</li>
+        <li>{{ 'landing.trustLang' | rdTranslate }}</li>
+        <li>{{ 'landing.trustArea' | rdTranslate }}</li>
+      </ul>
+    </section>
+
+    <aside class="right" aria-hidden="true">
+      <div class="phone">
+        <div class="phone-head">{{ 'nav.report' | rdTranslate }}</div>
+        <div class="phone-body">
+          <div class="spark">✦</div>
+          <div class="ph-title">{{ 'landing.previewTitle' | rdTranslate }}</div>
+          <div class="ph-sub">{{ 'landing.previewSub' | rdTranslate }}</div>
+          <div class="ph-chip">{{ 'landing.chipFlood' | rdTranslate }}</div>
+          <div class="ph-chip">{{ 'landing.chipAnimal' | rdTranslate }}</div>
+          <div class="ph-chip">{{ 'landing.chipHurt' | rdTranslate }}</div>
+          <div class="ph-chip">{{ 'landing.chipOther' | rdTranslate }}</div>
+        </div>
+        <div class="ph-composer">{{ 'landing.composer' | rdTranslate }}</div>
+      </div>
+    </aside>
   </main>
+
+  <footer class="foot">
+    <p class="coord-link">{{ 'landing.coordFooter' | rdTranslate }}
+      <a routerLink="/coordinator/login">{{ 'landing.signIn' | rdTranslate }}</a> ·
+      <a href="#" (click)="openDemo($event)">{{ 'landing.judgeDemo' | rdTranslate }}</a></p>
+    <rd-quiet-footer />
+    <p class="cup">{{ 'landing.cup' | rdTranslate }}</p>
+  </footer>
 </div>

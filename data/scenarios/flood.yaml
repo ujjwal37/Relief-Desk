@@ -1,6 +1,6 @@
 id: flood
 title: Urban Flood Relief
-description: Flooding incident response in Riverbend city (water rising, marooned civilians, food and medical assistance)
+description: Synthetic scenario inspired by Kerala floods. Water rising, people stranded, food and medical assistance. People in the reports are fictional.
 incident_types:
   - rescue
   - food
@@ -33,22 +33,22 @@ follow_up_questions:
     en: Where are you located? Please share your landmark, street, or ward number.
     hi: आप किस स्थान पर हैं? कृपया अपना लैंडमार्क, गली या वार्ड नंबर बताएं।
     hinglish: Aap kahan hain? Kripya apna landmark, gali ya ward number batayein.
-    ta: நீங்கள் எங்கு இருக்கிறீர்கள்? உங்கள் பகுதி அல்லது அடையாளத்தைக் குறிப்பிடவும்.
+    ml: നിങ്ങൾ എവിടെയാണ്? ലാൻഡ്‌മാർക്ക്, തെരുവ് അല്ലെങ്കിൽ വാർഡ് നമ്പർ പറയുക.
   people_count:
     en: How many people need assistance?
     hi: कुल कितने लोगों को सहायता की आवश्यकता है?
     hinglish: Kitne logo ko madad ki zaroorat hai?
-    ta: எத்தனை நபர்களுக்கு உதவி தேவை?
+    ml: എത്ര പേർക്ക് സഹായം വേണം?
   vulnerable:
     en: Are there any children, elderly individuals, pregnant women, or sick individuals with you?
     hi: क्या आपके साथ बच्चे, बुजुर्ग, गर्भवती महिलाएं या बीमार व्यक्ति हैं?
     hinglish: Kya aapke saath bache, buzurg, pregnant mahilayein ya bimaar log hain?
-    ta: உங்களுடன் குழந்தைகள், முதியவர்கள், கர்ப்பிணிகள் அல்லது நோயாளிகள் யாராவது இருக்கிறார்களா?
+    ml: കുട്ടികൾ, പ്രായമായവർ, ഗർഭിണികൾ അല്ലെങ്കിൽ രോഗികൾ കൂടെയുണ്ടോ?
   hazard:
     en: Is the water level rising, and are you stranded on a roof or upper floor?
     hi: क्या पानी का स्तर बढ़ रहा है, और क्या आप छत या ऊपरी मंजिल पर फंसे हैं?
-    hinglish: Kya paani ka level badh raha hai aur aap chat ya upari floor par hain?
-    ta: நீர் மட்டம் உயர்கிறதா, நீங்கள் மேல் தளத்தில் சிக்கியுள்ளீர்களா?
+    hinglish: Kya paani ka level badh raha hai aur aap chhat ya upari floor par hain?
+    ml: വെള്ളം ഉയരുകയാണോ? നിങ്ങൾ മേൽക്കൂരയിലോ മുകൾ നിലയിലോ കുടുങ്ങിയിട്ടുണ്ടോ?
 urgency_rules:
   base_weight: 10
   water_rising_boost: 30

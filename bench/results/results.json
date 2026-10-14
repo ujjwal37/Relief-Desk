@@ -1,0 +1,177 @@
+{
+  "dataset": "..\\..\\data\\synthetic\\flood_v1",
+  "split": "test",
+  "split_desc": "Test split (168 messages, frozen)",
+  "seed": 42,
+  "total_evaluated_messages": 168,
+  "metrics": {
+    "type_accuracy_pct": {
+      "relief_desk": 67.3,
+      "baseline_keyword": 16.3,
+      "target": ">= 90%"
+    },
+    "place_ward_accuracy_pct": {
+      "relief_desk": 100.0,
+      "baseline_keyword": 13.3,
+      "target": ">= 85%"
+    },
+    "people_count_exact_pct": {
+      "relief_desk": 79.5,
+      "baseline_keyword": 65.4,
+      "target": "Reported"
+    },
+    "people_count_pm1_pct": {
+      "relief_desk": 89.7,
+      "baseline_keyword": 71.8,
+      "target": "Reported"
+    },
+    "vulnerable_flag_macro_f1_pct": {
+      "relief_desk": 58.5,
+      "baseline_keyword": 39.4,
+      "target": "Reported"
+    },
+    "duplicate_precision_pct": {
+      "relief_desk": 95.8,
+      "baseline_hash": 10.0,
+      "target": "Beat hash clearly"
+    },
+    "duplicate_recall_pct": {
+      "relief_desk": 51.1,
+      "baseline_hash": 4.4,
+      "target": "Beat hash clearly"
+    },
+    "duplicate_f1_pct": {
+      "relief_desk": 66.7,
+      "baseline_hash": 6.2,
+      "target": "Beat hash clearly"
+    },
+    "duplicate_vs_update_3way_accuracy_pct": {
+      "relief_desk": 64.3,
+      "baseline_hash": "N/A (cannot detect updates)",
+      "target": "Reported"
+    },
+    "false_merge_rate_pct": {
+      "relief_desk": 0.0,
+      "baseline_hash": 0.0,
+      "target": "As low as possible"
+    },
+    "critical_case_top5_share_pct": {
+      "relief_desk": 60.0,
+      "baseline_fcfs": 0.0,
+      "target": "Clearly above FCFS"
+    },
+    "critical_case_top10_share_pct": {
+      "relief_desk": 60.0,
+      "baseline_fcfs": 20.0,
+      "target": "Clearly above FCFS"
+    },
+    "critical_case_mean_rank": {
+      "relief_desk": 11.5,
+      "baseline_fcfs": 13.5,
+      "target": "Lower is better"
+    },
+    "hoax_catch_rate_pct": {
+      "relief_desk": 100.0,
+      "baseline": "0.0%",
+      "target": "Reported"
+    },
+    "hoax_false_flag_rate_pct": {
+      "relief_desk": 0.0,
+      "baseline": "0.0%",
+      "target": "Reported"
+    },
+    "latency_p50_ms": {
+      "relief_desk": 692.6,
+      "baseline_fcfs": "< 1 ms",
+      "target": "Reported"
+    },
+    "latency_p95_ms": {
+      "relief_desk": 1991.4,
+      "baseline_fcfs": "< 1 ms",
+      "target": "Reported"
+    },
+    "cost_per_1000_msgs_usd": {
+      "relief_desk": "$0.0465",
+      "baseline": "N/A",
+      "target": "Reported"
+    }
+  },
+  "failure_examples": [
+    {
+      "message_id": "MSG-0102",
+      "raw_text": "Kainakary LP School \u092e\u0947\u0902 \u092a\u093e\u0928\u0940 \u092d\u0930 \u0917\u092f\u093e \u0939\u0948, \u0924\u0941\u0930\u0902\u0924 \u092c\u091a\u093e\u0935 \u0926\u0932 \u092d\u0947\u091c\u094b!",
+      "ground_truth": "type: medical",
+      "relief_desk": "type: rescue",
+      "category": "Incident Type Misclassification",
+      "reason": "Under-specified phrasing led to 'rescue' instead of 'medical'."
+    },
+    {
+      "message_id": "MSG-0103",
+      "raw_text": "Champakulam School \u092e\u0947\u0902 \u092a\u093e\u0928\u0940 \u092d\u0930 \u0917\u092f\u093e \u0939\u0948, \u0924\u0941\u0930\u0902\u0924 \u092c\u091a\u093e\u0935 \u0926\u0932 \u092d\u0947\u091c\u094b!",
+      "ground_truth": "type: medical",
+      "relief_desk": "type: rescue",
+      "category": "Incident Type Misclassification",
+      "reason": "Under-specified phrasing led to 'rescue' instead of 'medical'."
+    },
+    {
+      "message_id": "MSG-0106",
+      "raw_text": "Temple Road \u092e\u0947\u0902 \u092a\u093e\u0928\u0940 \u092d\u0930 \u0917\u092f\u093e \u0939\u0948, \u0924\u0941\u0930\u0902\u0924 \u092c\u091a\u093e\u0935 \u0926\u0932 \u092d\u0947\u091c\u094b!",
+      "ground_truth": "type: medical",
+      "relief_desk": "type: rescue",
+      "category": "Incident Type Misclassification",
+      "reason": "Under-specified phrasing led to 'rescue' instead of 'medical'."
+    }
+  ],
+  "error_analysis": {
+    "type_confusions": [
+      {
+        "pair": "medical->rescue",
+        "count": 10
+      },
+      {
+        "pair": "food->rescue",
+        "count": 8
+      },
+      {
+        "pair": "shelter->rescue",
+        "count": 6
+      },
+      {
+        "pair": "info->rescue",
+        "count": 5
+      },
+      {
+        "pair": "rescue->shelter",
+        "count": 1
+      },
+      {
+        "pair": "food->medical",
+        "count": 1
+      },
+      {
+        "pair": "info->shelter",
+        "count": 1
+      }
+    ],
+    "note": "Counts from this split only. Rules were not edited from these misses."
+  },
+  "corpus_messages": 444,
+  "frozen_test_count": 168,
+  "created_at": "2026-10-12T15:46:06.637869+00:00",
+  "gemini": {
+    "measured": false,
+    "reason": "fallback",
+    "model": "gemini-3.5-flash-lite",
+    "date": "2026-10-12",
+    "n": 168,
+    "cache": true,
+    "rate_limit_per_min": 13.0,
+    "type_accuracy_pct": null,
+    "place_ward_accuracy_pct": null,
+    "calls": 3,
+    "baseline_type_accuracy_pct": 16.3,
+    "baseline_ward_accuracy_pct": 13.3,
+    "rules_type_accuracy_pct": 67.3,
+    "rules_ward_accuracy_pct": 100.0
+  }
+}

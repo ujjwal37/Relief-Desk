@@ -1,88 +1,200 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { ApiClientService, ReportStatusResponse } from '@rd/shared';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ApiClientService, ReportStatusResponse, RdTranslatePipe } from '@rd/shared';
+import { MyRequestsService } from '../../../core/services/my-requests.service';
+import { LiveEventsService } from '../../../core/live-events.service';
 
 @Component({
   selector: 'app-status',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, RdTranslatePipe],
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StatusComponent implements OnInit {
+export class StatusComponent implements OnInit, OnDestroy {
   private api = inject(ApiClientService);
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
+  private store = inject(MyRequestsService);
+  private live = inject(LiveEventsService);
 
-  reportIdInput = signal('R-0412');
-  tokenInput = signal('tok_demo');
+  reportIdInput = signal('');
+  tokenInput = signal('');
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   statusData = signal<ReportStatusResponse | null>(null);
+  copied = signal<'' | 'id' | 'link'>('');
+  /** Find form shows when nothing is saved, or when asked for (?find=1). */
+  showFind = signal(false);
+  invalidInput = signal(false);
+  isNew = signal(false);
+  private currentToken = '';
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private watchedId = '';
+  private stopEvents?: () => void;
 
   ngOnInit(): void {
-    // Check route query parameters or localStorage for last report ID
-    const queryParams = this.route.snapshot.queryParams;
-    const qId = queryParams['id'] || queryParams['report_id'];
-    const qToken = queryParams['token'];
-
+    const q = this.route.snapshot.queryParams;
+    const qId = q['id'] || q['report_id'];
+    this.isNew.set(q['new'] === '1');
     if (qId) {
       this.reportIdInput.set(qId);
-      if (qToken) this.tokenInput.set(qToken);
-      this.fetchStatus(qId, qToken);
+      this.tokenInput.set(q['token'] || '');
+      this.fetchStatus(qId, q['token']);
+    } else if (q['find']) {
+      this.showFind.set(true);
     } else {
-      const storedId = localStorage.getItem('rd_last_report_id');
-      const storedToken = localStorage.getItem('rd_last_status_token');
-      if (storedId) {
-        this.reportIdInput.set(storedId);
-        if (storedToken) this.tokenInput.set(storedToken);
-        this.fetchStatus(storedId, storedToken || undefined);
+      const saved = this.store.latest();
+      if (saved) {
+        this.reportIdInput.set(saved.id);
+        this.tokenInput.set(saved.token);
+        this.fetchStatus(saved.id, saved.token || undefined);
       } else {
-        // Fallback to canonical synthetic demo case
-        this.fetchStatus('R-0412', 'tok_demo');
+        this.showFind.set(true);
       }
     }
   }
 
-  fetchStatus(reportId: string, token?: string): void {
+  ngOnDestroy(): void {
+    this.stopWatch();
+  }
+
+  /** Keep asking until a coordinator finishes the request, so the phone updates on its own. */
+  stillWaiting(status: string | undefined): boolean {
+    return status !== 'completed' && status !== 'resolved' && status !== 'closed';
+  }
+
+  fetchStatus(reportId: string, token?: string, silent = false): void {
     const cleanId = reportId.trim();
     if (!cleanId) return;
-
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
-
-    this.api.getReportStatus(cleanId, token?.trim()).subscribe({
+    if (!silent) {
+      this.isLoading.set(true);
+      this.errorMessage.set(null);
+    }
+    const nextToken = token?.trim();
+    if (nextToken) this.currentToken = nextToken;
+    this.api.getReportStatus(cleanId, this.currentToken || undefined).subscribe({
       next: (data) => {
         this.statusData.set(data);
+        this.showFind.set(false);
+        this.isLoading.set(false);
+        this.store.add(data.report_id || cleanId, this.currentToken);
+        if (this.stillWaiting(data.status)) this.watch(data.report_id || cleanId);
+        else this.stopWatch();
+      },
+      error: () => {
+        if (silent && this.statusData()) return;
+        this.statusData.set(null);
+        this.errorMessage.set('not-found');
+        this.showFind.set(true);
         this.isLoading.set(false);
       },
-      error: (err) => {
-        console.warn('Status fetch error, falling back to demo state:', err);
-        // If 404 or offline, load demo state for uninterrupted evaluation
-        this.api.getReportStatus('R-0412', 'tok_demo').subscribe({
-          next: (demo) => {
-            this.statusData.set(demo);
-            this.isLoading.set(false);
-          },
-          error: () => {
-            this.errorMessage.set('Unable to retrieve status. Please check your request ID.');
-            this.isLoading.set(false);
-          }
-        });
-      }
     });
   }
 
-  onTrackSubmit(): void {
-    const id = this.reportIdInput();
-    const tok = this.tokenInput();
-    this.fetchStatus(id, tok || undefined);
+  /** The stream is the update. A 2.5s poll runs only while that stream is down, inside the 3s approve budget. */
+  private watch(id: string): void {
+    this.startPoll();
+    if (!this.currentToken || this.watchedId === id) return;
+    this.stopEvents?.();
+    this.watchedId = id;
+    this.live.connectReport(id, this.currentToken);
+    this.stopEvents = this.live.onEvent(() => this.fetchStatus(id, this.currentToken, true));
   }
 
-  navigateTo(path: string): void {
-    this.router.navigate([path]);
+  private startPoll(): void {
+    if (this.pollTimer) return;
+    this.pollTimer = setInterval(() => {
+      if (this.live.state() === 'live') return;
+      const data = this.statusData();
+      const id = data?.report_id || this.reportIdInput().trim();
+      if (!id || !this.stillWaiting(data?.status)) {
+        this.stopPoll();
+        return;
+      }
+      this.fetchStatus(id, this.currentToken, true);
+    }, 2500);
+  }
+
+  private stopPoll(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  private stopWatch(): void {
+    this.stopPoll();
+    this.stopEvents?.();
+    this.stopEvents = undefined;
+    this.watchedId = '';
+    this.live.stop();
+  }
+
+  /** Accepts a request ID, or a pasted status link that carries id and token. */
+  onIdInput(value: string): void {
+    this.reportIdInput.set(value);
+    this.invalidInput.set(false);
+    try {
+      const url = new URL(value.trim());
+      const id = url.searchParams.get('id') || url.searchParams.get('report_id');
+      if (id) {
+        this.reportIdInput.set(id);
+        const tok = url.searchParams.get('token');
+        if (tok) this.tokenInput.set(tok);
+      }
+    } catch { /* plain ID */ }
+  }
+
+  async pasteFromClipboard(): Promise<void> {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) this.onIdInput(text);
+    } catch { /* permission denied: user can paste manually */ }
+  }
+
+  onTrackSubmit(): void {
+    const id = this.reportIdInput().trim();
+    if (!id) {
+      this.invalidInput.set(true);
+      return;
+    }
+    this.fetchStatus(id, this.tokenInput() || undefined);
+  }
+
+  statusLink(id: string): string {
+    const tok = this.currentToken || this.tokenInput();
+    return `${location.origin}/status?id=${encodeURIComponent(id)}${tok ? '&token=' + encodeURIComponent(tok) : ''}`;
+  }
+
+  private flash(kind: 'id' | 'link'): void {
+    this.copied.set(kind);
+    setTimeout(() => this.copied.set(''), 1600);
+  }
+
+  localTime(value: string | null | undefined): string {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  copyId(id: string): void {
+    navigator.clipboard?.writeText(id).then(() => this.flash('id'));
+  }
+
+  copyLink(id: string): void {
+    navigator.clipboard?.writeText(this.statusLink(id)).then(() => this.flash('link'));
+  }
+
+  share(id: string): void {
+    const url = this.statusLink(id);
+    if (navigator.share) {
+      navigator.share({ title: 'Relief Desk', url }).catch(() => undefined);
+    } else {
+      this.copyLink(id);
+    }
   }
 }

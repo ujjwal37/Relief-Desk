@@ -1,0 +1,74 @@
+<article class="step">
+  <div class="row">
+    <span class="mark" [class]="step().status" aria-hidden="true">
+      @switch (step().status) {
+        @case ('done') {
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>
+        }
+        @case ('running') { <i class="spin"></i> }
+        @case ('fallback') {
+          <svg class="retry-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-2.2-5.8"/><path d="M21 4v6h-6"/></svg>
+        }
+        @case ('error') { <i class="dot crit"></i> }
+        @default { <i class="dash"></i> }
+      }
+    </span>
+    <div class="copy">
+      <h3>{{ nameKey() | rdTranslate }}</h3>
+      @if (step().status === 'waiting') {
+        <p class="out wait">{{ 'flow.waiting' | rdTranslate }}</p>
+      } @else if (step().linkId) {
+        <p class="out">{{ beforeLink() }}<button type="button" class="id-link">{{ step().linkId }}</button>{{ afterLink() }}</p>
+      } @else if (sentence()) {
+        <p class="out">{{ sentence() }}</p>
+      }
+      <p class="meta">
+        @if (timeText()) { <span>{{ timeText() }}</span> }
+        <span class="badge">{{ badgeWord() }}</span>
+      </p>
+    </div>
+  </div>
+  @if (step().status === 'error') {
+    <button type="button" class="retry" (click)="retry.emit()">{{ 'ux.retry' | rdTranslate }}</button>
+  }
+  @if (showDetails()) {
+    <button type="button" class="details" [attr.aria-expanded]="open()" (click)="toggled.emit()">
+      {{ (open() ? 'flow.hideDetails' : 'flow.details') | rdTranslate }} ▾
+    </button>
+  }
+  @if (open() && showDetails()) {
+    <div class="box">
+      @if (step().input) { <p class="line"><span>{{ 'ux.input' | rdTranslate }}</span> {{ step().input }}</p> }
+      @if (step().asked) {
+        <p class="line"><span>{{ 'flow.prompt' | rdTranslate }}</span></p>
+        <pre class="raw">{{ clipped(step().asked, 6, promptAll()) }}</pre>
+        <div class="acts">
+          @if (needsClip(step().asked, 6)) {
+            <button type="button" (click)="promptAll.set(!promptAll())">{{ 'flow.showAll' | rdTranslate }}</button>
+          }
+          <button type="button" (click)="copy('prompt', step().asked)">{{ (copied() === 'prompt' ? 'flow.copied' : 'flow.copy') | rdTranslate }}</button>
+        </div>
+      }
+      @if (step().tools.length) {
+        <div class="tools">
+          <span>{{ 'ux.tools' | rdTranslate }}</span>
+          @for (tool of step().tools; track tool) { <code>{{ tool }}</code> }
+        </div>
+      }
+      @if (step().raw) {
+        <p class="line"><span>{{ 'ux.raw' | rdTranslate }}</span></p>
+        <pre class="raw">{{ clipped(step().raw, 8, rawAll()) }}</pre>
+        <div class="acts">
+          @if (needsClip(step().raw, 8)) {
+            <button type="button" (click)="rawAll.set(!rawAll())">{{ 'flow.showAll' | rdTranslate }}</button>
+          }
+          <button type="button" (click)="copy('raw', step().raw)">{{ (copied() === 'raw' ? 'flow.copied' : 'flow.copy') | rdTranslate }}</button>
+        </div>
+      }
+      @if (step().model && timeText()) {
+        <p class="line"><span>{{ 'flow.modelLatency' | rdTranslate }}</span> {{ timeText() }}</p>
+      }
+      @if (step().note) { <p class="line"><span>{{ 'flow.fellBack' | rdTranslate }}</span> {{ step().note }}</p> }
+    </div>
+  }
+</article>

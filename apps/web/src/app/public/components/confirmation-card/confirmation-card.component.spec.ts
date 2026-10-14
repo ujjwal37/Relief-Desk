@@ -56,11 +56,22 @@ describe('ConfirmationCardComponent', () => {
     expect(spy.calls.mostRecent().args[0].people_count).toBe(8);
   });
 
+  it('uses the Hinglish button words instead of Send now', () => {
+    TestBed.inject(LanguageService).setLanguage('hinglish');
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Abhi bhejein');
+    expect(text).not.toContain('Send now');
+  });
+
   it('renders the Hindi title when language is hi', () => {
     TestBed.inject(LanguageService).setLanguage('hi');
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('हमारी समझ');
     expect(text).toContain('अभी भेजें');
+    expect(text).toContain('बचाव');
+    expect(text).toContain('पानी बढ़ रहा है');
+    expect(text).not.toContain('water_rising');
   });
 });

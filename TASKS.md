@@ -98,3 +98,75 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | T-052 | Repo hygiene: gitleaks on full history, grep for other project names, LICENSE, tag `v1.0-submission` | U | TODO | T-051 | Scans clean; deployed revision = tag |
 | T-053 | Final video upload, description ≤1,024 chars, theme dropdown, submit on portal; save confirmation | U | TODO | T-050, T-052 | Confirmation saved in WORKDONE |
 | – | 18 Oct: buffer only (deadline 11:59 PM IST) | U | – | – | – |
+
+## First-pass reliability (branch cursor/first-pass-e2e-70f2 → ux-uplift)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| FP-01 | Offline report queue stores, retries, and dedupes | C | DONE | T-028 | Phone queue survives offline send; retry uses one idempotency key; server returns the same request |
+| FP-02 | Live coordinator queue | C | DONE | FP-01 | New public report appears within 5 s without reload |
+| FP-03 | Hinglish/Hindi intake place, ward, vulnerable, raw text | C | DONE | FP-01 | Pytest for the three TEST_REPORT examples |
+| FP-04 | Triage bands: critical cases are Needs help now | C | DONE | – | At least 3 seeds in Needs help now; chip and banner counts match |
+| FP-05 | Rescue matches boat/rescue, not shelter, unless labelled fallback | C | DONE | – | Pytest; benchmark not worse |
+| FP-06 | Honest status timeline, local time, short ID | C | DONE | – | Timeline matches real status |
+| FP-07 | Chat fully localized | C | DONE | – | No raw keys in chips, prompts, or review |
+| FP-08 | Dispatched and Completed lifecycle | C | DONE | FP-05 | Approve leaves the active queue; complete frees capacity |
+| FP-09 | Teams view | C | DONE | FP-08 | All resources listed; typed map pins |
+| FP-10 | Team location and simulated movement | C | DONE | FP-09 | Manual update; simulated path labelled |
+| FP-11 | Filters in the URL and timestamps | C | DONE | FP-02 | Status, type, area, time persist; empty state |
+| FP-12 | Time-based priority rise | C | DONE | FP-04 | Injected clock raises the score; reason chip |
+| FP-13 | Kerala case study | C | DONE | – | Districts Alappuzha, Ernakulam, Thrissur, Wayanad; synthetic people; Riverbend and Lucknow removed from app data |
+| FP-GAP | No team free, confirm link, seed clock | C | DONE | FP-12 | Estimated wait, resource gap alert, team confirm page, last-hour seeds |
+| FP-14 | Demo coordinator button on login | C | DONE | – | One click from /coordinator/login in demo mode |
+| FP-15 | Alerts map polish | C | DONE | – | Ward outlines, numbered typed pins, silent zone |
+| FP-16 | Accuracy report naming | C | DONE | – | Plain metric names vs first-come-first-served |
+| FP-17 | Mobile coordinator layout | C | DONE | FP-08 | No horizontal overflow at 390; case detail sheet |
+| FP-18 | i18n of case content | C | DONE | FP-13 | Translations field shown for the selected language |
+| FP-19 | Small fixes: 112 text, chhat, sass @use, reset demo | C | DONE | – | Documented build and reset |
+| FP-E2E | Playwright public and coordinator pass | C | DONE | FP-19 | Desktop 1440x900 and mobile 390x844 both pass: report, offline, status, find, demo login, approve, complete, teams, no boat free, filters, alerts, accuracy, hi/ta, theme |
+| RT-01 | Status lookup requires the matching token | C | DONE | FP-E2E | 401 without the token; demo canned status only for literal demo ids |
+| RT-02 | Tamil people count and vulnerable flags | C | DONE | RT-01 | 5 பேர், Tamil digits, and குழந்தை / elderly / medical |
+| RT-03 | My requests shows translated status and RD code | C | DONE | RT-02 | Home card does not show status.heroReceived or rep_ |
+| RT-04 | Offline replay opens status | C | DONE | RT-03 | After the queued report is accepted, leave the review screen for Status |
+| RT-05 | Mark arrived sets the team to at the scene | C | DONE | RT-04 | Resource status on_scene and the public timeline step is done |
+| RT-06 | Match ETAs prefer a nearer team | C | DONE | RT-05 | Oxygen case is the Varapuzha clinic; a far boat is not offered when a nearer one exists |
+| RT-07 | Teams free counts every team | C | DONE | RT-06 | The tile total includes shelter and food, not only boats and medical |
+| RT-08 | Tab counts follow filters; areas use place names | C | DONE | RT-07 | Needs-help counts drop with type, area and time; Kalpetta not ward 12 |
+| RT-09 | Seed hi and ta name the same place as English | C | DONE | RT-08 | INC-008 Hindi says St. Jude, not the school; no language names a different landmark |
+| RT-10 | Mobile coordinator banner, tabs and alerts map | C | DONE | RT-09 | Banner wraps, Accuracy report tab wraps, spike mark is a small circle |
+| RT-11 | Hinglish review does not say Send now | C | DONE | RT-10 | The review line uses Abhi bhejein, the same words as the button |
+| RT-12 | One resource-gap alert, seeded one marked sample | C | DONE | RT-11 | The fictional medical gap is labelled Sample; a live gap replaces it |
+| RT-13 | Team link is labelled demo | C | DONE | RT-12 | /team/:id shows Demo link and is not described as a signed-in screen |
+| RT-14 | Sample badge on the seeded resource gap | C | DONE | RT-13 | The card shows Sample and Sample: Resource gap; a live spike is not badged |
+| RT-15 | Nearby teams per district and honest ETAs | C | DONE | RT-14 | Each district has a boat, medical and food team within 30 km; farther cases say No nearby team |
+| RT-16 | Landing checkmark is a CSS escape | C | DONE | RT-15 | content uses \\2713 and no source file contains the mojibake marker |
+| RT-17 | Live reports dedupe the same street and people | C | DONE | RT-16 | A reworded Hinglish pair returns duplicate and the open card has merged_count 2 |
+| RT-18 | Spam sample is flagged and kept out of Needs help | C | DONE | RT-17 | FREE MONEY bit.ly OTP text is hoax and its score stays under 75 |
+| RT-19 | Tamil seed lines are Tamil sentences | C | DONE | RT-18 | INC-005 names the Aluva clock tower in Tamil; no pasted English words |
+| RT-20 | Dashboard map shows Kerala districts | C | DONE | RT-19 | Bounds fit open cases; labels Alappuzha, Ernakulam, Thrissur, Wayanad; no river stroke |
+| RT-21 | Mobile header stays on two rows | C | DONE | RT-20 | Logo and avatar on one row, tabs on the next; Accuracy report stays inside the header |
+| RT-22 | Live path calls Gemini when a key is set | C | DONE | RT-21 | Demo mode stays on recorded replies; the case AI reading shows Gemini or Offline fallback |
+| RT-23 | Benchmark type and ward from the train split | C | DONE | RT-22 | Ward uses the gazetteer on the full report; type follows need-words. Test type 67.3%, ward 100% |
+| RT-24 | A shared situation word does not merge a new case | C | DONE | RT-23 | "stranded" alone does not fold a counted report into a seed |
+| GM-01 | Gemini, cache, or fallback on every report | C | DONE | RT-24 | A real key calls Gemini. No key stores provider=fallback. Cards show Gemini, Recorded Gemini run, or Offline fallback |
+| GM-02 | Structured intake: type, ward, people, hoax | C | DONE | GM-01 | Hinglish and Tamil samples keep the original text. Spam stays under Needs help |
+| GM-03 | Frozen split and Gemini versus keyword baseline | C | DONE | GM-02 | 444 labelled reports. Test ids stay MSG-0073 to MSG-0240. Held-out type 67.3%, ward 100%. Gemini not measured without a key |
+| GM-04 | Embedding retrieval and a Gemini duplicate judge | C | DONE | GM-03 | Same district and time window. Judge says duplicate, update, or distinct. Lexical fallback when AI is off. Merge and undo are audited |
+| GM-05 | ADK pipeline after submit | C | DONE | GM-04 | SequentialAgent of Intake, parallel Dedupe and Triage, Matching, Explainer. Score and capacity stay in tools. The case shows Analysing, then complete, and is not dispatched |
+| GM-06 | Per-case agent trace | C | DONE | GM-05 | GET /api/cases/{id}/trace returns each agent step. The case drawer shows the timeline and Agents working |
+| GM-07 | Assist dispatcher with a human confirmation | C | DONE | GM-06 | Tools run in order. Commit requires confirmation. Reject releases the hold. Two coordinators cannot hold the same boat |
+| GM-08 | AI limits, injection, and health | C | DONE | GM-07 | Token bucket, semaphore, circuit breaker, daily cap, cache. Injection does not raise the score. /api/health/ai reports provider and quota |
+| GM-09 | Replay cache of recorded Gemini runs | C | DONE | GM-08 | data/ai_cache stays empty until make record-ai. Replay badges Recorded Gemini run. A new report with a key still calls Gemini |
+| GM-10 | Photo intake | C | BLOCKED | GM-09 | Not built. An uploaded image is not sent to Gemini. No assistive photo fields are shown |
+| GM-11 | Honest ADK docs and deploy recipe | C | DONE | GM-10 | README maps ADK and Gemini to files. Held-out type 67.3%, ward 100%, Gemini not measured. Dockerfile and Secret Manager notes are a recipe, not a live service |
+| GM-12 | Recheck the earlier retest fixes | C | DONE | GM-11 | Sample badge, 30 km ETA, checkmark escape, Kerala district labels, Tamil INC-005, and the two-row header still pass. No product code changed |
+| UX-04 | Agents visible on the case queue | C | DONE | GM-12 | View trace opens five agents. Assist stays behind Review and does not dispatch. Merged reports and accuracy bars use stored fields |
+| UX-05 | Pine & Sand palette | C | DONE | UX-04 | Light and dark themes use the pine and sand tokens. Navy gradients and glow shadows are gone. Text pairs are at least 4.5:1 |
+| STAB-01 | Stabilise the demo after the theme change | C | DONE | UX-05 | Undo clears a seed merge count. The public header fits at 390px. The queue opens on a case that is still waiting |
+
+## T-UX-03 UX3 uplift (branch ux-uplift)
+- DONE: tokens + light/dark/system theme (shared ThemeService), CallPill, QuietFooter, settings sheet, landing, coordinator login
+- TODO/BLOCKED (not started): public layout + tab bar, report chat + voice overlay, confirm, status, nearby, coordinator dashboard + tour, alerts, accuracy report, states
+- T-UI-01 and UX2 tasks superseded by T-UX-03
+- [x] T-UX-03 coordinator dashboard (briefing, sticky approve bar, tour, theme/language menu, shared band counts), public layout + tab bar, report chat, review, status, nearby, alerts, accuracy report, DEMO_MODE-gated demo entry. Unit tests: web 40 + shared 8 green. Not done: undo-after-approve toast (no un-approve API), photo attach in composer, separate public Home tab screen (landing is home), coordinator detail slide-over close control below 1280px.
+- [x] P0 public entry: Home screen, My requests, Find my request, 4-tab bar on all public pages, request ID copy/share on status.
+- [x] Alerts map overhaul (ward outlines, typed numbered pins, zoom/dim, key); home coordinator button; i18n template lint.

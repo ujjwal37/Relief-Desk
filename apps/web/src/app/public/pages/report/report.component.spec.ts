@@ -1,13 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
+import { signal } from '@angular/core';
 import { of } from 'rxjs';
-import { ApiClientService, LanguageService, canonicalRequestJson } from '@rd/shared';
-import { OfflineSyncService } from '../../../core/services/offline-sync.service';
+import { ApiClientService, LanguageService, ReportSubmitResponse, canonicalRequestJson } from '@rd/shared';
+import { OfflineSyncService, SyncedReport } from '../../../core/services/offline-sync.service';
 import { ReportComponent } from './report.component';
 
 describe('ReportComponent confirmation gate', () => {
   let fixture: ComponentFixture<ReportComponent>;
   let api: jasmine.SpyObj<ApiClientService>;
+  const online = signal(true);
+  const lastSynced = signal<SyncedReport | null>(null);
 
   beforeEach(async () => {
     api = jasmine.createSpyObj('ApiClientService', ['sendChatTurn', 'submitReport', 'getScenario', 'getScenarios']);
@@ -62,8 +65,10 @@ describe('ReportComponent confirmation gate', () => {
         {
           provide: OfflineSyncService,
           useValue: {
-            isOnline: () => true,
-            pendingCount: () => 0,
+            isOnline: online,
+            pendingCount: signal(0),
+            lastSynced,
+            readOnline: () => online(),
             getPrefilledSmsLink: () => 'sms:112',
             saveReportOffline: () => ({ idempotency_key: 'k' }),
           },
@@ -71,6 +76,8 @@ describe('ReportComponent confirmation gate', () => {
       ],
     }).compileComponents();
 
+    online.set(true);
+    lastSynced.set(null);
     fixture = TestBed.createComponent(ReportComponent);
     TestBed.inject(LanguageService).setLanguage('en');
     fixture.detectChanges();
@@ -125,6 +132,74 @@ describe('ReportComponent confirmation gate', () => {
       scenarioId: 'flood',
     }));
     expect(fixture.nativeElement.textContent).toContain('Trapped in Water');
+  });
+
+  it('opens status after an offline report is replayed', () => {
+    const navigate = spyOn(TestBed.inject(Router), 'navigate');
+    online.set(false);
+    const card = {
+      incident_type: 'rescue' as const,
+      place_text: 'Nedumudi Boat Jetty',
+      people_count: 2,
+      vulnerable: { child: false, elderly: false, disabled: false, pregnant: false, medical_need: false },
+      hazard: 'water_rising' as const,
+      summary: '2 people',
+      ready_to_submit: true,
+    };
+    fixture.componentInstance.confirmAndSubmit(card);
+    expect(navigate).not.toHaveBeenCalled();
+    const response: ReportSubmitResponse = {
+      report_id: 'rep_offline',
+      request_id: 'req_offline',
+      status_token: 'tok_offline',
+      summary: 'ok',
+      urgency_score: 10,
+      dedupe_decision: 'new',
+      flags: [],
+      safety_line: 'Call 112',
+    };
+    lastSynced.set({ client_id: 'cli_k', response });
+    fixture.detectChanges();
+    expect(navigate).toHaveBeenCalledWith(['/status'], {
+      queryParams: { id: 'rep_offline', token: 'tok_offline', new: 1 },
+    });
+  });
+
+  it('follows Hindi for labels, example chips, and the mic locale', () => {
+    const lang = TestBed.inject(LanguageService);
+    lang.setLanguage('hi');
+    fixture.detectChanges();
+    const box = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    expect(box.lang).toBe('hi-IN');
+    expect(box.placeholder).toBe('बताइए क्या हुआ');
+    expect(fixture.nativeElement.textContent).toContain('बाढ़ या पानी बढ़ रहा है');
+    expect(fixture.componentInstance.inputLocale()).toBe('hi-IN');
+    expect(fixture.componentInstance.sampleUtterance()).toContain('4 लोग');
+
+    (fixture.nativeElement.querySelector('.rd-set-btn') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const sheet = fixture.nativeElement.querySelector('.rd-sheet') as HTMLElement;
+    expect(sheet.textContent).toContain('EN');
+    expect(sheet.textContent).toContain('हिंदी');
+    expect(sheet.querySelector('[aria-label="Hinglish"]')).toBeNull();
+    (sheet.querySelector('[data-testid="lang-more"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(sheet.querySelector('[aria-label="Hinglish"]')).toBeTruthy();
+    expect(sheet.querySelector('[aria-label="Malayalam"]')).toBeTruthy();
+
+    fixture.componentInstance.openForm();
+    fixture.detectChanges();
+    const form = fixture.nativeElement.textContent as string;
+    expect(form).toContain('स्थान / लैंडमार्क');
+    expect(form).toContain('प्रभावित व्यक्तियों की संख्या');
+    expect(form).toContain('पानी में फंसे हैं');
+
+    lang.setLanguage('en');
+    fixture.componentInstance.mode.set('chat');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.inputLocale()).toBe('en-IN');
+    expect((fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement).lang).toBe('en-IN');
+    expect(fixture.componentInstance.sampleUtterance()).toContain('Ward 7');
   });
 
   it('fast path stays at chip then Send now, with no login control', () => {

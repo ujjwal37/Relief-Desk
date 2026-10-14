@@ -20,7 +20,7 @@ TEST_MESSAGES = [
     # 7. Hinglish food
     ("ward 7 community hall me 20 log hain khana khatam ho gaya hai", IncidentType.FOOD, 20, False),
     # 8. English rescue
-    ("3 people stranded on rooftop near Riverbend Central Market, water rising fast", IncidentType.RESCUE, 3, False),
+    ("3 people stranded on rooftop near Kerala Central Market, water rising fast", IncidentType.RESCUE, 3, False),
     # 9. English medical/pregnant
     ("Pregnant woman in labor at Sector 2, roads flooded, need urgent medical help", IncidentType.MEDICAL, None, False),
     # 10. English shelter
@@ -53,7 +53,7 @@ def test_prompt_injection_is_ignored():
 
 
 def test_offline_cache_works_when_gemini_disabled(monkeypatch):
-    test_msg = "Riverbend Ward 2 me 5 log pani me fanse hain"
+    test_msg = "Kerala Ward 2 me 5 log pani me fanse hain"
     res1 = intake_agent.parse_report(test_msg)
     assert res1.people.count == 5
 

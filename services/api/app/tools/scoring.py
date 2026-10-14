@@ -124,12 +124,18 @@ class ScoringEngine:
             IncidentType.SHELTER: 2.0,
         }.get(req.type, 0.0)
         final_score = round(max(0.0, min(100.0, raw_weighted * discount * 100.0 + type_bonus)), 1)
+        # A hoax or spam copy is kept, but it must not sit in Needs help now (score >= 75).
+        if any(flag in (req.flags or []) for flag in ("hoax", "hoax_or_flood")):
+            final_score = min(final_score, 40.0)
+            reasons_parts.append("flagged as hoax or spam")
 
         breakdown = {
             "vulnerability": round(v_score * 100, 1),
             "people": round(p_score * 100, 1),
             "hazard": round(h_score * 100, 1),
             "wait_time": round(w_score * 100, 1),
+            "wait_points": round(w.w_wait_time * w_score * discount * 100.0, 1),
+            "wait_minutes": int(wait_minutes),
             "confidence_factor": round(discount, 3),
             "type_priority": type_bonus,
             "final_score": final_score,
@@ -145,9 +151,9 @@ class ScoringEngine:
         )
 
     def compute_match_score(
-        self, req: StoredRequest, res: "StoredResource"
+        self, req: StoredRequest, res: "StoredResource", fallback_ok: bool = False
     ) -> Optional["MatchBreakdown"]:
-        from app.models.firestore_models import ResourceKind, MatchBreakdown
+        from app.models.firestore_models import ResourceKind, ResourceStatus, MatchBreakdown
         from app.models.schemas import IncidentType
         from app.tools.geo import haversine_distance
 
@@ -155,18 +161,26 @@ class ScoringEngine:
         if res.capacity_remaining <= 0:
             return None
 
-        # Hard constraint 2: Compatibility between request incident type and resource kind
-        compat_map = {
-            IncidentType.RESCUE: [ResourceKind.BOAT, ResourceKind.SHELTER],
+        # Primary kinds only. A shelter is not a boat. Fallbacks are explicit.
+        primary = {
+            IncidentType.RESCUE: [ResourceKind.BOAT],
             IncidentType.MEDICAL: [ResourceKind.MEDICAL],
-            IncidentType.FOOD: [ResourceKind.FOOD, ResourceKind.SHELTER],
+            IncidentType.FOOD: [ResourceKind.FOOD],
             IncidentType.SHELTER: [ResourceKind.SHELTER],
             IncidentType.ANIMAL_ATTACK: [ResourceKind.MEDICAL],
             IncidentType.INFO: [ResourceKind.SHELTER, ResourceKind.FOOD],
             IncidentType.OTHER: [ResourceKind.SHELTER, ResourceKind.FOOD, ResourceKind.BOAT],
         }
-        allowed_kinds = compat_map.get(req.type, [ResourceKind.SHELTER, ResourceKind.FOOD])
-        if res.kind not in allowed_kinds:
+        fallback = {
+            IncidentType.RESCUE: [ResourceKind.SHELTER],
+            IncidentType.MEDICAL: [ResourceKind.SHELTER],
+            IncidentType.FOOD: [ResourceKind.SHELTER],
+            IncidentType.SHELTER: [ResourceKind.FOOD],
+        }
+        allowed = fallback.get(req.type, []) if fallback_ok else primary.get(req.type, [])
+        if res.kind not in allowed:
+            return None
+        if res.status not in (ResourceStatus.AVAILABLE,) and not fallback_ok:
             return None
 
         # 1. Distance score (max 30 pts)

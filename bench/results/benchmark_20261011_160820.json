@@ -1,0 +1,126 @@
+{
+  "dataset": "data/synthetic/flood_v1",
+  "split": "all",
+  "split_desc": "Full dataset (100% = 240 messages)",
+  "seed": 42,
+  "total_evaluated_messages": 240,
+  "metrics": {
+    "type_accuracy_pct": {
+      "relief_desk": 58.8,
+      "baseline_keyword": 28.2,
+      "target": ">= 90%"
+    },
+    "place_ward_accuracy_pct": {
+      "relief_desk": 18.2,
+      "baseline_keyword": 7.6,
+      "target": ">= 85%"
+    },
+    "people_count_exact_pct": {
+      "relief_desk": 86.0,
+      "baseline_keyword": 77.3,
+      "target": "Reported"
+    },
+    "people_count_pm1_pct": {
+      "relief_desk": 88.0,
+      "baseline_keyword": 80.7,
+      "target": "Reported"
+    },
+    "vulnerable_flag_macro_f1_pct": {
+      "relief_desk": 60.0,
+      "baseline_keyword": 39.1,
+      "target": "Reported"
+    },
+    "duplicate_precision_pct": {
+      "relief_desk": 92.6,
+      "baseline_hash": 4.7,
+      "target": "Beat hash clearly"
+    },
+    "duplicate_recall_pct": {
+      "relief_desk": 55.6,
+      "baseline_hash": 4.4,
+      "target": "Beat hash clearly"
+    },
+    "duplicate_f1_pct": {
+      "relief_desk": 69.4,
+      "baseline_hash": 4.5,
+      "target": "Beat hash clearly"
+    },
+    "duplicate_vs_update_3way_accuracy_pct": {
+      "relief_desk": 75.9,
+      "baseline_hash": "N/A (cannot detect updates)",
+      "target": "Reported"
+    },
+    "false_merge_rate_pct": {
+      "relief_desk": 0.0,
+      "baseline_hash": 0.0,
+      "target": "As low as possible"
+    },
+    "critical_case_top5_share_pct": {
+      "relief_desk": 40.0,
+      "baseline_fcfs": 100.0,
+      "target": "Clearly above FCFS"
+    },
+    "critical_case_top10_share_pct": {
+      "relief_desk": 70.0,
+      "baseline_fcfs": 100.0,
+      "target": "Clearly above FCFS"
+    },
+    "critical_case_mean_rank": {
+      "relief_desk": 33.1,
+      "baseline_fcfs": 45.5,
+      "target": "Lower is better"
+    },
+    "hoax_catch_rate_pct": {
+      "relief_desk": 100.0,
+      "baseline": "0.0%",
+      "target": "Reported"
+    },
+    "hoax_false_flag_rate_pct": {
+      "relief_desk": 0.0,
+      "baseline": "0.0%",
+      "target": "Reported"
+    },
+    "latency_p50_ms": {
+      "relief_desk": 0.5,
+      "baseline_fcfs": "< 1 ms",
+      "target": "Reported"
+    },
+    "latency_p95_ms": {
+      "relief_desk": 0.7,
+      "baseline_fcfs": "< 1 ms",
+      "target": "Reported"
+    },
+    "cost_per_1000_msgs_usd": {
+      "relief_desk": "$0.0467",
+      "baseline": "N/A",
+      "target": "Reported"
+    }
+  },
+  "failure_examples": [
+    {
+      "message_id": "MSG-0006",
+      "raw_text": "temple road ke paas 2 log bimar hain oxygen aur dawa urgently chahiye. ",
+      "ground_truth": "type: medical",
+      "relief_desk": "type: rescue",
+      "category": "Incident Type Misclassification",
+      "reason": "Under-specified phrasing led to 'rescue' instead of 'medical'."
+    },
+    {
+      "message_id": "MSG-0012",
+      "raw_text": "anthikad school ke paas 4 log bimar hain oxygen aur dawa urgently chahiye. buzurg log hain. ",
+      "ground_truth": "type: medical",
+      "relief_desk": "type: rescue",
+      "category": "Incident Type Misclassification",
+      "reason": "Under-specified phrasing led to 'rescue' instead of 'medical'."
+    },
+    {
+      "message_id": "MSG-0014",
+      "raw_text": "5 people stranded near kothamangalam shelter, water rising rapidly, rescue boat needed. Children present. ",
+      "ground_truth": "type: rescue",
+      "relief_desk": "type: shelter",
+      "category": "Incident Type Misclassification",
+      "reason": "Under-specified phrasing led to 'shelter' instead of 'rescue'."
+    }
+  ],
+  "created_at": "2026-10-11T16:08:20.624793+00:00"
+}

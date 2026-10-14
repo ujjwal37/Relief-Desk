@@ -1,13 +1,51 @@
 /* Relief Desk Global Styles */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
+@use './theme';
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&family=Noto+Sans+Malayalam:wght@400;500;600&display=swap');
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
-  --rd-font-family: 'Inter', 'Noto Sans Devanagari', 'Noto Sans Tamil', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --rd-navy-deep: #0b192c;
-  --rd-navy-primary: #0b2545;
-  --rd-teal-accent: #14b8a6;
-  --rd-teal-dark: #0f6b5a;
-  --rd-mint: #ccfbf1;
+  --font-sans: 'Geist', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Malayalam', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --rd-font-family: var(--font-sans);
+  --t-caption: 500 12px/16px var(--font-sans);
+  --t-label: 500 13px/18px var(--font-sans);
+  --t-body: 400 14px/20px var(--font-sans);
+  --t-title: 600 16px/22px var(--font-sans);
+  --t-panel: 600 18px/24px var(--font-sans);
+  --t-page: 600 24px/30px var(--font-sans);
+  --t-kpi: 600 32px/36px var(--font-sans);
+  --t-title-ls: -0.01em;
+  --t-panel-ls: -0.015em;
+  --t-page-ls: -0.02em;
+  --t-kpi-ls: -0.02em;
+  --tp-meta: 400 14px/20px var(--font-sans);
+  --tp-body: 400 16px/24px var(--font-sans);
+  --tp-label: 600 16px/22px var(--font-sans);
+  --tp-cta: 600 18px/24px var(--font-sans);
+  --tp-title: 600 22px/28px var(--font-sans);
+  --tp-hero: 600 28px/34px var(--font-sans);
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+}
+
+html, body, ion-app, ion-content, .ios, .md, :host {
+  font-family: var(--font-sans);
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html, body {
@@ -15,13 +53,64 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  font-family: var(--rd-font-family);
-  background-color: #080f1d;
-  color: #ffffff;
-  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg);
+  color: var(--text);
   overflow-wrap: break-word;
+  font-variant-numeric: tabular-nums;
 }
 
-* {
-  box-sizing: border-box;
+body, .antialiased {
+  font: var(--t-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.public-shell, app-public-layout, .report-view {
+  font: var(--tp-body);
+}
+
+* { box-sizing: border-box; }
+
+button, input, textarea, select {
+  font-family: inherit;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.num, .prio, time, .kpi, .val {
+  font-variant-numeric: tabular-nums;
+}
+
+:lang(hi), :lang(ta), :lang(ml) {
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+:lang(hi) .title,
+:lang(hi) h1,
+:lang(hi) h2,
+:lang(hi) .tile {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+ion-app, ion-content, ion-button, ion-item, ion-label {
+  --ion-font-family: var(--font-sans);
+  --ion-default-font: var(--font-sans);
+  --ion-font-size: 14px;
+  --ion-text-color: var(--text);
+  font-family: var(--font-sans) !important;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.public-shell, app-public-layout, .report-view,
+app-public-layout ion-content, app-public-layout ion-button,
+app-public-layout ion-item, app-public-layout ion-label {
+  --ion-font-size: 16px;
+  font: var(--tp-body);
 }

@@ -1,3 +1,4 @@
+import hashlib
 import re
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -10,64 +11,103 @@ from app.models.public_models import (
     ReportStatusResponse,
     StatusTimelineStep,
 )
-from app.models.firestore_models import RequestStatus, StoredReport, StoredRequest
+from app.agents.matching import NEARBY_KM, eta_for_distance
+from app.models.firestore_models import MatchState, RequestStatus, StoredReport, StoredRequest
 from app.tools.storage import storage_service
 from app.tools.geo import grid_cell_id
+from app.tools.wait_tips import tips_for_request, wait_tips_for
 
 router = APIRouter(prefix="/api", tags=["Public Routes"])
 
-# Canonical synthetic area cells for Riverbend crisis map
+
+def public_code_for(report_id: str) -> str:
+    """Stable short id such as RD-1042. The internal id and token stay unchanged."""
+    digest = int(hashlib.sha256(report_id.encode("utf-8")).hexdigest()[:6], 16)
+    return f"RD-{1000 + (digest % 9000)}"
+
+
+def _format_km(km: float) -> str:
+    text = f"{km:.2f}".rstrip("0").rstrip(".")
+    return text or "0"
+
+
+def reporter_leg(req: Optional[StoredRequest]) -> tuple[Optional[int], str]:
+    """Distance and minute quote for the team the coordinator card would show."""
+    if req is None:
+        return None, ""
+    matches = storage_service.list_matches_for_request(req.id)
+    chosen = None
+    if req.assigned_resource_id:
+        chosen = next((row for row in matches if row.resource_id == req.assigned_resource_id), None)
+    if chosen is None:
+        approved_rows = [row for row in matches if row.state == MatchState.APPROVED]
+        pool = approved_rows or list(matches)
+        if pool:
+            chosen = max(pool, key=lambda row: row.score)
+    if chosen is None:
+        return None, ""
+    km = chosen.breakdown.distance_km
+    minutes = eta_for_distance(km)
+    if km > NEARBY_KM or minutes is None or minutes > 90:
+        return None, ""
+    return minutes, f"{_format_km(km)} km · about {minutes} min"
+
+
+# Canned status only for these ids. A token that merely contains "demo" is not enough.
+DEMO_STATUS_IDS = frozenset({"R-0412", "demo", "tok_demo"})
+
+# Canonical synthetic area cells. Places are real Kerala panchayats; the reports are not.
 CANONICAL_CELLS = [
     PublicCell(
-        cell_id="cell_2685_8093_w7",
-        ward="Ward 7 · Riverside & Temple Rd",
-        center_lat=26.8520,
-        center_lng=80.9310,
+        cell_id="cell_1031_7633_w7",
+        ward="Chalakudy · Thrissur",
+        center_lat=10.3080,
+        center_lng=76.3310,
         incident_counts={"rescue": 6, "food": 4, "shelter": 2},
         total_reports=12,
         severity_band="critical",
         time_bucket="Last 2 hours",
-        active_hazard="Water rising, Canal Road submerged",
-        alerts=["Flooded lanes · Ward 7 and Ward 4: Canal Road closed. Use Temple Road."],
+        active_hazard="Water rising, Temple Road submerged",
+        alerts=["Flooded lanes · Chalakudy and Aluva: Temple Road closed. Use the school road."],
         last_updated=datetime.now(timezone.utc).isoformat(),
     ),
     PublicCell(
-        cell_id="cell_2686_8094_w4",
-        ward="Ward 4 · North Ghat",
-        center_lat=26.8610,
-        center_lng=80.9420,
+        cell_id="cell_1011_7635_w4",
+        ward="Aluva · Ernakulam",
+        center_lat=10.1076,
+        center_lng=76.3516,
         incident_counts={"rescue": 4, "medical": 2},
         total_reports=6,
         severity_band="high",
         time_bucket="Last 2 hours",
         active_hazard="Waterlogging 2-3 feet",
-        alerts=["North Ghat embankment warning. Rescue teams deployed."],
+        alerts=["Aluva Manappuram warning. Rescue teams deployed."],
         last_updated=datetime.now(timezone.utc).isoformat(),
     ),
     PublicCell(
-        cell_id="cell_2684_8091_w9",
-        ward="Ward 9 · Mill Colony",
-        center_lat=26.8430,
-        center_lng=80.9180,
+        cell_id="cell_1047_7613_w9",
+        ward="Anthikad · Thrissur",
+        center_lat=10.4660,
+        center_lng=76.1300,
         incident_counts={"animal_attack": 3, "medical": 1},
         total_reports=4,
         severity_band="high",
         time_bucket="Last 2 hours",
-        active_hazard="Pack of aggressive dogs spotted near Mill Colony lanes",
-        alerts=["Dog attack alert · Ward 9: 3 reports in 2 h. Avoid walking alone after dark."],
+        active_hazard="Aggressive dogs spotted near Anthikad lanes",
+        alerts=["Dog attack alert · Anthikad: 3 reports in 2 h. Avoid walking alone after dark."],
         last_updated=datetime.now(timezone.utc).isoformat(),
     ),
     PublicCell(
-        cell_id="cell_2687_8095_w2",
-        ward="Ward 2 · Gandhi Nagar",
-        center_lat=26.8720,
-        center_lng=80.9520,
+        cell_id="cell_0942_7641_w2",
+        ward="Champakulam · Alappuzha",
+        center_lat=9.4160,
+        center_lng=76.4110,
         incident_counts={"food": 8, "shelter": 4},
         total_reports=12,
         severity_band="medium",
         time_bucket="Last 3 hours",
         active_hazard="Drinking water shortage, community kitchen operational",
-        alerts=["12 households near Gandhi High School need dry ration kits."],
+        alerts=["12 households near Champakulam School need dry ration kits."],
         last_updated=datetime.now(timezone.utc).isoformat(),
     ),
 ]
@@ -94,14 +134,14 @@ def get_public_cells(bbox: Optional[str] = Query(None, description="Bounding box
     # 2. Dynamically aggregate active stored requests into coarse grid cells
     active_requests = storage_service.list_requests()
     for req in active_requests:
-        lat = req.lat or 26.85
-        lng = req.lng or 80.93
+        lat = req.lat or 10.50
+        lng = req.lng or 76.30
         # Compute coarse cell id using 500m grid cell tool
         cid = grid_cell_id(lat, lng)
         # Round coordinates to coarse ~500m center grid to prevent exact geolocation leakage
         coarse_lat = round(round(lat / 0.0045) * 0.0045, 4)
         coarse_lng = round(round(lng / 0.0045) * 0.0045, 4)
-        ward_label = req.ward_id or "Riverbend Central"
+        ward_label = req.ward_id or "Kerala"
 
         if cid not in cell_map:
             cell_map[cid] = PublicCell(
@@ -156,20 +196,20 @@ def get_public_alerts():
     return [
         PublicAlert(
             id="alt_01",
-            title="Dog attack alert · Ward 9, Mill Colony",
+            title="Dog attack alert · Anthikad, Thrissur",
             ward="Ward 9",
             time_ago="25 min ago",
             severity="warning",
-            description="3 reports in 2 h. Avoid walking alone near the colony lanes after dark.",
+            description="3 reports in 2 h. Avoid walking alone near Anthikad lanes after dark.",
             icon="dog",
         ),
         PublicAlert(
             id="alt_02",
-            title="Flooded lanes · Ward 7 and Ward 4",
+            title="Flooded lanes · Chalakudy and Aluva",
             ward="Ward 7 & 4",
             time_ago="1 h ago",
             severity="critical",
-            description="Canal Road closed. Use Temple Road to reach the shelter.",
+            description="Temple Road closed. Use the school road to reach the shelter.",
             icon="flood",
         ),
         PublicAlert(
@@ -190,14 +230,10 @@ def get_report_status(
     token: Optional[str] = Query(None, description="Status access token returned at submission time"),
 ):
     """Returns the multi-step status progress for a reporter without exposing any PII."""
-    # 1. Lookup report by ID or by token
     report: Optional[StoredReport] = storage_service.get_report(report_id)
-    if not report and token:
-        report = storage_service.get_report_by_status_token(token)
 
-    # 2. Demo fallback for synthetic UI demonstration (e.g. 'R-0412', 'demo', or initial loads)
     if not report:
-        if report_id in ("R-0412", "demo", "tok_demo") or (token and "demo" in token.lower()):
+        if report_id in DEMO_STATUS_IDS:
             return ReportStatusResponse(
                 report_id="R-0412",
                 request_id="REQ-0412",
@@ -211,7 +247,7 @@ def get_report_status(
                     StatusTimelineStep(
                         step=1,
                         name="received",
-                        title="Received / प्राप्त",
+                        title="status.received",
                         state="done",
                         timestamp="11:42",
                         description="Request R-0412 saved in system",
@@ -219,7 +255,7 @@ def get_report_status(
                     StatusTimelineStep(
                         step=2,
                         name="matched",
-                        title="Matched / मिलान हुआ",
+                        title="status.matched",
                         state="done",
                         timestamp="11:44",
                         description="Volunteer boat team assigned",
@@ -227,7 +263,7 @@ def get_report_status(
                     StatusTimelineStep(
                         step=3,
                         name="on_the_way",
-                        title="On the way / सहायता रवाना",
+                        title="status.onway",
                         state="current",
                         timestamp="11:48",
                         description="Boat B-03 · from Ward 6 jetty",
@@ -235,17 +271,13 @@ def get_report_status(
                     StatusTimelineStep(
                         step=4,
                         name="fulfilled",
-                        title="Fulfilled / सहायता पहुँची",
+                        title="status.fulfilled",
                         state="pending",
                         timestamp=None,
                         description="You can confirm when help arrives",
                     ),
                 ],
-                while_you_wait_tips=[
-                    "Move to the highest safe place.",
-                    "Stay away from flood water and live wires.",
-                    "Keep your phone charged and stay reachable.",
-                ],
+                while_you_wait_tips=wait_tips_for("rescue"),
                 emergency_phone="112",
                 synthetic=True,
             )
@@ -254,93 +286,92 @@ def get_report_status(
             detail="Report not found. Please verify your report ID and status token.",
         )
 
-    # 3. If real report found, find corresponding request
+    if not token or token != report.status_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Status token does not match this report.",
+        )
+
+    # If real report found, find corresponding request
     req: Optional[StoredRequest] = None
-    if report.request_id:
-        req = storage_service.get_request(report.request_id)
+    if report.case_id or report.request_id:
+        req = storage_service.get_request(report.case_id or report.request_id)
+    # A merged report follows the case it joined, so its phone sees that case's dispatch.
+    if req is not None and req.merged_into:
+        req = storage_service.get_request(req.merged_into) or req
 
     req_status = req.status if req else RequestStatus.NEW
-
-    # Determine timeline states based on actual request lifecycle
-    step1_state = "done"
-    step2_state = "pending"
-    step3_state = "pending"
-    step4_state = "pending"
-    hero_title = "Sent. Help is being arranged."
-    delivery_status = "In progress"
-    eta_display = "~20 min"
-
-    if req_status in (RequestStatus.NEW, RequestStatus.NEEDS_RECHECK):
-        step2_state = "current"
-    elif req_status == RequestStatus.MATCHED:
-        step2_state = "done"
-        step3_state = "current"
-        eta_display = "~15 min"
-    elif req_status in (RequestStatus.APPROVED, RequestStatus.IN_PROGRESS):
-        step2_state = "done"
-        step3_state = "current"
-        hero_title = "Dispatch approved. Responders on the way."
-        eta_display = "~12 min"
-    elif req_status in (RequestStatus.RESOLVED, RequestStatus.CLOSED):
-        step2_state = "done"
-        step3_state = "done"
-        step4_state = "done"
-        hero_title = "Assistance delivered."
-        delivery_status = "Delivered"
-        eta_display = "Completed"
-
-    display_time = report.created_at[11:16] if len(report.created_at) >= 16 else "Just now"
+    code = public_code_for(report.id)
+    approved = req_status in (
+        RequestStatus.APPROVED,
+        RequestStatus.IN_PROGRESS,
+        RequestStatus.RESOLVED,
+        RequestStatus.CLOSED,
+    )
+    # dispatched/completed are added later; treat the string values the same way.
+    approved = approved or req_status.value in ("dispatched", "completed")
+    fulfilled = req_status in (RequestStatus.RESOLVED, RequestStatus.CLOSED) or req_status.value == "completed"
+    arrived = req_status == RequestStatus.IN_PROGRESS
+    matched_state = "done" if approved else "pending"
+    on_way_state = "done" if fulfilled or arrived else ("current" if approved else "pending")
+    fulfilled_state = "done" if fulfilled else "pending"
+    assigned_at = req.updated_at if req and approved else None
+    eta_minutes, eta_display = reporter_leg(req) if approved and not fulfilled else (None, "")
+    hero_title = (
+        "status.heroDone" if fulfilled
+        else "coord.resStatus.on_scene" if arrived
+        else "status.heroOnWay" if approved
+        else "status.heroReceived"
+    )
 
     timeline = [
         StatusTimelineStep(
             step=1,
             name="received",
-            title="Received / प्राप्त",
-            state=step1_state,
-            timestamp=display_time,
-            description=f"Report {report.id[:8]} logged securely",
+            title="status.received",
+            state="done",
+            timestamp=report.created_at,
+            description="status.stepReceived",
         ),
         StatusTimelineStep(
             step=2,
             name="matched",
-            title="Matched / मिलान हुआ",
-            state=step2_state,
-            timestamp=None if step2_state == "pending" else display_time,
-            description="Coordinator matching with available relief teams",
+            title="status.matched",
+            state=matched_state,
+            timestamp=assigned_at if matched_state == "done" else None,
+            description="status.stepMatchedDone" if matched_state == "done" else "status.stepMatchedWait",
         ),
         StatusTimelineStep(
             step=3,
             name="on_the_way",
-            title="On the way / सहायता रवाना",
-            state=step3_state,
-            timestamp=None if step3_state == "pending" else display_time,
-            description="Assigned team dispatched to your area cell",
+            title="status.onway",
+            state=on_way_state,
+            timestamp=assigned_at if on_way_state != "pending" else None,
+            description="coord.resStatus.on_scene" if arrived else "status.stepOnWay",
         ),
         StatusTimelineStep(
             step=4,
             name="fulfilled",
-            title="Fulfilled / सहायता पहुँची",
-            state=step4_state,
-            timestamp=None,
-            description="Confirmation requested upon rescue completion",
+            title="status.fulfilled",
+            state=fulfilled_state,
+            timestamp=req.updated_at if req and fulfilled else None,
+            description="status.stepFulfilled",
         ),
     ]
 
     return ReportStatusResponse(
         report_id=report.id,
         request_id=req.id if req else report.id,
+        public_code=code,
         status=req_status.value,
         hero_title=hero_title,
-        hero_subtitle=f"Report {report.id[:8]} · {display_time} · you can close the app",
-        eta_minutes=15,
+        hero_subtitle=code,
+        eta_minutes=eta_minutes,
         eta_display=eta_display,
-        delivery_status=delivery_status,
+        delivery_status="status.delivered" if fulfilled else ("status.onway" if approved else "status.waiting"),
         timeline=timeline,
-        while_you_wait_tips=[
-            "Move to the highest safe place.",
-            "Stay away from flood water and live wires.",
-            "Keep your phone charged and stay reachable.",
-        ],
+        while_you_wait_tips=tips_for_request(req),
         emergency_phone="112",
+        analysis_status=req.analysis_status if req else "complete",
         synthetic=True,
     )

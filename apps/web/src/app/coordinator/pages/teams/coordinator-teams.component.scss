@@ -1,0 +1,51 @@
+:host { display: block; height: 100%; overflow: auto; background: var(--bg); color: var(--text); }
+.teams { max-width: 980px; margin: 0 auto; padding: 16px 12px 32px; }
+.head h1 { margin: 0 0 12px; font: var(--t-page); letter-spacing: var(--t-page-ls); }
+.strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.strip button {
+  min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font: 600 14px var(--rd-font-family); cursor: pointer;
+}
+.strip button.on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.team-map { position: relative; height: 280px; margin: 0 0 12px; border: 1px solid var(--border); border-radius: var(--r3); overflow: hidden; background: var(--map-bg); box-shadow: var(--e1); }
+.legend {
+  position: absolute; z-index: 2; left: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 6px 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px;
+  font-size: 12px; font-weight: 600;
+}
+.team-map rd-map-provider { display: block; height: 100%; }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.card { border: 1px solid var(--border); border-radius: var(--r3); background: var(--card); overflow: hidden; box-shadow: var(--e1); }
+.row {
+  display: grid; width: 100%; grid-template-columns: 22px minmax(0, 1fr) auto 16px;
+  grid-template-areas: "icon name status chev" "icon leg age chev";
+  column-gap: 10px; row-gap: 2px; align-items: center;
+  padding: 10px 12px; border: 0; background: transparent; color: inherit;
+  font: inherit; text-align: left; cursor: pointer; min-height: 56px;
+}
+.icon { grid-area: icon; display: grid; place-items: center; }
+.name { grid-area: name; font-weight: 600; font-size: 16px; min-width: 0; }
+.status { grid-area: status; justify-self: end; font-weight: 600; font-size: 12px; padding: 4px 8px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; }
+.status.free { background: var(--brand-tint); color: var(--brand); }
+.status.late { background: var(--sev-high-t); color: var(--sev-high); }
+.leg { grid-area: leg; color: var(--text-2); font-size: 13px; font-weight: 600; min-width: 0; }
+.age { grid-area: age; justify-self: end; color: var(--text-2); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.age.stale { color: var(--sev-high); }
+.chev { grid-area: chev; color: var(--text-2); font-size: 12px; }
+.detail { padding: 0 12px 12px 44px; color: var(--text-2); font-size: 14px; }
+.detail h3 { margin: 10px 0 2px; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.detail p { margin: 0 0 4px; }
+.trail { margin: 0; padding-left: 18px; }
+.confirm { display: inline-flex; align-items: center; min-height: 44px; color: var(--brand); font-weight: 600; }
+.loc { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-top: 8px; }
+.loc input { width: 120px; min-height: 44px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); padding: 0 8px; }
+.loc button { min-height: 44px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-weight: 600; cursor: pointer; }
+.empty { padding: 24px; color: var(--text-2); }
+.note { margin: 0 0 10px; color: var(--brand); font-weight: 600; }
+
+@media (min-width: 800px) {
+  .row {
+    grid-template-columns: 22px minmax(160px, 1.5fr) auto minmax(140px, 1fr) auto 16px;
+    grid-template-areas: "icon name status leg age chev";
+  }
+}

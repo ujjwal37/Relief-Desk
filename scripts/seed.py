@@ -13,9 +13,9 @@ from pathlib import Path
 # Credentials for demo-only local environment
 DEMO_COORDINATOR = {
     "email": "demo-coordinator@reliefdesk.internal",
-    "password": "RiverbendRelief2026!",
+    "password": "KeralaRelief2026!",
     "role": "coordinator",
-    "displayName": "Riverbend Emergency Coordinator",
+    "displayName": "Kerala Emergency Coordinator",
     "uid": "demo-coord-01",
     "token": "demo-coordinator-token",
 }

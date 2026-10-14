@@ -1,7 +1,7 @@
 export type IncidentType = 'rescue' | 'food' | 'medical' | 'shelter' | 'info' | 'animal_attack' | 'other';
 export type UrgencyBand = 'critical' | 'high' | 'medium' | 'low';
 export type HazardType = 'water_rising' | 'stranded' | 'injury' | 'none' | 'unknown';
-export type RequestStatus = 'new' | 'needs_recheck' | 'matched' | 'approved' | 'in_progress' | 'resolved' | 'closed';
+export type RequestStatus = 'new' | 'needs_recheck' | 'matched' | 'approved' | 'dispatched' | 'in_progress' | 'resolved' | 'completed' | 'closed';
 
 export interface VulnerableFlags {
   child: boolean;
@@ -105,6 +105,10 @@ export interface ReportSubmitRequest {
   location_pin?: { lat: number; lng: number };
   scenario_id?: string;
   structured?: StructuredReportFacts;
+  /** Client retry key. The server returns the original request when this repeats. */
+  idempotency_key?: string;
+  /** Citizen's own words, kept separate from the machine summary. */
+  raw_text?: string;
 }
 
 export interface ReportSubmitResponse {
@@ -137,10 +141,26 @@ export interface StoredRequest {
   lat: number | null;
   lng: number | null;
   people_count: number | null;
+  /** Citizen wording such as "2-3" or "4". */
+  people_span?: string | null;
+  count_spans?: string[];
+  count_note?: string | null;
+  report_quotes?: { report_id: string; text: string; people_span?: string | null }[];
+  dedupe_trace?: string | null;
+  possible_duplicate?: {
+    target_id: string;
+    confidence: number;
+    similarity: number;
+    distance_km?: number | null;
+    minutes?: number | null;
+    note?: string;
+  } | null;
   vulnerable: VulnerableFlags;
   hazard: HazardType;
   urgency_score: number;
   urgency_reason: string;
+  wait_points?: number | null;
+  wait_minutes?: number | null;
   status: RequestStatus;
   confidence?: {
     type: number;
@@ -151,12 +171,44 @@ export interface StoredRequest {
   };
   report_ids?: string[];
   cluster_id?: string | null;
+  merged_into?: string | null;
   flags?: string[];
   raw_text?: string | null;
+  /** The confirmed card summary. A case title falls back to it while the model works. */
+  summary?: string | null;
   ai_translation?: string | null;
+  /** "gemini" live, "recorded" cache, "offline_fallback", or a test provider that is never shown as Gemini. */
+  ai_source?: 'gemini' | 'recorded' | 'offline_fallback' | 'antigravity-local' | 'openai_compat';
+  ai?: {
+    provider: 'gemini' | 'cache' | 'fallback' | 'antigravity-local' | 'openai_compat';
+    model?: string | null;
+    latency_ms?: number;
+    tokens?: number | null;
+    cached?: boolean;
+    fallback_reason?: string | null;
+  };
   translations?: { [lang: string]: string };
   translation_confidence?: number;
+  assigned_resource_id?: string | null;
+  reserved_people?: number | null;
   merged_count?: number;
+  analysis_status?: 'analysing' | 'complete';
+  trace?: Array<{
+    agent: string;
+    status: string;
+    input_summary?: string;
+    output?: string;
+    provider?: string | null;
+    /** English name of who answered, e.g. "Test model (NVIDIA)". */
+    provider_label?: string | null;
+    /** The name inside "Test model (...)" for a test provider. */
+    vendor?: string | null;
+    model?: string;
+    latency_ms?: number;
+    tokens?: number | null;
+    tool_calls?: string[];
+    ts?: string;
+  }>;
   update_count?: number;
   created_at?: string;
   updated_at?: string;
@@ -172,7 +224,12 @@ export interface StoredResource {
   lng: number;
   capacity_total: number;
   capacity_remaining: number;
-  status: 'available' | 'busy' | 'depleted';
+  status: 'available' | 'busy' | 'dispatched' | 'en_route' | 'on_scene' | 'returning' | 'depleted';
+  location_updated_at?: string | null;
+  assigned_request_id?: string | null;
+  area_name?: string | null;
+  simulated?: boolean;
+  location_trail?: { lat: number; lng: number; at: string }[];
 }
 
 export interface MatchBreakdown {
@@ -198,7 +255,26 @@ export interface MatchProposal {
   explanation?: string;
   explanation_hi?: string;
   state: 'proposed' | 'approved' | 'rejected';
+  is_fallback?: boolean;
+  fallback_label?: string | null;
+  simulated?: boolean;
+  eta_minutes?: number | null;
+  no_nearby?: boolean;
+  wait_minutes?: number | null;
+  wait_team_name?: string | null;
   overcommit_warning: boolean;
+}
+
+/** A citizen report from the last few minutes, for the desk's Just reported strip. */
+export interface RecentReport {
+  id: string;
+  case_id: string;
+  type: string;
+  summary: string;
+  ward_id: string | null;
+  place_text: string | null;
+  created_at: string;
+  joined_existing: boolean;
 }
 
 export interface StoredCluster {
@@ -258,12 +334,14 @@ export interface AnomalyAlert {
   ward_id?: string | null;
   severity: string;
   age_label: string;
+  detected_at?: string | null;
   acknowledged: boolean;
 }
 
 export interface ReportStatusResponse {
   report_id: string;
   request_id: string;
+  public_code?: string | null;
   status: string;
   hero_title: string;
   hero_subtitle: string;
@@ -273,6 +351,7 @@ export interface ReportStatusResponse {
   timeline: StatusTimelineStep[];
   while_you_wait_tips: string[];
   emergency_phone: string;
+  analysis_status?: string;
   synthetic: boolean;
 }
 

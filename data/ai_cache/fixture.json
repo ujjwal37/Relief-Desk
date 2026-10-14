@@ -1,0 +1,529 @@
+{
+  "version": 1,
+  "status": "pending",
+  "note": "Responses stay null until make record-ai runs with a real GEMINI_API_KEY. Do not invent Gemini output.",
+  "items": [
+    {
+      "id": "DR-001",
+      "lang": "hi",
+      "text": "वार्ड संदेश 1: Kainakary में 2 लोग पानी में फंसे हैं। नाव चाहिए। यह काल्पनिक रिपोर्ट है।",
+      "response": null
+    },
+    {
+      "id": "DR-002",
+      "lang": "en",
+      "text": "Message 2: 3 people stranded in Champakulam. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-003",
+      "lang": "en",
+      "text": "Message 3: 4 people stranded in Nedumudi. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-004",
+      "lang": "en",
+      "text": "Message 4: 5 people stranded in Aluva. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-005",
+      "lang": "en",
+      "text": "Message 5: 6 people stranded in Varapuzha. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-006",
+      "lang": "en",
+      "text": "Message 6: 1 people stranded in Kothamangalam. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-007",
+      "lang": "en",
+      "text": "Message 7: 2 people stranded in Chalakudy. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-008",
+      "lang": "en",
+      "text": "Message 8: 3 people stranded in Mala. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-009",
+      "lang": "en",
+      "text": "Message 9: 4 people stranded in Anthikad. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-010",
+      "lang": "en",
+      "text": "Message 10: 5 people stranded in Meppadi. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-011",
+      "lang": "en",
+      "text": "Message 11: 6 people stranded in Vythiri. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-012",
+      "lang": "en",
+      "text": "Message 12: 1 people stranded in Kainakary. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-013",
+      "lang": "en",
+      "text": "Message 13: 2 people stranded in Champakulam. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-014",
+      "lang": "en",
+      "text": "Message 14: 3 people stranded in Nedumudi. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-015",
+      "lang": "en",
+      "text": "Message 15: 4 people stranded in Aluva. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-016",
+      "lang": "en",
+      "text": "Message 16: 5 people stranded in Varapuzha. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-017",
+      "lang": "en",
+      "text": "Message 17: 6 people stranded in Kothamangalam. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-018",
+      "lang": "en",
+      "text": "Message 18: 1 people stranded in Chalakudy. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-019",
+      "lang": "en",
+      "text": "Message 19: 2 people stranded in Mala. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-020",
+      "lang": "en",
+      "text": "Message 20: 3 people stranded in Anthikad. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-021",
+      "lang": "en",
+      "text": "Message 21: 4 people stranded in Meppadi. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-022",
+      "lang": "en",
+      "text": "Message 22: 5 people stranded in Vythiri. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-023",
+      "lang": "en",
+      "text": "Message 23: 6 people stranded in Kainakary. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-024",
+      "lang": "en",
+      "text": "Message 24: 1 people stranded in Champakulam. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-025",
+      "lang": "en",
+      "text": "Message 25: 2 people stranded in Nedumudi. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-026",
+      "lang": "en",
+      "text": "Message 26: 3 people stranded in Aluva. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-027",
+      "lang": "en",
+      "text": "Message 27: 4 people stranded in Varapuzha. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-028",
+      "lang": "en",
+      "text": "Message 28: 5 people stranded in Kothamangalam. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-029",
+      "lang": "en",
+      "text": "Message 29: 6 people stranded in Chalakudy. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-030",
+      "lang": "en",
+      "text": "Message 30: 1 people stranded in Mala. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-031",
+      "lang": "en",
+      "text": "Message 31: 2 people stranded in Anthikad. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-032",
+      "lang": "en",
+      "text": "Message 32: 3 people stranded in Meppadi. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-033",
+      "lang": "en",
+      "text": "Message 33: 4 people stranded in Vythiri. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-034",
+      "lang": "en",
+      "text": "Message 34: 5 people stranded in Kainakary. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-035",
+      "lang": "en",
+      "text": "Message 35: 6 people stranded in Champakulam. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-036",
+      "lang": "en",
+      "text": "Message 36: 1 people stranded in Nedumudi. Need a boat. Synthetic scenario inspired by Kerala floods.",
+      "response": null
+    },
+    {
+      "id": "DR-D01",
+      "lang": "en",
+      "text": "Same house near Nedumudi Boat Jetty, people on the roof, send a boat. Second reporter, synthetic.",
+      "response": null
+    },
+    {
+      "id": "DR-D02",
+      "lang": "en",
+      "text": "Another neighbour reporting the Nedumudi lane rescue. Synthetic duplicate.",
+      "response": null
+    },
+    {
+      "id": "DR-D03",
+      "lang": "en",
+      "text": "Ward 3 Nedumudi lane again: same family on the roof. Synthetic duplicate.",
+      "response": null
+    },
+    {
+      "id": "DR-D04",
+      "lang": "en",
+      "text": "Third caller, same Nedumudi roof, still need a boat. Synthetic duplicate.",
+      "response": null
+    },
+    {
+      "id": "DR-D05",
+      "lang": "en",
+      "text": "Same Nedumudi Boat Jetty house, people still on the roof. Synthetic duplicate.",
+      "response": null
+    },
+    {
+      "id": "DR-D06",
+      "lang": "en",
+      "text": "Neighbour again at the Nedumudi lane, send a boat. Synthetic duplicate.",
+      "response": null
+    },
+    {
+      "id": "DR-D07",
+      "lang": "en",
+      "text": "Another call for the same Nedumudi roof. Synthetic duplicate.",
+      "response": null
+    },
+    {
+      "id": "DR-U01",
+      "lang": "en",
+      "text": "Nedumudi jetty now has 5 people and the water is still rising. Earlier there were 3. Synthetic update.",
+      "response": null
+    },
+    {
+      "id": "DR-H01",
+      "lang": "en",
+      "text": "Forward this to 10 groups. Free helicopter rescue call this number. 100% verified news share fast. Synthetic hoax, do not dispatch.",
+      "response": null
+    },
+    {
+      "id": "INC-001",
+      "lang": null,
+      "text": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "response": null
+    },
+    {
+      "id": "INC-002",
+      "lang": null,
+      "text": "Elderly father having severe diabetic emergency near Kainakary LP School, house surrounded by chest-deep flood water.",
+      "response": null
+    },
+    {
+      "id": "INC-003",
+      "lang": null,
+      "text": "Pregnant woman in full labor trapped behind Champakulam School, road inundated with 4ft water. Urgent medical boat.",
+      "response": null
+    },
+    {
+      "id": "INC-004",
+      "lang": null,
+      "text": "Lake embankment breached near Kalpetta. 12 people stranded including 1 wheelchair user and 4 small kids. Water rising rapidly.",
+      "response": null
+    },
+    {
+      "id": "INC-005",
+      "lang": null,
+      "text": "Wall collapsed near Clock Tower Aluva due to rushing flood water, 6 people clinging to roof terrace.",
+      "response": null
+    },
+    {
+      "id": "INC-006",
+      "lang": null,
+      "text": "Severe laceration and electrical shock near Power Plant Gate, severe bleeding, urgent paramedic boat.",
+      "response": null
+    },
+    {
+      "id": "INC-007",
+      "lang": null,
+      "text": "5 people trapped on Nedumudi Bridge bridge pillars, flood current violent, urgent motorized rescue boat.",
+      "response": null
+    },
+    {
+      "id": "INC-008",
+      "lang": null,
+      "text": "Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.",
+      "response": null
+    },
+    {
+      "id": "INC-009",
+      "lang": null,
+      "text": "Submerged bus near ISBT Bus Terminal, 15 passengers stranded on roof with water rising to roof level.",
+      "response": null
+    },
+    {
+      "id": "INC-010",
+      "lang": null,
+      "text": "Family of 9 stranded on tin roof behind Mala School, water level at 6 feet and rising.",
+      "response": null
+    },
+    {
+      "id": "INC-011",
+      "lang": null,
+      "text": "18 people stranded on 1st floor of Champakulam market with no drinking water or food for 24 hours.",
+      "response": null
+    },
+    {
+      "id": "INC-012",
+      "lang": null,
+      "text": "Cardiac medication needed urgently for elderly patient near Anthikad Bridge, stranded due to street flooding.",
+      "response": null
+    },
+    {
+      "id": "INC-013",
+      "lang": null,
+      "text": "22 displaced flood victims sheltered in Mata Mandir veranda, compound starting to flood, need shelter transfer.",
+      "response": null
+    },
+    {
+      "id": "INC-014",
+      "lang": null,
+      "text": "Quarters flooded near St. Mary Convent, pregnant mother and 2 children require boat evacuation.",
+      "response": null
+    },
+    {
+      "id": "INC-015",
+      "lang": null,
+      "text": "14 residents marooned in apartment near Puthumala, food packets and potable water urgently requested.",
+      "response": null
+    },
+    {
+      "id": "INC-016",
+      "lang": null,
+      "text": "Contaminated floodwater inundating worker barracks near Industrial Community Hall. 11 workers require rescue.",
+      "response": null
+    },
+    {
+      "id": "INC-017",
+      "lang": null,
+      "text": "30 displaced flood victims sheltered in Jama Masjid complex in Aluva require immediate dry food rations.",
+      "response": null
+    },
+    {
+      "id": "INC-018",
+      "lang": null,
+      "text": "Compound leg fracture outside Truck Union Bhawan, patient in severe shock, urgent boat transport to hospital.",
+      "response": null
+    },
+    {
+      "id": "INC-019",
+      "lang": null,
+      "text": "Staff residential quarters flooded behind Varapuzha School, 8 people including 5 children need rescue.",
+      "response": null
+    },
+    {
+      "id": "INC-020",
+      "lang": null,
+      "text": "25 flood refugees on terrace of Kalpetta School, acute shortage of baby food and drinking water.",
+      "response": null
+    },
+    {
+      "id": "INC-021",
+      "lang": null,
+      "text": "High fever and seizure emergency for 4yo child near Mala Health Centre, street flooded waist-deep.",
+      "response": null
+    },
+    {
+      "id": "INC-022",
+      "lang": null,
+      "text": "Canal overflow inundating houses near Anthikad School, water rising rapidly, 7 residents need evacuation.",
+      "response": null
+    },
+    {
+      "id": "INC-023",
+      "lang": null,
+      "text": "Slum shanties flooded behind Collectorate in Kothamangalam, 16 displaced people need immediate shelter.",
+      "response": null
+    },
+    {
+      "id": "INC-024",
+      "lang": null,
+      "text": "20 boat operators and volunteers cut off at Nedumudi School jetty require cooked food packets.",
+      "response": null
+    },
+    {
+      "id": "INC-025",
+      "lang": null,
+      "text": "Family safe on upper floor near Ram Mandir Champakulam, road flooded 2ft, dry rations requested.",
+      "response": null
+    },
+    {
+      "id": "INC-026",
+      "lang": null,
+      "text": "Basement seepage near Mala Health Centre, traders require tarpaulin and dry storage space.",
+      "response": null
+    },
+    {
+      "id": "INC-027",
+      "lang": null,
+      "text": "Requesting confirmation if Vythiri Bridge is submerged or accessible for light vehicles.",
+      "response": null
+    },
+    {
+      "id": "INC-028",
+      "lang": null,
+      "text": "Community kitchen at Varapuzha Gurudwara requires bulk wheat flour and cooking gas supplies.",
+      "response": null
+    },
+    {
+      "id": "INC-029",
+      "lang": null,
+      "text": "Routine medicine delivery requested for elderly couple near Meppadi Relief Camp.",
+      "response": null
+    },
+    {
+      "id": "INC-030",
+      "lang": null,
+      "text": "10 construction workers need dry shelter and blankets near Anthikad Relief Camp.",
+      "response": null
+    },
+    {
+      "id": "INC-031",
+      "lang": null,
+      "text": "Drinking water cans needed for 15 sheltered persons at Kainakary Church.",
+      "response": null
+    },
+    {
+      "id": "INC-032",
+      "lang": null,
+      "text": "3 shopkeepers stranded on mezzanine in Sarafa cloth market, water 2.5ft, non-critical boat assist requested.",
+      "response": null
+    },
+    {
+      "id": "INC-033",
+      "lang": null,
+      "text": "Seeking information regarding Metro operations from Kothamangalam station.",
+      "response": null
+    },
+    {
+      "id": "INC-034",
+      "lang": null,
+      "text": "Kalpetta Shelter full, 18 newly arrived evacuees need relocation to secondary facility.",
+      "response": null
+    },
+    {
+      "id": "INC-035",
+      "lang": null,
+      "text": "Reporting water level reading at Nedumudi Relief Camp as 1.2m over danger mark.",
+      "response": null
+    },
+    {
+      "id": "INC-036",
+      "lang": null,
+      "text": "Asking if Champakulam Shelter parking is flooded or safe for vehicle.",
+      "response": null
+    },
+    {
+      "id": "INC-037",
+      "lang": null,
+      "text": "Mala Boat Jetty committee offering hall space for 30 displaced people.",
+      "response": null
+    },
+    {
+      "id": "INC-038",
+      "lang": null,
+      "text": "Chalakudy River Jetty reports tracks are currently dry.",
+      "response": null
+    },
+    {
+      "id": "INC-039",
+      "lang": null,
+      "text": "Meppadi market association confirms sufficient grain stocks available for relief procurement.",
+      "response": null
+    },
+    {
+      "id": "INC-040",
+      "lang": null,
+      "text": "Fallen tree blocking roadway near Kalpetta Town, requires municipal clearance team.",
+      "response": null
+    },
+    {
+      "id": "phone-kainakary-merge",
+      "lang": "en",
+      "text": "Another report from Kainakary Ferry, water still rising",
+      "response": null
+    },
+    {
+      "id": "phone-hindi-ward12",
+      "lang": "hi",
+      "text": "वार्ड 12 में 6 लोग फंसे हैं, एक बच्चा भी है, पानी बढ़ रहा है, नाव भेजो।",
+      "response": null
+    }
+  ]
+}

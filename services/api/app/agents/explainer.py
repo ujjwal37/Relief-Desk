@@ -1,7 +1,6 @@
 import logging
 import re
 from typing import List, Optional, Set
-from app.config import settings
 from app.models.firestore_models import StoredRequest, StoredResource, MatchBreakdown
 from app.models.schemas import Explanation
 from app.llm.client import llm_client
@@ -98,7 +97,7 @@ class ExplainerAgent:
                 return fallback
             return Explanation(text_en=forged_llm_text, text_hi=fallback.text_hi)
 
-        if not settings.GEMINI_ENABLED:
+        if not llm_client.gemini_live():
             return fallback
 
         prompt = (

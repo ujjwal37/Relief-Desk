@@ -1,0 +1,12 @@
+.git
+node_modules
+dist
+.angular
+**/__pycache__
+.venv
+venv
+.env
+data/cache
+test-results
+playwright-report
+*.pyc

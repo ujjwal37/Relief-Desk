@@ -15,7 +15,10 @@ def test_flood_demo_pack_has_duplicates_update_hoax_and_silent_zone():
     assert "hoax" in hoax["flags"]
     assert "forward this to 10 groups" in hoax["text"].lower()
     update = next(row for row in reports if row["kind"] == "update")
-    assert "ab 5 log hain" in update["text"]
+    assert "5 people" in update["text"]
+    hindi = [row for row in reports if row["lang"] == "hi"]
+    assert [row["id"] for row in hindi] == ["DR-001"]
+    assert all(row["lang"] == "en" for row in reports if row["id"] != "DR-001")
 
 
 def test_load_demo_pack_keeps_the_hoax_report():

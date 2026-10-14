@@ -14,6 +14,17 @@ const FIXTURE = {
     cost_per_1000_msgs_usd: { relief_desk: '$0.0467', baseline: 'N/A', target: 'Reported' },
   },
   failure_examples: [],
+  gemini: {
+    measured: false,
+    reason: 'no_api_key',
+    model: 'gemini-3.8-flash',
+    date: '2026-10-12',
+    n: 168,
+    type_accuracy_pct: null,
+    place_ward_accuracy_pct: null,
+    baseline_type_accuracy_pct: 16.3,
+    baseline_ward_accuracy_pct: 13.3,
+  },
 };
 
 describe('CoordinatorBenchmarkComponent', () => {
@@ -32,12 +43,21 @@ describe('CoordinatorBenchmarkComponent', () => {
 
   it('prints the JSON numbers and the synthetic-data line', () => {
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Synthetic data, our own labels');
+    expect(text).toContain('Synthetic reports, our own labels');
     expect(text).toContain('71.4');
     expect(text).toContain('11.1');
     expect(text).toContain('10.5');
     expect(text).toContain('0.0');
     expect(text).toContain('$0.0467');
     expect(text).toContain('seed 42');
+    expect(text).toContain('gemini-3.8-flash');
+    expect(text).toContain('2026-10-12');
+    expect(text).toContain('168');
+    expect(text).toContain('16.3');
+    expect(text).toContain('Gemini was not called');
+    expect(text).toContain('Not measured yet');
+    expect(text).toContain('First come, first served');
+    expect(text).toContain('Where it still gets it wrong');
+    expect(text).not.toContain('Example data');
   });
 });

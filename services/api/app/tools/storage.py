@@ -1,7 +1,11 @@
 import logging
+import os
+import sys
+import threading
+import time
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Iterable, List, Optional
 from app.config import settings
 from app.models.firestore_models import (
     StoredReport,
@@ -10,6 +14,7 @@ from app.models.firestore_models import (
     AuditEntry,
     RequestStatus,
     StoredResource,
+    LocationPoint,
     ResourceKind,
     ResourceStatus,
     StoredMatch,
@@ -18,6 +23,22 @@ from app.models.firestore_models import (
 )
 
 logger = logging.getLogger("relief_desk.storage")
+
+# The default demo is two Kuttanad cases and the teams that sit within 15 km of them.
+# DEMO_SEED=full loads every incident in the flood pack. Reset always returns here.
+SMALL_CASE_IDS = ("INC-001", "INC-002")
+SMALL_TEAM_IDS = ("RES-BOAT-01", "RES-MED-02", "RES-FOOD-03", "RES-SHELTER-02")
+
+
+def active_seed_mode() -> str:
+    """small unless DEMO_SEED=full. Pytest keeps the full pack unless the env var says small."""
+    explicit = os.environ.get("DEMO_SEED", "").strip().lower()
+    if explicit in ("full", "small"):
+        return explicit
+    if "pytest" in sys.modules:
+        return "full"
+    mode = (getattr(settings, "DEMO_SEED", None) or "small").strip().lower()
+    return mode if mode in ("full", "small") else "small"
 
 
 class StorageService:
@@ -28,6 +49,9 @@ class StorageService:
         self._resources: Dict[str, StoredResource] = {}
         self._matches: Dict[str, StoredMatch] = {}
         self._audit_log: List[AuditEntry] = []  # Strictly append-only
+        self._idempotent: Dict[str, Dict[str, Any]] = {}
+        self._submit_lock = threading.Lock()
+        self._hold_lock = threading.Lock()
         self._firestore_client = None
         self._init_firestore()
 
@@ -66,6 +90,11 @@ class StorageService:
         )
         self._audit_log.append(entry)
         logger.info("AUDIT [%s] %s on %s by %s", entry.ts, action, target, actor)
+        try:
+            from app.tools.events import emit_audit
+            emit_audit(action, target, after)
+        except Exception:
+            logger.debug("Event bus did not publish %s", action, exc_info=True)
         return entry
 
     def get_audit_trail(self, target: Optional[str] = None) -> List[AuditEntry]:
@@ -81,7 +110,7 @@ class StorageService:
         lang: str = "en",
         source_id: str = "anon",
         trust_level: str = "anonymous",
-        event_id: str = "event_riverbend_flood",
+        event_id: str = "event_kerala_flood",
         pack_id: str = "flood",
         flags: Optional[List[str]] = None,
         status_token: Optional[str] = None,
@@ -125,6 +154,41 @@ class StorageService:
 
     def list_reports(self) -> List[StoredReport]:
         return list(self._reports.values())
+
+    def get_idempotent(self, key: Optional[str]) -> Optional[Dict[str, Any]]:
+        if not key:
+            return None
+        with self._submit_lock:
+            body = self._idempotent.get(key)
+            return dict(body) if body else None
+
+    def begin_or_replay(self, key: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Reserve a new key, or return the stored body / an in-flight marker."""
+        if not key:
+            return None
+        with self._submit_lock:
+            existing = self._idempotent.get(key)
+            if existing and existing.get("request_id"):
+                return dict(existing)
+            if existing and existing.get("_inflight"):
+                return {"_inflight": True}
+            self._idempotent[key] = {"_inflight": True}
+            return None
+
+    def save_idempotent(self, key: Optional[str], body: Dict[str, Any]) -> None:
+        if not key:
+            return
+        with self._submit_lock:
+            self._idempotent[key] = dict(body)
+
+    def release_idempotent(self, key: Optional[str]) -> None:
+        """Drop a reservation when submit fails, so the phone can retry the same key."""
+        if not key:
+            return
+        with self._submit_lock:
+            existing = self._idempotent.get(key)
+            if existing and existing.get("_inflight") and not existing.get("request_id"):
+                self._idempotent.pop(key, None)
 
     # --- Requests DAO ---
     def save_request(self, req: StoredRequest, actor: str = "system") -> StoredRequest:
@@ -206,12 +270,30 @@ class StorageService:
         cluster.undone = True
         cluster.updated_at = datetime.now(timezone.utc).isoformat()
 
-        # Detach cluster_id from requests
+        # Detach the cluster and release a folded report so undo puts it back on the board.
+        member_ids = set(cluster.request_ids)
         for r_id in cluster.request_ids:
-            if r_id in self._requests:
-                r = self._requests[r_id]
-                r.cluster_id = None
-                r.updated_at = datetime.now(timezone.utc).isoformat()
+            if r_id not in self._requests:
+                continue
+            req = self._requests[r_id]
+            req.cluster_id = None
+            if req.merged_into in member_ids:
+                parent = self._requests.get(req.merged_into)
+                if parent and (parent.merged_count or 1) > 1:
+                    parent.merged_count = (parent.merged_count or 1) - 1
+                req.merged_into = None
+                req.merged_count = 1
+            req.updated_at = datetime.now(timezone.utc).isoformat()
+
+        # Seed clusters can list report ids that were never stored. Those ghosts
+        # never had merged_into, so the loop above left the parent's count high
+        # and the chip stayed after undo. Recount from requests that still exist.
+        for r_id in cluster.request_ids:
+            req = self._requests.get(r_id)
+            if req is None or req.merged_into:
+                continue
+            still = sum(1 for other in self._requests.values() if other.merged_into == req.id)
+            req.merged_count = 1 + still
 
         self.record_audit(
             actor=actor,
@@ -246,7 +328,7 @@ class StorageService:
         return self._resources.get(resource_id)
 
     def list_resources(
-        self, kind: Optional[ResourceKind] = None, event_id: str = "event_riverbend_flood"
+        self, kind: Optional[ResourceKind] = None, event_id: str = "event_kerala_flood"
     ) -> List[StoredResource]:
         res_list = [r for r in self._resources.values() if r.event_id == event_id]
         if kind:
@@ -279,7 +361,7 @@ class StorageService:
         if res.capacity_remaining == 0:
             res.status = ResourceStatus.DEPLETED
         else:
-            res.status = ResourceStatus.BUSY
+            res.status = ResourceStatus.DISPATCHED
 
         res.updated_at = datetime.now(timezone.utc).isoformat()
         self._resources[resource_id] = res
@@ -297,6 +379,56 @@ class StorageService:
             },
         )
         return res, is_overcommit
+
+    def reserve_hold(self, request_id: str, resource_id: str, amount: int, actor: str = "dispatcher") -> dict:
+        """Claim seats without dispatching. A second claim on the same team fails."""
+        with self._hold_lock:
+            res = self._resources.get(resource_id)
+            if not res:
+                raise ValueError(f"Resource {resource_id} not found")
+            if res.hold_request_id == request_id:
+                return {"held": True, "resource_id": resource_id, "amount": res.hold_amount, "dispatched": False}
+            if res.hold_request_id or amount > res.capacity_remaining:
+                free = 0 if res.hold_request_id else res.capacity_remaining
+                raise ValueError(f"shortage: {amount} seats requested and {free} are free on {res.name}")
+            before = res.model_dump()
+            res.capacity_remaining -= amount
+            res.hold_request_id = request_id
+            res.hold_amount = amount
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+            self.record_audit(
+                actor=actor,
+                action="capacity_reserved",
+                target=resource_id,
+                before=before,
+                after={**res.model_dump(), "hold": True, "reserved_amount": amount},
+            )
+            return {"held": True, "resource_id": resource_id, "amount": amount, "dispatched": False}
+
+    def release_hold(self, resource_id: str, actor: str = "coordinator") -> Optional[StoredResource]:
+        """Give a rejected proposal's seats back. Does nothing when there is no hold."""
+        with self._hold_lock:
+            res = self._resources.get(resource_id)
+            if not res or not res.hold_request_id:
+                return res
+            before = res.model_dump()
+            amount = res.hold_amount or 0
+            res.capacity_remaining = min(res.capacity_total, res.capacity_remaining + amount)
+            res.hold_request_id = None
+            res.hold_amount = 0
+            if res.capacity_remaining > 0 and res.status == ResourceStatus.DEPLETED:
+                res.status = ResourceStatus.AVAILABLE
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+            self.record_audit(
+                actor=actor,
+                action="capacity_released",
+                target=resource_id,
+                before=before,
+                after={**res.model_dump(), "released_amount": amount},
+            )
+            return res
 
     def release_capacity(
         self, resource_id: str, amount: int, actor: str = "coordinator"
@@ -322,7 +454,127 @@ class StorageService:
         )
         return res
 
-    def load_seed_resources(self, yaml_path: Optional[str] = None) -> int:
+    def update_resource_location(
+        self, resource_id: str, lat: float, lng: float, actor: str = "coordinator"
+    ) -> StoredResource:
+        """Coordinator sets a team's last-known point. Stops a running simulation."""
+        res = self._resources.get(resource_id)
+        if not res:
+            raise ValueError(f"Resource {resource_id} not found")
+        before = res.model_dump()
+        res.lat = lat
+        res.lng = lng
+        res.location_updated_at = datetime.now(timezone.utc).isoformat()
+        res.updated_at = res.location_updated_at
+        res.simulated = False
+        res.sim_step = 0
+        self._append_trail(res)
+        self._resources[resource_id] = res
+        self.record_audit(
+            actor=actor, action="location_update", target=resource_id, before=before, after=res.model_dump()
+        )
+        return res
+
+    def begin_simulation(self, resource_id: str, target_lat: float, target_lng: float, launch: bool = True) -> None:
+        """Move a team in a straight line toward the case. Labelled simulated. Not a live GPS feed."""
+        res = self._resources.get(resource_id)
+        if not res:
+            return
+        res.sim_origin_lat = res.lat
+        res.sim_origin_lng = res.lng
+        res.sim_target_lat = target_lat
+        res.sim_target_lng = target_lng
+        res.sim_step = 0
+        res.simulated = True
+        res.status = ResourceStatus.EN_ROUTE
+        res.location_updated_at = datetime.now(timezone.utc).isoformat()
+        self._append_trail(res)
+        self._resources[resource_id] = res
+
+        def run() -> None:
+            for _ in range(4):
+                time.sleep(3)
+                current = self._resources.get(resource_id)
+                if not current or not current.simulated or current.sim_step >= 4:
+                    return
+                self.step_simulation(resource_id)
+
+        if launch:
+            threading.Thread(target=run, name=f"sim-{resource_id}", daemon=True).start()
+
+    def step_simulation(self, resource_id: str) -> Optional[StoredResource]:
+        res = self._resources.get(resource_id)
+        if not res or not res.simulated or res.sim_origin_lat is None or res.sim_target_lat is None:
+            return res
+        if res.sim_origin_lng is None or res.sim_target_lng is None:
+            return res
+        res.sim_step += 1
+        frac = min(1.0, res.sim_step / 4)
+        res.lat = res.sim_origin_lat + (res.sim_target_lat - res.sim_origin_lat) * frac
+        res.lng = res.sim_origin_lng + (res.sim_target_lng - res.sim_origin_lng) * frac
+        res.location_updated_at = datetime.now(timezone.utc).isoformat()
+        res.status = ResourceStatus.ON_SCENE if frac >= 1 else ResourceStatus.EN_ROUTE
+        self._append_trail(res)
+        self._resources[resource_id] = res
+        return res
+
+    def _append_trail(self, res: StoredResource) -> None:
+        res.location_trail.append(LocationPoint(
+            lat=res.lat,
+            lng=res.lng,
+            at=res.location_updated_at or datetime.now(timezone.utc).isoformat(),
+        ))
+        if len(res.location_trail) > 40:
+            res.location_trail = res.location_trail[-40:]
+
+    def team_action(self, resource_id: str, action: str, actor: str = "team") -> StoredResource:
+        """Field confirmation: at the scene, job done, or back in the pool."""
+        res = self._resources.get(resource_id)
+        if not res:
+            raise ValueError(f"Resource {resource_id} not found")
+        if action == "at_scene":
+            res.status = ResourceStatus.ON_SCENE
+            res.simulated = False
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+            if res.assigned_request_id:
+                try:
+                    self.mark_arrived(res.assigned_request_id, actor=actor)
+                except ValueError:
+                    pass
+        elif action == "done":
+            if res.assigned_request_id:
+                try:
+                    self.complete_request(res.assigned_request_id, actor=actor)
+                except ValueError:
+                    pass
+            res = self._resources[resource_id]
+            res.status = ResourceStatus.RETURNING
+            res.simulated = False
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+        elif action == "available":
+            if res.assigned_request_id:
+                current = self._requests.get(res.assigned_request_id)
+                if current and current.status in (
+                    RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS
+                ):
+                    try:
+                        self.complete_request(res.assigned_request_id, actor=actor)
+                    except ValueError:
+                        pass
+            res = self._resources[resource_id]
+            res.assigned_request_id = None
+            res.simulated = False
+            res.status = ResourceStatus.AVAILABLE if res.capacity_remaining > 0 else ResourceStatus.DEPLETED
+            res.updated_at = datetime.now(timezone.utc).isoformat()
+            self._resources[resource_id] = res
+        else:
+            raise ValueError(f"Unknown team action {action}")
+        self.record_audit(actor=actor, action="team_confirm", target=resource_id, after={"action": action, "status": res.status.value})
+        return res
+
+    def load_seed_resources(self, yaml_path: Optional[str] = None, only_ids: Optional[Iterable[str]] = None) -> int:
         """Loads seed resources from YAML file into storage."""
         import os
         import yaml
@@ -339,10 +591,13 @@ class StorageService:
             data = yaml.safe_load(f)
 
         count = 0
+        wanted = set(only_ids) if only_ids is not None else None
         for item in data.get("resources", []):
+            if wanted is not None and item.get("id") not in wanted:
+                continue
             res = StoredResource(
                 id=item["id"],
-                event_id=item.get("event_id", data.get("event_id", "event_riverbend_flood")),
+                event_id=item.get("event_id", data.get("event_id", "event_kerala_flood")),
                 pack_id=item.get("pack_id", data.get("scenario_pack", "flood")),
                 kind=ResourceKind(item["kind"]),
                 name=item["name"],
@@ -353,6 +608,9 @@ class StorageService:
                 capacity_total=int(item["capacity_total"]),
                 capacity_remaining=int(item.get("capacity_remaining", item["capacity_total"])),
                 status=ResourceStatus(item.get("status", "available")),
+                location_updated_at=item.get("location_updated_at") or datetime.now(timezone.utc).isoformat(),
+                assigned_request_id=item.get("assigned_request_id"),
+                area_name=item.get("area_name"),
                 synthetic=bool(item.get("synthetic", True)),
             )
             self._resources[res.id] = res
@@ -380,6 +638,9 @@ class StorageService:
     def list_matches_for_request(self, request_id: str) -> List[StoredMatch]:
         return [m for m in self._matches.values() if m.request_id == request_id]
 
+    def list_matches(self) -> List[StoredMatch]:
+        return list(self._matches.values())
+
     def approve_match(
         self,
         match_id: str,
@@ -394,13 +655,37 @@ class StorageService:
         req = self._requests.get(match.request_id)
         people_needed = req.people_count if (req and req.people_count) else 1
 
-        # Decrement capacity
-        _, is_overcommit = self.reserve_capacity(
-            resource_id=match.resource_id,
-            amount=people_needed,
-            allow_overcommit=allow_overcommit,
-            actor=approved_by,
-        )
+        # A hold already took the seats. Approving dispatches; it does not take them twice.
+        assigned_now = self._resources.get(match.resource_id)
+        already_held = bool(assigned_now and assigned_now.hold_request_id == (req.id if req else None))
+        if already_held:
+            before_res = assigned_now.model_dump()
+            assigned_now.hold_request_id = None
+            assigned_now.hold_amount = 0
+            assigned_now.status = ResourceStatus.DISPATCHED
+            self.record_audit(
+                actor=approved_by,
+                action="capacity_reserved",
+                target=assigned_now.id,
+                before=before_res,
+                after={**assigned_now.model_dump(), "confirmed": True},
+            )
+            is_overcommit = False
+        else:
+            _, is_overcommit = self.reserve_capacity(
+                resource_id=match.resource_id,
+                amount=people_needed,
+                allow_overcommit=allow_overcommit,
+                actor=approved_by,
+            )
+        assigned = self._resources.get(match.resource_id)
+        if assigned and req:
+            assigned.assigned_request_id = req.id
+            if not assigned.location_updated_at:
+                assigned.location_updated_at = assigned.updated_at
+            self._resources[assigned.id] = assigned
+            if req.lat is not None and req.lng is not None:
+                self.begin_simulation(assigned.id, req.lat, req.lng)
 
         before = match.model_dump()
         match.state = MatchState.APPROVED
@@ -411,9 +696,19 @@ class StorageService:
         self._matches[match_id] = match
 
         if req:
-            req.status = RequestStatus.APPROVED
+            before_req = req.model_dump()
+            req.status = RequestStatus.DISPATCHED
+            req.assigned_resource_id = match.resource_id
+            req.reserved_people = people_needed
             req.updated_at = datetime.now(timezone.utc).isoformat()
             self._requests[req.id] = req
+            self.record_audit(
+                actor=approved_by,
+                action="status_change",
+                target=req.id,
+                before=before_req,
+                after=req.model_dump(),
+            )
 
         self.record_audit(
             actor=approved_by,
@@ -424,6 +719,71 @@ class StorageService:
         )
         return match
 
+    def mark_arrived(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
+        """Coordinator marks the team on scene. Audited. Does not change capacity."""
+        req = self._requests.get(request_id)
+        if not req:
+            raise ValueError(f"Request {request_id} not found")
+        if req.status not in (RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS):
+            raise ValueError(f"Request {request_id} is not dispatched")
+        before = req.model_dump()
+        req.status = RequestStatus.IN_PROGRESS
+        req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._requests[req.id] = req
+        self.record_audit(actor=actor, action="status_change", target=req.id, before=before, after=req.model_dump())
+        resource_id = req.assigned_resource_id
+        res = self._resources.get(resource_id) if resource_id else None
+        if res:
+            res.simulated = False
+            res.status = ResourceStatus.ON_SCENE
+            if req.lat is not None and req.lng is not None:
+                res.lat = req.lat
+                res.lng = req.lng
+            res.location_updated_at = req.updated_at
+            res.updated_at = req.updated_at
+            self._append_trail(res)
+            self._resources[res.id] = res
+        return req
+
+    def complete_request(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
+        """Marks the case completed and releases the reserved seats back to the team."""
+        req = self._requests.get(request_id)
+        if not req:
+            raise ValueError(f"Request {request_id} not found")
+        if req.status in (RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED):
+            return req
+        if req.status not in (RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS):
+            raise ValueError(f"Request {request_id} is not dispatched")
+
+        before = req.model_dump()
+        resource_id = req.assigned_resource_id
+        amount = req.reserved_people or req.people_count or 1
+        req.status = RequestStatus.COMPLETED
+        req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._requests[req.id] = req
+        self.record_audit(actor=actor, action="status_change", target=req.id, before=before, after=req.model_dump())
+
+        if resource_id and resource_id in self._resources:
+            self._resources[resource_id].simulated = False
+            self.release_capacity(resource_id, amount, actor=actor)
+            still_out = any(
+                other.assigned_resource_id == resource_id
+                and other.id != req.id
+                and other.status in (RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS)
+                for other in self._requests.values()
+            )
+            res = self._resources[resource_id]
+            if still_out and res.capacity_remaining > 0:
+                res.status = ResourceStatus.DISPATCHED
+            elif res.capacity_remaining <= 0:
+                res.status = ResourceStatus.DEPLETED
+            else:
+                res.assigned_request_id = None
+            if not still_out:
+                res.assigned_request_id = None
+            self._resources[resource_id] = res
+        return req
+
     def reject_match(
         self, match_id: str, reason: str, actor: str = "coordinator"
     ) -> StoredMatch:
@@ -431,6 +791,7 @@ class StorageService:
         if not match:
             raise ValueError(f"Match {match_id} not found")
 
+        self.release_hold(match.resource_id, actor=actor)
         before = match.model_dump()
         match.state = MatchState.REJECTED
         match.rejected_reason = reason
@@ -446,7 +807,7 @@ class StorageService:
         )
         return match
 
-    def load_seed_incidents(self, yaml_path: Optional[str] = None, pack_id: str = "flood") -> int:
+    def load_seed_incidents(self, yaml_path: Optional[str] = None, pack_id: str = "flood", only_ids: Optional[Iterable[str]] = None) -> int:
         """Loads seeded flood incidents into storage requests."""
         import os
         import yaml
@@ -464,7 +825,10 @@ class StorageService:
             data = yaml.safe_load(f)
 
         count = 0
+        wanted = set(only_ids) if only_ids is not None else None
         for item in data.get("incidents", []):
+            if wanted is not None and item.get("id") not in wanted:
+                continue
             try:
                 vuln_data = item.get("vulnerable", {})
                 vuln = VulnerableFlags(
@@ -476,37 +840,44 @@ class StorageService:
                 )
 
                 sample_reports = item.get("sample_reports", [])
-                raw_text = None
-                ai_translation = None
                 translations_map: Dict[str, str] = {}
+                en_text = None
+                hi_text = None
                 for sr in sample_reports:
                     s_lang = sr.get("lang")
                     s_txt = sr.get("text")
-                    if s_lang and s_txt:
-                        translations_map[s_lang] = s_txt
-                    if s_lang in ("hi", "hinglish", "ta"):
-                        raw_text = s_txt
-                    elif s_lang == "en":
-                        ai_translation = s_txt
-                if not raw_text and sample_reports:
-                    raw_text = sample_reports[0].get("text")
+                    if not s_lang or not s_txt or s_lang == "ta":
+                        continue
+                    translations_map[s_lang] = s_txt
+                    if s_lang == "en":
+                        en_text = s_txt
+                    elif s_lang == "hi":
+                        hi_text = s_txt
+                # The desk reads English. One seeded case keeps its Hindi line.
+                show_hindi = item.get("id") == "INC-001"
+                raw_text = hi_text if show_hindi and hi_text else en_text
+                ai_translation = en_text or item.get("description", "")
+                if not raw_text:
+                    raw_text = next((sr.get("text") for sr in sample_reports if sr.get("lang") not in (None, "ta")), None)
                 if not ai_translation:
                     ai_translation = item.get("description", "")
                 if "en" not in translations_map and ai_translation:
                     translations_map["en"] = ai_translation
-                if "hi" not in translations_map and raw_text:
-                    translations_map["hi"] = raw_text
+                if show_hindi and hi_text:
+                    translations_map["hi"] = hi_text
 
                 flags_list = list(item.get("flags", []))
 
+                minutes_ago = count % 50
+                stamp = (datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)).isoformat()
                 req = StoredRequest(
                     id=item["id"],
                     pack_id=item.get("pack_id") or pack_id,
                     type=IncidentType(item.get("type", "rescue")),
                     place_text=item.get("description", ""),
                     ward_id=item.get("ward_id"),
-                    lat=float(item.get("lat", 26.85)),
-                    lng=float(item.get("lng", 80.94)),
+                    lat=float(item.get("lat", 10.50)),
+                    lng=float(item.get("lng", 76.30)),
                     people_count=int(item.get("people", 1)),
                     vulnerable=vuln,
                     hazard=HazardType(item.get("hazard", "unknown")),
@@ -523,6 +894,8 @@ class StorageService:
                         vulnerable=0.91,
                         urgency=0.94,
                     ),
+                    created_at=stamp,
+                    updated_at=stamp,
                 )
                 urg_res = scoring_engine.compute_urgency(req)
                 req.urgency_score = urg_res.score
@@ -552,6 +925,45 @@ class StorageService:
         logger.info("Loaded %d synthetic seed incidents into storage.", count)
         return count
 
+    def reset_demo(self) -> Dict[str, Any]:
+        """Clear in-memory cases and reload the small demo. The audit log stays append-only."""
+        return self._reload_seed("small")
+
+    def load_full_scenario(self) -> Dict[str, Any]:
+        """Reload the full flood pack. Benchmark files are not involved."""
+        return self._reload_seed("full")
+
+    def _reload_seed(self, mode: str) -> Dict[str, Any]:
+        self._reports.clear()
+        self._requests.clear()
+        self._clusters.clear()
+        self._resources.clear()
+        self._matches.clear()
+        self._idempotent.clear()
+        from app.tools.ratelimit import rate_limiter
+        rate_limiter.reset()
+        if mode == "full":
+            resources = self.load_seed_resources()
+            incidents = self.load_seed_incidents()
+            packs = self.load_scenario_pack_seeds()
+            demo = None
+            if settings.DEMO_MODE:
+                from app.tools.demo_seed import load_demo_pack
+                demo = load_demo_pack(self)
+        else:
+            resources = self.load_seed_resources(only_ids=SMALL_TEAM_IDS)
+            incidents = self.load_seed_incidents(only_ids=SMALL_CASE_IDS)
+            packs = 0
+            demo = None
+        _attach_recorded(self)
+        self.record_audit(
+            actor="reset_demo",
+            action="demo_reset" if mode == "small" else "demo_full",
+            target="storage",
+            after={"resources": resources, "incidents": incidents, "scenario_packs": packs, "seed": mode},
+        )
+        return {"resources": resources, "incidents": incidents, "scenario_packs": packs, "demo": demo, "seed": mode}
+
     def load_scenario_pack_seeds(self) -> int:
         """Load data/synthetic/<scenario-id>/seeds.yaml for every pack. No per-scenario branch."""
         import os
@@ -566,16 +978,31 @@ class StorageService:
         return loaded
 
 
+def _attach_recorded(storage) -> None:
+    try:
+        from app.llm.replay_seed import attach_recorded_ai
+
+        attach_recorded_ai(storage)
+    except Exception as exc:  # recordings are optional
+        logger.warning("Could not attach recorded Gemini readings: %s", exc)
+
+
 # Singleton instance
 storage_service = StorageService()
 # Auto-load seed resources and incidents
 try:
-    storage_service.load_seed_resources()
-    storage_service.load_seed_incidents()
-    storage_service.load_scenario_pack_seeds()
-    if settings.DEMO_MODE:
-        from app.tools.demo_seed import load_demo_pack
-        load_demo_pack(storage_service)
+    if active_seed_mode() == "full":
+        storage_service.load_seed_resources()
+        storage_service.load_seed_incidents()
+        storage_service.load_scenario_pack_seeds()
+        _attach_recorded(storage_service)
+        if settings.DEMO_MODE:
+            from app.tools.demo_seed import load_demo_pack
+            load_demo_pack(storage_service)
+    else:
+        storage_service.load_seed_resources(only_ids=SMALL_TEAM_IDS)
+        storage_service.load_seed_incidents(only_ids=SMALL_CASE_IDS)
+        _attach_recorded(storage_service)
 except Exception:
     pass
 

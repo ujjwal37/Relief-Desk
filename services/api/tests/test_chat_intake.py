@@ -87,6 +87,31 @@ def test_hero_flood_dialogue_under_four_turns():
     assert t3.confirmation_card.people_count == 5
 
 
+def test_language_override_stays_and_hides_raw_keys():
+    agent = ChatIntakeAgent()
+    resp = agent.process_turn(
+        session_id="test_lang_hi",
+        user_message="water is rising please help",
+        scenario_id="flood",
+        lang_override="hi",
+    )
+    assert "water_rising" not in resp.bot_message
+    assert "Hazard:" not in resp.bot_message
+    assert "How many" not in resp.bot_message
+    assert "Where are you" not in resp.bot_message
+    assert any("\u0900" <= ch <= "\u097F" for ch in resp.bot_message)
+
+    done = agent.process_turn(
+        session_id="test_lang_hi_done",
+        user_message="5 people at Gandhi school, a child, water rising",
+        scenario_id="flood",
+        lang_override="hi",
+    )
+    assert "water_rising" not in done.bot_message
+    assert "rescue" not in done.bot_message.lower()
+    assert "विवरण" in done.bot_message or any("\u0900" <= ch <= "\u097F" for ch in done.bot_message)
+
+
 def test_reports_api_endpoint():
     payload = {
         "text": "Gandhi school ke paas 3 log chat par hain, pani badh raha hai",

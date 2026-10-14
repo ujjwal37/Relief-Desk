@@ -1,77 +1,77 @@
-<div class="login-wrapper">
-  <div class="emergency-alert-banner">
-    <div class="alert-content">
-      <span class="alert-icon">⚠️</span>
-      <span class="alert-text">{{ 'safety.banner' | rdTranslate }}</span>
-      <a href="tel:112" class="call-112-btn">{{ 'safety.call112' | rdTranslate }}</a>
+<div class="split">
+  <aside class="brand-panel">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z" fill="var(--on-brand)"/><path d="M12 7v8M8 11h8" stroke="var(--brand)" stroke-width="2.2" stroke-linecap="round"/></svg>
+      Relief Desk
     </div>
-  </div>
+    <h2>{{ 'auth.brandTitle' | rdTranslate }}</h2>
+    <p>{{ 'auth.brandSub' | rdTranslate }}</p>
+    <ul class="samples" aria-hidden="true">
+      <li><span class="bar r"></span><span class="t">{{ 'auth.sample1' | rdTranslate }}</span><b class="n r">92</b></li>
+      <li><span class="bar a"></span><span class="t">{{ 'auth.sample2' | rdTranslate }}</span><b class="n a">78</b></li>
+      <li><span class="bar b"></span><span class="t">{{ 'auth.sample3' | rdTranslate }}</span><b class="n b">61</b></li>
+    </ul>
+    <p class="trust">✓ {{ 'auth.trust1' | rdTranslate }}</p>
+    <p class="trust">✓ {{ 'auth.trust2' | rdTranslate }}</p>
+  </aside>
 
-  <div class="nav-bar">
-    <rd-language-switcher></rd-language-switcher>
-  </div>
-
-  <div class="login-card">
-    <div class="header">
-      <span class="icon">🛡️</span>
-      <h2>{{ 'auth.loginTitle' | rdTranslate }}</h2>
-      <p class="sub">{{ 'auth.subtitle' | rdTranslate }}</p>
+  <main class="form-side">
+    <div class="bar-top">
+      <span class="mobile-brand">Relief Desk</span>
+      <span class="spacer"></span>
+      <rd-settings-button />
+      <rd-call-pill />
     </div>
 
-    @if (errorMessage()) {
-      <div class="error-banner">
-        <span>⚠️ {{ errorMessage() }}</span>
-      </div>
-    }
+    <div class="form-wrap">
+      <h1 id="login-h" tabindex="-1">{{ 'auth.signIn' | rdTranslate }}</h1>
+      <p class="sub">{{ 'auth.toDashboard' | rdTranslate }}</p>
 
-    <form class="login-form" (submit)="$event.preventDefault(); onLogin()">
-      <div class="field">
-        <label for="coord-email">{{ 'auth.email' | rdTranslate }}</label>
-        <input
-          id="coord-email"
-          type="email"
-          [value]="email()"
-          (input)="email.set($any($event.target).value)"
-          placeholder="name@reliefdesk.internal"
-          required
-        />
-      </div>
+      @if (demoMode()) {
+      <section class="demo" aria-labelledby="judge-h">
+        <h2 id="judge-h">{{ 'auth.judgeTitle' | rdTranslate }}</h2>
+        <p>{{ 'auth.judgeSub' | rdTranslate }}</p>
+        <button type="button" class="demo-btn" (click)="enterDemo()" [disabled]="isSubmitting()" autofocus>{{ 'auth.enterDemo' | rdTranslate }}</button>
+        <p class="note">{{ 'auth.syntheticNote' | rdTranslate }}</p>
+      </section>
 
-      <div class="field">
-        <label for="coord-password">{{ 'auth.password' | rdTranslate }}</label>
-        <input
-          id="coord-password"
-          type="password"
-          [value]="password()"
-          (input)="password.set($any($event.target).value)"
-          placeholder="••••••••••••"
-          required
-        />
-      </div>
+      <p class="or"><span>{{ 'auth.orAccount' | rdTranslate }}</span></p>
+      }
 
-      <div class="demo-notice" (click)="useDemoAccount()">
-        <span class="demo-icon">🔑</span>
-        <div class="demo-details">
-          <strong>{{ 'auth.demoNotice' | rdTranslate }}</strong>
-          <code>demo-coordinator&#64;reliefdesk.internal</code>
+      @if (failed()) {
+        <div class="error-banner" role="alert">{{ 'auth.wrong' | rdTranslate }}</div>
+      }
+
+      <form (submit)="$event.preventDefault(); onLogin()" novalidate>
+        <div class="field">
+          <label for="coord-email">{{ 'auth.email' | rdTranslate }}</label>
+          <input id="coord-email" type="email" autocomplete="username" [value]="email()" (input)="email.set($any($event.target).value)"
+            [placeholder]="'auth.emailPlaceholder' | rdTranslate" [attr.aria-invalid]="emailMissing" [attr.aria-describedby]="emailMissing ? 'e-err' : null" />
+          @if (emailMissing) { <span class="err" id="e-err">{{ 'auth.required' | rdTranslate }}</span> }
         </div>
-      </div>
-
-      <button type="submit" class="submit-btn" [disabled]="isSubmitting()">
-        @if (isSubmitting()) {
-          <span>Verifying credentials...</span>
-        } @else {
-          <span>{{ 'auth.submit' | rdTranslate }} →</span>
-        }
-      </button>
-
-      <button type="button" class="demo-quick-btn" (click)="useDemoAccount()">
-        ⚡ {{ 'auth.loginDemo' | rdTranslate }}
-      </button>
-    </form>
-
-    <div class="footer">
-      <a routerLink="/" class="back-link">← {{ 'auth.returnHome' | rdTranslate }}</a>
+        <div class="field">
+          <label for="coord-password">{{ 'auth.password' | rdTranslate }}</label>
+          <div class="pw">
+            <input #pwd id="coord-password" [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password" [value]="password()"
+              (input)="password.set($any($event.target).value)" [attr.aria-invalid]="passwordMissing" [attr.aria-describedby]="passwordMissing ? 'p-err' : null" />
+            <button type="button" class="eye" (click)="showPassword.set(!showPassword())"
+              [attr.aria-label]="(showPassword() ? 'auth.hide' : 'auth.show') | rdTranslate" [attr.aria-pressed]="showPassword()">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>@if (showPassword()) {<path d="M3 3l18 18"/>}</svg>
+            </button>
+          </div>
+          @if (passwordMissing) { <span class="err" id="p-err">{{ 'auth.required' | rdTranslate }}</span> }
+        </div>
+        <div class="meta">
+          <label class="keep"><input type="checkbox" /> {{ 'auth.keepSignedIn' | rdTranslate }}</label>
+          <a href="#" (click)="forgot($event)">{{ 'auth.forgot' | rdTranslate }}</a>
+        </div>
+        <button type="submit" class="submit" [disabled]="isSubmitting()">
+          @if (isSubmitting()) { <span class="spin" aria-hidden="true"></span>{{ 'auth.signingIn' | rdTranslate }} } @else { {{ 'auth.signInBtn' | rdTranslate }} }
+        </button>
+      </form>
+      <p class="back"><a routerLink="/">← {{ 'auth.backHome' | rdTranslate }}</a></p>
     </div>
-  </div>
+    <rd-quiet-footer />
+    @if (toast()) { <div class="toast" role="status">{{ 'auth.forgotToast' | rdTranslate }}</div> }
+  </main>
 </div>

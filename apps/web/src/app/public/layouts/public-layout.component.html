@@ -1,27 +1,39 @@
-<div class="public-shell">
-  <div class="emergency-header">
-    <div class="emergency-bar">
-      <span>🚨 {{ 'safety.banner' | rdTranslate }}</span>
-      <a href="tel:112" class="call-pill">{{ 'safety.call112' | rdTranslate }}</a>
-    </div>
+<div class="public-shell" [class.chat]="chat()">
+  @if (!chat()) {
     <header class="app-nav">
-      <a routerLink="/" class="nav-brand">
-        <span class="icon">🛡️</span>
-        <span class="name">{{ 'landing.title' | rdTranslate }}</span>
+      <a routerLink="/" class="brand" aria-label="Relief Desk">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z" fill="var(--brand)"/><path d="M12 7v8M8 11h8" stroke="var(--on-brand)" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <span>{{ 'landing.title' | rdTranslate }}</span>
       </a>
-      <nav class="nav-links">
-        <a routerLink="/report" class="nav-link">{{ 'nav.report' | rdTranslate }}</a>
-        <a routerLink="/status" class="nav-link">{{ 'nav.status' | rdTranslate }}</a>
-        <a routerLink="/nearby" class="nav-link">{{ 'nav.nearby' | rdTranslate }}</a>
-      </nav>
-      <app-scenario-switcher></app-scenario-switcher>
-      <div class="nav-actions">
-        <rd-language-switcher></rd-language-switcher>
-      </div>
+      <div class="actions"><rd-call-pill /><rd-settings-button /></div>
     </header>
-  </div>
+  }
+
+  @if (demo() && !chat()) {
+    <div class="demo-bar"><app-scenario-switcher></app-scenario-switcher></div>
+  }
 
   <main class="content-container">
     <router-outlet></router-outlet>
+    @if (!chat()) { <rd-quiet-footer /> }
   </main>
+
+  <nav class="tabs" [attr.aria-label]="'ui.main' | rdTranslate">
+      <a routerLink="/home" class="tab" routerLinkActive="on">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>
+        <span>{{ 'nav.home2' | rdTranslate }}</span>
+      </a>
+      <a routerLink="/nearby" class="tab" routerLinkActive="on">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        <span>{{ 'nav.nearby2' | rdTranslate }}</span>
+      </a>
+      <a routerLink="/report" class="tab fab-tab" [attr.aria-label]="'nav.reportFab' | rdTranslate">
+        <span class="fab"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+        <span>{{ 'nav.reportFab' | rdTranslate }}</span>
+      </a>
+      <a routerLink="/status" class="tab" routerLinkActive="on">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/><circle cx="18" cy="16" r="3"/></svg>
+        <span>{{ 'nav.status2' | rdTranslate }}</span>
+      </a>
+  </nav>
 </div>

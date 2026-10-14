@@ -1,0 +1,22 @@
+:host { display: block; }
+.card {
+  text-align: left; border: 2px solid var(--brand); border-radius: 12px; background: var(--surface);
+  padding: 10px 12px; min-height: 148px;
+}
+.chip { display: inline-flex; align-items: center; gap: 6px; margin: 0; min-height: 44px; font: 600 13px/1 var(--rd-font-family); color: var(--brand); }
+.fresh { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+.skel { height: 12px; border-radius: 6px; background: var(--surface-2); margin-bottom: 6px; }
+.skel.short { width: 60%; }
+ol { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+li { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); }
+li svg { color: var(--ok); }
+.bar { height: 6px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+.bar b { display: block; height: 6px; background: var(--brand); }
+.count, .hint { margin: 6px 0 0; font-size: 13px; color: var(--text-2); }
+.dash { width: 12px; height: 2px; background: var(--muted); display: inline-block; }
+.spin {
+  width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--brand);
+  border-radius: 50%; animation: rd-spin .8s linear infinite; display: inline-block;
+}
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+@keyframes rd-spin { to { transform: rotate(360deg); } }

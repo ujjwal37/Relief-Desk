@@ -31,6 +31,14 @@ _SWIM = re.compile(
     re.IGNORECASE,
 )
 
+# Short close, with no pipe summary and no raw hazard or type keys.
+_READY = {
+    "en": "Details are ready. Review the card below and tap Send.",
+    "hi": "विवरण तैयार है। नीचे दिए कार्ड की जाँच करें और भेजें।",
+    "hinglish": "Details ready hain. Neeche wala card check karke bhej dijiye.",
+    "ml": "വിവരങ്ങൾ തയ്യാർ. താഴെയുള്ള കാർഡ് പരിശോധിച്ച് അയയ്ക്കുക.",
+}
+
 
 def injection_pattern(message: str) -> bool:
     return _INJECTION.search(message) is not None
@@ -55,7 +63,7 @@ def pack_notice(scenario, lang: str) -> str:
 def reply_is_only_safety_lines(reply: str) -> bool:
     catalog = []
     for line in scenario_registry._safety_lines.values():
-        for lang in ("en", "hi", "hinglish", "ta"):
+        for lang in ("en", "hi", "hinglish", "ml"):
             text = line.get(lang)
             if text:
                 catalog.append(text)
@@ -121,7 +129,13 @@ class ChatIntakeAgent:
         state.messages_history.append({"role": "user", "text": user_message})
 
         scenario = scenario_registry.get_scenario(state.scenario_id) or scenario_registry.get_scenario("flood")
-        lang = lang_override or state.language or "en"
+        # The app language wins over a guess from the words, so a Hindi UI
+        # does not flip to English after an English chip.
+        if lang_override:
+            lang = lang_override
+            state.language = lang_override
+        else:
+            lang = state.language or "en"
 
         # 1. Safety guardrail: advice and injection requests return fixed lines only.
         advice = safety_refusal_lines(user_message)
@@ -143,8 +157,8 @@ class ChatIntakeAgent:
         extracted_turn = intake_agent.parse_report(user_message, language_hint=lang)
         current = state.extracted_so_far
 
-        # Detect language
-        if extracted_turn.language:
+        # Detect language only when the client did not choose one.
+        if extracted_turn.language and not lang_override:
             lang = extracted_turn.language.value
             state.language = lang
 
@@ -157,7 +171,7 @@ class ChatIntakeAgent:
         if extracted_turn.place_text:
             current.place_text = extracted_turn.place_text
         elif location_pin and not current.place_text:
-            current.place_text = f"Pin ({location_pin.get('lat', 26.85):.4f}, {location_pin.get('lng', 80.93):.4f})"
+            current.place_text = f"Pin ({location_pin.get('lat', 9.498):.4f}, {location_pin.get('lng', 76.339):.4f})"
 
         if extracted_turn.people.count is not None:
             current.people = extracted_turn.people
@@ -201,7 +215,7 @@ class ChatIntakeAgent:
             summary_text = " | ".join(summary_parts)
             card = ConfirmationCardData(
                 incident_type=current.type.value,
-                place_text=current.place_text or "Riverbend Ward 2",
+                place_text=current.place_text or "Champakulam",
                 people_count=current.people.count or 1,
                 vulnerable=current.vulnerable.model_dump(),
                 hazard=current.hazard.value,
@@ -211,12 +225,7 @@ class ChatIntakeAgent:
             )
             state.confirmation_card = card
 
-            if lang == "hi":
-                bot_msg = f"मैंने विवरण दर्ज कर लिया है: {summary_text}। कृपया नीचे दिए गए कन्फर्मेशन कार्ड की जांच करें और सबमिट करें।"
-            elif lang == "hinglish":
-                bot_msg = f"Maine sab details note kar li hain: {summary_text}. Please check confirmation card below and send."
-            else:
-                bot_msg = f"I have gathered the details: {summary_text}. Please review the confirmation card below and tap Send."
+            bot_msg = _READY.get(lang, _READY["en"])
 
             state.messages_history.append({"role": "assistant", "text": bot_msg})
             return ChatTurnResponse(

@@ -12,7 +12,7 @@ logger = logging.getLogger("relief_desk.auth")
 router = APIRouter(prefix="/api", tags=["auth"])
 
 DEMO_COORDINATOR_EMAIL = "demo-coordinator@reliefdesk.internal"
-DEMO_COORDINATOR_PASSWORD = "RiverbendRelief2026!"
+DEMO_COORDINATOR_PASSWORD = "KeralaRelief2026!"
 DEMO_COORDINATOR_TOKEN = "demo-coordinator-token"
 
 
@@ -53,7 +53,7 @@ def verify_coordinator_token(token: str) -> CoordinatorUser:
             uid="demo-coord-01",
             email=DEMO_COORDINATOR_EMAIL,
             role="coordinator",
-            display_name="Riverbend Emergency Coordinator",
+            display_name="Kerala Emergency Coordinator",
         )
 
     # 2. Check signed JWT
@@ -132,7 +132,7 @@ def login(creds: LoginRequest):
             token=token,
             email=DEMO_COORDINATOR_EMAIL,
             role="coordinator",
-            display_name="Riverbend Emergency Coordinator",
+            display_name="Kerala Emergency Coordinator",
         )
 
     raise HTTPException(

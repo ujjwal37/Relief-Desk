@@ -1,7 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { CoordinatorCommandComponent } from './coordinator-command.component';
 import { ApiClientService, StoredRequest, MatchProposal, StoredResource, UrgencyWeights } from '@rd/shared';
+import { MapProviderComponent } from '../../../core/maps/map-provider.component';
 
 describe('CoordinatorCommandComponent', () => {
   let component: CoordinatorCommandComponent;
@@ -129,13 +132,27 @@ describe('CoordinatorCommandComponent', () => {
       'getUrgencyWeights',
       'updateUrgencyWeights',
       'approveMatch',
+      'markArrived',
+      'completeRequest',
       'rejectMatch',
+      'mergeRequests',
+      'keepSeparate',
       'splitCluster',
       'getScenarios',
       'getMapsConfig',
+      'getAssistProposals',
+      'planAssist',
+      'resetDemo',
+      'loadFullScenario',
+      'getRecentReports',
     ]);
 
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
+    apiClientSpy.getRecentReports.and.returnValue(of([]));
+    apiClientSpy.getAssistProposals.and.returnValue(of({ proposals: [], shortages: [] }));
+    apiClientSpy.planAssist.and.returnValue(of({ proposals: [], shortages: [] }));
+    apiClientSpy.resetDemo.and.returnValue(of({ seed: 'small', incidents: 2 }));
+    apiClientSpy.loadFullScenario.and.returnValue(of({ seed: 'full', incidents: 40 }));
     apiClientSpy.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
     apiClientSpy.getScenarios.and.returnValue(of([
       { id: 'flood', title: 'Urban Flood Relief', description: '', incident_types: ['rescue'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: [] },
@@ -150,12 +167,22 @@ describe('CoordinatorCommandComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [CoordinatorCommandComponent],
-      providers: [{ provide: ApiClientService, useValue: apiClientSpy }],
+      providers: [provideRouter([]), { provide: ApiClientService, useValue: apiClientSpy }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CoordinatorCommandComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  it('lands on an open case when the highest score is already dispatched', () => {
+    const dispatched = { ...mockRequests[0], id: 'INC-DISP', status: 'dispatched' as const, urgency_score: 99 };
+    (component as unknown as { initialSelectDone: boolean }).initialSelectDone = false;
+    component.applyQueue([dispatched, mockRequests[0], mockRequests[1]], false);
+    expect(component.selectedRequestId()).toBe('INC-001');
+    fixture.detectChanges();
+    const opener = fixture.nativeElement.querySelector('.hooks .trace-chip') as HTMLButtonElement | null;
+    expect(opener?.textContent).toContain('How it decided');
   });
 
   it('should create and load ranked requests and resources', () => {
@@ -180,15 +207,80 @@ describe('CoordinatorCommandComponent', () => {
   it('should approve match, update request status, and display confirmation toast', () => {
     component.approveMatch(mockProposal);
     expect(apiClientSpy.approveMatch).toHaveBeenCalledWith('match_001', false);
-    expect(component.actionToast()?.text).toContain('Dispatch Approved');
+    expect(component.actionToast()?.text).toMatch(/Dispatch approved|Motorized Rescue Boat/);
     const updated = component.requests().find((r) => r.id === 'INC-001');
-    expect(updated?.status).toBe('approved');
+    expect(updated?.status).toBe('dispatched');
+    expect(component.filteredRequests().some((r) => r.id === 'INC-001')).toBeFalse();
+    expect(component.counts().dispatched).toBe(1);
+    expect(component.teamsFree().free).toBe(0);
+    component.setBandFilter('dispatched');
+    expect(component.filteredRequests().map((r) => r.id)).toEqual(['INC-001']);
+  });
+
+  it('marks the assigned team at the scene', () => {
+    component.approveMatch(mockProposal);
+    apiClientSpy.markArrived.and.returnValue(of({ ...mockRequests[0], status: 'in_progress' }));
+    const dispatched = component.requests().find((r) => r.id === 'INC-001')!;
+    component.markArrived(dispatched);
+    expect(component.resources().find((r) => r.id === 'res_boat_02')?.status).toBe('on_scene');
+    expect(component.resources().find((r) => r.id === 'res_boat_02')?.simulated).toBeFalse();
+  });
+
+  it('should complete a dispatched case and free the team', () => {
+    component.approveMatch(mockProposal);
+    apiClientSpy.completeRequest.and.returnValue(of({ ...mockRequests[0], status: 'completed' }));
+    const dispatched = component.requests().find((r) => r.id === 'INC-001')!;
+    component.markCompleted(dispatched);
+    expect(apiClientSpy.completeRequest).toHaveBeenCalledWith('INC-001');
+    expect(component.requests().find((r) => r.id === 'INC-001')?.status).toBe('completed');
+    expect(component.teamsFree().free).toBe(1);
+    expect(component.counts().completed).toBe(1);
+    expect(component.counts().critical).toBe(1);
+  });
+
+  it('counts every team in the free tile, including shelter and food', () => {
+    component.resources.set([
+      { ...mockResources[0], id: 'boat', kind: 'boat', status: 'available', capacity_remaining: 6 },
+      { ...mockResources[0], id: 'shelter', kind: 'shelter', status: 'available', capacity_remaining: 40 },
+      { ...mockResources[0], id: 'food', kind: 'food', status: 'busy', capacity_remaining: 10 },
+      { ...mockResources[0], id: 'med', kind: 'medical', status: 'available', capacity_remaining: 0 },
+    ]);
+    expect(component.teamsFree()).toEqual({ free: 2, total: 4 });
+  });
+
+  it('tab counts follow the type, area and time filters, and areas use place names', () => {
+    expect(component.counts().total).toBe(2);
+    component.setFilterType('medical');
+    expect(component.counts().total).toBe(1);
+    expect(component.counts().critical).toBe(1);
+    component.setArea('ward_7');
+    expect(component.counts().total).toBe(0);
+    component.setFilterType('all');
+    component.setArea('all');
+    component.setTime('hour');
+    expect(component.counts().total).toBe(0);
+    component.clearFilters();
+    expect(component.placeName('ward_7')).toBe('Chalakudy');
+    expect(component.placeName('ward_4')).toBe('Aluva');
+    expect(component.placeName('ward_12')).toBe('Kalpetta');
+    expect(/ward\s*\d+/i.test(component.placeName('ward_7'))).toBeFalse();
+  });
+
+  it('keeps type, area and time filters and can clear them', () => {
+    component.setFilterType('medical');
+    component.setArea('ward_4');
+    expect(component.filteredRequests().map((r) => r.id)).toEqual(['INC-002']);
+    component.setTime('hour');
+    expect(component.filteredRequests().length).toBe(0);
+    component.clearFilters();
+    expect(component.filteredRequests().length).toBe(2);
+    expect(component.timeFilter()).toBe('all');
   });
 
   it('should split cluster and reload requests when undo merge is clicked', () => {
     component.splitCluster('INC-001');
     expect(apiClientSpy.splitCluster).toHaveBeenCalledWith('INC-001');
-    expect(component.actionToast()?.text).toContain('Cluster split undone');
+    expect(component.actionToast()?.text).toContain('separate cases');
     expect(apiClientSpy.getRequests).toHaveBeenCalled();
   });
 
@@ -199,9 +291,9 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.currentWeights().w_vulnerability).toBe(45);
   });
 
-  it('should accurately detect original languages (Hindi, Tamil, Hinglish, English)', () => {
+  it('should accurately detect original languages (Hindi, Malayalam, Hinglish, English)', () => {
     expect(component.detectOriginalLanguage('पानी बहुत तेजी से बढ़ रहा है')).toBe('Hindi');
-    expect(component.detectOriginalLanguage('வெள்ளத்தில் சிக்கியுள்ளோம் காப்பாற்றுங்கள்')).toBe('Tamil');
+    expect(component.detectOriginalLanguage('വെള്ളം ഉയരുന്നു, സഹായം വേണം')).toBe('Malayalam');
     expect(component.detectOriginalLanguage('paani badh raha hai bachao jaldi')).toBe('Hinglish');
     expect(component.detectOriginalLanguage('Flood water rising rapidly please send boat')).toBe('English');
   });
@@ -230,7 +322,6 @@ describe('CoordinatorCommandComponent', () => {
       translations: {
         en: 'Water entered the house.',
         hi: 'घर में पानी घुस गया है।',
-        ta: 'வீட்டிற்குள் தண்ணீர் புகுந்தது.',
       },
     };
 
@@ -239,9 +330,243 @@ describe('CoordinatorCommandComponent', () => {
 
     component.setTranslationLang('hi');
     expect(component.getTranslationText(multiLangReq)).toBe('घर में पानी घुस गया है।');
+  });
 
-    component.setTranslationLang('ta');
-    expect(component.getTranslationText(multiLangReq)).toBe('வீட்டிற்குள் தண்ணீர் புகுந்தது.');
+  it('titles a case still being analysed with its summary, never the scoring note', () => {
+    component.setTranslationLang('en');
+    const analysing: StoredRequest = {
+      ...mockRequests[0],
+      ai_translation: null,
+      translations: {},
+      urgency_reason: 'Vulnerable flags: child, elderly (Urgency score: 44.7)',
+      summary: '5 people needing rescue | at Gandhi School | Vulnerable: child | Hazard: water_rising',
+      analysis_status: 'analysing',
+    };
+    expect(component.getTranslationText(analysing)).toBe('5 people needing rescue at Gandhi School');
+    expect(component.getTranslationText({ ...analysing, summary: null })).toBe(analysing.raw_text as string);
+    expect(component.getTranslationText({ ...analysing, summary: null, raw_text: 'Vulnerable flags: child (Urgency score: 44.7)' }))
+      .toBe(analysing.place_text as string);
+  });
+
+  it('builds a queue need line from flags and the needed team, never a scoring note', () => {
+    const line = component.queueNeedLine(mockRequests[0]);
+    expect(line.toLowerCase()).toContain('children');
+    expect(line.toLowerCase()).toContain('elderly');
+    expect(line.toLowerCase()).toMatch(/boat/);
+    expect(line).not.toMatch(/urgency score/i);
+    const onlyChild = component.queueNeedLine({
+      ...mockRequests[0],
+      people_count: 3,
+      vulnerable: { child: true, elderly: false, disabled: false, pregnant: false, medical_need: false },
+    });
+    expect(onlyChild.toLowerCase()).toMatch(/3 children/);
+    expect(onlyChild.toLowerCase()).toMatch(/boat/);
+  });
+
+  it('formats waiting time from wait_minutes or created_at', () => {
+    expect(component.waitTime({ ...mockRequests[0], wait_minutes: 12 })).toMatch(/12/);
+    const hourAgo = new Date(Date.now() - 70 * 60_000).toISOString();
+    expect(component.waitTime({ ...mockRequests[0], wait_minutes: 0, created_at: hourAgo })).toMatch(/1 h/);
+  });
+
+  it('shows a slim queue card and a Send card with one Why line', () => {
+    const card = fixture.nativeElement.querySelector('button.case') as HTMLElement;
+    expect(card.querySelector('.title')?.textContent).toContain('Water has entered');
+    expect(card.querySelector('.loc')?.textContent).toMatch(/^Ward 7 ·/);
+    expect(card.querySelector('.prio')?.textContent?.trim()).toBe('94');
+    expect(card.querySelector('.ico-chip.people')?.textContent).toContain('5');
+    expect(card.querySelector('.ico-chip.vuln')?.textContent).toContain('Vulnerable');
+    expect(card.textContent).not.toContain('Priority');
+    expect(card.querySelector('.need')).toBeNull();
+    const panel = fixture.nativeElement.querySelector('.detail') as HTMLElement;
+    expect(panel.querySelector('.send-kicker')?.textContent).toContain('Send: Motorized Rescue Boat #02');
+    expect((panel.querySelector('.facts') as HTMLElement).textContent).toContain('1.2 km · about 4 min');
+    expect(panel.querySelector('.why-line')?.textContent).toContain('Rescue Boat #02');
+    expect(panel.querySelector('.more-block')?.hasAttribute('hidden')).toBeTrue();
+    expect(component.sendTeamLabel('Boat 2')).toBe('Send: Boat 2');
+    expect(component.whyLine(mockProposal)).toContain('1.2 km');
+  });
+
+  it('keeps Ward N on the queue location line', () => {
+    expect(component.locationLine(mockRequests[0])).toMatch(/^Ward 7 ·/);
+    expect(component.locationLine({ ...mockRequests[0], ward_id: 'ward_12', place_text: 'Canal Road' }))
+      .toBe('Ward 12 · Canal Road');
+  });
+
+  it('merges a new report into the open queue and keeps the selected case', () => {
+    expect(component.selectedRequestId()).toBe('INC-001');
+    const live = {
+      ...mockRequests[0],
+      id: 'INC-LIVE',
+      urgency_score: 96,
+      place_text: 'Just reported',
+      updated_at: '2026-10-11T15:00:00+00:00',
+    };
+    component.applyQueue([live], true);
+    expect(component.requests().some((row) => row.id === 'INC-LIVE')).toBeTrue();
+    expect(component.freshIds().has('INC-LIVE')).toBeTrue();
+    expect(component.flashIds().has('INC-LIVE')).toBeTrue();
+    expect(component.selectedRequestId()).toBe('INC-001');
+    component.openReported('INC-LIVE');
+    expect(component.selectedRequestId()).toBe('INC-LIVE');
+  });
+
+  it('shows Gemini or Offline fallback on the AI reading', () => {
+    const rows = component.requests().map((row) => ({ ...row }));
+    rows[0] = { ...rows[0], ai_source: 'gemini' };
+    rows[1] = { ...rows[1], ai_source: 'offline_fallback' };
+    component.requests.set(rows);
+    component.selectRequest('INC-001');
+    fixture.detectChanges();
+    const gemini = fixture.nativeElement.textContent as string;
+    expect(gemini).toContain('AI reading');
+    expect(gemini).toContain('Gemini');
+    component.selectRequest('INC-002');
+    fixture.detectChanges();
+    const offline = fixture.nativeElement.textContent as string;
+    expect(offline).toContain('Offline fallback');
+    expect(offline).not.toContain('Gemini');
+    rows[0] = {
+      ...rows[0],
+      ai_source: 'recorded',
+      ai: { provider: 'cache', model: 'gemini-3.8-flash', latency_ms: 4, tokens: 12, cached: true, fallback_reason: null },
+    };
+    component.requests.set(rows);
+    component.selectRequest('INC-001');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent as string).toContain('Recorded (Gemini)');
+  });
+
+  it('says there is no nearby team instead of an hours-long ETA', () => {
+    const far: MatchProposal = {
+      ...mockProposal,
+      eta_minutes: 5995,
+      no_nearby: true,
+      breakdown: { ...mockProposal.breakdown, distance_km: 1998 },
+    };
+    expect(component.etaText(far)).toBe('No nearby team');
+    expect(component.etaText(far)).not.toContain('5995');
+    const near: MatchProposal = {
+      ...mockProposal,
+      eta_minutes: 4,
+      breakdown: { ...mockProposal.breakdown, distance_km: 1.2 },
+    };
+    expect(component.etaText(near)).toBe('about 4 min');
+    const freeClose: MatchProposal = {
+      ...mockProposal,
+      eta_minutes: undefined,
+      no_nearby: true,
+      breakdown: { ...mockProposal.breakdown, distance_km: 12 },
+    };
+    expect(component.etaText(freeClose)).toBe('about 36 min');
+    expect(component.etaText(freeClose)).not.toContain('No nearby team');
+  });
+
+  it('fits open cases and labels the four Kerala districts without a river', () => {
+    component.matches.set([]);
+    component.requests.set([
+      { ...mockRequests[0], id: 'south', lat: 9.43, lng: 76.4, status: 'new' },
+      { ...mockRequests[0], id: 'north', lat: 11.6, lng: 76.08, status: 'new' },
+      { ...mockRequests[0], id: 'done', lat: 26.8, lng: 80.9, status: 'completed' },
+    ]);
+    fixture.detectChanges();
+    const frame = component.mapFrame();
+    expect(frame.minLa).toBeLessThan(9.43);
+    expect(frame.maxLa).toBeGreaterThan(11.6);
+    expect(frame.maxLa).toBeLessThan(20);
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Alappuzha');
+    expect(text).toContain('Ernakulam');
+    expect(text).toContain('Thrissur');
+    expect(text).toContain('Wayanad');
+    expect(fixture.nativeElement.querySelectorAll('polygon.district').length).toBe(4);
+    expect(fixture.nativeElement.querySelector('path[stroke="var(--map-water)"]')).toBeNull();
+    const pins = component.svgPins().filter((pin) => pin.kind === 'req');
+    expect(pins.map((pin) => pin.id).sort()).toEqual(['north', 'south']);
+    for (const pin of pins) {
+      expect(pin.x).toBeGreaterThan(20);
+      expect(pin.x).toBeLessThan(580);
+      expect(pin.y).toBeGreaterThan(20);
+      expect(pin.y).toBeLessThan(460);
+    }
+  });
+
+  it('focuses the selected case, labels team lines, and lists only the kinds on the map', () => {
+    component.resources.set([
+      ...mockResources,
+      { ...mockResources[0], id: 'res_shelter', kind: 'shelter', name: 'School hall', lat: 26.86, lng: 80.94 },
+    ]);
+    fixture.detectChanges();
+    const pins = component.drawnPins();
+    expect(pins.find((pin) => pin.id === 'INC-001')?.dim).toBeFalse();
+    expect(pins.find((pin) => pin.id === 'INC-002')?.dim).toBeTrue();
+    expect(pins.find((pin) => pin.id === 'res_boat_02')?.suggested).toBeTrue();
+    expect(pins.find((pin) => pin.id === 'res_shelter')?.dim).toBeTrue();
+    expect(component.focusLegs().map((leg) => leg.label)).toEqual(['1.2 km · about 4 min']);
+    expect(component.mapLegs().map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
+    expect(component.mapLegs()[0].suggested).toBeTrue();
+    const provider = fixture.debugElement.query(By.css('rd-map-provider')).componentInstance as MapProviderComponent;
+    expect(provider.legs.map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
+    expect(provider.legs[0].suggested).toBeTrue();
+    expect(provider.fitAll).toBeFalse();
+    const frame = component.mapFrame();
+    expect(frame.minLa).toBeLessThan(26.85);
+    expect(frame.maxLa).toBeGreaterThan(26.852);
+    expect(frame.minLo).toBeLessThan(80.925);
+    expect(frame.maxLo).toBeGreaterThan(80.93);
+    for (const leg of component.focusLegs()) {
+      for (const value of [leg.x1, leg.x2, leg.lx]) {
+        expect(value).toBeGreaterThan(20);
+        expect(value).toBeLessThan(580);
+      }
+      for (const value of [leg.y1, leg.y2, leg.ly]) {
+        expect(value).toBeGreaterThan(10);
+        expect(value).toBeLessThan(470);
+      }
+    }
+    expect(component.legendBands()).toEqual(['critical']);
+    expect(component.legendKinds()).toEqual(['boat']);
+    const map = (fixture.nativeElement.querySelector('.svgmap') as HTMLElement).textContent || '';
+    const legend = (fixture.nativeElement.querySelector('.legend') as HTMLElement).textContent || '';
+    expect(map).toContain('1.2 km · about 4 min');
+    expect(legend).toContain('Needs help now');
+    expect(legend).toContain('Boat');
+    expect(legend).not.toContain('Shelter');
+    expect(legend).not.toContain('Help soon');
+    const boat = component.mapPins().find((pin) => pin.id === 'res_boat_02');
+    expect(boat?.vehicle).toBe('boat');
+    expect(boat?.marker).toBe('team');
+    const glyph = fixture.nativeElement.querySelector('.svgmap .pin path') as SVGPathElement;
+    expect(glyph.getAttribute('d')).toContain('M2 14.5');
+    const row = fixture.nativeElement.querySelector('.candidates li') as HTMLElement;
+    expect(row.textContent).toContain('1.2 km · about 4 min');
+    expect((fixture.nativeElement.querySelector('.facts') as HTMLElement).textContent).toContain('1.2 km · about 4 min');
+    row.dispatchEvent(new Event('mouseenter'));
+    fixture.detectChanges();
+    expect(provider.highlightId).toBe('res_boat_02');
+    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke')).toBe('#047857');
+    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke-width')).toBe('6');
+  });
+
+  it('draws lines only to the top three teams', () => {
+    const extra = [1, 2, 3].map((n) => ({
+      ...mockProposal,
+      match_id: `m${n}`,
+      resource_id: `res_${n}`,
+      resource_name: `Team ${n}`,
+      breakdown: { ...mockProposal.breakdown, distance_km: n },
+      eta_minutes: n * 3,
+    }));
+    component.resources.set([
+      ...mockResources,
+      ...extra.map((prop, n) => ({ ...mockResources[0], id: prop.resource_id, name: prop.resource_name, lat: 26.86 + n / 100, lng: 80.94 })),
+    ]);
+    component.matches.set([mockProposal, ...extra]);
+    fixture.detectChanges();
+    expect(component.mapLegs().length).toBe(3);
+    expect(component.focusLegs().length).toBe(3);
+    expect(component.mapLegs().map((leg) => leg.id)).not.toContain('res_3');
+    expect(component.candidateMatches().length).toBe(3);
   });
 
   it('reloads the queue when the demo phone submits a report', () => {
@@ -251,5 +576,141 @@ describe('CoordinatorCommandComponent', () => {
       data: { type: 'rd-report-submitted', reportId: 'R-demo' },
     } as MessageEvent);
     expect(apiClientSpy.getRequests).toHaveBeenCalled();
+  });
+
+  it('opens the phone report on the queue and ignores a watermark', () => {
+    expect(component.selectedRequestId()).toBe('INC-001');
+    const live = {
+      ...mockRequests[0],
+      id: 'req_phone',
+      place_text: 'Temple Road',
+      urgency_score: 90,
+      updated_at: '2026-10-12T18:00:00+00:00',
+    };
+    apiClientSpy.getRequests.and.returnValue(of([...mockRequests, live]));
+    apiClientSpy.getRequests.calls.reset();
+    component.onLiveReport({ type: 'rd-report-submitted', requestId: 'req_phone' });
+    const args = apiClientSpy.getRequests.calls.mostRecent().args;
+    expect(args[2]).toBeUndefined();
+    expect(component.requests().some((row) => row.id === 'req_phone')).toBeTrue();
+    expect(component.selectedRequestId()).toBe('req_phone');
+  });
+
+  it('Reset demo and Load full scenario replace the whole queue', () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    apiClientSpy.getRequests.and.returnValue(of([mockRequests[0]]));
+    component.resetDemo();
+    expect(apiClientSpy.resetDemo).toHaveBeenCalled();
+    expect(component.requests().map((row) => row.id)).toEqual(['INC-001']);
+    apiClientSpy.getRequests.and.returnValue(of(mockRequests));
+    component.loadFullScenario();
+    expect(apiClientSpy.loadFullScenario).toHaveBeenCalled();
+    expect(component.requests().map((row) => row.id)).toEqual(['INC-001', 'INC-002']);
+  });
+
+  it('filters the open queue from the top search box', () => {
+    component.searchQuery.set('Gandhi');
+    fixture.detectChanges();
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-001']);
+    component.searchQuery.set('Canal Road');
+    fixture.detectChanges();
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-002']);
+  });
+
+  it('opens five agents from the selected case and keeps assist behind a review tap', () => {
+    const opener = fixture.nativeElement.querySelector('.trace-chip') as HTMLButtonElement;
+    opener.click();
+    fixture.detectChanges();
+    const trace = fixture.nativeElement.textContent as string;
+    expect(trace).toContain('Intake');
+    expect(trace).toContain('Duplicate check');
+    expect(trace).toContain('Triage');
+    expect(trace).toContain('Matching');
+    expect(trace).toContain('Explainer');
+    expect(trace).toContain('Not recorded');
+    component.closeTrace();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent as string).not.toContain('Nothing is dispatched until you approve');
+    component.assist.set({
+      proposals: [{
+        match_id: 'm1',
+        request_id: 'INC-001',
+        title: 'Lane',
+        team_name: 'Boat 2',
+        team_kind: 'boat',
+        why: 'Nearest free boat',
+        expires_at: null,
+        expired: false,
+      }],
+      shortages: [{ kind: 'boat', have: 2, need: 3, explanation: 'Not enough teams' }],
+    });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent as string).toContain('Staff low: dispatcher suggests 1 assignment');
+    (fixture.nativeElement.querySelector('app-assist-banner button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.textContent as string;
+    expect(panel).toContain('Nothing is dispatched until you approve');
+    expect(panel).toContain('Why only 2 of 3?');
+    expect(panel).toContain('Not enough teams');
+  });
+
+  it('shows an analysing card in place and a done chip after the trace completes', () => {
+    const live = { ...mockRequests[0], id: 'INC-NEW', analysis_status: 'analysing' as const, urgency_score: 99, trace: [{ agent: 'Intake', status: 'complete' as const, output: 'rescue' }] };
+    component.applyQueue([live], true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="ai-analysing"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent as string).toContain('AI analysing…');
+    expect(fixture.nativeElement.querySelector('button.case')).not.toBeNull();
+    expect(component.selectedRequestId()).toBe('INC-001');
+    component.applyQueue([{
+      ...live,
+      analysis_status: 'complete',
+      trace: ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'].map((agent, index) => ({
+        agent,
+        status: 'complete' as const,
+        output: 'done',
+        model: 'gemini-3.8-flash',
+        latency_ms: 100 * (index + 1),
+      })),
+    }], true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="ai-analysing"]')).toBeNull();
+    expect(fixture.nativeElement.textContent as string).toContain('Analysed by 5 agents in');
+  });
+
+  it('shows conflicting counts, each report, and merge or keep-separate', () => {
+    apiClientSpy.mergeRequests.and.returnValue(of({ cluster_id: 'c1' }));
+    apiClientSpy.keepSeparate.and.returnValue(of({ id: 'INC-DUP' }));
+    const dup: StoredRequest = {
+      ...mockRequests[0],
+      id: 'INC-DUP',
+      people_count: 5,
+      count_spans: ['2-3', '4-5'],
+      count_note: 'Counts differ: 2-3 vs 4-5',
+      report_quotes: [
+        { report_id: 'r1', text: '2-3 people at Oakbend' },
+        { report_id: 'r2', text: '4-5 people at Oakbend' },
+      ],
+      possible_duplicate: {
+        target_id: 'INC-001',
+        confidence: 0.6,
+        similarity: 0.55,
+        distance_km: 0.8,
+        minutes: 12,
+        note: 'Possible duplicate, review',
+      },
+    };
+    component.applyQueue([dup], false);
+    component.selectRequest('INC-DUP');
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Counts differ: 2-3 vs 4-5');
+    expect(text).toContain('Possible duplicate, review');
+    expect(text).toContain('2-3 people at Oakbend');
+    expect(text).toContain('4-5 people at Oakbend');
+    (fixture.nativeElement.querySelector('[data-testid="merge-dup"]') as HTMLButtonElement).click();
+    expect(apiClientSpy.mergeRequests).toHaveBeenCalledWith('INC-001', 'INC-DUP', jasmine.any(Array));
+    (fixture.nativeElement.querySelector('[data-testid="keep-dup"]') as HTMLButtonElement).click();
+    expect(apiClientSpy.keepSeparate).toHaveBeenCalledWith('INC-DUP');
   });
 });

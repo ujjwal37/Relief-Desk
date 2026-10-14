@@ -4,6 +4,29 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
+class AiCall(BaseModel):
+    """One model attempt. provider is gemini, cache, fallback, or a test provider
+    (antigravity-local, openai_compat) that is never shown as Gemini."""
+
+    provider: str = "fallback"
+    model: Optional[str] = None
+    latency_ms: int = 0
+    tokens: Optional[int] = None
+    cached: bool = False
+    fallback_reason: Optional[str] = None
+
+    def badge(self) -> str:
+        if self.provider == "openai_compat":
+            return "test"
+        if self.provider == "antigravity-local":
+            return "local"
+        if self.provider == "cache" or self.cached:
+            return "recorded"
+        if self.provider == "gemini":
+            return "gemini"
+        return "offline"
+
+
 class IncidentType(str, Enum):
     RESCUE = "rescue"
     FOOD = "food"
@@ -33,7 +56,7 @@ class SupportedLanguage(str, Enum):
     HI = "hi"
     HINGLISH = "hinglish"
     EN = "en"
-    TA = "ta"
+    ML = "ml"
 
 
 class DedupeDecisionType(str, Enum):
@@ -73,6 +96,7 @@ class FieldConfidences(BaseModel):
 
 class ExtractedRequest(BaseModel):
     type: IncidentType = Field(default=IncidentType.OTHER)
+    secondary_needs: List[IncidentType] = Field(default_factory=list)
     place_text: Optional[str] = Field(default=None, max_length=500)
     people: PeopleInfo = Field(default_factory=PeopleInfo)
     vulnerable: VulnerableFlags = Field(default_factory=VulnerableFlags)
@@ -84,6 +108,9 @@ class ExtractedRequest(BaseModel):
     evidence_spans: Dict[str, str] = Field(default_factory=dict)
     notes: str = Field(default="")
     needs_human_review: bool = False
+    ward_id: Optional[str] = None
+    hoax_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    original_text: str = ""
 
     def validate_spans_against_raw(self, raw_text: str) -> None:
         """Validates evidence_spans against raw_text substrings.
@@ -108,6 +135,11 @@ class DedupeDecision(BaseModel):
     changed_fields: Dict[str, Any] = Field(default_factory=dict, description="Changed fields if decision is update")
     evidence: List[str] = Field(default_factory=list, description="List of concrete evidence reasons")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    similarity: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    distance_km: Optional[float] = None
+    minutes_apart: Optional[float] = None
+    # True when the pair is close but under the auto-merge threshold. The case stays separate.
+    review: bool = False
 
     @model_validator(mode="after")
     def validate_decision_rules(self) -> DedupeDecision:

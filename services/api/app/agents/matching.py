@@ -1,5 +1,6 @@
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional
 from pydantic import BaseModel
 from app.models.firestore_models import (
@@ -9,7 +10,10 @@ from app.models.firestore_models import (
     MatchState,
     MatchBreakdown,
     ResourceKind,
+    ResourceStatus,
 )
+from app.models.schemas import IncidentType
+from app.tools.geo import haversine_distance
 from app.tools.storage import storage_service
 from app.tools.scoring import scoring_engine
 from app.agents.explainer import explainer_agent
@@ -32,6 +36,32 @@ class MatchProposal(BaseModel):
     explanation_hi: Optional[str] = None
     state: MatchState = MatchState.PROPOSED
     overcommit_warning: bool = False
+    is_fallback: bool = False
+    fallback_label: Optional[str] = None
+    simulated: bool = False
+    eta_minutes: Optional[int] = None
+    no_nearby: bool = False
+    wait_minutes: Optional[int] = None
+    wait_team_name: Optional[str] = None
+
+
+def _explain_together(request: StoredRequest, candidates: list, use_model: bool = False) -> list:
+    """Team explanations come from the template by default.
+
+    Ranking runs on every case open and after every report, so a model call here would queue
+    behind intake on a slow model. use_model=True asks the Explainer for each team.
+    """
+    if not use_model:
+        return [explainer_agent.generate_template_fallback(request, res, breakdown) for res, breakdown, _ in candidates]
+    if len(candidates) < 2:
+        return [explainer_agent.explain(request, res, breakdown) for res, breakdown, _ in candidates]
+    workers = min(4, len(candidates))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = [
+            pool.submit(explainer_agent.explain, request, res, breakdown)
+            for res, breakdown, _ in candidates
+        ]
+        return [item.result() for item in futures]
 
 
 class MatchingAgent:
@@ -57,18 +87,35 @@ class MatchingAgent:
         people_needed = request.people_count if request.people_count else 1
 
         for res in resources:
-            breakdown = scoring_engine.compute_match_score(request, res)
+            breakdown = scoring_engine.compute_match_score(request, res, fallback_ok=False)
             if breakdown is None:
                 continue
+            scored_candidates.append((res, breakdown, False))
 
-            scored_candidates.append((res, breakdown))
+        using_fallback = False
+        if not scored_candidates:
+            using_fallback = True
+            for res in resources:
+                breakdown = scoring_engine.compute_match_score(request, res, fallback_ok=True)
+                if breakdown is None:
+                    continue
+                scored_candidates.append((res, breakdown, True))
 
-        # Sort by total_score descending
+        # Distance score is 0 past 10 km, so a far team with more seats can outrank a nearer one.
+        # Keep teams near the closest suitable team. If every team is far, keep the closest and show its real ETA.
+        scored_candidates = _keep_nearer(scored_candidates)
+
+        # Sort by total_score descending. Primary matches never mix with a fallback list.
         scored_candidates.sort(key=lambda item: item[1].total_score, reverse=True)
         top_candidates = scored_candidates[:top_n]
+        fallback_label = _fallback_label(request.type) if using_fallback else None
+        wait_minutes, wait_team_name = (None, None)
+        if using_fallback:
+            wait_minutes, wait_team_name = _nearest_finish(request, resources)
 
         proposals: List[MatchProposal] = []
-        for res, breakdown in top_candidates:
+        explanations = _explain_together(request, top_candidates)
+        for (res, breakdown, is_fallback), explanation in zip(top_candidates, explanations):
             # Check if there is an existing match in storage
             existing = [
                 m
@@ -77,7 +124,6 @@ class MatchingAgent:
             ]
 
             is_overcommit = people_needed > res.capacity_remaining
-            explanation = explainer_agent.explain(request, res, breakdown)
 
             if existing:
                 match = existing[0]
@@ -120,6 +166,13 @@ class MatchingAgent:
                     explanation_hi=match.explanation_hi,
                     state=match.state,
                     overcommit_warning=is_overcommit,
+                    is_fallback=is_fallback,
+                    fallback_label=fallback_label if is_fallback else None,
+                    simulated=bool(getattr(res, "simulated", False)),
+                    eta_minutes=eta_for_distance(breakdown.distance_km),
+                    no_nearby=breakdown.distance_km > NEARBY_KM,
+                    wait_minutes=wait_minutes if is_fallback else None,
+                    wait_team_name=wait_team_name if is_fallback else None,
                 )
             )
 
@@ -129,6 +182,90 @@ class MatchingAgent:
             request.id,
         )
         return proposals
+
+
+# Quote a minute ETA only inside this radius. Farther than this, say there is no nearby team.
+NEARBY_KM = 30.0
+# A team inside this radius is close enough to prefer over a farther cluster.
+PRACTICAL_KM = 40.0
+
+
+def eta_for_distance(distance_km: float) -> Optional[int]:
+    """Straight-line minutes at 20 km/h. None when the team is too far to quote."""
+    if distance_km > NEARBY_KM:
+        return None
+    return max(1, round((distance_km / 20.0) * 60))
+
+
+# How much farther than the nearest team we still offer as an alternative.
+NEAR_BAND_KM = 15.0
+
+
+def _keep_nearer(scored: list) -> list:
+    if len(scored) <= 1:
+        return scored
+    nearest = min(item[1].distance_km for item in scored)
+    if nearest <= PRACTICAL_KM:
+        limit = min(PRACTICAL_KM, nearest + NEAR_BAND_KM)
+    else:
+        # Nothing is close. Keep the nearest cluster so one isolated team is not the only offer.
+        limit = nearest * 1.15
+    kept = [item for item in scored if item[1].distance_km <= limit + 0.05]
+    return kept or scored
+
+
+_PRIMARY = {
+    IncidentType.RESCUE: [ResourceKind.BOAT],
+    IncidentType.MEDICAL: [ResourceKind.MEDICAL],
+    IncidentType.FOOD: [ResourceKind.FOOD],
+    IncidentType.SHELTER: [ResourceKind.SHELTER],
+    IncidentType.ANIMAL_ATTACK: [ResourceKind.MEDICAL],
+}
+
+
+def _finish_minutes(res: StoredResource) -> int:
+    """Minutes until this team can take another case. Straight-line, 20 km/h, plus time on scene."""
+    if res.status == ResourceStatus.ON_SCENE:
+        return 20
+    if res.status == ResourceStatus.RETURNING:
+        return 15
+    travel = 15
+    if res.sim_target_lat is not None and res.sim_target_lng is not None:
+        dist = haversine_distance(res.lat, res.lng, res.sim_target_lat, res.sim_target_lng)
+        travel = max(1, round((dist / 20.0) * 60))
+    if res.status in (ResourceStatus.EN_ROUTE, ResourceStatus.DISPATCHED):
+        return travel + 20
+    return travel + 20
+
+
+def _nearest_finish(request: StoredRequest, resources: List[StoredResource]):
+    kinds = _PRIMARY.get(request.type, [])
+    busy = [
+        res for res in resources
+        if res.kind in kinds and res.status != ResourceStatus.AVAILABLE
+    ]
+    if not busy:
+        return None, None
+
+    def distance(res: StoredResource) -> float:
+        if request.lat is None or request.lng is None:
+            return 0.0
+        return haversine_distance(request.lat, request.lng, res.lat, res.lng)
+
+    nearest = min(busy, key=distance)
+    if distance(nearest) > NEARBY_KM:
+        return None, None
+    return _finish_minutes(nearest), nearest.name
+
+
+def _fallback_label(incident_type) -> str:
+    from app.models.schemas import IncidentType
+    return {
+        IncidentType.RESCUE: "coord.noBoatFree",
+        IncidentType.MEDICAL: "coord.noMedicalFree",
+        IncidentType.FOOD: "coord.noFoodFree",
+        IncidentType.SHELTER: "coord.noShelterFree",
+    }.get(incident_type, "coord.noTeamFree")
 
 
 matching_agent = MatchingAgent()

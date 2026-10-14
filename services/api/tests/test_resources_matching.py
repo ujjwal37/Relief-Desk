@@ -29,8 +29,8 @@ def test_match_score_breakdown_and_hard_constraints():
     req = StoredRequest(
         id="req_rescue_test",
         type=IncidentType.RESCUE,
-        lat=26.853,
-        lng=80.940,
+        lat=9.430,
+        lng=76.398,
         people_count=8,
         hazard=HazardType.WATER_RISING,
         urgency_score=90.0,
@@ -162,6 +162,49 @@ def test_approve_match_capacity_transaction():
     updated_boat = storage_service.get_resource("RES-BOAT-02")
     assert updated_boat.capacity_remaining == initial_cap - 4
 
-    # Verify request status transitioned to APPROVED
+    # Approve moves the case to dispatched and the team off the free list
     updated_req = storage_service.get_request("req_match_tx")
-    assert updated_req.status == RequestStatus.APPROVED
+    assert updated_req.status == RequestStatus.DISPATCHED
+    assert updated_req.assigned_resource_id == "RES-BOAT-02"
+    assert updated_boat.status in (ResourceStatus.DISPATCHED, ResourceStatus.DEPLETED, ResourceStatus.EN_ROUTE)
+    assert updated_boat.assigned_request_id == "req_match_tx"
+    assert updated_boat.location_updated_at
+
+    arrived = storage_service.mark_arrived("req_match_tx", actor="coordinator_lead")
+    assert arrived.status == RequestStatus.IN_PROGRESS
+    on_scene = storage_service.get_resource("RES-BOAT-02")
+    assert on_scene is not None
+    assert on_scene.status == ResourceStatus.ON_SCENE
+    assert on_scene.simulated is False
+
+    done = storage_service.complete_request("req_match_tx", actor="coordinator_lead")
+    assert done.status == RequestStatus.COMPLETED
+    restored = storage_service.get_resource("RES-BOAT-02")
+    assert restored.capacity_remaining == initial_cap
+    assert restored.status == ResourceStatus.AVAILABLE
+    assert restored.assigned_request_id is None
+    trail = storage_service.get_audit_trail("req_match_tx")
+    assert any(entry.action == "status_change" and entry.actor == "coordinator_lead" for entry in trail)
+
+
+def test_simulated_move_and_manual_location():
+    storage_service.load_seed_resources()
+    boat = storage_service.get_resource("RES-BOAT-03")
+    assert boat is not None
+    origin_lat, origin_lng = boat.lat, boat.lng
+    target_lat, target_lng = origin_lat + 0.04, origin_lng + 0.04
+    storage_service.begin_simulation("RES-BOAT-03", target_lat, target_lng, launch=False)
+    moved = storage_service.step_simulation("RES-BOAT-03")
+    assert moved is not None
+    assert moved.simulated is True
+    assert moved.status == ResourceStatus.EN_ROUTE
+    assert moved.lat != origin_lat
+    for _ in range(3):
+        moved = storage_service.step_simulation("RES-BOAT-03")
+    assert moved.status == ResourceStatus.ON_SCENE
+    assert abs(moved.lat - target_lat) < 1e-6
+    placed = storage_service.update_resource_location("RES-BOAT-03", 9.5, 76.3, actor="coordinator_lead")
+    assert placed.lat == 9.5
+    assert placed.lng == 76.3
+    assert placed.simulated is False
+    assert placed.location_updated_at

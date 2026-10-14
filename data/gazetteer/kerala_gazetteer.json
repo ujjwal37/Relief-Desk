@@ -1,0 +1,1022 @@
+{
+  "city": "Kerala",
+  "label": "Synthetic scenario inspired by Kerala floods",
+  "bbox": {
+    "min_lat": 9.3611,
+    "max_lat": 11.664,
+    "min_lng": 75.9823,
+    "max_lng": 76.6837
+  },
+  "wards": [
+    {
+      "id": "ward_1",
+      "number": 1,
+      "name_en": "Kainakary",
+      "name_hi": "काइनकरी",
+      "district": "Alappuzha",
+      "lat": 9.47,
+      "lng": 76.39
+    },
+    {
+      "id": "ward_2",
+      "number": 2,
+      "name_en": "Champakulam",
+      "name_hi": "चम्पाकुलाम",
+      "district": "Alappuzha",
+      "lat": 9.416,
+      "lng": 76.411
+    },
+    {
+      "id": "ward_3",
+      "number": 3,
+      "name_en": "Nedumudi",
+      "name_hi": "नेदुमुडी",
+      "district": "Alappuzha",
+      "lat": 9.43,
+      "lng": 76.398
+    },
+    {
+      "id": "ward_4",
+      "number": 4,
+      "name_en": "Aluva",
+      "name_hi": "आलुवा",
+      "district": "Ernakulam",
+      "lat": 10.1076,
+      "lng": 76.3516
+    },
+    {
+      "id": "ward_5",
+      "number": 5,
+      "name_en": "Varapuzha",
+      "name_hi": "वरप्पुषा",
+      "district": "Ernakulam",
+      "lat": 10.078,
+      "lng": 76.268
+    },
+    {
+      "id": "ward_6",
+      "number": 6,
+      "name_en": "Kothamangalam",
+      "name_hi": "कोथमंगलम",
+      "district": "Ernakulam",
+      "lat": 10.065,
+      "lng": 76.628
+    },
+    {
+      "id": "ward_7",
+      "number": 7,
+      "name_en": "Chalakudy",
+      "name_hi": "चालाकुडी",
+      "district": "Thrissur",
+      "lat": 10.308,
+      "lng": 76.331
+    },
+    {
+      "id": "ward_8",
+      "number": 8,
+      "name_en": "Mala",
+      "name_hi": "माला",
+      "district": "Thrissur",
+      "lat": 10.241,
+      "lng": 76.267
+    },
+    {
+      "id": "ward_9",
+      "number": 9,
+      "name_en": "Anthikad",
+      "name_hi": "अंतिक्काड",
+      "district": "Thrissur",
+      "lat": 10.466,
+      "lng": 76.13
+    },
+    {
+      "id": "ward_10",
+      "number": 10,
+      "name_en": "Meppadi",
+      "name_hi": "मेप्पाडी",
+      "district": "Wayanad",
+      "lat": 11.557,
+      "lng": 76.14
+    },
+    {
+      "id": "ward_11",
+      "number": 11,
+      "name_en": "Vythiri",
+      "name_hi": "वित्तूरि",
+      "district": "Wayanad",
+      "lat": 11.55,
+      "lng": 76.038
+    },
+    {
+      "id": "ward_12",
+      "number": 12,
+      "name_en": "Kalpetta",
+      "name_hi": "कल्पेट्टा",
+      "district": "Wayanad",
+      "lat": 11.608,
+      "lng": 76.082
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "LM-01",
+      "name": "Kainakary LP School",
+      "ward_id": "ward_1",
+      "lat": 9.476,
+      "lng": 76.39,
+      "category": "school",
+      "aliases_hi": [
+        "काइनकरी LP School"
+      ],
+      "aliases_en": [
+        "kainakary lp school",
+        "kainakarylpschool"
+      ]
+    },
+    {
+      "id": "LM-02",
+      "name": "Kainakary Boat Jetty",
+      "ward_id": "ward_1",
+      "lat": 9.47185,
+      "lng": 76.39571,
+      "category": "temple",
+      "aliases_hi": [
+        "काइनकरी Boat Jetty"
+      ],
+      "aliases_en": [
+        "kainakary boat jetty",
+        "kainakaryboatjetty"
+      ]
+    },
+    {
+      "id": "LM-03",
+      "name": "Kainakary Church",
+      "ward_id": "ward_1",
+      "lat": 9.46515,
+      "lng": 76.39353,
+      "category": "community_hall",
+      "aliases_hi": [
+        "काइनकरी Church"
+      ],
+      "aliases_en": [
+        "kainakary church",
+        "kainakarychurch"
+      ]
+    },
+    {
+      "id": "LM-04",
+      "name": "Kainakary Relief Camp",
+      "ward_id": "ward_1",
+      "lat": 9.46515,
+      "lng": 76.38647,
+      "category": "hospital",
+      "aliases_hi": [
+        "काइनकरी Relief Camp"
+      ],
+      "aliases_en": [
+        "kainakary relief camp",
+        "kainakaryreliefcamp"
+      ]
+    },
+    {
+      "id": "LM-05",
+      "name": "Kainakary Health Centre",
+      "ward_id": "ward_1",
+      "lat": 9.47185,
+      "lng": 76.38429,
+      "category": "police_station",
+      "aliases_hi": [
+        "काइनकरी Health Centre"
+      ],
+      "aliases_en": [
+        "kainakary health centre",
+        "kainakaryhealthcentre"
+      ]
+    },
+    {
+      "id": "LM-06",
+      "name": "Champakulam School",
+      "ward_id": "ward_2",
+      "lat": 9.422,
+      "lng": 76.411,
+      "category": "school",
+      "aliases_hi": [
+        "चम्पाकुलाम स्कूल"
+      ],
+      "aliases_en": [
+        "champakulam school",
+        "champakulamschool"
+      ]
+    },
+    {
+      "id": "LM-07",
+      "name": "Champakulam Church",
+      "ward_id": "ward_2",
+      "lat": 9.41785,
+      "lng": 76.41671,
+      "category": "market",
+      "aliases_hi": [
+        "चम्पाकुलाम Church"
+      ],
+      "aliases_en": [
+        "champakulam church",
+        "champakulamchurch"
+      ]
+    },
+    {
+      "id": "LM-08",
+      "name": "Champakulam Boat Jetty",
+      "ward_id": "ward_2",
+      "lat": 9.41115,
+      "lng": 76.41453,
+      "category": "temple",
+      "aliases_hi": [
+        "चम्पाकुलाम Boat Jetty"
+      ],
+      "aliases_en": [
+        "champakulam boat jetty",
+        "champakulamboatjetty"
+      ]
+    },
+    {
+      "id": "LM-09",
+      "name": "Champakulam Market",
+      "ward_id": "ward_2",
+      "lat": 9.41115,
+      "lng": 76.40747,
+      "category": "shelter",
+      "aliases_hi": [
+        "चम्पाकुलाम Market"
+      ],
+      "aliases_en": [
+        "champakulam market",
+        "champakulammarket"
+      ]
+    },
+    {
+      "id": "LM-10",
+      "name": "Champakulam Shelter",
+      "ward_id": "ward_2",
+      "lat": 9.41785,
+      "lng": 76.40529,
+      "category": "metro_station",
+      "aliases_hi": [
+        "चम्पाकुलाम Shelter"
+      ],
+      "aliases_en": [
+        "champakulam shelter",
+        "champakulamshelter"
+      ]
+    },
+    {
+      "id": "LM-11",
+      "name": "Nedumudi Boat Jetty",
+      "ward_id": "ward_3",
+      "lat": 9.436,
+      "lng": 76.398,
+      "category": "ghat",
+      "aliases_hi": [
+        "नेदुमुडी Boat Jetty"
+      ],
+      "aliases_en": [
+        "nedumudi boat jetty",
+        "nedumudiboatjetty"
+      ]
+    },
+    {
+      "id": "LM-12",
+      "name": "Nedumudi Bridge",
+      "ward_id": "ward_3",
+      "lat": 9.43185,
+      "lng": 76.40371,
+      "category": "bridge",
+      "aliases_hi": [
+        "नेदुमुडी Bridge"
+      ],
+      "aliases_en": [
+        "nedumudi bridge",
+        "nedumudibridge"
+      ]
+    },
+    {
+      "id": "LM-13",
+      "name": "Nedumudi School",
+      "ward_id": "ward_3",
+      "lat": 9.42515,
+      "lng": 76.40153,
+      "category": "shelter",
+      "aliases_hi": [
+        "नेदुमुडी School"
+      ],
+      "aliases_en": [
+        "nedumudi school",
+        "nedumudischool"
+      ]
+    },
+    {
+      "id": "LM-14",
+      "name": "Nedumudi Relief Camp",
+      "ward_id": "ward_3",
+      "lat": 9.42515,
+      "lng": 76.39447,
+      "category": "ghat",
+      "aliases_hi": [
+        "नेदुमुडी Relief Camp"
+      ],
+      "aliases_en": [
+        "nedumudi relief camp",
+        "nedumudireliefcamp"
+      ]
+    },
+    {
+      "id": "LM-15",
+      "name": "Nedumudi Church",
+      "ward_id": "ward_3",
+      "lat": 9.43185,
+      "lng": 76.39229,
+      "category": "shelter",
+      "aliases_hi": [
+        "नेदुमुडी Church"
+      ],
+      "aliases_en": [
+        "nedumudi church",
+        "nedumudichurch"
+      ]
+    },
+    {
+      "id": "LM-16",
+      "name": "Aluva Manappuram",
+      "ward_id": "ward_4",
+      "lat": 10.1136,
+      "lng": 76.3516,
+      "category": "market",
+      "aliases_hi": [
+        "आलुवा Manappuram"
+      ],
+      "aliases_en": [
+        "aluva manappuram",
+        "aluvamanappuram"
+      ]
+    },
+    {
+      "id": "LM-17",
+      "name": "Aluva School",
+      "ward_id": "ward_4",
+      "lat": 10.10945,
+      "lng": 76.35731,
+      "category": "mosque",
+      "aliases_hi": [
+        "आलुवा School"
+      ],
+      "aliases_en": [
+        "aluva school",
+        "aluvaschool"
+      ]
+    },
+    {
+      "id": "LM-18",
+      "name": "Little Flower Hospital",
+      "ward_id": "ward_4",
+      "lat": 10.10275,
+      "lng": 76.35513,
+      "category": "hospital",
+      "aliases_hi": [
+        "लिटिल फ्लावर अस्पताल"
+      ],
+      "aliases_en": [
+        "little flower hospital",
+        "littleflowerhospital"
+      ]
+    },
+    {
+      "id": "LM-19",
+      "name": "Aluva Bus Stand",
+      "ward_id": "ward_4",
+      "lat": 10.10275,
+      "lng": 76.34807,
+      "category": "police_station",
+      "aliases_hi": [
+        "आलुवा Bus Stand"
+      ],
+      "aliases_en": [
+        "aluva bus stand",
+        "aluvabusstand"
+      ]
+    },
+    {
+      "id": "LM-20",
+      "name": "Aluva Relief Camp",
+      "ward_id": "ward_4",
+      "lat": 10.10945,
+      "lng": 76.34589,
+      "category": "market",
+      "aliases_hi": [
+        "आलुवा Relief Camp"
+      ],
+      "aliases_en": [
+        "aluva relief camp",
+        "aluvareliefcamp"
+      ]
+    },
+    {
+      "id": "LM-21",
+      "name": "Varapuzha Bridge",
+      "ward_id": "ward_5",
+      "lat": 10.084,
+      "lng": 76.268,
+      "category": "community_hall",
+      "aliases_hi": [
+        "वरप्पुषा Bridge"
+      ],
+      "aliases_en": [
+        "varapuzha bridge",
+        "varapuzhabridge"
+      ]
+    },
+    {
+      "id": "LM-22",
+      "name": "Varapuzha School",
+      "ward_id": "ward_5",
+      "lat": 10.07985,
+      "lng": 76.27371,
+      "category": "hospital",
+      "aliases_hi": [
+        "वरप्पुषा School"
+      ],
+      "aliases_en": [
+        "varapuzha school",
+        "varapuzhaschool"
+      ]
+    },
+    {
+      "id": "LM-23",
+      "name": "Varapuzha Church",
+      "ward_id": "ward_5",
+      "lat": 10.07315,
+      "lng": 76.27153,
+      "category": "school",
+      "aliases_hi": [
+        "वरप्पुषा Church"
+      ],
+      "aliases_en": [
+        "varapuzha church",
+        "varapuzhachurch"
+      ]
+    },
+    {
+      "id": "LM-24",
+      "name": "Varapuzha Health Centre",
+      "ward_id": "ward_5",
+      "lat": 10.07315,
+      "lng": 76.26447,
+      "category": "temple",
+      "aliases_hi": [
+        "वरप्पुषा Health Centre"
+      ],
+      "aliases_en": [
+        "varapuzha health centre",
+        "varapuzhahealthcentre"
+      ]
+    },
+    {
+      "id": "LM-25",
+      "name": "Varapuzha Shelter",
+      "ward_id": "ward_5",
+      "lat": 10.07985,
+      "lng": 76.26229,
+      "category": "shelter",
+      "aliases_hi": [
+        "वरप्पुषा Shelter"
+      ],
+      "aliases_en": [
+        "varapuzha shelter",
+        "varapuzhashelter"
+      ]
+    },
+    {
+      "id": "LM-26",
+      "name": "Kothamangalam Bus Stand",
+      "ward_id": "ward_6",
+      "lat": 10.071,
+      "lng": 76.628,
+      "category": "community_hall",
+      "aliases_hi": [
+        "कोथमंगलम Bus Stand"
+      ],
+      "aliases_en": [
+        "kothamangalam bus stand",
+        "kothamangalambusstand"
+      ]
+    },
+    {
+      "id": "LM-27",
+      "name": "Taluk Hospital Kothamangalam",
+      "ward_id": "ward_6",
+      "lat": 10.06685,
+      "lng": 76.63371,
+      "category": "hospital",
+      "aliases_hi": [
+        "Taluk Hospital Kothamangalam"
+      ],
+      "aliases_en": [
+        "taluk hospital kothamangalam",
+        "talukhospitalkothamangalam"
+      ]
+    },
+    {
+      "id": "LM-28",
+      "name": "Kothamangalam School",
+      "ward_id": "ward_6",
+      "lat": 10.06015,
+      "lng": 76.63153,
+      "category": "metro_station",
+      "aliases_hi": [
+        "कोथमंगलम School"
+      ],
+      "aliases_en": [
+        "kothamangalam school",
+        "kothamangalamschool"
+      ]
+    },
+    {
+      "id": "LM-29",
+      "name": "Kothamangalam Shelter",
+      "ward_id": "ward_6",
+      "lat": 10.06015,
+      "lng": 76.62447,
+      "category": "school",
+      "aliases_hi": [
+        "कोथमंगलम Shelter"
+      ],
+      "aliases_en": [
+        "kothamangalam shelter",
+        "kothamangalamshelter"
+      ]
+    },
+    {
+      "id": "LM-30",
+      "name": "Kothamangalam Market",
+      "ward_id": "ward_6",
+      "lat": 10.06685,
+      "lng": 76.62229,
+      "category": "police_station",
+      "aliases_hi": [
+        "कोथमंगलम Market"
+      ],
+      "aliases_en": [
+        "kothamangalam market",
+        "kothamangalammarket"
+      ]
+    },
+    {
+      "id": "LM-31",
+      "name": "Temple Road",
+      "ward_id": "ward_7",
+      "lat": 10.314,
+      "lng": 76.331,
+      "category": "shelter",
+      "aliases_hi": [
+        "मंदिर रोड"
+      ],
+      "aliases_en": [
+        "temple road",
+        "templeroad"
+      ]
+    },
+    {
+      "id": "LM-32",
+      "name": "Chalakudy Mahadeva Temple",
+      "ward_id": "ward_7",
+      "lat": 10.30985,
+      "lng": 76.33671,
+      "category": "hospital",
+      "aliases_hi": [
+        "चालाकुडी Mahadeva Temple"
+      ],
+      "aliases_en": [
+        "chalakudy mahadeva temple",
+        "chalakudymahadevatemple"
+      ]
+    },
+    {
+      "id": "LM-33",
+      "name": "Chalakudy School",
+      "ward_id": "ward_7",
+      "lat": 10.30315,
+      "lng": 76.33453,
+      "category": "community_hall",
+      "aliases_hi": [
+        "चालाकुडी School"
+      ],
+      "aliases_en": [
+        "chalakudy school",
+        "chalakudyschool"
+      ]
+    },
+    {
+      "id": "LM-34",
+      "name": "Chalakudy River Jetty",
+      "ward_id": "ward_7",
+      "lat": 10.30315,
+      "lng": 76.32747,
+      "category": "shelter",
+      "aliases_hi": [
+        "चालाकुडी River Jetty"
+      ],
+      "aliases_en": [
+        "chalakudy river jetty",
+        "chalakudyriverjetty"
+      ]
+    },
+    {
+      "id": "LM-35",
+      "name": "Chalakudy Relief Camp",
+      "ward_id": "ward_7",
+      "lat": 10.30985,
+      "lng": 76.32529,
+      "category": "police_station",
+      "aliases_hi": [
+        "चालाकुडी Relief Camp"
+      ],
+      "aliases_en": [
+        "chalakudy relief camp",
+        "chalakudyreliefcamp"
+      ]
+    },
+    {
+      "id": "LM-36",
+      "name": "Mala Panchayat Office",
+      "ward_id": "ward_8",
+      "lat": 10.247,
+      "lng": 76.267,
+      "category": "shelter",
+      "aliases_hi": [
+        "माला Panchayat Office"
+      ],
+      "aliases_en": [
+        "mala panchayat office",
+        "malapanchayatoffice"
+      ]
+    },
+    {
+      "id": "LM-37",
+      "name": "Mala School",
+      "ward_id": "ward_8",
+      "lat": 10.24285,
+      "lng": 76.27271,
+      "category": "school",
+      "aliases_hi": [
+        "माला School"
+      ],
+      "aliases_en": [
+        "mala school",
+        "malaschool"
+      ]
+    },
+    {
+      "id": "LM-38",
+      "name": "Mala Church",
+      "ward_id": "ward_8",
+      "lat": 10.23615,
+      "lng": 76.27053,
+      "category": "hospital",
+      "aliases_hi": [
+        "माला Church"
+      ],
+      "aliases_en": [
+        "mala church",
+        "malachurch"
+      ]
+    },
+    {
+      "id": "LM-39",
+      "name": "Mala Health Centre",
+      "ward_id": "ward_8",
+      "lat": 10.23615,
+      "lng": 76.26347,
+      "category": "market",
+      "aliases_hi": [
+        "माला Health Centre"
+      ],
+      "aliases_en": [
+        "mala health centre",
+        "malahealthcentre"
+      ]
+    },
+    {
+      "id": "LM-40",
+      "name": "Mala Boat Jetty",
+      "ward_id": "ward_8",
+      "lat": 10.24285,
+      "lng": 76.26129,
+      "category": "temple",
+      "aliases_hi": [
+        "माला Boat Jetty"
+      ],
+      "aliases_en": [
+        "mala boat jetty",
+        "malaboatjetty"
+      ]
+    },
+    {
+      "id": "LM-41",
+      "name": "Anthikad School",
+      "ward_id": "ward_9",
+      "lat": 10.472,
+      "lng": 76.13,
+      "category": "market",
+      "aliases_hi": [
+        "अंतिक्काड School"
+      ],
+      "aliases_en": [
+        "anthikad school",
+        "anthikadschool"
+      ]
+    },
+    {
+      "id": "LM-42",
+      "name": "Anthikad Church",
+      "ward_id": "ward_9",
+      "lat": 10.46785,
+      "lng": 76.13571,
+      "category": "school",
+      "aliases_hi": [
+        "अंतिक्काड Church"
+      ],
+      "aliases_en": [
+        "anthikad church",
+        "anthikadchurch"
+      ]
+    },
+    {
+      "id": "LM-43",
+      "name": "Anthikad Bridge",
+      "ward_id": "ward_9",
+      "lat": 10.46115,
+      "lng": 76.13353,
+      "category": "hospital",
+      "aliases_hi": [
+        "अंतिक्काड Bridge"
+      ],
+      "aliases_en": [
+        "anthikad bridge",
+        "anthikadbridge"
+      ]
+    },
+    {
+      "id": "LM-44",
+      "name": "Anthikad Relief Camp",
+      "ward_id": "ward_9",
+      "lat": 10.46115,
+      "lng": 76.12647,
+      "category": "community_hall",
+      "aliases_hi": [
+        "अंतिक्काड Relief Camp"
+      ],
+      "aliases_en": [
+        "anthikad relief camp",
+        "anthikadreliefcamp"
+      ]
+    },
+    {
+      "id": "LM-45",
+      "name": "Anthikad Health Centre",
+      "ward_id": "ward_9",
+      "lat": 10.46785,
+      "lng": 76.12429,
+      "category": "police_station",
+      "aliases_hi": [
+        "अंतिक्काड Health Centre"
+      ],
+      "aliases_en": [
+        "anthikad health centre",
+        "anthikadhealthcentre"
+      ]
+    },
+    {
+      "id": "LM-46",
+      "name": "Puthumala",
+      "ward_id": "ward_10",
+      "lat": 11.563,
+      "lng": 76.14,
+      "category": "shelter",
+      "aliases_hi": [
+        "पुथुमला"
+      ],
+      "aliases_en": [
+        "puthumala",
+        "puthumala"
+      ]
+    },
+    {
+      "id": "LM-47",
+      "name": "Meppadi School",
+      "ward_id": "ward_10",
+      "lat": 11.55885,
+      "lng": 76.14571,
+      "category": "school",
+      "aliases_hi": [
+        "मेप्पाडी School"
+      ],
+      "aliases_en": [
+        "meppadi school",
+        "meppadischool"
+      ]
+    },
+    {
+      "id": "LM-48",
+      "name": "DM WIMS Hospital",
+      "ward_id": "ward_10",
+      "lat": 11.55215,
+      "lng": 76.14353,
+      "category": "hospital",
+      "aliases_hi": [
+        "डीएम विम्स अस्पताल"
+      ],
+      "aliases_en": [
+        "dm wims hospital",
+        "dmwimshospital"
+      ]
+    },
+    {
+      "id": "LM-49",
+      "name": "Meppadi Town",
+      "ward_id": "ward_10",
+      "lat": 11.55215,
+      "lng": 76.13647,
+      "category": "market",
+      "aliases_hi": [
+        "मेप्पाडी Town"
+      ],
+      "aliases_en": [
+        "meppadi town",
+        "meppaditown"
+      ]
+    },
+    {
+      "id": "LM-50",
+      "name": "Meppadi Relief Camp",
+      "ward_id": "ward_10",
+      "lat": 11.55885,
+      "lng": 76.13429,
+      "category": "temple",
+      "aliases_hi": [
+        "मेप्पाडी Relief Camp"
+      ],
+      "aliases_en": [
+        "meppadi relief camp",
+        "meppadireliefcamp"
+      ]
+    },
+    {
+      "id": "LM-51",
+      "name": "Vythiri School",
+      "ward_id": "ward_11",
+      "lat": 11.556,
+      "lng": 76.038,
+      "category": "shelter",
+      "aliases_hi": [
+        "वित्तूरि School"
+      ],
+      "aliases_en": [
+        "vythiri school",
+        "vythirischool"
+      ]
+    },
+    {
+      "id": "LM-52",
+      "name": "Vythiri Bridge",
+      "ward_id": "ward_11",
+      "lat": 11.55185,
+      "lng": 76.04371,
+      "category": "bridge",
+      "aliases_hi": [
+        "वित्तूरि Bridge"
+      ],
+      "aliases_en": [
+        "vythiri bridge",
+        "vythiribridge"
+      ]
+    },
+    {
+      "id": "LM-53",
+      "name": "Vythiri Health Centre",
+      "ward_id": "ward_11",
+      "lat": 11.54515,
+      "lng": 76.04153,
+      "category": "community_hall",
+      "aliases_hi": [
+        "वित्तूरि Health Centre"
+      ],
+      "aliases_en": [
+        "vythiri health centre",
+        "vythirihealthcentre"
+      ]
+    },
+    {
+      "id": "LM-54",
+      "name": "Vythiri Shelter",
+      "ward_id": "ward_11",
+      "lat": 11.54515,
+      "lng": 76.03447,
+      "category": "hospital",
+      "aliases_hi": [
+        "वित्तूरि Shelter"
+      ],
+      "aliases_en": [
+        "vythiri shelter",
+        "vythirishelter"
+      ]
+    },
+    {
+      "id": "LM-55",
+      "name": "Vythiri Market",
+      "ward_id": "ward_11",
+      "lat": 11.55185,
+      "lng": 76.03229,
+      "category": "police_station",
+      "aliases_hi": [
+        "वित्तूरि Market"
+      ],
+      "aliases_en": [
+        "vythiri market",
+        "vythirimarket"
+      ]
+    },
+    {
+      "id": "LM-56",
+      "name": "Kalpetta Bus Stand",
+      "ward_id": "ward_12",
+      "lat": 11.614,
+      "lng": 76.082,
+      "category": "ghat",
+      "aliases_hi": [
+        "कल्पेट्टा Bus Stand"
+      ],
+      "aliases_en": [
+        "kalpetta bus stand",
+        "kalpettabusstand"
+      ]
+    },
+    {
+      "id": "LM-57",
+      "name": "Kalpetta District Hospital",
+      "ward_id": "ward_12",
+      "lat": 11.60985,
+      "lng": 76.08771,
+      "category": "school",
+      "aliases_hi": [
+        "कल्पेट्टा District Hospital"
+      ],
+      "aliases_en": [
+        "kalpetta district hospital",
+        "kalpettadistricthospital"
+      ]
+    },
+    {
+      "id": "LM-58",
+      "name": "Kalpetta School",
+      "ward_id": "ward_12",
+      "lat": 11.60315,
+      "lng": 76.08553,
+      "category": "shelter",
+      "aliases_hi": [
+        "कल्पेट्टा School"
+      ],
+      "aliases_en": [
+        "kalpetta school",
+        "kalpettaschool"
+      ]
+    },
+    {
+      "id": "LM-59",
+      "name": "Kalpetta Shelter",
+      "ward_id": "ward_12",
+      "lat": 11.60315,
+      "lng": 76.07847,
+      "category": "hospital",
+      "aliases_hi": [
+        "कल्पेट्टा Shelter"
+      ],
+      "aliases_en": [
+        "kalpetta shelter",
+        "kalpettashelter"
+      ]
+    },
+    {
+      "id": "LM-60",
+      "name": "Kalpetta Town",
+      "ward_id": "ward_12",
+      "lat": 11.60985,
+      "lng": 76.07629,
+      "category": "police_station",
+      "aliases_hi": [
+        "कल्पेट्टा Town"
+      ],
+      "aliases_en": [
+        "kalpetta town",
+        "kalpettatown"
+      ]
+    }
+  ]
+}

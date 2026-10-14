@@ -1,6 +1,6 @@
 id: dog_attack
 title: Dog attack
-description: Synthetic Riverbend pack for animal-attack reports. First aid is the fixed reviewed line only.
+description: Synthetic Kerala pack for animal-attack reports. First aid is the fixed reviewed line only.
 incident_types:
   - animal_attack
   - medical
@@ -21,22 +21,22 @@ follow_up_questions:
     en: Where did this happen? Share a landmark or ward.
     hi: यह कहाँ हुआ? लैंडमार्क या वार्ड बताएं।
     hinglish: Yeh kahan hua? Landmark ya ward batayein.
-    ta: இது எங்கு நடந்தது? இடத்தைச் சொல்லுங்கள்.
+    ml: ഇത് എവിടെ സംഭവിച്ചു? ഒരു ലാൻഡ്‌മാർക്ക് അല്ലെങ്കിൽ വാർഡ് പറയുക.
   people_count:
     en: How many people were bitten or need help?
     hi: कितने लोगों को मदद चाहिए?
     hinglish: Kitne logo ko madad chahiye?
-    ta: எத்தனை பேருக்கு உதவி தேவை?
+    ml: എത്ര പേർക്ക് സഹായം വേണം?
   vulnerable:
     en: Is a child, elderly person, or someone pregnant among them?
     hi: क्या इनमें बच्चा, बुजुर्ग या गर्भवती व्यक्ति है?
     hinglish: Kya inme baccha, buzurg ya pregnant vyakti hai?
-    ta: குழந்தை, முதியவர் அல்லது கர்ப்பிணி இருக்கிறார்களா?
+    ml: കുട്ടി, പ്രായമായയാൾ അല്ലെങ്കിൽ ഗർഭിണി ഉണ്ടോ?
   hazard:
     en: Is anyone still near the animal, or is the wound bleeding?
     hi: क्या कोई अभी जानवर के पास है, या घाव से खून बह रहा है?
     hinglish: Kya koi abhi jaanwar ke paas hai, ya ghaav se khoon bah raha hai?
-    ta: யாராவது இன்னும் விலங்கின் அருகில் இருக்கிறார்களா?
+    ml: ആരെങ്കിലും ഇപ്പോഴും മൃഗത്തിനടുത്തുണ്ടോ, അല്ലെങ്കിൽ മുറിവിൽ നിന്ന് രക്തം വരുന്നുണ്ടോ?
 urgency_rules:
   base_weight: 10
   injury_boost: 25

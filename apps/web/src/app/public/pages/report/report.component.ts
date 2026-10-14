@@ -1,12 +1,16 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, inject, signal, OnInit, effect, viewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { timeout, TimeoutError } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
 import {
   ApiClientService,
   LanguageService,
   RdTranslatePipe,
   ConfirmationCardData,
+  CallPillComponent,
+  SettingsButtonComponent,
+  SUPPORTED_LANGUAGES,
   ChatTurnResponse,
   ReportSubmitResponse,
   ReportSubmitRequest,
@@ -15,6 +19,8 @@ import {
   canonicalRequestJson,
 } from '@rd/shared';
 
+import { announceReport } from '../../../core/live-report';
+import { MyRequestsService } from '../../../core/services/my-requests.service';
 import { OfflineSyncService } from '../../../core/services/offline-sync.service';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { ConfirmationCardComponent } from '../../components/confirmation-card/confirmation-card.component';
@@ -24,7 +30,10 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   timestamp: Date;
+  quick?: string[];
 }
+
+const AUTO_PLACE = '__auto__';
 
 const EMPTY_VULNERABLE: Record<string, boolean> = {
   child: false,
@@ -34,28 +43,60 @@ const EMPTY_VULNERABLE: Record<string, boolean> = {
   medical_need: false,
 };
 
+/** A chat turn that takes longer than this falls back to the form. */
+const CHAT_TURN_TIMEOUT_MS = 15000;
+
+interface SpeechRec {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript?: string }>> }) => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
 @Component({
   selector: 'app-report',
   standalone: true,
-  imports: [CommonModule, FormsModule, RdTranslatePipe, ConfirmationCardComponent],
+  imports: [CommonModule, FormsModule, RouterLink, RdTranslatePipe, ConfirmationCardComponent, CallPillComponent, SettingsButtonComponent],
   templateUrl: './report.component.html',
   styleUrl: './report.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ReportComponent implements OnInit {
+export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   private apiClient = inject(ApiClientService);
   private router = inject(Router);
   readonly langService = inject(LanguageService);
   readonly scenarioState = inject(ScenarioService);
   readonly offlineSync = inject(OfflineSyncService);
+  private readonly myRequests = inject(MyRequestsService);
 
   readonly sessionId = signal<string>(`sess_${Math.random().toString(36).substring(2, 9)}`);
   readonly mode = signal<'chat' | 'form'>('chat');
   readonly userInput = signal<string>('');
   readonly isRecording = signal<boolean>(false);
+  readonly voiceOpen = signal<boolean>(false);
+  readonly transcript = signal<string>('');
+  readonly slow = signal<boolean>(false);
+  readonly reviewOpen = signal<boolean>(false);
+  readonly kbOffset = signal<number>(0);
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
+  private voiceTimers: ReturnType<typeof setTimeout>[] = [];
+  private recognition: { stop: () => void } | null = null;
+  private threadEnd = viewChild<ElementRef<HTMLElement>>('threadEnd');
+  private lastCount = 0;
+  private queuedLocally = false;
+
+  readonly suggestions = [
+    { key: 'landing.chipFlood', text: 'Flood or water rising' },
+    { key: 'landing.chipAnimal', text: 'Animal attack or bite' },
+    { key: 'landing.chipHurt', text: 'Someone hurt or sick' },
+    { key: 'landing.chipOther', text: 'Something else' },
+  ];
   readonly isLoading = signal<boolean>(false);
-  readonly locationPin = signal<{ lat: number; lng: number }>({ lat: 26.852, lng: 80.925 });
-  readonly locationText = signal<string>('Ward 7 · Auto-detected');
+  readonly locationPin = signal<{ lat: number; lng: number }>({ lat: 9.498, lng: 76.339 });
+  readonly locationText = signal<string>(AUTO_PLACE);
 
   readonly chatMessages = signal<ChatMessage[]>([]);
   readonly pendingCard = signal<ConfirmationCardData | null>(null);
@@ -69,6 +110,17 @@ export class ReportComponent implements OnInit {
   ]);
 
   constructor() {
+    effect(() => {
+      const read = this.offlineSync.lastSynced;
+      if (typeof read !== 'function') return;
+      const synced = read();
+      const reportId = synced?.response?.report_id;
+      if (!this.queuedLocally || !reportId) return;
+      this.queuedLocally = false;
+      this.router.navigate(['/status'], {
+        queryParams: { id: reportId, token: synced.response.status_token, new: 1 },
+      });
+    });
     effect(() => {
       const id = this.scenarioState.activeId();
       this.apiClient.getScenario(id).subscribe({
@@ -86,15 +138,143 @@ export class ReportComponent implements OnInit {
 
   ngOnInit(): void {
     this.scenarioState.ensureLoaded();
-    this.chatMessages.set([
-      {
-        id: 'msg_welcome',
-        role: 'assistant',
-        text: 'Namaste. Describe what happened and what help is needed. You can speak or type in Hindi, Hinglish, English, or Tamil.',
-        timestamp: new Date(),
-      },
-    ]);
+    this.chatMessages.set([]);
     this.tryGeolocation();
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this.onViewport);
+    }
+  }
+
+  private onViewport = (): void => {
+    const vv = window.visualViewport;
+    if (vv) this.kbOffset.set(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+  };
+
+  ngOnDestroy(): void {
+    window.visualViewport?.removeEventListener('resize', this.onViewport);
+    this.closeVoice();
+    if (this.slowTimer) clearTimeout(this.slowTimer);
+  }
+
+  ngAfterViewChecked(): void {
+    const n = this.chatMessages().length + (this.isLoading() ? 1 : 0);
+    if (n !== this.lastCount) {
+      this.lastCount = n;
+      this.threadEnd()?.nativeElement.scrollIntoView?.({ block: 'end' });
+    }
+  }
+
+  pickSuggestion(key: string): void {
+    this.userInput.set(this.langService.translate(key));
+    this.sendUserMessage();
+  }
+
+  placeLabel(): string {
+    const text = this.locationText();
+    if (!text || text === AUTO_PLACE) return this.langService.translate('report.autoPlace');
+    return text;
+  }
+
+  useQuick(msgId: string, text: string): void {
+    this.chatMessages.update((m) => m.map((x) => (x.id === msgId ? { ...x, quick: undefined } : x)));
+    const spoken: Record<string, string> = {
+      '1-2': 'report.said12',
+      '3-5': 'report.said35',
+      '6+': 'report.said6',
+      '?': 'report.saidNot',
+      child: 'report.saidChild',
+      elderly: 'report.saidElderly',
+      sick: 'report.saidSick',
+      none: 'report.saidNone',
+    };
+    const key = spoken[text];
+    this.userInput.set(key ? this.langService.translate(key) : text);
+    this.sendUserMessage();
+  }
+
+  private quickFor(resp: ChatTurnResponse): string[] | undefined {
+    if (resp.confirmation_card) return undefined;
+    const first = (resp.missing_fields || [])[0];
+    if (first === 'people_count') return ['1-2', '3-5', '6+', '?'];
+    if (first === 'vulnerable') return ['child', 'elderly', 'sick', 'none'];
+    return undefined;
+  }
+
+  quickLabelKey(text: string): string {
+    return ({ '1-2': 'report.qr12', '3-5': 'report.qr35', '6+': 'report.qr6', '?': 'report.qrNot', child: 'confirm.child', elderly: 'confirm.elderly', sick: 'confirm.medical', none: 'report.qrNone' } as Record<string, string>)[text] || text;
+  }
+
+  onEnter(e: Event): void {
+    if ((e as KeyboardEvent).shiftKey) return;
+    e.preventDefault();
+    this.sendUserMessage();
+  }
+
+  autoGrow(el: HTMLTextAreaElement): void {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 5 * 24 + 24) + 'px';
+  }
+
+  /** BCP-47 locale for the mic and the text box. English and Hindi are the primary pair. */
+  inputLocale(): string {
+    const lang = this.langService.currentLang();
+    if (lang === 'hi' || lang === 'hinglish') return 'hi-IN';
+    if (lang === 'ml') return 'ml-IN';
+    return 'en-IN';
+  }
+
+  /** Canned line used when the browser has no speech recogniser. Matches the chosen language. */
+  sampleUtterance(): string {
+    const lang = this.langService.currentLang();
+    if (lang === 'hi') {
+      return 'वार्ड 7 में शिव मंदिर के पास 4 लोग फंसे हैं। पानी कमर तक है। एक बच्चा और बुजुर्ग हैं। नाव भेजिए।';
+    }
+    if (lang === 'hinglish') {
+      return 'Ward 7 Shiv Mandir ke paas 4 log fanse hain, paani kamar tak hai, ek bachcha hai, boat bhejo.';
+    }
+    if (lang === 'ml') {
+      return 'വാർഡ് 7 ശിവ ക്ഷേത്രത്തിന് സമീപം 4 പേർ കുടുങ്ങി. വെള്ളം ഉയരുന്നു. ബോട്ട് വേണം.';
+    }
+    return '4 people are trapped near Shiva Temple in Ward 7. The water is at waist level. There is a child and an elderly person. Please send a boat.';
+  }
+
+  langLabel(): string {
+    const t = this.transcript();
+    if (/[\u0900-\u097F]/.test(t)) return 'हिंदी';
+    if (/[\u0D00-\u0D7F]/.test(t)) return 'മലയാളം';
+    return SUPPORTED_LANGUAGES.find((l) => l.code === this.langService.currentLang())?.label || 'English';
+  }
+
+  closeVoice(): void {
+    this.voiceTimers.forEach(clearTimeout);
+    this.voiceTimers = [];
+    try {
+      this.recognition?.stop();
+    } catch {
+      // The recogniser may already have stopped.
+    }
+    this.recognition = null;
+    this.voiceOpen.set(false);
+    this.isRecording.set(false);
+  }
+
+  typeInstead(): void {
+    this.userInput.set(this.transcript());
+    this.closeVoice();
+  }
+
+  finishVoice(): void {
+    const text = this.transcript();
+    this.closeVoice();
+    if (text) {
+      this.userInput.set(text);
+      this.sendUserMessage();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEsc(): void {
+    if (this.voiceOpen()) this.closeVoice();
   }
 
   tileLabel(tile: ScenarioTile): string {
@@ -176,15 +356,51 @@ export class ReportComponent implements OnInit {
   }
 
   toggleVoice(): void {
-    const rec = !this.isRecording();
-    this.isRecording.set(rec);
-    if (rec) {
-      setTimeout(() => {
-        this.userInput.set('नमस्ते, हम वार्ड 7 में शिव मंदिर के पास फंसे हैं। पानी कमर तक आ गया है, घर में 4 लोग हैं, एक छोटा बच्चा और बुजुर्ग दादी हैं। कृपया जल्दी नाव भेजिए।');
-        this.isRecording.set(false);
-        this.sendUserMessage();
-      }, 1200);
+    if (this.voiceOpen()) {
+      this.closeVoice();
+      return;
     }
+    this.voiceOpen.set(true);
+    this.isRecording.set(true);
+    this.transcript.set('');
+    if (this.startRecognition()) return;
+    this.playSampleUtterance();
+  }
+
+  private startRecognition(): boolean {
+    const host = window as Window & {
+      SpeechRecognition?: new () => SpeechRec;
+      webkitSpeechRecognition?: new () => SpeechRec;
+    };
+    const Ctor = host.SpeechRecognition || host.webkitSpeechRecognition;
+    if (!Ctor) return false;
+    try {
+      const rec = new Ctor();
+      rec.lang = this.inputLocale();
+      rec.interimResults = true;
+      rec.continuous = false;
+      rec.onresult = (event) => {
+        let text = '';
+        for (let i = 0; i < event.results.length; i++) {
+          text += event.results[i][0]?.transcript || '';
+        }
+        this.transcript.set(text.trim());
+      };
+      rec.onerror = () => this.playSampleUtterance();
+      rec.start();
+      this.recognition = rec;
+      return true;
+    } catch {
+      this.recognition = null;
+      return false;
+    }
+  }
+
+  private playSampleUtterance(): void {
+    const words = this.sampleUtterance().split(' ');
+    words.forEach((_, i) => {
+      this.voiceTimers.push(setTimeout(() => this.transcript.set(words.slice(0, i + 1).join(' ')), 350 + i * 180));
+    });
   }
 
   sendUserMessage(): void {
@@ -202,7 +418,16 @@ export class ReportComponent implements OnInit {
 
     this.chatMessages.update((msgs) => [...msgs, userMsg]);
     this.userInput.set('');
+
+    if (!this.onlineNow()) {
+      this.queueCitizenText(text);
+      return;
+    }
+
     this.isLoading.set(true);
+    this.slow.set(false);
+    if (this.slowTimer) clearTimeout(this.slowTimer);
+    this.slowTimer = setTimeout(() => this.slow.set(true), 6000);
 
     this.apiClient
       .sendChatTurn({
@@ -212,31 +437,39 @@ export class ReportComponent implements OnInit {
         language: this.langService.currentLang(),
         location_pin: this.locationPin(),
       })
+      .pipe(timeout(CHAT_TURN_TIMEOUT_MS))
       .subscribe({
         next: (resp: ChatTurnResponse) => {
           this.isLoading.set(false);
+          this.slow.set(false);
+          if (this.slowTimer) clearTimeout(this.slowTimer);
           if (resp.confirmation_card) {
             this.pendingCard.set(resp.confirmation_card);
+            this.reviewOpen.set(true);
           }
           const assistantMsg: ChatMessage = {
             id: `ast_${Date.now()}`,
             role: 'assistant',
             text: resp.bot_message,
             timestamp: new Date(),
+            quick: this.quickFor(resp),
           };
           this.chatMessages.update((msgs) => [...msgs, assistantMsg]);
         },
-        error: () => {
+        error: (err: unknown) => {
           this.isLoading.set(false);
-          this.chatMessages.update((msgs) => [
-            ...msgs,
-            {
-              id: `err_${Date.now()}`,
-              role: 'assistant',
-              text: 'Connection failed. Your message is saved locally and will auto-retry. Call 112 for urgent emergency.',
-              timestamp: new Date(),
-            },
-          ]);
+          this.slow.set(false);
+          if (this.slowTimer) clearTimeout(this.slowTimer);
+          if (err instanceof TimeoutError) {
+            // Never leave the citizen on a spinner: offer the form with what we have.
+            this.chatMessages.update((msgs) => [
+              ...msgs,
+              { id: `ast_${Date.now()}`, role: 'assistant', text: this.langService.translate('report.takingLonger'), timestamp: new Date() },
+            ]);
+            this.openForm();
+            return;
+          }
+          this.queueCitizenText(text);
         },
       });
   }
@@ -258,8 +491,10 @@ export class ReportComponent implements OnInit {
       summary: card.summary,
     };
 
+    const words = this.citizenWords() || card.summary;
     const payload: ReportSubmitRequest = {
-      text: card.summary,
+      text: words,
+      raw_text: words,
       channel: this.mode() === 'form' ? 'form' : 'text',
       lang: this.langService.currentLang(),
       location_pin: this.locationPin(),
@@ -267,17 +502,9 @@ export class ReportComponent implements OnInit {
       structured: facts,
     };
 
-    if (!this.offlineSync.isOnline()) {
-      const item = this.offlineSync.saveReportOffline(payload);
-      this.chatMessages.update((msgs) => [
-        ...msgs,
-        {
-          id: `off_${Date.now()}`,
-          role: 'assistant',
-          text: `Offline. Report queued on this phone (${item.idempotency_key}). It sends when the network returns. You can also use Send by SMS.`,
-          timestamp: new Date(),
-        },
-      ]);
+    if (!this.onlineNow()) {
+      this.offlineSync.saveReportOffline(payload);
+      this.noteQueued();
       return;
     }
 
@@ -286,34 +513,16 @@ export class ReportComponent implements OnInit {
       next: (res: ReportSubmitResponse) => {
         this.isLoading.set(false);
         this.submittedResult.set(res);
-        try {
-          localStorage.setItem('rd_last_report_id', res.report_id);
-          localStorage.setItem('rd_last_status_token', res.status_token);
-        } catch {
-          // ignore storage failures in private mode
-        }
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage(
-            { type: 'rd-report-submitted', reportId: res.report_id },
-            window.location.origin,
-          );
-        }
+        this.myRequests.add(res.report_id, res.status_token, card.incident_type);
+        announceReport(res.report_id, res.request_id);
         this.router.navigate(['/status'], {
-          queryParams: { id: res.report_id, token: res.status_token },
+          queryParams: { id: res.report_id, token: res.status_token, new: 1 },
         });
       },
       error: () => {
         this.isLoading.set(false);
-        const item = this.offlineSync.saveReportOffline(payload);
-        this.chatMessages.update((msgs) => [
-          ...msgs,
-          {
-            id: `err_${Date.now()}`,
-            role: 'assistant',
-            text: `Network error. Report queued locally (${item.idempotency_key}) and will auto-retry. Call 112 for an urgent emergency.`,
-            timestamp: new Date(),
-          },
-        ]);
+        this.offlineSync.saveReportOffline(payload);
+        this.noteQueued();
       },
     });
   }
@@ -325,7 +534,7 @@ export class ReportComponent implements OnInit {
   private blankCard(): ConfirmationCardData {
     return this.withSummary({
       incident_type: 'rescue',
-      place_text: this.locationText(),
+      place_text: this.placeLabel(),
       people_count: 1,
       vulnerable: { ...EMPTY_VULNERABLE },
       hazard: 'unknown',
@@ -336,20 +545,57 @@ export class ReportComponent implements OnInit {
 
   private withSummary(card: ConfirmationCardData): ConfirmationCardData {
     const count = card.people_count ?? 0;
+    const type = this.langService.translate(`incidentType.${card.incident_type}`);
     const vulns = Object.entries(card.vulnerable || {})
       .filter(([, on]) => on)
-      .map(([key]) => key);
-    const parts = [`${count} people needing ${card.incident_type}`];
+      .map(([key]) => this.langService.translate(key === 'medical_need' ? 'confirm.medical' : `confirm.${key}`));
+    const parts = [`${count} · ${type}`];
     if (card.place_text) {
-      parts.push(`at ${card.place_text}`);
+      parts.push(card.place_text);
     }
     if (vulns.length) {
-      parts.push(`Vulnerable: ${vulns.join(', ')}`);
+      parts.push(vulns.join(', '));
     }
     if (card.hazard && card.hazard !== 'unknown' && card.hazard !== 'none') {
-      parts.push(`Hazard: ${card.hazard}`);
+      parts.push(this.langService.translate(`hazardKind.${card.hazard}`));
     }
-    return { ...card, summary: parts.join(' | ') };
+    return { ...card, summary: parts.join(' · ') };
+  }
+
+  citizenWords(): string {
+    return this.chatMessages().filter((msg) => msg.role === 'user').map((msg) => msg.text).join('\n');
+  }
+
+  private onlineNow(): boolean {
+    const reader = this.offlineSync.readOnline;
+    if (typeof reader === 'function') return reader.call(this.offlineSync);
+    return this.offlineSync.isOnline();
+  }
+
+  /** Store the citizen's words so a failed or offline send is retried, not dropped. */
+  private queueCitizenText(text: string): void {
+    this.offlineSync.saveReportOffline({
+      text,
+      raw_text: text,
+      channel: 'text',
+      lang: this.langService.currentLang(),
+      location_pin: this.locationPin(),
+      scenario_id: this.scenarioId(),
+    });
+    this.noteQueued();
+  }
+
+  private noteQueued(): void {
+    this.queuedLocally = true;
+    this.chatMessages.update((msgs) => [
+      ...msgs,
+      {
+        id: `off_${Date.now()}`,
+        role: 'assistant',
+        text: this.langService.translate('report.savedPending'),
+        timestamp: new Date(),
+      },
+    ]);
   }
 
   private tryGeolocation(): void {
@@ -361,7 +607,7 @@ export class ReportComponent implements OnInit {
         this.locationPin.set({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
       () => {
-        // Riverbend centroid stays as the synthetic fallback.
+        // Alappuzha stays as the synthetic fallback when the phone has no GPS fix.
       },
       { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 },
     );

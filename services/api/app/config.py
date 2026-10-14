@@ -7,12 +7,45 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api"
     LOG_LEVEL: str = "INFO"
 
-    # Gemini & ADK
+    # Gemini & ADK. Model ids from https://ai.google.dev/gemini-api/docs/models
+    # (page updated 2026-10-09). New projects use gemini-3.8-flash.
+    # Embeddings: gemini-embedding-001, task SEMANTIC_SIMILARITY, 768 dimensions
+    # (https://ai.google.dev/gemini-api/docs/embeddings).
     GEMINI_API_KEY: str = "replace-me"
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
+    GEMINI_EMBED_MODEL: str = "gemini-embedding-001"
+    GEMINI_EMBED_DIM: int = 768
+    GEMINI_EMBED_TASK: str = "SEMANTIC_SIMILARITY"
     GEMINI_ENABLED: bool = True
     GEMINI_DAILY_CALL_CAP: int = 2000
-    DEMO_MODE: bool = False
+    GEMINI_TIMEOUT_S: float = 12.0
+    # Model calls that may run at once (Gemini or a local model). Extra calls wait in a
+    # priority queue, critical cases first. Set 1 for a local model that serves one call at a time.
+    AI_CONCURRENCY: int = 2
+    # Duplicate retrieval must answer inside the 5 s merge budget, or the lexical rules decide.
+    EMBED_TIMEOUT_S: float = 3.0
+    # auto: call Gemini when a real key is set. replay: serve data/ai_cache.
+    # fallback: never call the network. DEMO_MODE does not skip a real key.
+    AI_MODE: str = "auto"
+    # Manual testing only: "antigravity" routes live calls to the local Antigravity CLI (agy),
+    # "openai_compat" to an OpenAI-compatible chat API such as NVIDIA NIM. Neither is ever
+    # scored by the benchmark or written to data/ai_cache.
+    LLM_PROVIDER: str = ""
+    ANTIGRAVITY_BIN: str = ""
+    ANTIGRAVITY_TIMEOUT_S: float = 40.0
+    OPENAI_COMPAT_BASE_URL: str = "https://integrate.api.nvidia.com/v1"
+    OPENAI_COMPAT_API_KEY: str = ""
+    OPENAI_COMPAT_MODEL: str = "meta/llama-3.3-70b-instruct"
+    # Empty means no embedding call: duplicates use local similarity and rules.
+    OPENAI_COMPAT_EMBED_MODEL: str = ""
+    # NIM retrieval embedders require input_type. Empty sends none (plain OpenAI servers reject it).
+    OPENAI_COMPAT_EMBED_INPUT_TYPE: str = "query"
+    OPENAI_COMPAT_TIMEOUT_S: float = 30.0
+    # Name in the trace label "Test model (<name>)". Empty derives it from the base URL host.
+    OPENAI_COMPAT_LABEL: str = ""
+    DEMO_MODE: bool = True
+    # small: two cases and a few teams. full: the flood pack (benchmark and record_ai read the files directly).
+    DEMO_SEED: str = "small"
 
     # Google Cloud
     GCP_PROJECT_ID: str = "relief-desk-demo"
@@ -31,7 +64,7 @@ class Settings(BaseSettings):
     FIREBASE_AUTH_EMULATOR_HOST: Optional[str] = None
     RATE_LIMIT_REPORTS_PER_HOUR: int = 10
     DEFAULT_LANG: str = "en"
-    SUPPORTED_LANGS: List[str] = ["en", "hi", "hinglish", "ta"]
+    SUPPORTED_LANGS: List[str] = ["en", "hi", "hinglish", "ml"]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

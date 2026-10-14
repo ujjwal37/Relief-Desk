@@ -1,0 +1,41 @@
+<div class="page">
+  <header>
+    <a routerLink="/" class="brand">Relief Desk</a>
+    <rd-call-pill />
+  </header>
+  <p class="label">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
+  <h1>{{ 'team.open' | rdTranslate }}</h1>
+  <p class="demo" role="note">{{ 'team.demo' | rdTranslate }}</p>
+  <p class="lead">{{ 'team.lead' | rdTranslate }}</p>
+
+  @if (error(); as key) { <p class="err" role="alert">{{ key | rdTranslate }}</p> }
+  @if (notice(); as key) { <p class="ok" role="status">{{ key | rdTranslate }}</p> }
+
+  @if (team(); as t) {
+    <article class="card">
+      <h2>{{ t.name }}</h2>
+      <p>{{ ('coord.resStatus.' + t.status) | rdTranslate }}</p>
+      @if (t.simulated) { <p class="sim">{{ 'coord.simulated' | rdTranslate }}</p> }
+      @if (t.assigned_request_id) { <p>{{ 'coord.assigned' | rdTranslate }} {{ t.assigned_request_id }}</p> }
+      @if (trailPoints(t)) {
+        <p class="trail-label">{{ 'team.trail' | rdTranslate }}</p>
+        <svg viewBox="0 0 332 172" class="trail" role="img" [attr.aria-label]="'team.trail' | rdTranslate">
+          <rect width="332" height="172" rx="12" fill="var(--map-bg)"/>
+          <polyline [attr.points]="trailPoints(t)" fill="none" stroke="var(--brand)" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      }
+    </article>
+
+    <div class="actions">
+      <button type="button" (click)="act('at_scene')">{{ 'team.atScene' | rdTranslate }}</button>
+      <button type="button" (click)="act('done')">{{ 'team.done' | rdTranslate }}</button>
+      <button type="button" (click)="act('available')">{{ 'team.back' | rdTranslate }}</button>
+    </div>
+
+    <label class="share">
+      <input type="checkbox" [checked]="sharing()" (change)="toggleShare($any($event.target).checked)" />
+      {{ 'team.share' | rdTranslate }}
+    </label>
+    @if (sharing()) { <p>{{ 'team.sharing' | rdTranslate }}</p> }
+  }
+</div>

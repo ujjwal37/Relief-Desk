@@ -8,6 +8,7 @@ import {
   ChatTurnResponse,
   UrgencyWeights,
   DedupeDecision,
+  RecentReport,
   StoredRequest,
   StoredResource,
   MatchProposal,
@@ -89,12 +90,43 @@ export class ApiClientService {
     );
   }
 
+  keepSeparate(requestId: string): Observable<any> {
+    return this.http.post<any>(`/api/requests/${requestId}/keep-separate`, {}, this.getAuthHeaders());
+  }
+
   splitCluster(requestId: string): Observable<any> {
     return this.http.post<any>(`/api/requests/${requestId}/split`, {}, this.getAuthHeaders());
   }
 
   getCluster(clusterId: string): Observable<any> {
     return this.http.get<any>(`/api/clusters/${clusterId}`, this.getAuthHeaders());
+  }
+
+  getMerge(requestId: string): Observable<any> {
+    return this.http.get<any>(`/api/cases/${requestId}/merge`, this.getAuthHeaders());
+  }
+
+  /** Reload the two-case demo. The API allows it in demo mode or for the demo coordinator. */
+  resetDemo(): Observable<any> {
+    return this.http.post<any>('/api/demo/reset', {}, this.getAuthHeaders());
+  }
+
+  /** Load every synthetic flood case. Reset returns to the two-case demo. */
+  loadFullScenario(): Observable<any> {
+    return this.http.post<any>('/api/demo/full', {}, this.getAuthHeaders());
+  }
+
+  /** Ask the desk. Read-only search over cases; Gemini picks the filters, rules if it cannot. */
+  askDesk(question: string, lang?: string): Observable<any> {
+    return this.http.post<any>('/api/desk/ask', { question, lang }, this.getAuthHeaders());
+  }
+
+  getAssistProposals(): Observable<any> {
+    return this.http.get<any>('/api/assist/proposals', this.getAuthHeaders());
+  }
+
+  planAssist(): Observable<any> {
+    return this.http.post<any>('/api/assist/plan', {}, this.getAuthHeaders());
   }
 
   verifyCoordinatorSession(): Observable<any> {
@@ -105,9 +137,15 @@ export class ApiClientService {
     return this.http.get<{ enabled: boolean; apiKey: string | null }>('/api/config/maps');
   }
 
-  getRequests(sort = 'urgency', packId?: string): Observable<StoredRequest[]> {
+  /** Citizen reports from the last 15 minutes, newest first. */
+  getRecentReports(minutes = 15): Observable<RecentReport[]> {
+    return this.http.get<RecentReport[]>(`/api/recent-reports?minutes=${minutes}`, this.getAuthHeaders());
+  }
+
+  getRequests(sort = 'urgency', packId?: string, updatedSince?: string): Observable<StoredRequest[]> {
     const pack = packId ? `&pack_id=${encodeURIComponent(packId)}` : '';
-    return this.http.get<StoredRequest[]>(`/api/requests?sort=${sort}${pack}`, this.getAuthHeaders());
+    const since = updatedSince ? `&updated_since=${encodeURIComponent(updatedSince)}` : '';
+    return this.http.get<StoredRequest[]>(`/api/requests?sort=${sort}${pack}${since}`, this.getAuthHeaders());
   }
 
   getRequest(id: string): Observable<StoredRequest> {
@@ -126,12 +164,36 @@ export class ApiClientService {
     );
   }
 
+  markArrived(id: string): Observable<StoredRequest> {
+    return this.http.post<StoredRequest>(`/api/requests/${id}/arrived`, {}, this.getAuthHeaders());
+  }
+
+  completeRequest(id: string): Observable<StoredRequest> {
+    return this.http.post<StoredRequest>(`/api/requests/${id}/complete`, {}, this.getAuthHeaders());
+  }
+
   rejectMatch(id: string, reason: string): Observable<any> {
     return this.http.post<any>(
       `/api/matches/${id}/reject`,
       { reason },
       this.getAuthHeaders()
     );
+  }
+
+  updateResourceLocation(id: string, lat: number, lng: number): Observable<StoredResource> {
+    return this.http.post<StoredResource>(`/api/resources/${id}/location`, { lat, lng }, this.getAuthHeaders());
+  }
+
+  getTeam(id: string): Observable<StoredResource> {
+    return this.http.get<StoredResource>(`/api/team/${id}`);
+  }
+
+  confirmTeam(id: string, action: 'at_scene' | 'done' | 'available'): Observable<StoredResource> {
+    return this.http.post<StoredResource>(`/api/team/${id}`, { action });
+  }
+
+  shareTeamLocation(id: string, lat: number, lng: number): Observable<StoredResource> {
+    return this.http.post<StoredResource>(`/api/team/${id}/location`, { lat, lng });
   }
 
   getResources(kind?: string): Observable<StoredResource[]> {

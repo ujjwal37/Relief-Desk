@@ -1,20 +1,39 @@
-// Relief Desk Design Tokens
-$rd-navy-deep: #0b192c;
-$rd-navy-primary: #0b2545;
-$rd-navy-light: #134074;
-$rd-teal-accent: #14b8a6;
-$rd-teal-dark: #0f6b5a;
-$rd-mint: #ccfbf1;
-
-// Urgency Semantics
-$rd-urgency-critical: #ef4444;
-$rd-urgency-high: #f59e0b;
-$rd-urgency-medium: #eab308;
-$rd-urgency-low: #10b981;
-
-// Backgrounds & Neutrals
-$rd-bg-dark: #080f1d;
-$rd-panel-dark: #0e1726;
-$rd-border-dark: #1e293b;
-$rd-text-bright: #ffffff;
-$rd-text-muted: #94a3b8;
+// Mirrors theme.scss. Unused by the app; theme.scss is the live sheet.
+$rd-bg: #f4f4f5;
+$rd-surface: #ffffff;
+$rd-surface-2: #f4f4f5;
+$rd-border: #e4e4e7;
+$rd-text: #09090b;
+$rd-text-2: #71717a;
+$rd-muted: #71717a;
+$rd-brand: #047857;
+$rd-on-brand: #ffffff;
+$rd-brand-tint: #ecfdf5;
+$rd-sev-crit: #dc2626;
+$rd-sev-high: #d97706;
+$rd-sev-med: #2563eb;
+$rd-sev-low: #64748b;
+$rd-ok: #059669;
+$rd-bg-dark: #0b1210;
+$rd-surface-dark: #121a17;
+$rd-text-dark: #ecf3ee;
+$rd-brand-dark: #34d399;
+$rd-font-sans: 'Geist', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Malayalam', ui-sans-serif, system-ui, sans-serif;
+$rd-font-mono: 'Geist Mono', ui-monospace, monospace;
+$rd-t-caption: 500 12px/16px $rd-font-sans;
+$rd-t-label: 500 13px/18px $rd-font-sans;
+$rd-t-body: 400 14px/20px $rd-font-sans;
+$rd-t-title: 600 16px/22px $rd-font-sans;
+$rd-t-panel: 600 18px/24px $rd-font-sans;
+$rd-t-page: 600 24px/30px $rd-font-sans;
+$rd-t-kpi: 600 32px/36px $rd-font-sans;
+$rd-t-title-ls: -0.01em;
+$rd-t-panel-ls: -0.015em;
+$rd-t-page-ls: -0.02em;
+$rd-t-kpi-ls: -0.02em;
+$rd-tp-meta: 400 14px/20px $rd-font-sans;
+$rd-tp-body: 400 16px/24px $rd-font-sans;
+$rd-tp-label: 600 16px/22px $rd-font-sans;
+$rd-tp-cta: 600 18px/24px $rd-font-sans;
+$rd-tp-title: 600 22px/28px $rd-font-sans;
+$rd-tp-hero: 600 28px/34px $rd-font-sans;

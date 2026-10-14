@@ -18,6 +18,7 @@ class AnomalyAlert(BaseModel):
     ward_id: Optional[str] = None
     severity: str = "high"
     age_label: str = "just now"
+    detected_at: Optional[str] = None
     acknowledged: bool = False
 
 
@@ -172,6 +173,21 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
     kind_map = {"medical": "medical", "rescue": "boat", "food": "food", "shelter": "shelter"}
     mapped_demand = {kind_map[k]: v for k, v in demand.items() if k in kind_map}
     alerts.extend(resource_gap_alerts(mapped_demand, free))
+    available_teams: Dict[str, int] = {}
+    for resource in storage.list_resources():
+        status = resource.status.value if hasattr(resource.status, "value") else str(resource.status)
+        if status == "available" and resource.capacity_remaining > 0:
+            available_teams[resource.kind.value] = available_teams.get(resource.kind.value, 0) + 1
+    for kind, open_cases in mapped_demand.items():
+        if open_cases > 0 and available_teams.get(kind, 0) == 0:
+            alerts.append(AnomalyAlert(
+                id=f"gap-none-{kind}",
+                kind="resource_gap",
+                title="Resource gap",
+                reason=f"No {kind} team free. {open_cases} cases are still waiting.",
+                severity="high",
+                age_label="1 min ago",
+            ))
 
     conflict_wards = [req for req in requests if "conflict" in (req.flags or [])]
     if conflict_wards:
@@ -192,13 +208,27 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
     return alerts
 
 
+def _gap_kind(alert_id: str) -> str:
+    return alert_id.removeprefix("gap-none-").removeprefix("gap-")
+
+
 def collect_alerts(storage=None) -> List[AnomalyAlert]:
+    live = live_alerts_from_storage(storage) if storage is not None else []
+    live_gap_kinds = {
+        _gap_kind(alert.id) for alert in live if alert.kind == "resource_gap"
+    }
     merged: Dict[str, AnomalyAlert] = {}
     for alert in alerts_from_signals(load_seed_signals()):
+        if alert.kind == "resource_gap":
+            if _gap_kind(alert.id) in live_gap_kinds:
+                continue
+            alert = alert.model_copy(update={
+                "title": "Sample resource gap",
+                "reason": f"Sample. {alert.reason}",
+            })
         merged[alert.id] = alert
-    if storage is not None:
-        for alert in live_alerts_from_storage(storage):
-            merged.setdefault(alert.id, alert)
+    for alert in live:
+        merged.setdefault(alert.id, alert)
     result = []
     for alert in merged.values():
         alert.acknowledged = alert.id in ACKNOWLEDGED

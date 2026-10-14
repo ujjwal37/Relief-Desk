@@ -1,0 +1,48 @@
+<div class="scrim" (click)="closed.emit()"></div>
+<div class="drawer" [class.sheet]="mobile()" role="dialog" aria-modal="true" aria-labelledby="trace-title">
+  @if (mobile()) { <div class="grab" aria-hidden="true"></div> }
+  <header>
+    <h2 id="trace-title">{{ 'flow.title' | rdTranslate }}</h2>
+    <button type="button" class="x" (click)="closed.emit()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
+  </header>
+
+  @if (runState() === 'empty') {
+    <p class="empty">{{ 'flow.noTrace' | rdTranslate }}</p>
+    <p class="empty-sub">{{ 'flow.noTraceOld' | rdTranslate }}</p>
+  } @else {
+    <p class="headline">
+      <strong>{{ headline() }}</strong>
+      @if (totalText()) { <span> · {{ totalText() }}</span> }
+      <span class="word run-badge">{{ headerWord() }}</span>
+    </p>
+    <p class="context">{{ contextLine() }}</p>
+
+    @if (runState() === 'failed') {
+      <p class="banner fail">{{ 'flow.failed' | rdTranslate }}</p>
+      <button type="button" class="retry-run" (click)="retry.emit()">{{ 'ux.retry' | rdTranslate }}</button>
+    }
+    @if (runState() === 'fallback') {
+      <p class="banner warn">{{ fallbackText() }}</p>
+    }
+    @if (runState() === 'loading') {
+      <p class="banner load">{{ loadingText() }}</p>
+    }
+
+    <ol class="steps">
+      @for (step of intakeStep(); track step.agent) {
+        <app-trace-step [step]="step" [nameKey]="nameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
+      }
+      <li class="parallel" [attr.aria-label]="'flow.parallel' | rdTranslate">
+        <p class="same">{{ 'flow.parallel' | rdTranslate }}</p>
+        @for (side of parallel(); track side.agent) {
+          <app-trace-step [step]="side" [nameKey]="nameKey(side.agent)" [open]="expanded() === side.agent" (toggled)="toggle(side.agent)" (retry)="retry.emit()" />
+        }
+      </li>
+      @for (step of afterParallel(); track step.agent) {
+        <app-trace-step [step]="step" [nameKey]="nameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
+      }
+    </ol>
+  }
+
+  <p class="human">{{ 'flow.humanNote' | rdTranslate }}</p>
+</div>

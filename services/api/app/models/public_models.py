@@ -40,6 +40,7 @@ class ReportStatusResponse(BaseModel):
     """Status tracking for reporting public user with zero PII."""
     report_id: str
     request_id: str
+    public_code: Optional[str] = None
     status: str
     hero_title: str
     hero_subtitle: str
@@ -47,12 +48,7 @@ class ReportStatusResponse(BaseModel):
     eta_display: str = "~18 min"
     delivery_status: str = "In progress"
     timeline: List[StatusTimelineStep]
-    while_you_wait_tips: List[str] = Field(
-        default_factory=lambda: [
-            "Move to the highest safe place.",
-            "Stay away from flood water and live wires.",
-            "Keep your phone charged and stay reachable.",
-        ]
-    )
+    while_you_wait_tips: List[str] = Field(default_factory=list)
     emergency_phone: str = "112"
+    analysis_status: str = "complete"
     synthetic: bool = True

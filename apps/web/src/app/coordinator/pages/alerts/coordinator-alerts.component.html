@@ -1,56 +1,123 @@
-<div class="alerts-page">
-  <section class="alert-list card" aria-labelledby="alerts-heading">
+<ng-template #icon let-k let-s="s">
+  <svg [attr.width]="s || 16" [attr.height]="s || 16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    @switch (k) {
+      @case ('spike') { <path d="M12 3 2 21h20L12 3z" /><path d="M12 10v5M12 18v.5" /> }
+      @case ('silent_zone') { <circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" /> }
+      @case ('resource_gap') { <path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" /> }
+      @case ('conflict') { <path d="M4 8h14l-4-4M20 16H6l4 4" /> }
+      @default { <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /> }
+    }
+  </svg>
+</ng-template>
+
+<div class="alerts-page" [class.list-only]="listOnly()">
+  <section class="alert-list" aria-labelledby="alerts-heading">
     <h1 id="alerts-heading">{{ 'alerts.title' | rdTranslate }}</h1>
     <p class="sub">{{ 'alerts.subtitle' | rdTranslate }}</p>
-    <p class="error" *ngIf="error()">{{ error() }}</p>
-    <p class="sub" *ngIf="!error() && alerts().length === 0">{{ 'alerts.empty' | rdTranslate }}</p>
+    <div class="error" role="alert" *ngIf="error()">{{ error() }} <button type="button" (click)="reload()">{{ 'bench.retry' | rdTranslate }}</button></div>
+    <p class="empty" *ngIf="!error() && alerts().length === 0">{{ 'alerts.empty' | rdTranslate }}</p>
 
-    <article
-      class="alert-row"
-      *ngFor="let alert of alerts()"
-      [class.selected]="selectedId() === alert.id"
-      [class.critical]="alert.severity === 'critical'"
-      (click)="select(alert)"
-    >
+    <article class="alert-row" *ngFor="let it of items(); trackBy: trackId"
+      [class]="'alert-row k-' + it.kind" [class.selected]="selectedId() === it.alert.id" [class.done]="it.alert.acknowledged"
+      [class.sample]="isSample(it.alert)"
+      tabindex="0" (click)="select(it.alert)" (keydown.enter)="select(it.alert)">
       <div class="row-head">
-        <strong>{{ alert.title }}</strong>
-        <span class="age">{{ alert.age_label }}</span>
+        <span class="num" aria-hidden="true">{{ it.n }}</span>
+        <span class="kind"><ng-container *ngTemplateOutlet="icon; context: { $implicit: it.kind, s: 15 }"></ng-container>{{ isSample(it.alert) ? titleOf(it.alert) : ('alerts.k.' + it.kind | rdTranslate) }}</span>
+        <span class="sample-badge" *ngIf="isSample(it.alert)">{{ 'alerts.sampleBadge' | rdTranslate }}</span>
+        <span class="age" [attr.title]="it.alert.detected_at || ''">{{ ageText(it.alert) }}</span>
       </div>
-      <p class="reason">{{ alert.reason }}</p>
+      <p class="reason">{{ reasonOf(it.alert) }}</p>
+      <p class="where" *ngIf="it.ward">{{ it.ward.name }} · {{ it.ward.district }}</p>
+      <p class="where off" *ngIf="!it.at">{{ 'alerts.noPin' | rdTranslate }}</p>
       <div class="actions">
-        <button type="button" class="chip" (click)="select(alert); $event.stopPropagation()">
-          {{ 'alerts.viewMap' | rdTranslate }}
+        <button type="button" class="primary" [disabled]="it.alert.acknowledged" (click)="acknowledge(it.alert); $event.stopPropagation()">
+          {{ it.alert.acknowledged ? ('alerts.ackDone' | rdTranslate) : ('alerts.acknowledge' | rdTranslate) }}
         </button>
-        <button
-          type="button"
-          class="chip"
-          [disabled]="alert.acknowledged"
-          (click)="acknowledge(alert); $event.stopPropagation()"
-        >
-          {{ alert.acknowledged ? 'Acknowledged' : ('alerts.acknowledge' | rdTranslate) }}
-        </button>
+        <button type="button" class="secondary" *ngIf="it.at && !listOnly()" (click)="viewOnMap(it.alert); $event.stopPropagation()">{{ 'alerts.viewMap' | rdTranslate }}</button>
       </div>
     </article>
   </section>
 
-  <section class="map-panel card" aria-label="Alert map">
-    <svg viewBox="0 0 520 640" class="city-map" role="img" aria-label="Riverbend wards">
-      <rect width="520" height="640" fill="#0a1120"></rect>
-      <path d="M40 80 C 180 140, 220 260, 160 420 C 120 520, 260 580, 400 520" fill="none" stroke="#1d4ed8" stroke-width="28" opacity="0.55"></path>
-      <g *ngFor="let alert of alerts(); let i = index">
-        <circle
-          [attr.cx]="80 + (i % 4) * 110"
-          [attr.cy]="120 + (i % 5) * 90"
-          r="28"
-          [attr.fill]="alert.kind === 'silent_zone' ? '#fbbf24' : '#fb7185'"
-          [attr.opacity]="selectedId() === alert.id ? 0.85 : 0.35"
-        ></circle>
-      </g>
-    </svg>
-    <p class="map-caption" *ngIf="selectedId() as id">
-      <ng-container *ngFor="let alert of alerts()">
-        <span *ngIf="alert.id === id">{{ alert.title }} — {{ alert.reason }}</span>
-      </ng-container>
-    </p>
+  <section class="map-panel" *ngIf="!listOnly()" [attr.aria-label]="'alerts.mapAria' | rdTranslate">
+    <rd-map-provider class="mapbox" [pins]="googlePins()" [center]="center()" [focusToken]="focusNonce()" (pinSelect)="selectedId.set($event)">
+      <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="city-map" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="'alerts.mapAria' | rdTranslate">
+        <rect [attr.width]="W" [attr.height]="H" fill="var(--map-bg)"></rect>
+        <g class="world" [style.transform]="transform()">
+          <path d="M-20 330 C 130 440, 260 330, 400 450 S 700 530, 830 440" fill="none" stroke="var(--map-water)" stroke-width="40" stroke-linecap="round"></path>
+          <text x="560" y="520" class="river">{{ 'alerts.river' | rdTranslate }}</text>
+
+          <g *ngFor="let c of cells">
+            <polygon [attr.points]="c.d" class="ward"
+              [class.dim]="selected() && selectedWard() !== c.ward.id"
+              [class.silent]="selected()?.kind === 'silent_zone' && selectedWard() === c.ward.id"
+              [class.conf]="selected()?.kind === 'conflict' && selectedWard() === c.ward.id"></polygon>
+            <circle *ngIf="selected()?.kind === 'spike' && selectedWard() === c.ward.id" class="spike-mark"
+              [attr.cx]="c.c.x" [attr.cy]="c.c.y" [attr.r]="spikeRadius"></circle>
+            <text [attr.x]="c.lx" [attr.y]="c.ly" class="wname" [class.dim]="selected() && selectedWard() !== c.ward.id">
+              <tspan *ngFor="let l of c.lines; let li = index" [attr.x]="c.lx" [attr.dy]="li ? 15 : 0">{{ l }}</tspan>
+              <tspan *ngIf="selectedWard() === c.ward.id" [attr.x]="c.lx" dy="14" class="dist">{{ c.ward.district }}</tspan>
+            </text>
+          </g>
+
+          <g *ngFor="let l of landmarks" class="lm" [class.dim]="selected()">
+            <rect [attr.x]="l.x - 4" [attr.y]="l.y - 4" width="8" height="8" rx="2"></rect>
+            <text [attr.x]="l.x + 8" [attr.y]="l.y - 14">{{ l.name }}</text>
+          </g>
+
+          <!-- resource pins when the gap is selected -->
+          <g *ngIf="selected()?.kind === 'resource_gap'">
+            <g *ngFor="let r of medPins()" class="res" [class.busy]="!r.free">
+              <circle [attr.cx]="r.x" [attr.cy]="r.y" r="12"></circle>
+              <path [attr.d]="'M' + (r.x - 5) + ' ' + r.y + 'h10M' + r.x + ' ' + (r.y - 5) + 'v10'"></path>
+              <text [attr.x]="r.x + 17" [attr.y]="r.y + 5" class="rl">{{ r.free ? ('alerts.free' | rdTranslate) : ('alerts.busy' | rdTranslate) }}</text>
+            </g>
+          </g>
+
+          <!-- alert pins -->
+          <ng-container *ngFor="let it of items()">
+            <g *ngIf="it.at" class="pin" [class]="'pin k-' + it.kind" [class.on]="selectedId() === it.alert.id" [class.dim]="selected() && selectedId() !== it.alert.id"
+              (click)="select(it.alert)" tabindex="0" (keydown.enter)="select(it.alert)" role="button" [attr.aria-label]="it.n + ', ' + titleOf(it.alert)">
+              <circle *ngIf="it.kind === 'spike' && selectedId() === it.alert.id" class="pulse" [attr.cx]="it.at.x" [attr.cy]="it.at.y - 14" r="22"></circle>
+              <path [attr.d]="'M' + it.at.x + ' ' + (it.at.y + 8) + ' l-12 -17 a15 15 0 1 1 24 0 z'" class="drop"></path>
+              <text [attr.x]="it.at.x" [attr.y]="it.at.y - 9" class="pn">{{ it.n }}</text>
+            </g>
+          </ng-container>
+
+          <!-- selected detail on map -->
+          <ng-container *ngIf="selected() as s">
+            <g *ngIf="s.kind === 'silent_zone' && s.at" class="note">
+              <text [attr.x]="s.at.x" [attr.y]="s.at.y + 62" class="nt">{{ 'alerts.noReports' | rdTranslate }} {{ s.window }}</text>
+            </g>
+            <g *ngIf="s.kind === 'spike' && s.stat && s.at" class="note">
+              <text [attr.x]="s.at.x" [attr.y]="s.at.y + 62" class="nt crit">{{ s.stat }} {{ 'alerts.reports' | rdTranslate }} · {{ s.window }}</text>
+            </g>
+            <g *ngIf="s.kind === 'conflict' && s.claims && s.at" class="claims">
+              <g [attr.transform]="'translate(' + (s.at.x - claimW(s.claims[0]) - 22) + ',' + (s.at.y - 52) + ')'">
+                <rect [attr.width]="claimW(s.claims[0])" height="28" rx="8"></rect>
+                <text x="10" y="19"><tspan class="cl">A</tspan> {{ s.claims[0] }}</text>
+              </g>
+              <g [attr.transform]="'translate(' + (s.at.x + 22) + ',' + (s.at.y - 8) + ')'">
+                <rect [attr.width]="claimW(s.claims[1])" height="28" rx="8"></rect>
+                <text x="10" y="19"><tspan class="cl">B</tspan> {{ s.claims[1] }}</text>
+              </g>
+            </g>
+          </ng-container>
+        </g>
+      </svg>
+    </rd-map-provider>
+
+    <div class="key" role="list" [attr.aria-label]="'alerts.key' | rdTranslate">
+      <span class="key-title">{{ 'alerts.key' | rdTranslate }}</span>
+      <span *ngFor="let k of kinds" role="listitem" class="kitem" [class]="'kitem k-' + k"><span class="kdot"><ng-container *ngTemplateOutlet="icon; context: { $implicit: k, s: 14 }"></ng-container></span>{{ 'alerts.k.' + k | rdTranslate }}</span>
+    </div>
+
+    <div class="detail" *ngIf="selected() as s" aria-live="polite" [class]="'detail k-' + s.kind">
+      <span class="dnum">{{ s.n }}</span>
+      <div>
+        <b>{{ isSample(s.alert) ? titleOf(s.alert) : ('alerts.k.' + s.kind | rdTranslate) }}<ng-container *ngIf="s.ward"> · {{ s.ward.name }}</ng-container></b>
+        <p>{{ reasonOf(s.alert) }}</p>
+      </div>
+    </div>
   </section>
 </div>
