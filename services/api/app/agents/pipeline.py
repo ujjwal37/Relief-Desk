@@ -3,7 +3,9 @@
 Scoring and capacity stay in Python tools. The model may propose and explain.
 Without a Gemini key the same tools still finish the case, and the run is marked fallback.
 """
+import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 import threading
 import time
 from datetime import datetime, timezone
@@ -186,7 +188,7 @@ def _trace_step(
         "agent": agent,
         "status": status,
         "input_summary": (summary or "")[:180],
-        "output": (output or "")[:400],
+        "output": output or "",
         "provider": provider,
         "provider_label": display_name(provider) if model else "Rules",
         "vendor": vendor(provider),
@@ -204,7 +206,7 @@ def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
     provider = (ai.provider if ai else None) or ("gemini" if req.ai_source == "gemini" else "fallback")
     ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local", "openai_compat") else None
     english = (req.translations or {}).get("en") or req.ai_translation or req.summary or summary or req.type.value
-    return _trace_step(
+    row = _trace_step(
         "Intake",
         "complete",
         summary,
@@ -216,6 +218,8 @@ def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
         latency_ms=ai.latency_ms if ai else None,
         tokens=ai.tokens if ai else None,
     )
+    row["fallback_reason"] = ai.fallback_reason if ai else "seed_not_recorded"
+    return row
 
 
 def mark_analysing(request_id: str) -> None:
@@ -245,7 +249,7 @@ def note_dedupe(req: StoredRequest) -> None:
     for step in req.trace or []:
         if step.get("agent") == "Dedupe":
             step["status"] = "complete"
-            step["output"] = _dedupe_output(req)[:400]
+            step["output"] = _dedupe_output(req)
             step["ts"] = datetime.now(timezone.utc).isoformat()
 
 
@@ -254,6 +258,7 @@ def finish(request_id: str) -> None:
     req = storage_service.get_request(request_id)
     if req is None:
         return
+    req = req.model_copy(deep=True)
     started = time.perf_counter()
     scored = scoring_engine.compute_urgency(req)
     triage_at = time.perf_counter()
@@ -271,30 +276,70 @@ def finish(request_id: str) -> None:
         f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch."
     )
     explanation = f"{explanation} This note is not medical or legal advice."
+    from app.agents.review import language_review
+    from app.agents.matching import matching_agent
+    from app.llm.ai_queue import ai_priority, report_priority
+
+    facts = {"type": req.type.value, "people": req.people_count, "vulnerable": req.vulnerable.model_dump(),
+             "hazard": req.hazard.value, "score": scored.score}
+    dedupe_context = {"facts": facts, "tool_result": _dedupe_output(req)}
+    triage_context = {"facts": facts, "breakdown": scored.breakdown, "reason": scored.reason}
+
+    def review(agent, context, fallback):
+        with ai_priority(report_priority(req.urgency_score)):
+            return language_review(agent, context, fallback)
+
+    # Independent language checks share the same guarded model queue.
+    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="case-review") as pool:
+        dup_future = pool.submit(review, "Dedupe", dedupe_context, _dedupe_output(req))
+        urg_future = pool.submit(review, "Triage", triage_context, scored.reason)
+        duplicate = dup_future.result()
+        urgency = urg_future.result()
+    matching_started = time.perf_counter()
+    proposals = matching_agent.find_matches(req, top_n=1, save_to_storage=False)
+    best = proposals[0] if proposals else None
+    matching_output = json.dumps({
+        "team": best.resource_name if best else "No suitable team available",
+        "km": best.breakdown.distance_km if best else None,
+        "kind": best.resource_kind.value if best else kind,
+        "seats": best.capacity_remaining if best else 0,
+    })
+    matching_ms = int((time.perf_counter() - matching_started) * 1000)
+    explain_context = {"facts": facts, "matching": json.loads(matching_output), "free_teams": capacity["available"]}
+    explained = review("Explainer", explain_context, explanation)
+
+    def row(agent, result, tools, at):
+        built = _trace_step(agent, "complete", summary, result["text"], tools, at,
+                            provider=result["provider"], model=result.get("model"),
+                            latency_ms=result.get("latency_ms"), tokens=result.get("tokens"))
+        built["fallback_reason"] = result.get("fallback_reason")
+        built["cached"] = result.get("cached", False)
+        return built
+
     req.analysis = {
-        "provider": provider,
-        "model": model,
+        "provider": req.ai.provider if req.ai else "tool",
+        "model": req.ai.model if req.ai else None,
         "intake": (req.raw_text or "")[:240],
-        "dedupe": _dedupe_output(req),
+        "dedupe": duplicate["text"],
         "triage": {"score": scored.score, "reason": scored.reason},
         "matching": capacity,
-        "explainer": explanation,
+        "explainer": explained["text"],
     }
     req.trace = [
         _intake_row(req, summary, started),
-        _trace_step("Dedupe", "complete", summary, _dedupe_output(req), [], started),
-        _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], triage_at),
-        _trace_step("Matching", "complete", summary, f"{capacity['available']} {kind} free", ["check_capacity"], match_at),
-        _trace_step("Explainer", "complete", summary, explanation, [], match_at),
+        row("Dedupe", duplicate, [], started),
+        row("Triage", urgency, ["score_urgency"], triage_at),
+        _trace_step("Matching", "complete", summary, matching_output, ["check_capacity", "match_score"], matching_started, latency_ms=matching_ms),
+        row("Explainer", explained, [], match_at),
     ]
     req.analysis_status = "complete"
-    # A coordinator may have approved this case while the model was still working.
+    # Commit only analysis fields: an approval/merge may have happened during a model call.
     latest = storage_service.get_request(request_id)
-    if latest is not None and latest.status != req.status:
-        req.status = latest.status
-        req.assigned_resource_id = latest.assigned_resource_id
-        req.reserved_people = latest.reserved_people
-    storage_service.save_request(req, actor="pipeline")
+    if latest is not None:
+        latest.trace = req.trace
+        latest.analysis = req.analysis
+        latest.analysis_status = "complete"
+        storage_service.save_request(latest, actor="pipeline")
 
 
 def _dedupe_output(req: StoredRequest) -> str:

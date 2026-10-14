@@ -881,7 +881,9 @@
     "modelLatency": "Model · latency",
     "waiting": "Waiting",
     "badgeTool": "Python tool",
-    "badgeCache": "Recorded (Gemini)"
+    "badgeCache": "Recorded (Gemini)",
+    "simulateOutage": "Preview rules fallback",
+    "simulatedOnly": "Preview only. Stored traces and dispatch decisions are unchanged."
   },
   "uiRef": {
     "activeQueue": "Active queue",

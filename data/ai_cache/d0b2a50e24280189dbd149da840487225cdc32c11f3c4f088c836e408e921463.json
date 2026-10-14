@@ -1,0 +1,8 @@
+{
+  "key": "d0b2a50e24280189dbd149da840487225cdc32c11f3c4f088c836e408e921463",
+  "response": "{\n  \"type\": \"medical\",\n  \"secondary_needs\": [\n    \"rescue\"\n  ],\n  \"place_text\": \"near St. Jude Hospital\",\n  \"people\": {\n    \"count\": 1,\n    \"confidence\": 0.8\n  },\n  \"vulnerable\": {\n    \"child\": false,\n    \"elderly\": false,\n    \"disabled\": false,\n    \"pregnant\": false,\n    \"medical_need\": true\n  },\n  \"hazard\": \"stranded\",\n  \"urgency_hint\": \"critical\",\n  \"language\": \"en\",\n  \"is_update_phrase\": false,\n  \"confidence\": {\n    \"type\": 0.99,\n    \"place\": 0.95,\n    \"people\": 0.8,\n    \"vulnerable\": 0.95,\n    \"urgency\": 0.99\n  },\n  \"evidence_spans\": {\n    \"people\": \"critical respiratory patient\",\n    \"vulnerable\": \"critical respiratory patient\"\n  },\n  \"notes\": \"Patient is stranded with oxygen running out in 1 hour near St. Jude Hospital.\",\n  \"text_en\": \"Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.\",\n  \"text_hi\": \"सेंट ज्यूड अस्पताल के पास फंसे एक गंभीर श्वसन रोगी के लिए 1 घंटे में ऑक्सीजन खत्म हो रही है।\",\n  \"translation_confidence\": 0.99\n}",
+  "source": "gemini",
+  "provider": "gemini",
+  "model": "gemini-3.5-flash-lite",
+  "tokens": 1605
+}

@@ -1,0 +1,105 @@
+{
+  "fingerprint": "1d231fdde8947aeeb12426e4b9fa73276e5b1c1147d163ce93987da4ead8ce58",
+  "trace": [
+    {
+      "agent": "Intake",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "Flood water entering 1st floor near Nedumudi Boat Jetty. 8 people including 3 children and 2 elderly stranded on rooftop, urgent boat needed.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 1873,
+      "tokens": 1657,
+      "tool_calls": [],
+      "ts": "2026-10-14T18:04:14.972510+00:00",
+      "fallback_reason": null
+    },
+    {
+      "agent": "Dedupe",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "The deduplication step identified this rescue report as a duplicate based on the provided facts. The incident involves eight people with a score of 77.8 and a rising water hazard.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 891,
+      "tokens": 229,
+      "tool_calls": [],
+      "ts": "2026-10-14T18:04:14.972526+00:00",
+      "fallback_reason": null,
+      "cached": false
+    },
+    {
+      "agent": "Triage",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "The triage report indicates a rescue score of 77.8 for eight people facing rising water with child and elderly vulnerability flags. The breakdown reflects a high hazard value of 100.0 and a vulnerability score of 80.0 with a 0.98 confidence factor.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 2991,
+      "tokens": 370,
+      "tool_calls": [
+        "score_urgency"
+      ],
+      "ts": "2026-10-14T18:04:14.972531+00:00",
+      "fallback_reason": null,
+      "cached": false
+    },
+    {
+      "agent": "Matching",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "{\"team\": \"Motorized Rescue Boat\", \"km\": 0.67, \"kind\": \"boat\", \"seats\": 12}",
+      "provider": "tool",
+      "provider_label": "Rules",
+      "vendor": null,
+      "model": null,
+      "latency_ms": 4920,
+      "tokens": null,
+      "tool_calls": [
+        "check_capacity",
+        "match_score"
+      ],
+      "ts": "2026-10-14T18:04:14.972534+00:00"
+    },
+    {
+      "agent": "Explainer",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "A rescue for 8 people involving rising water has a priority score of 77.8 and includes vulnerable children and elderly individuals. The Motorized Rescue Boat team is available 0.67 km away with 12 seats.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 1925,
+      "tokens": 274,
+      "tool_calls": [],
+      "ts": "2026-10-14T18:04:14.972537+00:00",
+      "fallback_reason": null,
+      "cached": false
+    }
+  ],
+  "analysis": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "intake": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+    "dedupe": "The deduplication step identified this rescue report as a duplicate based on the provided facts. The incident involves eight people with a score of 77.8 and a rising water hazard.",
+    "triage": {
+      "score": 77.8,
+      "reason": "Vulnerable flags: child, elderly + 8 persons + water rising rapidly (Urgency score: 77.8)"
+    },
+    "matching": {
+      "kind": "boat",
+      "available": 4,
+      "dispatched": false
+    },
+    "explainer": "A rescue for 8 people involving rising water has a priority score of 77.8 and includes vulnerable children and elderly individuals. The Motorized Rescue Boat team is available 0.67 km away with 12 seats."
+  },
+  "recorded_at": "2026-10-14T18:04:14.972609+00:00",
+  "request_id": "INC-001"
+}

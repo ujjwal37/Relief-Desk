@@ -96,6 +96,14 @@ class LLMClient:
         return key not in _PLACEHOLDER_KEYS
 
     @property
+    def _last_tokens(self) -> Optional[int]:
+        return getattr(self._tls, "tokens", None)
+
+    @_last_tokens.setter
+    def _last_tokens(self, value: Optional[int]) -> None:
+        self._tls.tokens = value
+
+    @property
     def last_ai(self) -> AiCall:
         """The call this thread just made. Parallel intake must not share one slot."""
         value = getattr(self._tls, "last_ai", None)
@@ -245,6 +253,7 @@ class LLMClient:
         max_retries is the number of repair attempts after invalid JSON. The
         default is one repair, then fallback.
         """
+        max_retries = max(0, min(2, max_retries))
         started = time.perf_counter()
         user_prompt = scrub_pii(user_prompt)
         cache_key = self.cache_key(system_instruction, user_prompt)
@@ -476,6 +485,11 @@ class LLMClient:
         from concurrent.futures import TimeoutError as FuturesTimeout
 
         timeout_s = float(timeout_s or settings.GEMINI_TIMEOUT_S or 12.0)
+        from app.llm.adk_runtime import current_step, run_text_agent
+
+        agent_name = current_step()
+        json_output = "json" in system_instruction.lower()
+        model_name = settings.GEMINI_MODEL
         self._last_tokens = None
         self.guard.slots.acquire()
         try:
@@ -484,22 +498,35 @@ class LLMClient:
             self.guard.slots.release()
             raise
 
-        def _run() -> str:
+        def _run() -> tuple[str, Optional[int]]:
             client = self._make_genai_client(timeout_s)
-            response_obj = client.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=user_prompt,
-                config={"system_instruction": system_instruction, "temperature": 0.1},
-            )
-            usage = getattr(response_obj, "usage_metadata", None)
-            total = getattr(usage, "total_token_count", None) if usage is not None else None
-            self._last_tokens = int(total) if isinstance(total, int) else None
-            return response_obj.text or ""
+            used: Optional[int] = None
+
+            def transport() -> str:
+                nonlocal used
+                config: Dict[str, Any] = {"system_instruction": system_instruction, "temperature": 0.1}
+                if json_output:
+                    config["response_mime_type"] = "application/json"
+                if model_name.startswith("gemini-2.5-flash"):
+                    config["thinking_config"] = {"thinking_budget": 0}
+                response_obj = client.models.generate_content(model=model_name, contents=user_prompt, config=config)
+                usage = getattr(response_obj, "usage_metadata", None)
+                total = getattr(usage, "total_token_count", None) if usage is not None else None
+                used = int(total) if isinstance(total, int) else None
+                return response_obj.text or ""
+
+            try:
+                return run_text_agent(agent_name, model_name, system_instruction, user_prompt, transport), used
+            finally:
+                close = getattr(client, "close", None)
+                if close:
+                    close()
 
         try:
             future = _GEMINI_POOL.submit(_run)
             try:
-                text = future.result(timeout=timeout_s)
+                text, tokens = future.result(timeout=timeout_s)
+                self._last_tokens = tokens
             except FuturesTimeout as exc:
                 future.cancel()
                 raise TimeoutError("Gemini timed out") from exc

@@ -3,6 +3,8 @@ import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
 import { testProviderWord } from './provider-label';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
 
+const outputText = (value: unknown) => typeof value === 'string' ? value : '';
+
 const ORDER = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'] as const;
 const NAMES: Record<string, string> = {
   Intake: 'flow.intake',
@@ -28,6 +30,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   readonly closed = output<void>();
   readonly retry = output<void>();
   readonly expanded = signal<string | null>(null);
+  readonly simulateOutage = signal(false);
   private poll: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
@@ -41,7 +44,14 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   readonly steps = computed(() => {
     this.lang.currentLang();
     const byName = new Map((this.request().trace || []).map((step) => [step.agent, step]));
-    return ORDER.map((agent) => this.toView(agent, byName.get(agent)));
+    return ORDER.map((agent) => {
+      const raw = byName.get(agent);
+      if (this.simulateOutage() && agent !== 'Matching' && raw) {
+        return this.toView(agent, { ...raw, provider: 'fallback', model: undefined, latency_ms: 0,
+          fallback_reason: 'simulated_outage', output: this.rulesOutput(agent) });
+      }
+      return this.toView(agent, raw);
+    });
   });
 
   readonly intakeStep = computed(() => this.steps().filter((step) => step.agent === 'Intake' && this.visible(step)));
@@ -64,6 +74,8 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   readonly headerWord = computed(() => {
     this.lang.currentLang();
     const req = this.request();
+    if (this.simulateOutage()) return this.lang.translate('flow.badgeRules');
+    if (req.ai?.provider === 'cache') return this.lang.translate('flow.badgeCache');
     const intake = (req.trace || []).find((row) => row.agent === 'Intake');
     if (testProviderWord(req.ai?.provider || req.ai_source, intake?.vendor, (key) => this.lang.translate(key))) {
       return this.lang.translate('flow.badgeTest');
@@ -179,6 +191,14 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  private rulesOutput(agent: string): string {
+    const req = this.request();
+    if (agent === 'Intake') return JSON.stringify({ type: req.type, people: req.people_count, place: req.place_text });
+    if (agent === 'Dedupe') return req.dedupe_trace || 'Review duplicate evidence with the coordinator.';
+    if (agent === 'Triage') return req.urgency_reason;
+    return `Python urgency score: ${req.urgency_score}. A coordinator reviews the team proposal.`;
+  }
+
   private fallbackCount(): number {
     return this.steps().filter((step) => step.provider === 'fallback' || step.status === 'fallback').length;
   }
@@ -198,8 +218,8 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     const prompt = this.kept((raw as { prompt?: string } | undefined)?.prompt) ? String((raw as { prompt?: string }).prompt) : null;
     const model = this.kept(raw?.model) ? String(raw?.model) : null;
     const latencyMs = typeof raw?.latency_ms === 'number' && raw.latency_ms > 0 ? raw.latency_ms : null;
-    const note = status === 'fallback'
-      ? (this.kept(this.request().ai?.fallback_reason) ? String(this.request().ai?.fallback_reason) : null)
+    const note = (status === 'fallback' || raw?.provider === 'fallback')
+      ? String(raw?.fallback_reason || this.request().ai?.fallback_reason || '')
       : status === 'error' && this.kept(raw?.output) ? String(raw?.output) : null;
     const badge = this.stepBadge(raw);
     return {
@@ -246,7 +266,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     if (agent === 'Dedupe') {
       const id = this.dupId(raw);
       if (id) {
-        const mins = String(parsed['minutes'] || req.possible_duplicate?.minutes || '4');
+        const mins = String(parsed['minutes'] || req.possible_duplicate?.minutes || '—');
         return cap(t('flow.sentDedupeHit').replace('{id}', id).replace('{n}', mins));
       }
       return cap(t('flow.sentDedupeClear'));
@@ -263,7 +283,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
       const seats = String(parsed['seats'] || parsed['capacity'] || '1');
       return cap(t('flow.sentMatch').replace('{team}', team).replace('{km}', km).replace('{capability}', capab).replace('{seats}', seats));
     }
-    return cap(t('flow.sentExplain'));
+    return outputText(raw?.output) || cap(t('flow.sentExplain'));
   }
 
   private dupId(raw?: NonNullable<StoredRequest['trace']>[number]): string {

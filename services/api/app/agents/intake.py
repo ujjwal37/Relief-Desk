@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import Field
 from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.llm.client import llm_client
+from app.llm.adk_runtime import ai_step
 from app.tools.gazetteer import gazetteer
 from app.tools.nlu_rules import extract_place, hazard_name, infer_incident_type, people_count, vulnerable_flags
 from app.tools.trust import hoax_score_for
@@ -127,7 +128,8 @@ class IntakeAgent:
             return ReportAnalysis(**parsed)
 
         try:
-            raw_response = self.client.generate_content(
+            with ai_step("Intake"):
+                raw_response = self.client.generate_content(
                 system_instruction=SYSTEM_INTAKE_PROMPT,
                 user_prompt=user_prompt,
                 validator=validate_json_schema,

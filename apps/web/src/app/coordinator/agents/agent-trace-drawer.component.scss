@@ -52,3 +52,5 @@ h2 { margin: 0; font: var(--t-panel); letter-spacing: var(--t-title-ls); }
     border-left: 0; border-radius: var(--r4) var(--r4) 0 0;
   }
 }
+
+.outage-preview { display: flex; gap: 8px; align-items: center; padding: 12px 0; font-size: 13px; color: var(--muted); }

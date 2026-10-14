@@ -881,7 +881,9 @@
     "modelLatency": "मॉडल · विलंब",
     "waiting": "प्रतीक्षा",
     "badgeTool": "पाइथन टूल",
-    "badgeCache": "रिकॉर्ड किया गया (Gemini)"
+    "badgeCache": "रिकॉर्ड किया गया (Gemini)",
+    "simulateOutage": "नियमों वाला विकल्प देखें",
+    "simulatedOnly": "केवल पूर्वावलोकन। सहेजे गए ट्रेस और प्रेषण निर्णय नहीं बदलते।"
   },
   "uiRef": {
     "activeQueue": "सक्रिय सूची",

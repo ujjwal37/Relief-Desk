@@ -7,10 +7,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api"
     LOG_LEVEL: str = "INFO"
 
-    # Gemini & ADK. Model ids from https://ai.google.dev/gemini-api/docs/models
-    # (page updated 2026-10-09). New projects use gemini-3.8-flash.
-    # Embeddings: gemini-embedding-001, task SEMANTIC_SIMILARITY, 768 dimensions
-    # (https://ai.google.dev/gemini-api/docs/embeddings).
+    # Model stays configurable: 2.5 Flash returned 404 for this account on 14 Oct.
+    # https://ai.google.dev/gemini-api/docs/models
     GEMINI_API_KEY: str = "replace-me"
     GEMINI_MODEL: str = "gemini-3.8-flash"
     GEMINI_EMBED_MODEL: str = "gemini-embedding-001"
@@ -18,7 +16,7 @@ class Settings(BaseSettings):
     GEMINI_EMBED_TASK: str = "SEMANTIC_SIMILARITY"
     GEMINI_ENABLED: bool = True
     GEMINI_DAILY_CALL_CAP: int = 2000
-    GEMINI_TIMEOUT_S: float = 12.0
+    GEMINI_TIMEOUT_S: float = 20.0
     # Model calls that may run at once (Gemini or a local model). Extra calls wait in a
     # priority queue, critical cases first. Set 1 for a local model that serves one call at a time.
     AI_CONCURRENCY: int = 2

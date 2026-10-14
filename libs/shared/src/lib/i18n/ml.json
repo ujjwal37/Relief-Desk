@@ -881,7 +881,9 @@
     "modelLatency": "Model · latency",
     "waiting": "Waiting",
     "badgeTool": "പൈത്തൺ ടൂൾ",
-    "badgeCache": "റെക്കോർഡ് ചെയ്തത് (Gemini)"
+    "badgeCache": "റെക്കോർഡ് ചെയ്തത് (Gemini)",
+    "simulateOutage": "നിയമങ്ങൾ അടിസ്ഥാനമാക്കിയ മാർഗം കാണുക",
+    "simulatedOnly": "പ്രിവ്യൂ മാത്രം. സൂക്ഷിച്ച ട്രേസുകളും വിന്യാസ തീരുമാനങ്ങളും മാറില്ല."
   },
   "uiRef": {
     "activeQueue": "സജീവ പട്ടിക",

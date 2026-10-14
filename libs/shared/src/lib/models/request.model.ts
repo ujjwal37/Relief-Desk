@@ -199,6 +199,8 @@ export interface StoredRequest {
     input_summary?: string;
     output?: string;
     provider?: string | null;
+    fallback_reason?: string | null;
+    cached?: boolean;
     /** English name of who answered, e.g. "Test model (NVIDIA)". */
     provider_label?: string | null;
     /** The name inside "Test model (...)" for a test provider. */

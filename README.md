@@ -67,7 +67,7 @@ ADK 2.11 warns that `SequentialAgent` and `ParallelAgent` are deprecated in favo
 | Intake JSON | `GEMINI_MODEL` default `gemini-3.8-flash` | `app/llm/client.py`, `app/agents/intake.py` | Mocked in `tests/test_gemini_live.py`. Live smoke skips unless `GEMINI_API_KEY` is a real key |
 | Duplicate judge | `GEMINI_MODEL` | `app/agents/dedupe.py` | Mocked in `tests/test_embedding_dedupe.py` |
 | Embeddings | `GEMINI_EMBED_MODEL=gemini-embedding-001`, task `SEMANTIC_SIMILARITY`, 768-d | `app/llm/embeddings.py` | Mocked. No key returns no vector and the lexical fallback runs |
-| Explainer text | `GEMINI_MODEL` | `app/agents/explainer.py`, `pipeline.py` | The stored note is the tool sentence plus "not medical or legal advice" unless a live call replaces it. Not scored on the split |
+| Explainer text | `GEMINI_MODEL` | `app/agents/explainer.py`, `pipeline.py` | Read-only ADK language reviews explain supplied Python results; invalid numbers fall back to the tool sentence. Not scored on the split |
 | Assist dispatcher | `GEMINI_MODEL` | `app/agents/dispatcher.py` | Tool order, reject, and the two-coordinator hold are tested without a model call |
 | Benchmark column | `GEMINI_MODEL` | `bench/gemini_eval.py` | `measured: false`, reason `no_api_key`, n=168, date 2026-10-11 |
 | Recorded replay | `AI_MODE=replay` | `data/ai_cache`, `scripts/record_ai.py` | `fixture.json` lists the prompts with no replies. `make record-ai` writes transcripts only after a real call |
@@ -161,3 +161,8 @@ Hourly local-news watch, weather alerts, SMS/WhatsApp intake, offline sync, more
 
 ## License
 `<choose>`
+
+
+Walkthrough upgrades: live language calls execute through `app/llm/adk_runtime.py` using ADK `LlmAgent` and `InMemoryRunner`. Intake is followed by independent duplicate/urgency language reviews, then deterministic matching and a language explanation. The declared `PIPELINE` is a reference graph; the production path in `pipeline.finish` runs the two reviews concurrently through the shared model gate. Models never set scores or dispatch. Default per-call timeout is 20s after quota/slot waiting; a sub-4s response is not guaranteed.
+
+`python scripts/record_ai.py --traces INC-001 INC-008` (with the API environment loaded) records actual seeded intake/review traces. Missing keys or fallback results never acquire Gemini provenance. Replay uses **Recorded (Gemini)** labels and an input fingerprint. The drawer's **Preview rules fallback** checkbox is local and makes no API writes. On 14 Oct, the API rejected `gemini-2.5-flash` for this account (404); `gemini-3.8-flash` returned high demand (503), while the configured `gemini-3.5-flash-lite` completed a genuine ADK call. Keep the model configurable and verify availability with your own account.

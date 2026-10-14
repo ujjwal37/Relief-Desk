@@ -44,5 +44,7 @@
     </ol>
   }
 
+  <label class="outage-preview"><input type="checkbox" [checked]="simulateOutage()" (change)="simulateOutage.set(!simulateOutage())" /> {{ 'flow.simulateOutage' | rdTranslate }}</label>
+  @if (simulateOutage()) { <p class="empty-sub">{{ 'flow.simulatedOnly' | rdTranslate }}</p> }
   <p class="human">{{ 'flow.humanNote' | rdTranslate }}</p>
 </div>

@@ -72,6 +72,17 @@ describe('AgentTraceDrawerComponent', () => {
     expect(fixture.nativeElement.querySelector('.banner.warn')).toBeNull();
   });
 
+  it('previews fallback without mutating saved provenance', () => {
+    const original = JSON.stringify(REQUEST);
+    fixture.componentInstance.simulateOutage.set(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Preview only');
+    expect(fixture.componentInstance.steps().find((step) => step.agent === 'Triage')?.provider).toBe('fallback');
+    expect(JSON.stringify(REQUEST)).toBe(original);
+    fixture.componentInstance.simulateOutage.set(false);
+    expect(fixture.componentInstance.steps().find((step) => step.agent === 'Triage')?.provider).toBe('tool');
+  });
+
   it('keeps a single step expanded', () => {
     const buttons = fixture.nativeElement.querySelectorAll('.details') as NodeListOf<HTMLButtonElement>;
     buttons[0].click();
