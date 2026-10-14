@@ -1,4 +1,6 @@
 import { CommonModule } from '@angular/common';
+import { PINE_SAND_MAP_STYLE } from './pine-sand-map-style';
+import { LatLng, panIfMoved } from './map-center';
 import {
   AfterContentInit,
   AfterViewInit,
@@ -15,7 +17,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { panIfMoved } from './map-center';
 import { markerDataUrl, TONE_COLOR, vehiclePath, PinTone, VehicleKind } from './map-markers';
 import { MapProviderService } from './map-provider.service';
 
@@ -99,21 +100,30 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   private map: { panTo?: (pos: { lat: number; lng: number }) => void; fitBounds?: (bounds: unknown, padding?: number) => void } | null = null;
   private markers: { setMap?: (map: null) => void }[] = [];
   private lines: { setMap?: (map: null) => void }[] = [];
-  private lastCenter: { lat: number; lng: number } | null = null;
   private lastToken = 0;
+  private gaveUp = false;
+  private lastPinKey = '';
+  private lastCenter: LatLng | null = null;
 
   ngAfterContentInit(): void {
     this.refreshBuiltin();
   }
 
   ngAfterViewInit(): void {
+    const w = window as unknown as { gm_authFailure?: () => void };
+    w.gm_authFailure = () => this.fallBackToSvg();
     this.maps.decide().then((mode) => {
-      this.mode = mode;
+      if (this.gaveUp || this.maps.authFailed || mode !== 'google') {
+        this.mode = 'svg';
+        this.refreshBuiltin();
+        this.cdr.markForCheck();
+        return;
+      }
+      this.mode = 'google';
       this.refreshBuiltin();
       this.cdr.detectChanges();
-      if (mode === 'google') {
-        this.draw();
-      }
+      this.draw();
+      window.setTimeout(() => this.fallbackIfBroken(), 800);
     });
     window.addEventListener('offline', this.onOffline);
   }
@@ -123,25 +133,44 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   }
 
   ngOnChanges(): void {
+    if (this.gaveUp || !this.map) {
+      return;
+    }
     const force = this.focusToken !== this.lastToken;
     this.lastToken = this.focusToken;
-    if (force && this.map && Number.isFinite(this.center?.lat) && Number.isFinite(this.center?.lng)) {
+    if (force && Number.isFinite(this.center?.lat) && Number.isFinite(this.center?.lng)) {
       this.map.panTo?.(this.center);
       this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
     } else {
       this.lastCenter = panIfMoved(this.map, this.lastCenter, this.center);
     }
-    if (this.mode === 'google' && this.map) {
-      this.draw();
+    const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []);
+    if (this.mode !== 'google' || pinKey === this.lastPinKey) {
+      return;
     }
+    this.draw();
   }
 
   private onOffline = (): void => {
+    this.fallBackToSvg();
+  };
+
+  private fallBackToSvg(): void {
+    this.gaveUp = true;
+    this.maps.authFailed = true;
     this.mode = 'svg';
     this.map = null;
     this.refreshBuiltin();
+    this.markers = [];
     this.cdr.markForCheck();
-  };
+  }
+
+  private fallbackIfBroken(): void {
+    const text = this.canvas?.nativeElement?.innerText || '';
+    if (text.includes('Oops') || text.includes("didn't load")) {
+      this.fallBackToSvg();
+    }
+  }
 
   /** A page schematic (Cases) wins. Otherwise this provider draws pins and legs. */
   private refreshBuiltin(): void {
@@ -236,9 +265,12 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
+          styles: PINE_SAND_MAP_STYLE,
         });
         this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
       }
+      const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []);
+      this.lastPinKey = pinKey;
       this.markers.forEach((marker) => marker.setMap?.(null));
       this.lines.forEach((line) => line.setMap?.(null));
       this.lines = this.legs.map((leg) => {

@@ -7,6 +7,8 @@ export type MapMode = 'google' | 'svg';
 export class MapProviderService {
   private api = inject(ApiClientService);
   private pending: Promise<MapMode> | null = null;
+  /** Set when the browser key is rejected. Later maps stay on the SVG. */
+  authFailed = false;
 
   decide(): Promise<MapMode> {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
