@@ -20,6 +20,10 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "outputPath": {
+              "base": "dist/web",
+              "browser": "browser"
+            },
             "browser": "apps/web/src/main.ts",
             "polyfills": [
               "zone.js"

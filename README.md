@@ -150,7 +150,7 @@ Each report makes one model call: the same JSON reply carries the facts, the typ
 
 ## Deploy
 
-There is no live Cloud Run URL in this repo. `deploy/cloudrun.md` is the recipe: a root `Dockerfile`, `GEMINI_API_KEY` injected from Secret Manager as an environment variable, and the note that case rows stay in process memory. Firestore is not the store this process writes.
+There is no live Cloud Run URL in this repo. `deploy/cloudrun.md` is the recipe: a root `Dockerfile`, Firebase Hosting for `dist/web/browser` with `/api/**` and `/healthz` rewritten to Cloud Run service `relief-desk-api` in `asia-south1`, and `GEMINI_API_KEY`, `JWT_SECRET`, and `GOOGLE_MAPS_API_KEY` mounted from Secret Manager. Case rows stay in process memory. Firestore is not the store this process writes.
 
 ## Built with
 

@@ -1232,3 +1232,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified: `node scripts/check-i18n.mjs`. `npx ng build web --configuration=development`. Screenshots at 1366 of Home, drawer, Overview, Teams, Accuracy, Home Hindi, dark, and public report at 390.
 - Notes / risks / not done: Front-end only. Seed counts (INC-008, 15/8/16) are API data and were not changed. Map-provider pins were not edited (handoff: no core/maps). TASKS.md has no UX handoff row. No e2e or unit suite this pass. `.env` was not changed.
 - Next (suggested task id): none
+
+### 2026-10-14 11:55 IST — T-036 — Cursor
+- What changed: Ported the Cloud Run + Firebase Hosting scaffold onto current main, without the live-tracking branch. Hosting serves `dist/web/browser` and rewrites `/api/**` and `/healthz` to Cloud Run service `relief-desk-api` in asia-south1. Non-secret env is in `deploy/cloudrun.env.yaml` (`DEMO_MODE=true`, `DEMO_SEED=small`, `GEMINI_ENABLED=true`). The recipe mounts `GEMINI_API_KEY`, `JWT_SECRET`, and `GOOGLE_MAPS_API_KEY` from Secret Manager. Dockerfile keeps the existing copy set and uses `exec` so SIGTERM reaches uvicorn. Request timeout stays 300s for the SSE stream. PyJWT was already pinned. T-036 stays TODO: there is still no public URL.
+- Files: firebase.json, .firebaserc, deploy/cloudrun.env.yaml, deploy/cloudrun.md, .env.example, Dockerfile, .gcloudignore, .dockerignore, .gitignore, angular.json, README.md, services/api/tests/test_deploy_scaffold.py, WORKDONE.md
+- How verified: `/tmp/rd-venv/bin/pytest services/api/tests` — 270 passed, 1 skipped. `npx ng build web` — succeeded; `dist/web/browser/index.html` exists. Secret scan of tracked files and `git log -p --all` found no real API keys, private keys, or committed `.env` files.
+- Notes / risks / not done: Not deployed. `.firebaserc` is `your-project-id`. The synthetic demo password and bearer `demo-coordinator-token` stay in the repo on purpose. The code default `JWT_SECRET` is still `relief-desk-coordinator-secret-2026` until Secret Manager overrides it. Live-tracking from PR #4 was not merged.
+- Next (suggested task id): T-036 (human deploy), then T-048
