@@ -189,3 +189,8 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | IMP-02 | Harden live Gemini/ADK reviews, record genuine demo traces, and add an isolated outage preview | C | DONE | IMP-01 | Configurable bounded timeout; validated semantic reviews never replace deterministic scores; true model/cache metadata; recordings only from real Gemini; outage preview leaves stored cases unchanged |
 | IMP-03 | Add a guarded five-report live surge demonstration and inventory-aware medical scenario | C | DONE | IMP-02 | Demo-only authenticated surge; spaced synthetic submissions through normal intake and SSE; no dispatch; stock constraints are deterministic and pack-driven; human approval remains required |
 | IMP-04 | Add bounded photo observations with explicit reporter review and capture updated screenshots | C | DONE | IMP-03 | Synthetic image size/type validation; actual Gemini multimodal call through budgets/timeouts; uncertain observations require confirmation; text/offline paths preserved; desktop/mobile/Hindi screenshots and regression checks |
+
+## Browser branding (user requested 15 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| UI-REF-04 | Replace Angular browser icon with the website shield-and-cross logo | C | DONE | IMP-04 | SVG and ICO match website logo; served page references branded icon; production build passes |
