@@ -17,6 +17,9 @@ def reset_demo(coordinator: CoordinatorUser = Depends(get_current_coordinator)):
     """
     if not settings.DEMO_MODE and (coordinator.email or "").lower() != DEMO_COORDINATOR_EMAIL:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Demo reset is only available in demo mode or for the demo coordinator")
+    from app.tools.demo_surge import snapshot
+    if snapshot()["running"]:
+        raise HTTPException(status_code=409, detail="Wait for the synthetic surge to finish before resetting")
     summary = storage_service.reset_demo()
     summary["actor"] = coordinator.email
     return summary
@@ -27,6 +30,9 @@ def load_full_scenario(coordinator: CoordinatorUser = Depends(get_current_coordi
     """Load the full flood pack into the running demo. Reset returns to the small seed."""
     if not settings.DEMO_MODE and (coordinator.email or "").lower() != DEMO_COORDINATOR_EMAIL:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Demo seed is only available in demo mode or for the demo coordinator")
+    from app.tools.demo_surge import snapshot
+    if snapshot()["running"]:
+        raise HTTPException(status_code=409, detail="Wait for the synthetic surge to finish before reloading")
     summary = storage_service.load_full_scenario()
     summary["actor"] = coordinator.email
     return summary
@@ -55,7 +61,8 @@ def simulate_surge(coordinator: CoordinatorUser = Depends(get_current_coordinato
     require_demo_mode()
     from app.tools.demo_surge import start_surge
     try:
-        return start_surge(coordinator.email)
+        from app.api.reports import ReportSubmitRequest, submit_report
+        return start_surge(coordinator.email, lambda data: submit_report(ReportSubmitRequest(**data)))
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
 

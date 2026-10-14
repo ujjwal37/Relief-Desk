@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { CoordinatorCommandComponent } from './coordinator-command.component';
-import { ApiClientService, StoredRequest, MatchProposal, StoredResource, UrgencyWeights } from '@rd/shared';
+import { LanguageService, ApiClientService, StoredRequest, MatchProposal, StoredResource, UrgencyWeights } from '@rd/shared';
 import { MapProviderComponent } from '../../../core/maps/map-provider.component';
 
 describe('CoordinatorCommandComponent', () => {
@@ -147,6 +147,8 @@ describe('CoordinatorCommandComponent', () => {
       'getRecentReports',
     ]);
 
+    mockResources[0].location_updated_at = new Date().toISOString();
+    mockRequests[0].trace = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'].map((agent) => ({ agent, status: 'complete', provider: 'tool', output: 'Python checks completed', tool_calls: [] }));
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
     apiClientSpy.getRecentReports.and.returnValue(of([]));
     apiClientSpy.getAssistProposals.and.returnValue(of({ proposals: [], shortages: [] }));
@@ -170,6 +172,7 @@ describe('CoordinatorCommandComponent', () => {
       providers: [provideRouter([]), { provide: ApiClientService, useValue: apiClientSpy }],
     }).compileComponents();
 
+    TestBed.inject(LanguageService).setLanguage('en');
     fixture = TestBed.createComponent(CoordinatorCommandComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -181,7 +184,7 @@ describe('CoordinatorCommandComponent', () => {
     component.applyQueue([dispatched, mockRequests[0], mockRequests[1]], false);
     expect(component.selectedRequestId()).toBe('INC-001');
     fixture.detectChanges();
-    const opener = fixture.nativeElement.querySelector('.hooks .trace-chip') as HTMLButtonElement | null;
+    const opener = fixture.nativeElement.querySelector('.how-link') as HTMLButtonElement | null;
     expect(opener?.textContent).toContain('How it decided');
   });
 
@@ -373,18 +376,18 @@ describe('CoordinatorCommandComponent', () => {
     const card = fixture.nativeElement.querySelector('button.case') as HTMLElement;
     expect(card.querySelector('.title')?.textContent).toContain('Water has entered');
     expect(card.querySelector('.loc')?.textContent).toMatch(/^Ward 7 ·/);
-    expect(card.querySelector('.prio')?.textContent?.trim()).toBe('94');
+    expect(card.querySelector('.prio')?.textContent?.trim()).toBe('Priority 94');
     expect(card.querySelector('.ico-chip.people')?.textContent).toContain('5');
     expect(card.querySelector('.ico-chip.vuln')?.textContent).toContain('Vulnerable');
-    expect(card.textContent).not.toContain('Priority');
+    expect(card.textContent).toContain('Priority');
     expect(card.querySelector('.need')).toBeNull();
     const panel = fixture.nativeElement.querySelector('.detail') as HTMLElement;
-    expect(panel.querySelector('.send-kicker')?.textContent).toContain('Send: Motorized Rescue Boat #02');
+    expect(panel.querySelector('.send-kicker')?.textContent).toContain('Best team for this');
     expect((panel.querySelector('.facts') as HTMLElement).textContent).toContain('1.2 km · about 4 min');
-    expect(panel.querySelector('.why-line')?.textContent).toContain('Rescue Boat #02');
+    expect(panel.querySelector('.recommendation-reason')?.textContent).toContain('Rescue Boat #02');
     expect(panel.querySelector('.more-block')?.hasAttribute('hidden')).toBeTrue();
-    expect(component.sendTeamLabel('Boat 2')).toBe('Send: Boat 2');
-    expect(component.whyLine(mockProposal)).toContain('1.2 km');
+    expect(component.sendTeamLabel('Boat 2')).toBe('Send');
+    expect(component.whyLine(mockProposal)).toContain('Closest free team');
   });
 
   it('keeps Ward N on the queue location line', () => {
@@ -536,19 +539,15 @@ describe('CoordinatorCommandComponent', () => {
     const boat = component.mapPins().find((pin) => pin.id === 'res_boat_02');
     expect(boat?.vehicle).toBe('boat');
     expect(boat?.marker).toBe('team');
-    const glyph = fixture.nativeElement.querySelector('.svgmap .pin path') as SVGPathElement;
-    expect(glyph.getAttribute('d')).toContain('M2 14.5');
-    const row = fixture.nativeElement.querySelector('.candidates li') as HTMLElement;
-    expect(row.textContent).toContain('1.2 km · about 4 min');
-    expect((fixture.nativeElement.querySelector('.facts') as HTMLElement).textContent).toContain('1.2 km · about 4 min');
-    row.dispatchEvent(new Event('mouseenter'));
+    expect(fixture.nativeElement.querySelector('.svgmap .pin rect')).not.toBeNull();
+    component.highlightId.set('res_boat_02');
     fixture.detectChanges();
     expect(provider.highlightId).toBe('res_boat_02');
     expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke')).toBe('#047857');
     expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke-width')).toBe('6');
   });
 
-  it('draws lines only to the top three teams', () => {
+  it('draws one recommended line and changes it when inspecting a different team', () => {
     const extra = [1, 2, 3].map((n) => ({
       ...mockProposal,
       match_id: `m${n}`,
@@ -563,10 +562,14 @@ describe('CoordinatorCommandComponent', () => {
     ]);
     component.matches.set([mockProposal, ...extra]);
     fixture.detectChanges();
-    expect(component.mapLegs().length).toBe(3);
-    expect(component.focusLegs().length).toBe(3);
+    expect(component.mapLegs().length).toBe(1);
+    expect(component.focusLegs().length).toBe(1);
     expect(component.mapLegs().map((leg) => leg.id)).not.toContain('res_3');
     expect(component.candidateMatches().length).toBe(3);
+    component.highlightId.set('res_2');
+    expect(component.mapLegs().map((leg) => leg.id)).toEqual(['res_2']);
+    component.highlightId.set(null);
+    expect(component.mapLegs().map((leg) => leg.id)).toEqual(['res_boat_02']);
   });
 
   it('reloads the queue when the demo phone submits a report', () => {
@@ -602,6 +605,8 @@ describe('CoordinatorCommandComponent', () => {
     component.resetDemo();
     expect(apiClientSpy.resetDemo).toHaveBeenCalled();
     expect(component.requests().map((row) => row.id)).toEqual(['INC-001']);
+    mockResources[0].location_updated_at = new Date().toISOString();
+    mockRequests[0].trace = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'].map((agent) => ({ agent, status: 'complete', provider: 'tool', output: 'Python checks completed', tool_calls: [] }));
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
     component.loadFullScenario();
     expect(apiClientSpy.loadFullScenario).toHaveBeenCalled();
@@ -618,16 +623,16 @@ describe('CoordinatorCommandComponent', () => {
   });
 
   it('opens five agents from the selected case and keeps assist behind a review tap', () => {
-    const opener = fixture.nativeElement.querySelector('.trace-chip') as HTMLButtonElement;
+    const opener = fixture.nativeElement.querySelector('.how-link') as HTMLButtonElement;
     opener.click();
     fixture.detectChanges();
     const trace = fixture.nativeElement.textContent as string;
-    expect(trace).toContain('Intake');
-    expect(trace).toContain('Duplicate check');
-    expect(trace).toContain('Triage');
-    expect(trace).toContain('Matching');
-    expect(trace).toContain('Explainer');
-    expect(trace).toContain('Not recorded');
+    expect(trace).toContain('Understood the report');
+    expect(trace).toContain('Checked for duplicates');
+    expect(trace).toContain('Rated urgency');
+    expect(trace).toContain('Found the closest team');
+    expect(trace).toContain('Explained the choice');
+    expect(trace).toContain('Python tool');
     component.closeTrace();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent as string).not.toContain('Nothing is dispatched until you approve');

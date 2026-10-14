@@ -163,8 +163,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     } else {
       this.lastCenter = panIfMoved(this.map, this.lastCenter, this.center);
     }
-    const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []);
-    if (this.mode !== 'google' || (pinKey === this.lastPinKey && !this.highlightId)) {
+    const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []) + '#' + (this.highlightId || '');
+    if (this.mode !== 'google' || pinKey === this.lastPinKey) {
       return;
     }
     this.draw();
@@ -297,7 +297,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         });
         this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
       }
-      const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []);
+      const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []) + '#' + (this.highlightId || '');
       this.lastPinKey = pinKey;
       this.markers.forEach((marker) => marker.setMap?.(null));
       this.lines.forEach((line) => line.setMap?.(null));

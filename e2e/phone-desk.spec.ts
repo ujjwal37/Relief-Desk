@@ -16,8 +16,8 @@ async function shot(page: Page, name: string): Promise<void> {
 test('a phone report reaches the desk, merges, and comes back approved', async ({ browser }) => {
   fs.mkdirSync(SHOTS, { recursive: true });
   fs.mkdirSync('/opt/cursor/artifacts/videos', { recursive: true });
-  const tag = `kfer${Date.now().toString(36).replace(/[0-9]/g, 'x')}`;
-  const place = `Kainakary Ferry ${tag}`;
+  const tag = `Demo ${Date.now().toString().slice(-6)}`;
+  const place = `Kainakary Ferry Jetty (${tag})`;
   const context = await browser.newContext({
     viewport: { width: 1366, height: 768 },
     geolocation: { latitude: 9.416, longitude: 76.411 },

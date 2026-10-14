@@ -906,5 +906,36 @@
   },
   "map": {
     "loading": "Loading sector map…"
+  },
+  "photo": {
+    "add": "Add photo",
+    "title": "Photo observations",
+    "preview": "Selected synthetic photo",
+    "ephemeral": "The image is analysed only when you tap below. It is not stored. Only details you review can be added to your report.",
+    "synthetic": "This is a synthetic demo image",
+    "remove": "Remove photo",
+    "offline": "Connect to analyse the photo, or continue with text.",
+    "analyse": "Analyse with Gemini",
+    "analysing": "Analysing…",
+    "unverified": "AI photo suggestions · unverified",
+    "reviewed": "I checked these observations against the photo",
+    "use": "Use reviewed details",
+    "invalid": "Choose a PNG, JPEG or WebP photo up to 2 MB.",
+    "unavailable": "Photo analysis is unavailable. You can still describe the scene and send your report.",
+    "confirmedWords": "I reviewed these photo observations: {observations}.",
+    "reviewRequired": "Photo details were reviewed by the reporter; check them again before sending.",
+    "water": {
+      "none": "No visible water",
+      "ground": "Water on the ground",
+      "knee": "Water appears knee-high",
+      "waist": "Water appears waist-high",
+      "roof": "Water near roof level",
+      "unclear": "Water level unclear"
+    },
+    "damage": {
+      "visible": "Possible structural damage visible",
+      "not_visible": "No structural damage visible",
+      "unclear": "Structural damage unclear"
+    }
   }
 }

@@ -24,7 +24,7 @@
       }
       <p class="meta">
         @if (timeText()) { <span>{{ timeText() }}</span> }
-        <span class="badge">{{ badgeWord() }}</span>
+        <span class="badge" [class.model]="step().badge === 'gemini' || step().badge === 'cache'">{{ badgeWord() }}</span>
       </p>
     </div>
   </div>

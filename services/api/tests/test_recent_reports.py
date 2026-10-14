@@ -12,7 +12,8 @@ client = TestClient(app)
 AUTH = {"Authorization": "Bearer demo-coordinator-token"}
 
 
-def test_recent_reports_are_newest_first_and_skip_older_ones():
+def test_recent_reports_are_newest_first_and_skip_older_ones(monkeypatch):
+    monkeypatch.setattr(storage_service, "_reports", {})
     now = datetime.now(timezone.utc)
     older = StoredReport(
         id="rep_just_old",

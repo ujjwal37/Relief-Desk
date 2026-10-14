@@ -45,3 +45,5 @@
 .v-btns { display:flex; gap:12px; width:100%; max-width:380px; } .v-btns button { flex:1; min-height:56px; border-radius:var(--r3); font:600 18px var(--rd-font-family); cursor:pointer; border:0; }
 .v-sec { background:color-mix(in srgb, var(--on-brand) 16%, transparent); color:var(--on-brand); } .v-done { background:var(--on-brand); color:var(--brand); }
 @media (prefers-reduced-motion: reduce) { .orb, .wave i, .typing i { animation:none; } }
+
+.report-safety { flex: none; margin: 0; padding: 4px 12px; color: var(--text-2); background: var(--surface-2); font-size: 12px; line-height: 18px; }

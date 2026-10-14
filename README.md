@@ -73,7 +73,7 @@ ADK 2.11 warns that `SequentialAgent` and `ParallelAgent` are deprecated in favo
 | Recorded replay | `AI_MODE=replay` | `data/ai_cache`, `scripts/record_ai.py` | `fixture.json` lists the prompts with no replies. `make record-ai` writes transcripts only after a real call |
 | Health | none | `GET /api/health/ai` in `app/api/health.py` | Returns provider, model, cache hit rate, and quota. It does not return the key |
 
-Not built: Gemini Live voice, Search grounding, Malayalam, photo intake, Pub/Sub, BigQuery.
+Not built: Gemini Live voice, Search grounding, Malayalam live voice, Pub/Sub, BigQuery. Photo observations are implemented with explicit reporter review; images are not stored.
 
 ## Benchmark (synthetic, our own labels)
 
@@ -157,7 +157,7 @@ There is no live Cloud Run URL in this repo. `deploy/cloudrun.md` is the recipe:
 Angular, Ionic, Capacitor, FastAPI, `google-adk==2.11.0`, `google-genai==2.29.0`. Model id `gemini-3.8-flash` and embedding id `gemini-embedding-001` come from the Gemini docs (models page dated 2026-10-09, embeddings page dated June 2025) and are set in `services/api/app/config.py`. Built with help from AI coding tools (Antigravity, Cursor).
 
 ## Roadmap (not built)
-Hourly local-news watch, weather alerts, SMS/WhatsApp intake, offline sync, more Indian languages.
+Hourly local-news watch, weather alerts, SMS/WhatsApp intake, full multi-device offline sync, more Indian languages.
 
 ## License
 `<choose>`
@@ -171,3 +171,8 @@ Walkthrough upgrades: live language calls execute through `app/llm/adk_runtime.p
 In DEMO_MODE, the coordinator header's **Simulate 5 reports** submits five synthetic messages through normal intake, spaced two seconds apart. One run at a time, with a 30s cooldown; the endpoint requires coordinator auth and returns 403 outside demo mode. Progress uses SSE with a status-poll fallback. Actual merges/updates, score order and spike alerts are shown; no score or successful merge is scripted and no dispatch is approved automatically.
 
 The existing scenario menu can load the **Dog attack** pack even from the small demo. Its DOG-001 fixture contains a human-entered synthetic clinician referral requiring RIG stock. Routing profiles and facility stocks live in YAML; Python excludes unstocked facilities and rechecks/allocates stock atomically on human approval. Completing a case frees team capacity, but does not replenish allocated supplies. This is an inventory-routing demonstration, not clinical triage or a treatment/dose recommendation.
+
+
+Photo observations: `/report` accepts PNG/JPEG/WebP synthetic demo images up to 2 MB. **Analyse with Gemini** sends pixels and the report caption through the shared guards; metadata is stripped and the image is not retained. The schema allows only visible water/damage observations. The reporter must check them before adding details to the draft, then review and send as usual. A model outage leaves text/form/offline reporting available. No injury diagnosis or AI verification badge is produced.
+
+[Walkthrough coverage and verification](docs/reviews/walkthrough-improvements.md) · [Updated screenshots](docs/design/reviews/walkthrough-improvements/README.md).

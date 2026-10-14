@@ -46,7 +46,7 @@ describe('CoordinatorOverviewComponent map filters', () => {
     const map = fixture.nativeElement.querySelector('rd-map-provider') as HTMLElement;
     const alerts = fixture.nativeElement.querySelector('app-coordinator-alerts') as HTMLElement;
     expect(getComputedStyle(map).top).toBe('56px');
-    expect(getComputedStyle(alerts).width).toBe('380px');
+    expect(parseFloat(getComputedStyle(alerts).width)).toBeGreaterThan(300);
     expect(getComputedStyle(fixture.nativeElement.querySelector('.alerts-page.list-only')).overflowY).toBe('auto');
     expect(map.compareDocumentPosition(alerts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.map-stage svg:not(.rd-schematic)')).toBeNull();

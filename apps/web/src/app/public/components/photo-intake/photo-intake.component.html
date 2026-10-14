@@ -1,0 +1,18 @@
+<label class="attach"><span aria-hidden="true">📷</span> {{ 'photo.add' | rdTranslate }}
+  <input class="file" type="file" accept="image/jpeg,image/png,image/webp" (change)="selectFile($event)" [attr.aria-label]="'photo.add' | rdTranslate" />
+</label>
+@if (error()) { <p class="error" role="status">{{ error() | rdTranslate }}</p> }
+@if (preview()) {
+  <section class="photo-panel" [attr.aria-label]="'photo.title' | rdTranslate">
+    <div class="preview-row"><img [src]="preview()" [alt]="'photo.preview' | rdTranslate" /><div><h3>{{ 'photo.title' | rdTranslate }}</h3><p>{{ 'photo.ephemeral' | rdTranslate }}</p></div><button type="button" class="remove" (click)="clear()" [attr.aria-label]="'photo.remove' | rdTranslate">✕</button></div>
+    <label class="check"><input type="checkbox" [checked]="synthetic()" (change)="synthetic.set(!synthetic())" /> {{ 'photo.synthetic' | rdTranslate }}</label>
+    @if (!online()) { <p>{{ 'photo.offline' | rdTranslate }}</p> }
+    <button type="button" class="analyse" [disabled]="!synthetic() || busy() || !online()" (click)="analyse()">{{ (busy() ? 'photo.analysing' : 'photo.analyse') | rdTranslate }}</button>
+    @if (result()?.reading; as reading) {
+      <p class="chip">{{ 'photo.unverified' | rdTranslate }} · {{ result()?.ai?.provider === 'cache' ? ('flow.badgeCache' | rdTranslate) : ('flow.badgeGemini' | rdTranslate) }}</p>
+      <p>{{ readingText(reading) }}</p>
+      <label class="check"><input type="checkbox" [checked]="reviewed()" (change)="reviewed.set(!reviewed())" /> {{ 'photo.reviewed' | rdTranslate }}</label>
+      <button type="button" class="analyse" [disabled]="!reviewed()" (click)="accept()">{{ 'photo.use' | rdTranslate }}</button>
+    }
+  </section>
+}

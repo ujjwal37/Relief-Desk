@@ -75,6 +75,7 @@
       </div>
     </header>
 
+    <p class="safety-note" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
     @if (mergeNotice()) { <p class="surge-note" role="status">{{ mergeNotice() }}</p> }
     @if (surgeNotice()) { <p class="surge-note" role="status">{{ surgeNotice() }}</p> }
     @if (guideOpen()) {

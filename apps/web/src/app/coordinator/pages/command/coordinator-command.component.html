@@ -120,7 +120,7 @@
             @for (leg of focusLegs(); track leg.id) {
               <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#047857' : '#6b7280'" [attr.stroke-width]="leg.suggested ? (highlightId() === leg.id ? 6 : 4) : (highlightId() === leg.id ? 5 : 2)" stroke-linecap="round"/>
               <rect [attr.x]="leg.lx - (leg.label.length * 3.2 + 10)" [attr.y]="leg.ly - 15" [attr.width]="leg.label.length * 6.4 + 20" height="23" rx="11.5" fill="#0f172a" opacity=".88"/>
-              <text class="leg" style="fill: white" [class.on]="leg.suggested" [attr.x]="leg.lx" [attr.y]="leg.ly" text-anchor="middle">{{ leg.label }}</text>
+              <text class="leg" [class.on]="leg.suggested" [attr.x]="leg.lx" [attr.y]="leg.ly" text-anchor="middle">{{ leg.label }}</text>
             }
             @if (movementTrail()) {
               <polyline [attr.points]="movementTrail()" fill="none" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -193,7 +193,7 @@
             <div class="send-card skel"><p class="facts">{{ 'coord.findingTeam' | rdTranslate }}</p></div>
           } @else if (activeProposal(); as prop) {
             <section class="recommendation-summary">
-              <p class="recommendation-label">{{ 'uiRef.recommendation' | rdTranslate }} <span class="ai-src">{{ aiSourceText(req) }}</span></p>
+              <p class="recommendation-label">{{ 'uiRef.recommendation' | rdTranslate }} <span class="ai-src">{{ 'flow.badgeTool' | rdTranslate }}</span></p>
               <p class="recommendation-reason">{{ prop.explanation || whyLine(prop) }}</p>
               <div class="recommendation-stats">
                 <div><span>{{ 'ui.urgency' | rdTranslate }}</span><b>{{ Math.round(req.urgency_score) }}/100</b></div>

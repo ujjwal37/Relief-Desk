@@ -88,3 +88,18 @@ def test_second_transient_error_falls_back(live, monkeypatch):
     llm_client.generate_content("s", f"ZXDOWN{uuid.uuid4().hex}")
     assert calls["n"] == 2
     assert llm_client.last_ai.provider == "fallback"
+
+
+def test_transient_and_validation_repairs_share_two_retry_limit(live, monkeypatch):
+    import json
+    called = []
+    def mixed(system, user, timeout_s=None):
+        called.append(True)
+        if len(called) in (1, 3):
+            raise _Err(503, "UNAVAILABLE")
+        return "invalid JSON"
+    monkeypatch.setattr(llm_client, '_call_gemini', mixed)
+    llm_client.generate_content('JSON only', f'ZXMIXED{uuid.uuid4().hex}', validator=json.loads, max_retries=2)
+    assert len(called) == 3
+    assert llm_client.last_ai.provider == 'fallback'
+    assert llm_client.last_ai.fallback_reason == 'retry_limit'

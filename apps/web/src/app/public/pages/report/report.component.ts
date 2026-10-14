@@ -19,6 +19,7 @@ import {
   canonicalRequestJson,
 } from '@rd/shared';
 
+import { PhotoIntakeComponent } from '../../components/photo-intake/photo-intake.component';
 import { announceReport } from '../../../core/live-report';
 import { MyRequestsService } from '../../../core/services/my-requests.service';
 import { OfflineSyncService } from '../../../core/services/offline-sync.service';
@@ -59,7 +60,7 @@ interface SpeechRec {
 @Component({
   selector: 'app-report',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RdTranslatePipe, ConfirmationCardComponent, CallPillComponent, SettingsButtonComponent],
+  imports: [CommonModule, FormsModule, RouterLink, RdTranslatePipe, ConfirmationCardComponent, CallPillComponent, SettingsButtonComponent, PhotoIntakeComponent],
   templateUrl: './report.component.html',
   styleUrl: './report.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,6 +81,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly transcript = signal<string>('');
   readonly slow = signal<boolean>(false);
   readonly reviewOpen = signal<boolean>(false);
+  readonly photoUsed = signal(false);
   readonly kbOffset = signal<number>(0);
   private slowTimer: ReturnType<typeof setTimeout> | null = null;
   private voiceTimers: ReturnType<typeof setTimeout>[] = [];
@@ -403,6 +405,13 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  usePhotoObservation(text: string): void {
+    this.userInput.set([this.userInput().trim(), text].filter(Boolean).join('\n'));
+    this.pendingCard.set(null);
+    this.reviewOpen.set(false);
+    this.photoUsed.set(true);
+  }
+
   sendUserMessage(): void {
     const text = this.userInput().trim();
     if (!text || this.isLoading()) {
@@ -491,7 +500,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       summary: card.summary,
     };
 
-    const words = this.citizenWords() || card.summary;
+    const words = [this.citizenWords(), this.photoUsed() ? this.userInput().trim() : ''].filter(Boolean).join('\n') || card.summary;
     const payload: ReportSubmitRequest = {
       text: words,
       raw_text: words,

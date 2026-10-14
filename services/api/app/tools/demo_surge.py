@@ -6,6 +6,7 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass, field
+from typing import Callable
 
 from app.agents.pipeline import spawn
 from app.tools.events import publish
@@ -33,7 +34,7 @@ def snapshot() -> dict:
                 "failed": _state.failed, "total": 5}
 
 
-def start_surge(actor: str) -> dict:
+def start_surge(actor: str, submit: Callable) -> dict:
     global _state
     with _lock:
         if _state.running:
@@ -44,7 +45,7 @@ def start_surge(actor: str) -> dict:
         run_id = _state.run_id
     accepted = snapshot()
     try:
-        spawn(lambda: _run(run_id, actor))
+        spawn(lambda: _run(run_id, actor, submit))
     except Exception:
         with _lock:
             _state.running = False
@@ -52,8 +53,7 @@ def start_surge(actor: str) -> dict:
     return accepted
 
 
-def _run(run_id: str, actor: str) -> None:
-    from app.api.reports import ReportSubmitRequest, submit_report
+def _run(run_id: str, actor: str, submit: Callable) -> None:
     from app.tools.storage import storage_service
 
     # Fictional people/streets. The first pair shares one precise synthetic rooftop.
@@ -70,12 +70,12 @@ def _run(run_id: str, actor: str) -> None:
             if index:
                 time.sleep(2)
             try:
-                result = submit_report(ReportSubmitRequest(
-                    text=text, raw_text=text, lang=lang, source_id=f"surge-{run_id}-{index}",
-                    idempotency_key=f"surge-{run_id}-{index}", location_pin={"lat": lat, "lng": lng},
-                    structured={"incident_type": kind, "place_text": place, "people_count": people,
-                                "vulnerable": vuln, "hazard": "water_rising" if index < 3 else "none"},
-                ))
+                result = submit({
+                    "text": text, "raw_text": text, "lang": lang, "source_id": f"surge-{run_id}-{index}",
+                    "idempotency_key": f"surge-{run_id}-{index}", "location_pin": {"lat": lat, "lng": lng},
+                    "structured": {"incident_type": kind, "place_text": place, "people_count": people,
+                                   "vulnerable": vuln, "hazard": "water_rising" if index < 3 else "none"},
+                })
                 with _lock:
                     _state.submitted += 1
                     _state.report_ids.append(result.report_id)

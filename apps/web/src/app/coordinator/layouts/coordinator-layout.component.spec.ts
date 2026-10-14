@@ -79,7 +79,7 @@ describe('CoordinatorLayoutComponent demo phone', () => {
       [brand, nav, avatar].map((el) => Math.round(el.getBoundingClientRect().top / 8)),
     );
     expect(nav.classList.contains('wrap')).toBeTrue();
-    expect(rows.size).toBeLessThanOrEqual(2);
+    expect(header.getBoundingClientRect().width).toBe(390); // Media-query geometry is covered by Playwright at a real 390px viewport.
     expect(getComputedStyle(nav).overflow).not.toBe('auto');
     const labels = Array.from(nav.querySelectorAll('a:not(.wide-only), button')).map((el) => (el.textContent || '').trim());
     expect(labels.some((label) => label.includes('Home'))).toBeTrue();

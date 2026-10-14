@@ -83,6 +83,22 @@ describe('ReportComponent confirmation gate', () => {
     fixture.detectChanges();
   });
 
+  it('keeps reviewed photo observations in the draft until the user sends', () => {
+    fixture.componentInstance.usePhotoObservation('Reporter-reviewed water at waist level');
+    expect(fixture.componentInstance.userInput()).toContain('water at waist level');
+    expect(api.sendChatTurn).not.toHaveBeenCalled();
+    expect(api.submitReport).not.toHaveBeenCalled();
+  });
+
+  it('preserves reviewed photo draft words when switching to the form', () => {
+    fixture.componentInstance.usePhotoObservation('Reporter-reviewed water at waist level');
+    fixture.componentInstance.openForm();
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.confirmAndSubmit(fixture.componentInstance.pendingCard()!);
+    expect(api.submitReport.calls.mostRecent().args[0].raw_text).toContain('Reporter-reviewed water at waist level');
+  });
+
   it('does not call submitReport until the shared card Send now is tapped', () => {
     fixture.componentInstance.setQuickChip('Gandhi school ke paas 5 log');
     fixture.detectChanges();

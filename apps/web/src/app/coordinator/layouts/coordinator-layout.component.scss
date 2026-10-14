@@ -72,3 +72,6 @@ h3 { margin:12px 0 6px; font-size:13px; font-weight: 600; color:var(--text-2); t
 .surge-button:disabled { opacity: .6; cursor: wait; }
 .surge-note { margin: 0; padding: 8px 20px; color: var(--brand); background: var(--brand-tint); font-size: 13px; }
 @media (max-width: 900px) { .surge-button { font-size: 11px; max-width: 118px; white-space: normal; } }
+
+.safety-note { flex: none; margin: 0; padding: 4px 16px; background: var(--surface-2); font-size: 12px; line-height: 18px; }
+.safety-note a { color: var(--text-2); text-decoration: none; }

@@ -906,5 +906,36 @@
   },
   "map": {
     "loading": "Sector map load ho raha hai…"
+  },
+  "photo": {
+    "add": "Photo jodein",
+    "title": "Photo se mile observations",
+    "preview": "Chuni hui synthetic photo",
+    "ephemeral": "Neeche tap karne par image analyse hogi. Image save nahi hoti. Sirf aapke review kiye details report mein judenge.",
+    "synthetic": "Yeh synthetic demo image hai",
+    "remove": "Photo hatayein",
+    "offline": "Photo analyse karne ke liye connect karein, ya text se jaari rakhein.",
+    "analyse": "Gemini se analyse karein",
+    "analysing": "Analysis jaari hai…",
+    "unverified": "AI photo suggestions · verify nahi hue",
+    "reviewed": "Maine observations ko photo se milakar check kiya",
+    "use": "Reviewed details use karein",
+    "invalid": "2 MB tak PNG, JPEG ya WebP photo chunein.",
+    "unavailable": "Photo analysis available nahi. Aap scene likhkar report bhej sakte hain.",
+    "confirmedWords": "Maine yeh photo observations review kiye: {observations}.",
+    "reviewRequired": "Photo details reporter ne review kiye; bhejne se pehle dobara check karein.",
+    "water": {
+      "none": "Paani nahi dikh raha",
+      "ground": "Zameen par paani",
+      "knee": "Paani ghutnon tak lag raha",
+      "waist": "Paani kamar tak lag raha",
+      "roof": "Paani chhat ke paas",
+      "unclear": "Paani ka level clear nahi"
+    },
+    "damage": {
+      "visible": "Structure ka possible damage dikh raha",
+      "not_visible": "Structure ka damage nahi dikh raha",
+      "unclear": "Structure ka damage clear nahi"
+    }
   }
 }

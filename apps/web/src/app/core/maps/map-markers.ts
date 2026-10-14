@@ -27,10 +27,10 @@ const ON_CASE = new Set(['busy', 'dispatched', 'en_route', 'on_scene']);
 export const CHECKIN_LATE_MIN = 120;
 
 export function teamTone(
-  team: { assigned_request_id?: string | null; status?: string; location_updated_at?: string | null },
+  team: { assigned_request_id?: string | null; status?: string; capacity_remaining?: number; location_updated_at?: string | null },
   now = Date.now(),
 ): 'free' | 'busy' | 'stale' {
-  if (team.assigned_request_id || (team.status != null && ON_CASE.has(team.status))) return 'busy';
+  if (team.assigned_request_id || team.status === 'depleted' || (team.capacity_remaining != null && team.capacity_remaining <= 0) || (team.status != null && ON_CASE.has(team.status))) return 'busy';
   const stamp = team.location_updated_at || '';
   if (!stamp) return 'stale';
   const minutes = Math.round((now - new Date(stamp).getTime()) / 60000);

@@ -360,3 +360,23 @@ export interface ReportStatusResponse {
   synthetic: boolean;
 }
 
+
+export interface PhotoReading {
+  water_level: 'none' | 'ground' | 'knee' | 'waist' | 'roof' | 'unclear';
+  structural_damage: 'visible' | 'not_visible' | 'unclear';
+  confidence: number;
+}
+
+export interface PhotoAnalysis {
+  reading: PhotoReading | null;
+  ai: { provider: string; model?: string | null; latency_ms?: number; fallback_reason?: string | null };
+  needs_human_review: true;
+  image_stored: false;
+}
+
+export interface PhotoInput {
+  image_base64: string;
+  mime_type: 'image/jpeg' | 'image/png' | 'image/webp';
+  caption: string;
+  synthetic: true;
+}

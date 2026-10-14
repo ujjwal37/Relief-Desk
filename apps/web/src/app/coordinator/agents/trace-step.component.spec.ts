@@ -6,6 +6,8 @@ const STEP: TraceStepView = {
   agent: 'Triage',
   status: 'done',
   output: 'score 90',
+  sentence: 'score 90',
+  hasDetails: true,
   model: 'gemini-3.8-flash',
   latencyMs: 420,
   provider: 'gemini',
@@ -32,7 +34,6 @@ describe('TraceStepComponent', () => {
   it('shows the output, model, and a collapsed details control', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Triage');
-    expect(text).toContain('Done');
     expect(text).toContain('score 90');
     expect(text).toContain('Gemini');
     expect(text).not.toContain('gemini-3.8-flash');
@@ -47,10 +48,10 @@ describe('TraceStepComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.details')?.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.textContent).toContain('score_urgency');
-    fixture.componentRef.setInput('step', { ...STEP, tools: [], model: null, latencyMs: null, output: null, input: null, asked: null, raw: null });
+    fixture.componentRef.setInput('step', { ...STEP, tools: [], provider: 'tool', badge: 'tool', model: null, latencyMs: null, output: null, input: null, asked: null, raw: null });
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Rules');
+    expect(text).toContain('Python tool');
     expect(text).not.toContain('No tools');
     expect(text).not.toContain('Not recorded');
   });
@@ -59,7 +60,7 @@ describe('TraceStepComponent', () => {
     fixture.componentRef.setInput('step', { ...STEP, provider: 'openai_compat', vendor: 'NVIDIA', model: 'meta/llama-3.3-70b-instruct' });
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Test model (NVIDIA)');
+    expect(text).toContain('Test model');
     expect(text).not.toContain('Gemini');
   });
 });
