@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -6,6 +7,82 @@ from app.models.firestore_models import StoredCluster, StoredRequest
 from app.api.auth import get_current_coordinator, CoordinatorUser
 
 router = APIRouter(prefix="/api", tags=["Requests & Clusters"])
+
+
+def _parse_stamp(value: Optional[str]) -> Optional[datetime]:
+    """Accept ISO timestamps, a trailing Z, and a '+' that the query string turned into a space."""
+    if not value or not str(value).strip():
+        return None
+    text = str(value).strip().replace("Z", "+00:00")
+    if " " in text and "+" not in text:
+        text = text.replace(" ", "+", 1)
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _changed_since(req, updated_since: Optional[str]) -> bool:
+    """A new report stays visible when a query string turns '+' into a space, or one stamp uses Z."""
+    if not updated_since:
+        return True
+    raw = req.updated_at or req.created_at or ""
+    mark = _parse_stamp(updated_since)
+    if mark is None:
+        return raw >= updated_since
+    got = _parse_stamp(raw)
+    if got is None:
+        return raw >= updated_since
+    return got >= mark
+
+
+class RecentReportItem(BaseModel):
+    id: str
+    case_id: str
+    type: str
+    summary: str
+    ward_id: Optional[str] = None
+    place_text: Optional[str] = None
+    created_at: str
+    joined_existing: bool = False
+
+
+@router.get("/recent-reports", response_model=List[RecentReportItem], summary="Reports from the last few minutes")
+def recent_reports(
+    minutes: int = 15,
+    _coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
+    """Newest first. A merge still points at the case already in the queue."""
+    window = max(1, min(int(minutes or 15), 120))
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=window)
+    rows: List[RecentReportItem] = []
+    for report in storage_service.list_reports():
+        stamp = _parse_stamp(report.created_at)
+        if stamp is None or stamp < cutoff:
+            continue
+        case_id = report.case_id or report.request_id
+        if not case_id:
+            continue
+        summary = (report.summary or report.raw_text or "").strip().replace("\n", " ")
+        if len(summary) > 80:
+            summary = summary[:77].rstrip() + "…"
+        rows.append(
+            RecentReportItem(
+                id=report.id,
+                case_id=case_id,
+                type=report.incident_type or "other",
+                summary=summary,
+                ward_id=report.ward_id,
+                place_text=report.place_text,
+                created_at=report.created_at,
+                joined_existing=bool(report.joined_existing),
+            )
+        )
+    rows.sort(key=lambda row: row.created_at, reverse=True)
+    return rows[:20]
 
 
 class MergeRequestPayload(BaseModel):
@@ -49,11 +126,21 @@ def merge_requests(
             detail=f"Secondary request '{payload.secondary_request_id}' not found"
         )
 
-    cluster = storage_service.create_cluster(
-        request_ids=[request_id, payload.secondary_request_id],
-        evidence=payload.evidence or ["Manual coordinator merge"],
-        merged_by=payload.merged_by or coordinator.email,
-    )
+    from app.tools.case_merge import fold_case
+
+    try:
+        fold_case(
+            request_id,
+            payload.secondary_request_id,
+            evidence=payload.evidence or ["Manual coordinator merge"],
+            merged_by=payload.merged_by or coordinator.email,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    req_primary = storage_service.get_request(request_id)
+    cluster = storage_service.get_cluster(req_primary.cluster_id) if req_primary and req_primary.cluster_id else None
+    if cluster is None:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Merge did not record a cluster")
 
     return MergeResultResponse(
         cluster_id=cluster.id,
@@ -62,6 +149,24 @@ def merge_requests(
         evidence=cluster.evidence,
         merged_by=cluster.merged_by
     )
+
+
+@router.post("/requests/{request_id}/keep-separate")
+def keep_request_separate(
+    request_id: str,
+    coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
+    """The coordinator looked at a possible duplicate and wants it to stay its own case."""
+    req = storage_service.get_request(request_id)
+    if req is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Request '{request_id}' not found")
+    req.possible_duplicate = None
+    req.dedupe_trace = "Kept separate."
+    for step in req.trace or []:
+        if step.get("agent") == "Dedupe":
+            step["output"] = "Kept separate."
+    storage_service.save_request(req, actor=coordinator.email or "coordinator")
+    return {"id": req.id, "possible_duplicate": None, "dedupe_trace": req.dedupe_trace}
 
 
 @router.post("/requests/{request_id}/split", response_model=SplitResultResponse)
@@ -139,23 +244,38 @@ def case_merge(
     if req is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Case '{case_id}' not found")
     cluster = storage_service.get_cluster(req.cluster_id) if req.cluster_id else None
-    ids = list(cluster.request_ids) if cluster and cluster.request_ids else [req.id]
     reports = []
-    for rid in ids:
-        member = storage_service.get_request(rid)
-        linked = next((row for row in storage_service.list_reports() if row.request_id == rid), None)
-        reports.append({
-            "id": rid,
-            "text": (member.raw_text if member else None) or (linked.raw_text if linked else None),
-            "at": member.created_at if member else (linked.created_at if linked else None),
-            "channel": linked.channel if linked else None,
-            "lang": linked.lang if linked else None,
-        })
+    if req.report_quotes:
+        for quote in req.report_quotes:
+            linked = storage_service.get_report(quote.report_id)
+            reports.append({
+                "id": quote.report_id,
+                "text": quote.text,
+                "at": linked.created_at if linked else req.created_at,
+                "channel": linked.channel if linked else None,
+                "lang": linked.lang if linked else None,
+            })
+    else:
+        ids = list(cluster.request_ids) if cluster and cluster.request_ids else [req.id]
+        for rid in ids:
+            member = storage_service.get_request(rid)
+            linked = next((row for row in storage_service.list_reports() if row.request_id == rid), None)
+            reports.append({
+                "id": rid,
+                "text": (member.raw_text if member else None) or (linked.raw_text if linked else None),
+                "at": member.created_at if member else (linked.created_at if linked else None),
+                "channel": linked.channel if linked else None,
+                "lang": linked.lang if linked else None,
+            })
     why = None
     for step in req.trace or []:
         if step.get("agent") == "Dedupe" and step.get("output"):
             why = step.get("output")
             break
+    if req.dedupe_trace:
+        why = req.dedupe_trace
+    if req.count_note and (not why or req.count_note not in why):
+        why = f"{why}. {req.count_note}" if why else req.count_note
     if why is None and cluster and cluster.evidence:
         why = " ".join(cluster.evidence)
     return {
@@ -195,12 +315,13 @@ def list_requests(
             req.wait_points = result.breakdown.get("wait_points")
             req.wait_minutes = int(result.breakdown.get("wait_minutes") or 0)
         score_changed = req.urgency_score != before
-        if not updated_since or (req.updated_at or "") >= updated_since or score_changed:
+        if _changed_since(req, updated_since) or score_changed:
             refreshed.append(req)
 
     if sort == "urgency":
         refreshed = sorted(refreshed, key=lambda r: r.urgency_score, reverse=True)
-    return refreshed
+    # A merge can land while this list is being built. Drop the copy that joined another case.
+    return [req for req in refreshed if not req.merged_into]
 
 
 @router.get("/requests/{id}", response_model=StoredRequest, summary="Get single request detail")

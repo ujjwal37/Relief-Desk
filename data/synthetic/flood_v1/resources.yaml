@@ -1,4 +1,5 @@
 # Synthetic teams for the Kerala flood scenario. People and team names are fictional.
+# The demo pack sits in the Kuttanad / Alappuzha cluster, within 15 km of Kainakary.
 version: 1.0.0
 scenario_pack: flood
 event_id: event_kerala_flood
@@ -19,9 +20,9 @@ resources:
   name: Ernakulam Rescue Boat
   name_hi: एर्नाकुलम बचाव नाव
   kind: boat
-  ward_id: ward_4
-  lat: 10.08
-  lng: 76.45
+  ward_id: ward_2
+  lat: 9.455
+  lng: 76.36
   capacity_total: 10
   capacity_remaining: 10
   status: available
@@ -31,9 +32,9 @@ resources:
   name: Thrissur Flood Raft
   name_hi: त्रिशूर बाढ़ राफ्ट
   kind: boat
-  ward_id: ward_8
-  lat: 10.34
-  lng: 76.24
+  ward_id: ward_1
+  lat: 9.49
+  lng: 76.37
   capacity_total: 6
   capacity_remaining: 6
   status: available
@@ -43,9 +44,9 @@ resources:
   name: Heavy Duty Evacuation Boat
   name_hi: भारी निकासी नाव
   kind: boat
-  ward_id: ward_12
-  lat: 11.608
-  lng: 76.082
+  ward_id: ward_3
+  lat: 9.445
+  lng: 76.415
   capacity_total: 20
   capacity_remaining: 20
   status: available
@@ -55,9 +56,9 @@ resources:
   name: Meppadi Government High School Relief Camp
   name_hi: मॉडल टाउन राजकीय उच्च विद्यालय राहत शिविर
   kind: shelter
-  ward_id: ward_10
-  lat: 11.557
-  lng: 76.14
+  ward_id: ward_1
+  lat: 9.505
+  lng: 76.4
   capacity_total: 150
   capacity_remaining: 150
   status: available
@@ -79,9 +80,9 @@ resources:
   name: Kothamangalam Indoor Sports Complex Relief Shelter
   name_hi: सिविल लाइन्स इंडोर स्पोर्ट्स कॉम्प्लेक्स आश्रय स्थल
   kind: shelter
-  ward_id: ward_6
-  lat: 10.065
-  lng: 76.628
+  ward_id: ward_2
+  lat: 9.46
+  lng: 76.355
   capacity_total: 250
   capacity_remaining: 250
   status: available
@@ -91,9 +92,9 @@ resources:
   name: Taluk Hospital Kothamangalam
   name_hi: तालुक अस्पताल कोथमंगलम
   kind: medical
-  ward_id: ward_6
-  lat: 10.069
-  lng: 76.632
+  ward_id: ward_1
+  lat: 9.485
+  lng: 76.41
   capacity_total: 45
   capacity_remaining: 45
   status: available
@@ -115,9 +116,9 @@ resources:
   name: Mala Relief Clinic
   name_hi: माला राहत चिकित्सालय
   kind: medical
-  ward_id: ward_8
-  lat: 10.34
-  lng: 76.24
+  ward_id: ward_3
+  lat: 9.44
+  lng: 76.37
   capacity_total: 25
   capacity_remaining: 25
   status: available
@@ -127,9 +128,9 @@ resources:
   name: Varapuzha Relief Clinic
   name_hi: वराप्पुषा राहत चिकित्सालय
   kind: medical
-  ward_id: ward_5
-  lat: 10.081
-  lng: 76.272
+  ward_id: ward_2
+  lat: 9.512
+  lng: 76.355
   capacity_total: 12
   capacity_remaining: 12
   status: available
@@ -139,8 +140,8 @@ resources:
   name: Aluva Central Ration & Food Packet Hub
   name_hi: आलुवा केंद्रीय राशन व खाद्य पैकेट हब
   kind: food
-  ward_id: ward_4
-  lat: 10.09
+  ward_id: ward_3
+  lat: 9.468
   lng: 76.42
   capacity_total: 500
   capacity_remaining: 500
@@ -151,9 +152,9 @@ resources:
   name: Thrissur Community Kitchen
   name_hi: त्रिशूर सामुदायिक रसोई
   kind: food
-  ward_id: ward_8
-  lat: 10.34
-  lng: 76.24
+  ward_id: ward_1
+  lat: 9.5
+  lng: 76.365
   capacity_total: 300
   capacity_remaining: 300
   status: available
@@ -165,7 +166,7 @@ resources:
   kind: food
   ward_id: ward_3
   lat: 9.44
-  lng: 76.40
+  lng: 76.4
   capacity_total: 400
   capacity_remaining: 400
   status: available
@@ -175,9 +176,9 @@ resources:
   name: Kalpetta Community Kitchen
   name_hi: कल्पेट्टा सामुदायिक रसोई
   kind: food
-  ward_id: ward_12
-  lat: 11.57
-  lng: 76.09
+  ward_id: ward_2
+  lat: 9.452
+  lng: 76.385
   capacity_total: 250
   capacity_remaining: 250
   status: available
@@ -187,9 +188,9 @@ resources:
   name: Vythiri Relief Clinic
   name_hi: व्यथिरी राहत चिकित्सालय
   kind: medical
-  ward_id: ward_11
-  lat: 11.57
-  lng: 76.09
+  ward_id: ward_1
+  lat: 9.492
+  lng: 76.385
   capacity_total: 16
   capacity_remaining: 16
   status: available

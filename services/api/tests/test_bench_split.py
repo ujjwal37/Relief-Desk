@@ -23,7 +23,8 @@ def test_corpus_has_at_least_300_labelled_reports_and_a_frozen_test():
     assert len(messages) >= 300
     assert {row["id"] for row in messages} == {row["message_id"] for row in labels}
     langs = {row["lang"] for row in messages}
-    assert {"en", "hi", "hinglish", "ta"} <= langs
+    assert {"en", "hi", "hinglish"} <= langs
+    assert "ta" not in langs
     meta = load_split(DATA)
     assert meta["seed"] == 42
     assert meta["test_ids"][0] == "MSG-0073"

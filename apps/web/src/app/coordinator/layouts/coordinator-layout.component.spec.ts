@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { ApiClientService } from '@rd/shared';
 import { CoordinatorLayoutComponent } from './coordinator-layout.component';
@@ -38,6 +38,18 @@ describe('CoordinatorLayoutComponent demo phone', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
+  it('shows the three steps once, then stays dismissed', async () => {
+    localStorage.removeItem('rd_guide_dismissed');
+    localStorage.removeItem('rd_tour_done');
+    const fixture = await setup(null, true);
+    expect(fixture.nativeElement.textContent).toContain('1 A report arrives');
+    (fixture.nativeElement.querySelector('.guide button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.guide')).toBeNull();
+    expect(localStorage.getItem('rd_guide_dismissed')).toBe('1');
+    localStorage.setItem('rd_tour_done', '1');
+  });
+
   it('shows a 390px phone frame beside the coordinator when ?demo=1 on a wide screen', async () => {
     const fixture = await setup('1', true);
     const frame = fixture.nativeElement.querySelector('.demo-phone') as HTMLElement;
@@ -69,12 +81,35 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     expect(nav.classList.contains('wrap')).toBeTrue();
     expect(rows.size).toBeLessThanOrEqual(2);
     expect(getComputedStyle(nav).overflow).not.toBe('auto');
-    const accuracy = Array.from(nav.querySelectorAll('a')).find((link) =>
-      (link.textContent || '').includes('Accuracy report'),
+    const labels = Array.from(nav.querySelectorAll('a, button')).map((el) => (el.textContent || '').trim());
+    expect(labels.some((label) => label.includes('Home'))).toBeTrue();
+    expect(labels.some((label) => label.includes('Cases'))).toBeTrue();
+    expect(labels.some((label) => label.includes('Agent'))).toBeTrue();
+    expect(labels.join(' ')).not.toContain('Overview');
+    expect(labels.join(' ')).not.toContain('Accuracy report');
+    (fixture.nativeElement.querySelector('.avatar') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const accuracy = Array.from(fixture.nativeElement.querySelectorAll('.menu a')).find((link) =>
+      ((link as HTMLElement).textContent || '').includes('Accuracy report'),
     ) as HTMLElement;
     expect(accuracy).toBeTruthy();
-    expect(accuracy.offsetWidth).toBeGreaterThan(0);
-    expect(accuracy.getBoundingClientRect().right).toBeLessThanOrEqual(header.getBoundingClientRect().right + 1);
+    const overview = Array.from(fixture.nativeElement.querySelectorAll('.menu a')).find((link) =>
+      ((link as HTMLElement).textContent || '').includes('Overview'),
+    ) as HTMLElement;
+    expect(overview).toBeTruthy();
+  });
+
+  it('opens Home when the top search box is used from another tab', async () => {
+    const fixture = await setup(null, true);
+    const router = TestBed.inject(Router);
+    spyOnProperty(router, 'url', 'get').and.returnValue('/coordinator/teams');
+    const nav = spyOn(router, 'navigateByUrl').and.resolveTo(true);
+    const input = fixture.nativeElement.querySelector('#coord-search') as HTMLInputElement;
+    input.value = 'Chalakudy';
+    input.dispatchEvent(new Event('input'));
+    expect(fixture.componentInstance.ui.searchQuery()).toBe('Chalakudy');
+    expect(nav).toHaveBeenCalledWith('/coordinator/command');
+    fixture.componentInstance.ui.searchQuery.set('');
   });
 
   it('hides the phone frame when demo mode is off', async () => {

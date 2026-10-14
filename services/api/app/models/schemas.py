@@ -5,7 +5,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class AiCall(BaseModel):
-    """One model attempt. provider is gemini, cache, or fallback."""
+    """One model attempt. provider is gemini, cache, fallback, or a test provider
+    (antigravity-local, openai_compat) that is never shown as Gemini."""
 
     provider: str = "fallback"
     model: Optional[str] = None
@@ -15,12 +16,14 @@ class AiCall(BaseModel):
     fallback_reason: Optional[str] = None
 
     def badge(self) -> str:
+        if self.provider == "openai_compat":
+            return "test"
+        if self.provider == "antigravity-local":
+            return "local"
         if self.provider == "cache" or self.cached:
             return "recorded"
         if self.provider == "gemini":
             return "gemini"
-        if self.provider == "antigravity-local":
-            return "local"
         return "offline"
 
 
@@ -53,7 +56,7 @@ class SupportedLanguage(str, Enum):
     HI = "hi"
     HINGLISH = "hinglish"
     EN = "en"
-    TA = "ta"
+    ML = "ml"
 
 
 class DedupeDecisionType(str, Enum):
@@ -132,6 +135,11 @@ class DedupeDecision(BaseModel):
     changed_fields: Dict[str, Any] = Field(default_factory=dict, description="Changed fields if decision is update")
     evidence: List[str] = Field(default_factory=list, description="List of concrete evidence reasons")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    similarity: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    distance_km: Optional[float] = None
+    minutes_apart: Optional[float] = None
+    # True when the pair is close but under the auto-merge threshold. The case stays separate.
+    review: bool = False
 
     @model_validator(mode="after")
     def validate_decision_rules(self) -> DedupeDecision:

@@ -102,6 +102,24 @@ describe('CoordinatorAlertsComponent', () => {
     expect(title).toBe('Sample: Resource gap');
   });
 
+  it('View on map focuses that ward, including the row that is already selected', () => {
+    expect(fixture.componentInstance.selectedId()).toBe('spike-ward-7');
+    const button = fixture.nativeElement.querySelector('button.secondary') as HTMLButtonElement;
+    expect(button.textContent).toContain('View on map');
+    button.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.focusNonce()).toBe(1);
+    expect(fixture.componentInstance.center().lat).toBeCloseTo(10.308, 3);
+    expect(fixture.componentInstance.center().lng).toBeCloseTo(76.331, 3);
+    const buttons = fixture.nativeElement.querySelectorAll('button.secondary');
+    (buttons[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.selectedId()).toBe('silent-ward-5');
+    expect(fixture.componentInstance.center().lat).toBeCloseTo(10.078, 3);
+    expect(fixture.componentInstance.center().lng).toBeCloseTo(76.268, 3);
+    expect(fixture.componentInstance.transform()).toContain('scale(1.35)');
+  });
+
   it('shows the seeded spike and silent zone with their reasons', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Report spike');

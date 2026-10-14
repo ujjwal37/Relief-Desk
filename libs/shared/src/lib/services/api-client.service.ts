@@ -8,6 +8,7 @@ import {
   ChatTurnResponse,
   UrgencyWeights,
   DedupeDecision,
+  RecentReport,
   StoredRequest,
   StoredResource,
   MatchProposal,
@@ -89,6 +90,10 @@ export class ApiClientService {
     );
   }
 
+  keepSeparate(requestId: string): Observable<any> {
+    return this.http.post<any>(`/api/requests/${requestId}/keep-separate`, {}, this.getAuthHeaders());
+  }
+
   splitCluster(requestId: string): Observable<any> {
     return this.http.post<any>(`/api/requests/${requestId}/split`, {}, this.getAuthHeaders());
   }
@@ -101,9 +106,14 @@ export class ApiClientService {
     return this.http.get<any>(`/api/cases/${requestId}/merge`, this.getAuthHeaders());
   }
 
-  /** Reload the synthetic demo cases. The API allows it in demo mode or for the demo coordinator. */
+  /** Reload the two-case demo. The API allows it in demo mode or for the demo coordinator. */
   resetDemo(): Observable<any> {
     return this.http.post<any>('/api/demo/reset', {}, this.getAuthHeaders());
+  }
+
+  /** Load every synthetic flood case. Reset returns to the two-case demo. */
+  loadFullScenario(): Observable<any> {
+    return this.http.post<any>('/api/demo/full', {}, this.getAuthHeaders());
   }
 
   /** Ask the desk. Read-only search over cases; Gemini picks the filters, rules if it cannot. */
@@ -125,6 +135,11 @@ export class ApiClientService {
 
   getMapsConfig(): Observable<{ enabled: boolean; apiKey: string | null }> {
     return this.http.get<{ enabled: boolean; apiKey: string | null }>('/api/config/maps');
+  }
+
+  /** Citizen reports from the last 15 minutes, newest first. */
+  getRecentReports(minutes = 15): Observable<RecentReport[]> {
+    return this.http.get<RecentReport[]>(`/api/recent-reports?minutes=${minutes}`, this.getAuthHeaders());
   }
 
   getRequests(sort = 'urgency', packId?: string, updatedSince?: string): Observable<StoredRequest[]> {

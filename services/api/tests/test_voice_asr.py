@@ -15,10 +15,8 @@ def test_list_synthetic_voice_notes():
     assert len(notes) >= 8
     # Verify languages represented
     langs = {n["lang"] for n in notes}
-    assert "hi" in langs
-    assert "hinglish" in langs
-    assert "en" in langs
-    assert "ta" in langs
+    assert langs == {"en", "hi"}
+    assert sum(1 for n in notes if n["lang"] == "hi") == 1
     # All confidences > 0.80
     assert all(n["asr_confidence"] >= 0.80 for n in notes)
 
@@ -62,15 +60,15 @@ def test_hindi_voice_note_pipeline():
     assert stored_req.vulnerable.elderly is True
 
 
-def test_hinglish_medical_voice_note_pipeline():
-    """Verify Hinglish voice note with medical vulnerability."""
+def test_english_medical_voice_note_pipeline():
+    """Verify the English medical voice note."""
     response = client.post(
         "/api/reports",
         json={
             "channel": "voice",
             "voice_note_id": "VN-02",
             "source_id": "phone_mic_device_2",
-            "lang": "hinglish",
+            "lang": "en",
             "scenario_id": "flood"
         }
     )

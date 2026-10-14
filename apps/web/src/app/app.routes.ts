@@ -6,8 +6,17 @@ export const routes: Routes = [
     loadComponent: () => import('./public/pages/team/team-confirm.component').then(m => m.TeamConfirmComponent),
   },
   {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () => import('./landing/landing.component').then(m => m.LandingComponent),
+  },
+  {
     path: 'welcome',
     loadComponent: () => import('./landing/landing.component').then(m => m.LandingComponent),
+  },
+  {
+    path: 'report-preview',
+    loadComponent: () => import('./landing/report-preview.component').then(m => m.ReportPreviewComponent),
   },
   {
     path: '',

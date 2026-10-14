@@ -12,6 +12,16 @@ from app.tools.scoring import scoring_engine
 client = TestClient(app)
 
 
+def test_daily_trip_stays_open_past_the_short_window():
+    guard = Guard(fail_limit=3)
+    guard.now = lambda: 0.0
+    guard.trip(60 * 60)
+    assert guard.circuit_open() is True
+    assert guard.failures == 3
+    guard.now = lambda: 31.0
+    assert guard.circuit_open() is True
+
+
 def test_token_bucket_waits_and_circuit_opens():
     slept = []
     guard = Guard(per_minute=30, fail_limit=2)

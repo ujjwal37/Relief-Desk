@@ -16,7 +16,7 @@ def seed_prompt(raw_text: str) -> str:
 
 
 def attach_recorded_ai(storage) -> int:
-    """Seeded cases with a file in data/ai_cache show "Recorded Gemini run" instead of the fallback.
+    """Seeded cases with a file in data/ai_cache show "Recorded (Gemini)" instead of the fallback.
 
     Only the provenance is attached: the stored reply came from a real Gemini call made by
     `make record-ai`. Cases without a recording keep their offline-fallback label.

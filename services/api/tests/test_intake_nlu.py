@@ -1,7 +1,10 @@
 """Hinglish and Hindi intake must keep the place, the ward, and who is vulnerable."""
 from fastapi.testclient import TestClient
-from app.agents.intake import intake_agent
+from app.agents.intake import SYSTEM_INTAKE_PROMPT, IntakeAgent, intake_agent
 from app.main import app
+from app.models.schemas import IncidentType
+from app.tools.gazetteer import gazetteer
+from app.tools.nlu_rules import infer_incident_type, people_count
 from app.tools.storage import storage_service
 
 client = TestClient(app)
@@ -31,24 +34,60 @@ def test_hindi_place_ward_and_child():
     assert extracted.vulnerable.elderly is True
 
 
-def test_tamil_count_child_and_medical():
-    counted = intake_agent.parse_report(
-        "வராப்புழாவில் 5 பேர் சிக்கியுள்ளனர், ஒரு குழந்தை உள்ளது",
-        language_hint="ta",
-    )
-    assert counted.people.count == 5
-    assert counted.vulnerable.child is True
+HINDI_FREE = "वार्ड 12 में 6 लोग फंसे हैं, एक बच्चा भी है, पानी बढ़ रहा है, नाव भेजो।"
 
-    words = intake_agent.parse_report(
-        "ஐந்து பேர் சிக்கியுள்ளனர். முதியவருக்கு ஆக்சிஜன் தேவை.",
-        language_hint="ta",
-    )
-    assert words.people.count == 5
-    assert words.vulnerable.elderly is True
-    assert words.vulnerable.medical_need is True
 
-    tamil_digits = intake_agent.parse_report("௫ பேர் படகு வேண்டும்", language_hint="ta")
-    assert tamil_digits.people.count == 5
+class _BlankGemini:
+    """A model answer that extracted nothing. Rules must still fill the facts."""
+
+    def generate_content(self, **_kwargs):
+        return "{}"
+
+
+def test_hindi_free_text_reads_type_people_and_ward():
+    assert people_count("वार्ड 3 में 10 लोगों के लिए खाना चाहिए") == 10
+    assert people_count("चार लोग फंसे हैं") == 4
+    assert people_count("वार्ड १२ में ६ लोग हैं") == 6
+    assert infer_incident_type("नाव भेजो, लोग फंसे हैं") == "rescue"
+    assert gazetteer.resolve_ward(None, "वार्ड १२ में पानी बढ़ रहा है") == "ward_12"
+
+    extracted = intake_agent.parse_report(HINDI_FREE, language_hint="hi")
+    assert extracted.type == IncidentType.RESCUE
+    assert extracted.people.count == 6
+    assert extracted.ward_id == "ward_12"
+    assert extracted.vulnerable.child is True
+    assert extracted.place_text is not None
+    assert "वार्ड 12" in extracted.place_text
+
+
+def test_rules_repair_a_blank_gemini_hindi_answer():
+    assert "वार्ड" in SYSTEM_INTAKE_PROMPT
+    assert "लोगों" in SYSTEM_INTAKE_PROMPT
+    extracted = IntakeAgent(client=_BlankGemini()).parse_report(HINDI_FREE, language_hint="hi")
+    assert extracted.type == IncidentType.RESCUE
+    assert extracted.people.count == 6
+    assert extracted.ward_id == "ward_12"
+    assert extracted.vulnerable.child is True
+
+
+def test_hindi_chat_confirms_type_people_and_ward():
+    response = client.post(
+        "/api/intake/chat",
+        json={
+            "session_id": "sess_hi_ward12",
+            "message": HINDI_FREE,
+            "language": "hi",
+            "scenario_id": "flood",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    card = body["confirmation_card"]
+    assert card is not None
+    assert card["incident_type"] == "rescue"
+    assert card["people_count"] == 6
+    assert "वार्ड 12" in (card["place_text"] or "")
+    assert "विवरण तैयार" in body["bot_message"]
 
 
 def test_landmark_sentence_keeps_the_ward():

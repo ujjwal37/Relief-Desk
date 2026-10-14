@@ -11,7 +11,26 @@ from app.models.firestore_models import StoredRequest, RequestStatus
 from app.models.schemas import HazardType
 
 
-def test_burst_of_20_copies_flagged_rate_limited_and_nothing_deleted():
+def test_demo_mode_does_not_flag_repeated_phone_reports(monkeypatch):
+    from app.config import settings
+    from app.tools.ratelimit import rate_limiter
+
+    rate_limiter.reset()
+    monkeypatch.setattr(settings, "DEMO_MODE", True)
+    limited = [rate_limiter.check_and_record("demo-phone")[0] for _ in range(12)]
+    assert limited == [False] * 12
+    monkeypatch.setattr(settings, "DEMO_MODE", False)
+    rate_limiter.reset()
+    again = [rate_limiter.check_and_record("demo-phone")[0] for _ in range(11)]
+    assert again[:10] == [False] * 10
+    assert again[10] is True
+    rate_limiter.reset()
+
+
+def test_burst_of_20_copies_flagged_rate_limited_and_nothing_deleted(monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "DEMO_MODE", False)
     storage = StorageService()
     limiter = RateLimiter(max_per_hour=10)
     source_id = "spammer_device_123"

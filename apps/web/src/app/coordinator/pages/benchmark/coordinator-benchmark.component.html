@@ -3,67 +3,49 @@
     <h1>{{ 'bench.title2' | rdTranslate }}</h1>
     @if (example()) { <span class="example">{{ 'ux.exampleData' | rdTranslate }}</span> }
     <p class="sub">{{ 'bench.sub' | rdTranslate }}</p>
-    @if (subtitle()) { <p class="meta">{{ subtitle() }}</p> }
-    @if (gemini(); as g) {
-      <p class="meta">{{ 'bench.model' | rdTranslate }} {{ g.model || ('ux.notRecorded' | rdTranslate) }}</p>
-      <p class="meta">{{ 'bench.date' | rdTranslate }} {{ g.date || ('ux.notRecorded' | rdTranslate) }}</p>
-      <p class="meta">{{ 'ux.labelled' | rdTranslate }} {{ g.n || ('ux.notRecorded' | rdTranslate) }}</p>
-      @if (!g.measured) { <p>{{ (g.reason === 'fallback' ? 'bench.geminiUnreachable' : 'bench.geminiNotMeasured') | rdTranslate }}</p> }
-      @if (g.measured) {
-        <p>{{ 'bench.geminiType' | rdTranslate }} {{ g.type || ('ux.notRecorded' | rdTranslate) }}</p>
-        <p>{{ 'bench.geminiWard' | rdTranslate }} {{ g.ward || ('ux.notRecorded' | rdTranslate) }}</p>
-      }
-      <p>{{ 'bench.keywordType' | rdTranslate }} {{ g.baseType || ('ux.notRecorded' | rdTranslate) }}</p>
-      <p>{{ 'bench.keywordWard' | rdTranslate }} {{ g.baseWard || ('ux.notRecorded' | rdTranslate) }}</p>
-    }
   </header>
 
   @if (error()) {
     <div class="error" role="alert">{{ error() }} <button type="button" (click)="reload()">{{ 'bench.retry' | rdTranslate }}</button></div>
   }
-  @if (!error() && rows().length === 0) { <div class="skel"><i></i><i></i><i></i></div> }
+  @if (!error() && rows().length === 0) { <div class="skel"><i></i><i></i></div> }
 
-  @if (rows().length) {
-    <div class="grid">
-      @for (row of rows(); track row.key) {
+  @if (cards().length) {
+    <div class="grid cards">
+      @for (row of cards(); track row.key) {
         <article class="metric">
           <h2>{{ row.label | rdTranslate }}</h2>
           <p class="means">{{ row.means | rdTranslate }}</p>
-          @if (row.pct) {
-            <p class="key">{{ 'ux.higher' | rdTranslate }} · {{ 'ux.scale' | rdTranslate }}</p>
-            <p class="key">{{ 'ux.geminiBar' | rdTranslate }}</p>
-            @if (geminiValue(row); as value) {
-              <div class="pair">
-                <span class="val">{{ value }}</span>
-                <div class="track"><b class="gem" [style.width.%]="pct(value)"></b></div>
-              </div>
-            } @else {
-              <p class="miss">{{ 'ux.notMeasured' | rdTranslate }}</p>
-            }
-            <p class="key">{{ 'ux.ruleBar' | rdTranslate }}</p>
-            <div class="pair">
-              <span class="val">{{ row.relief || ('ux.notRecorded' | rdTranslate) }}</span>
-              @if (row.relief) { <div class="track"><b class="rule" [style.width.%]="pct(row.relief)"></b></div> }
-            </div>
-            <p class="base">{{ row.baselineName | rdTranslate }} {{ row.baseline || ('ux.notRecorded' | rdTranslate) }}</p>
-          } @else {
-            <div class="nums">
-              <div><span>{{ 'bench.ours' | rdTranslate }}</span><b>{{ row.relief || ('ux.notRecorded' | rdTranslate) }}</b></div>
-              <div><span>{{ row.baselineName | rdTranslate }}</span><b>{{ row.baseline || ('ux.notRecorded' | rdTranslate) }}</b></div>
-            </div>
-          }
+          <p class="kpi">{{ row.relief || ('ux.notRecorded' | rdTranslate) }}</p>
         </article>
       }
     </div>
   }
 
-  <section class="failures">
-    <h2>{{ 'ux.wrongTitle' | rdTranslate }}</h2>
-    <ul>
-      @for (line of failures(); track line) { <li>{{ line }}</li> }
-      @if (!failures().length) { <li>{{ 'ux.notRecorded' | rdTranslate }}</li> }
-    </ul>
-    <p>{{ marginText() || ('ux.notRecorded' | rdTranslate) }}</p>
-    @if (smallSample()) { <p>{{ 'ux.smallSample' | rdTranslate }}</p> }
-  </section>
+  @if (tableRows().length) {
+    <div class="table-wrap">
+      <table class="cases">
+        <thead>
+          <tr>
+            <th>{{ 'bench.colCase' | rdTranslate }}</th>
+            <th>{{ 'bench.colAiUrgency' | rdTranslate }}</th>
+            <th>{{ 'bench.colCoordinator' | rdTranslate }}</th>
+            <th>{{ 'bench.colAiTeam' | rdTranslate }}</th>
+            <th>{{ 'bench.colResult' | rdTranslate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of tableRows(); track row.caseId) {
+            <tr>
+              <td>{{ row.caseId }}</td>
+              <td>{{ row.aiUrgency }}</td>
+              <td>{{ row.coordinator }}</td>
+              <td>{{ row.aiTeam }}</td>
+              <td>{{ row.result }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 </div>

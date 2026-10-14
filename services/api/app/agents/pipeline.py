@@ -22,7 +22,39 @@ from app.tools.storage import storage_service
 
 logger = logging.getLogger("relief_desk.pipeline")
 
-_spawn: Callable[[Callable[[], None]], None] = lambda fn: threading.Thread(target=fn, daemon=True).start()
+_inflight_lock = threading.Lock()
+_inflight: List[threading.Thread] = []
+
+
+def _start_thread(fn: Callable[[], None]) -> None:
+    """Run intake after the HTTP response. The thread is tracked so tests can join it."""
+    def run() -> None:
+        try:
+            fn()
+        finally:
+            with _inflight_lock:
+                if thread in _inflight:
+                    _inflight.remove(thread)
+
+    thread = threading.Thread(target=run, daemon=True)
+    with _inflight_lock:
+        _inflight.append(thread)
+    thread.start()
+
+
+def wait_for_idle(timeout: float = 5.0) -> bool:
+    """True when every background intake thread has finished."""
+    deadline = time.perf_counter() + timeout
+    while time.perf_counter() < deadline:
+        with _inflight_lock:
+            alive = [item for item in _inflight if item.is_alive()]
+        if not alive:
+            return True
+        time.sleep(0.02)
+    return False
+
+
+_spawn: Callable[[Callable[[], None]], None] = _start_thread
 
 
 def score_urgency(people_count: int, incident_type: str, child: bool = False, elderly: bool = False) -> dict:
@@ -145,7 +177,10 @@ def _trace_step(
     latency_ms: Optional[int] = None,
     tokens: Optional[int] = None,
 ) -> dict:
-    """One trace row. provider is gemini, cache, fallback or tool. model is set only when a model ran."""
+    """One trace row. provider is gemini, cache, fallback, tool, or a test provider such as
+    openai_compat. model is set only when a model ran. provider_label never says Gemini for a test model."""
+    from app.llm.providers import display_name, vendor
+
     measured = max(0, int(round((time.perf_counter() - started) * 1000)))
     return {
         "agent": agent,
@@ -153,6 +188,8 @@ def _trace_step(
         "input_summary": (summary or "")[:180],
         "output": (output or "")[:400],
         "provider": provider,
+        "provider_label": display_name(provider) if model else "Rules",
+        "vendor": vendor(provider),
         "model": model,
         "latency_ms": latency_ms if latency_ms is not None else measured,
         "tokens": tokens,
@@ -165,7 +202,7 @@ def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
     """The Intake row reports the model call that actually happened, in English for the coordinator."""
     ai = req.ai
     provider = (ai.provider if ai else None) or ("gemini" if req.ai_source == "gemini" else "fallback")
-    ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local") else None
+    ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local", "openai_compat") else None
     english = (req.translations or {}).get("en") or req.ai_translation or req.summary or summary or req.type.value
     return _trace_step(
         "Intake",
@@ -201,6 +238,17 @@ def mark_analysing(request_id: str) -> None:
     storage_service.save_request(req, actor="pipeline")
 
 
+def note_dedupe(req: StoredRequest) -> None:
+    """The duplicate check is decided before the model runs. Show it while Intake still works."""
+    if req.analysis_status != "analysing":
+        return
+    for step in req.trace or []:
+        if step.get("agent") == "Dedupe":
+            step["status"] = "complete"
+            step["output"] = _dedupe_output(req)[:400]
+            step["ts"] = datetime.now(timezone.utc).isoformat()
+
+
 def finish(request_id: str) -> None:
     """Run the deterministic tools. A live model is not required for the case to complete."""
     req = storage_service.get_request(request_id)
@@ -214,7 +262,9 @@ def finish(request_id: str) -> None:
     kind = {"medical": "medical", "food": "food", "shelter": "shelter"}.get(req.type.value, "boat")
     capacity = check_capacity(kind)
     match_at = time.perf_counter()
-    provider = "gemini" if llm_client.gemini_live() else "fallback"
+    ran = req.ai if req.ai and req.ai.provider != "fallback" else None
+    provider = ran.provider if ran else ("gemini" if llm_client.gemini_live() else "fallback")
+    model = (ran.model if ran else None) or settings.GEMINI_MODEL
     summary = (req.raw_text or "")[:180]
     explanation = strip_advice(
         f"The urgency score is {scored.score}. "
@@ -223,22 +273,46 @@ def finish(request_id: str) -> None:
     explanation = f"{explanation} This note is not medical or legal advice."
     req.analysis = {
         "provider": provider,
-        "model": settings.GEMINI_MODEL,
+        "model": model,
         "intake": (req.raw_text or "")[:240],
-        "dedupe": "duplicate" if req.merged_into else "distinct",
+        "dedupe": _dedupe_output(req),
         "triage": {"score": scored.score, "reason": scored.reason},
         "matching": capacity,
         "explainer": explanation,
     }
     req.trace = [
         _intake_row(req, summary, started),
-        _trace_step("Dedupe", "complete", summary, "duplicate" if req.merged_into else "distinct", [], started),
+        _trace_step("Dedupe", "complete", summary, _dedupe_output(req), [], started),
         _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], triage_at),
         _trace_step("Matching", "complete", summary, f"{capacity['available']} {kind} free", ["check_capacity"], match_at),
         _trace_step("Explainer", "complete", summary, explanation, [], match_at),
     ]
     req.analysis_status = "complete"
+    # A coordinator may have approved this case while the model was still working.
+    latest = storage_service.get_request(request_id)
+    if latest is not None and latest.status != req.status:
+        req.status = latest.status
+        req.assigned_resource_id = latest.assigned_resource_id
+        req.reserved_people = latest.reserved_people
     storage_service.save_request(req, actor="pipeline")
+
+
+def _dedupe_output(req: StoredRequest) -> str:
+    """The Duplicate check line: merge confidence, and a counts note when the reports disagree."""
+    if req.dedupe_trace:
+        note = req.dedupe_trace
+        if req.count_note and req.count_note not in note:
+            return f"{note}. {req.count_note}"
+        return note
+    if req.possible_duplicate is not None:
+        return req.possible_duplicate.note or "Possible duplicate, review"
+    if req.merged_into or (req.merged_count or 1) > 1:
+        base = "duplicate"
+    else:
+        base = "distinct"
+    if req.count_note:
+        return f"{base}. {req.count_note}"
+    return base
 
 
 def ensure_trace(req: StoredRequest) -> None:
@@ -247,7 +321,7 @@ def ensure_trace(req: StoredRequest) -> None:
         return
     summary = (req.raw_text or req.place_text or "")[:180]
     marks = [time.perf_counter()]
-    dedupe_out = "duplicate" if req.merged_into or (req.merged_count or 1) > 1 else "distinct"
+    dedupe_out = _dedupe_output(req)
     marks.append(time.perf_counter())
     scored = scoring_engine.compute_urgency(req)
     marks.append(time.perf_counter())

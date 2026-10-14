@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 
 export interface MetricRow {
@@ -46,6 +46,8 @@ export class CoordinatorBenchmarkComponent implements OnInit {
   private lang = inject(LanguageService);
 
   readonly rows = signal<MetricRow[]>([]);
+  readonly cards = computed(() => this.rows().filter((row) => row.pct && row.relief).slice(0, 2));
+  readonly tableRows = signal<{ caseId: string; aiUrgency: string; coordinator: string; aiTeam: string; result: string }[]>([]);
   readonly subtitle = signal('');
   readonly failures = signal<string[]>([]);
   readonly error = signal<string | null>(null);
@@ -126,6 +128,13 @@ export class CoordinatorBenchmarkComponent implements OnInit {
       const id = item['message_id'] ? String(item['message_id']) : '';
       return [id, reason].filter(Boolean).join(': ');
     }).filter(Boolean));
+    this.tableRows.set(examples.slice(0, 12).map((item) => ({
+      caseId: String(item['message_id'] || item['case_id'] || '—'),
+      aiUrgency: String(item['ai_urgency'] || item['predicted_urgency'] || '—'),
+      coordinator: String(item['coordinator'] || item['label'] || '—'),
+      aiTeam: String(item['ai_team'] || item['predicted_team'] || '—'),
+      result: String(item['reason'] || item['category'] || item['result'] || '—'),
+    })));
     this.setMargin(payload, this.rows());
     const gemini = payload['gemini'] as Record<string, unknown> | undefined;
     if (!gemini) {

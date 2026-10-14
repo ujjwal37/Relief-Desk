@@ -39,8 +39,36 @@ describe('AskDeskComponent', () => {
     expect(c.viaText(answer as any)).toBe('gemini-3.5-flash-lite');
   });
 
+  it('shows example cards until the first answer, then keeps a thread', () => {
+    const fixture = TestBed.createComponent(AskDeskComponent);
+    fixture.componentRef.setInput('fullPage', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('ux.agentHello');
+    expect(fixture.nativeElement.textContent).toContain('ux.exampleA1');
+    expect(fixture.nativeElement.querySelectorAll('.example').length).toBe(3);
+    expect(fixture.nativeElement.querySelector('form.composer')).not.toBeNull();
+    fixture.componentInstance.question = 'elderly in Aluva';
+    fixture.componentInstance.ask();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.thread().length).toBe(1);
+    expect(fixture.nativeElement.textContent).toContain('INC-001');
+    expect(fixture.nativeElement.querySelector('.example')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.hello')).toBeNull();
+    expect(fixture.nativeElement.querySelector('form.composer')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.case-link')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.page')?.classList.contains('has-thread')).toBeTrue();
+  });
+
   it('labels rule answers', () => {
     const c = TestBed.createComponent(AskDeskComponent).componentInstance;
     expect(c.viaText({ ...answer, ai: { provider: 'fallback', model: null } } as any)).toBe('ux.deskByRules');
+  });
+
+  it('labels a test provider answer with its vendor, never Gemini', () => {
+    lang.translate = (k: string) => (k === 'ux.badgeTest' ? 'Test model ({name})' : k);
+    const c = TestBed.createComponent(AskDeskComponent).componentInstance;
+    const via = c.viaText({ ...answer, ai: { provider: 'openai_compat', model: 'meta/llama-3.3-70b-instruct', vendor: 'NVIDIA' } } as any);
+    lang.translate = (k: string) => k;
+    expect(via).toBe('meta/llama-3.3-70b-instruct · Test model (NVIDIA)');
   });
 });

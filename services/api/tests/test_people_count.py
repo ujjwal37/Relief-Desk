@@ -12,6 +12,9 @@ from app.tools.nlu_rules import people_count
         ("5 people stranded", 5),
         ("10 people including 2 children", 10),
         ("Need boat at a jetty", None),
+        ("2-3 people on the roof", 3),
+        ("4-5 people stranded", 5),
+        ("2 to 3 people need a boat", 3),
     ],
 )
 def test_people_count(text, expected):

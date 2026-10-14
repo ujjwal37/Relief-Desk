@@ -7,18 +7,24 @@ cache, so recordings stay pure Gemini API output.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from app.config import settings
 
+logger = logging.getLogger("relief_desk.antigravity")
+
 PROVIDER = "antigravity-local"
 MODEL = "antigravity-cli"
+# The CLI has returned an empty body after several minutes when its own timer is ignored.
+# This cap applies to both --print-timeout and the subprocess, whatever the setting says.
+HARD_TIMEOUT_S = 40.0
 
 
 def _under_pytest() -> bool:
@@ -67,10 +73,79 @@ def _binary() -> str:
     return path
 
 
+def _bounded_timeout(timeout_s: Optional[float]) -> float:
+    if timeout_s is None:
+        timeout_s = getattr(settings, "ANTIGRAVITY_TIMEOUT_S", HARD_TIMEOUT_S)
+    try:
+        requested = float(timeout_s or HARD_TIMEOUT_S)
+    except (TypeError, ValueError):
+        requested = HARD_TIMEOUT_S
+    return max(1.0, min(requested, HARD_TIMEOUT_S))
+
+
+def _log_raw(message: str, stdout: Optional[str], stderr: Optional[str]) -> None:
+    logger.error(
+        "%s | stdout=%r | stderr=%r",
+        message,
+        (stdout or "")[:2000],
+        (stderr or "")[:2000],
+    )
+
+
+def _json_obj(blob: str) -> Optional[Dict[str, Any]]:
+    clean = (blob or "").strip()
+    if not clean:
+        return None
+    try:
+        data = json.loads(clean)
+    except ValueError:
+        try:
+            data = json.loads(extract_json(clean))
+        except ValueError:
+            return None
+    return data if isinstance(data, dict) else None
+
+
+def _reply_from_stdout(stdout: str) -> Tuple[str, Optional[int]]:
+    """Read the CLI envelope from any line, or a bare JSON object if that is all it printed."""
+    raw = stdout or ""
+    blobs = [line.strip() for line in raw.splitlines() if line.strip()]
+    whole = raw.strip()
+    if whole and whole not in blobs:
+        blobs.append(whole)
+    envelopes = []
+    bare = []
+    for blob in reversed(blobs):
+        data = _json_obj(blob)
+        if data is None:
+            continue
+        if any(key in data for key in ("status", "response", "usage", "text")):
+            envelopes.append(data)
+        else:
+            bare.append(data)
+    if envelopes:
+        data = envelopes[0]
+        status = str(data.get("status", "SUCCESS")).upper()
+        if status not in ("SUCCESS", "OK", ""):
+            raise RuntimeError(f"Antigravity CLI status {data.get('status')}")
+        text = str(data.get("response") or data.get("text") or "")
+        if not text.strip():
+            raise RuntimeError("Antigravity CLI returned an empty reply")
+        usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}
+        tokens = usage.get("total_tokens")
+        return text, int(tokens) if isinstance(tokens, int) else None
+    if bare:
+        return json.dumps(bare[0], ensure_ascii=False), None
+    text = raw.strip()
+    if text:
+        return text, None
+    raise RuntimeError("Antigravity CLI returned an empty reply")
+
+
 def call_antigravity(system_instruction: str, user_prompt: str, timeout_s: Optional[float] = None,
                      run=subprocess.run) -> Tuple[str, Optional[int]]:
     """One non-interactive `agy --print` call. Returns (reply text, total tokens). Raises on failure."""
-    timeout_s = float(timeout_s or getattr(settings, "ANTIGRAVITY_TIMEOUT_S", 60.0) or 60.0)
+    timeout_s = _bounded_timeout(timeout_s)
     prompt = (
         f"{system_instruction}\n\n{user_prompt}\n\n"
         "Answer directly. Do not use tools, do not read or write files. Return only the requested output."
@@ -80,21 +155,17 @@ def call_antigravity(system_instruction: str, user_prompt: str, timeout_s: Optio
            "--print-timeout", f"{int(timeout_s)}s"]
     try:
         proc = run(cmd, cwd=workdir, capture_output=True, text=True, encoding="utf-8",
-                   timeout=timeout_s + 10, stdin=subprocess.DEVNULL)
+                   timeout=timeout_s, stdin=subprocess.DEVNULL)
     except subprocess.TimeoutExpired as exc:
+        _log_raw("Antigravity CLI timed out", getattr(exc, "stdout", None), getattr(exc, "stderr", None))
         raise TimeoutError("Antigravity CLI timed out") from exc
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
     if proc.returncode not in (0, None):
+        _log_raw(f"Antigravity CLI exit {proc.returncode}", proc.stdout, proc.stderr)
         raise RuntimeError(f"Antigravity CLI exit {proc.returncode}: {(proc.stderr or '')[:200]}")
     try:
-        env = json.loads((proc.stdout or "").strip().splitlines()[-1])
-    except (ValueError, IndexError) as exc:
-        raise RuntimeError("Antigravity CLI did not return its JSON envelope") from exc
-    if str(env.get("status", "")).upper() != "SUCCESS":
-        raise RuntimeError(f"Antigravity CLI status {env.get('status')}")
-    text = str(env.get("response") or "")
-    if not text.strip():
-        raise RuntimeError("Antigravity CLI returned an empty reply")
-    tokens = (env.get("usage") or {}).get("total_tokens")
-    return text, int(tokens) if isinstance(tokens, int) else None
+        return _reply_from_stdout(proc.stdout or "")
+    except RuntimeError as exc:
+        _log_raw(str(exc), proc.stdout, proc.stderr)
+        raise

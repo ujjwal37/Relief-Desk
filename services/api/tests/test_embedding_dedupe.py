@@ -135,6 +135,36 @@ def test_embed_helper_returns_none_without_a_key():
     assert abs(cosine(_unit(), _unit()) - 1.0) < 1e-9
 
 
+def test_antigravity_skips_embeddings_and_uses_the_lexical_check(monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "LLM_PROVIDER", "antigravity", raising=False)
+    monkeypatch.setattr(dedupe_agent.client, "gemini_live", lambda: True)
+
+    def boom(*_args, **_kwargs):
+        raise AssertionError("Gemini was called")
+
+    monkeypatch.setattr(dedupe_agent.client, "generate_content", boom)
+    assert embed_texts(["boat at the jetty"]) is None
+    existing = StoredRequest(
+        id="req_lex",
+        type=IncidentType.RESCUE,
+        place_text="Mithra Church Road",
+        raw_text="Mithra Church Road pe 4 log chhat par hain",
+        ward_id="ward_2",
+        lat=9.45,
+        lng=76.39,
+        people_count=4,
+    )
+    text = "Mithra Church Road par 4 log fas gaye, madad chahiye"
+    extracted = intake_agent.parse_report(text)
+    found = dedupe_agent.prefilter_candidates(extracted, 9.45, 76.39, "ward_2", [existing])
+    assert [row.id for row in found] == ["req_lex"]
+    decision = dedupe_agent.evaluate(text, extracted, found)
+    assert decision.decision == DedupeDecisionType.DUPLICATE
+    assert not any("gemini-embedding-001" in line for line in decision.evidence)
+
+
 def test_merge_and_undo_are_audited():
     token = f"Mithralane{uuid.uuid4().hex[:6]}"
     pin = {"lat": 8.5, "lng": 76.9}

@@ -32,6 +32,10 @@ gcloud run deploy relief-desk-api \
 
 `JWT_SECRET` and `GOOGLE_MAPS_API_KEY` are the other values that must stay out of git. Maps stays on the built-in SVG until `GOOGLE_MAPS_API_KEY` is a real key.
 
+## Live updates
+
+`GET /api/events` is a Server-Sent Events stream (`text/event-stream`). The handler sends `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no`, and `Content-Encoding: identity` so Cloud Run and other proxies do not buffer the chunks. A heartbeat goes out every 15 seconds. Cloud Run's request timeout (300 seconds unless you set a higher `--timeout`) still closes the socket; the desk and the status page reconnect with backoff, and they poll every 5 seconds while the stream is down. This file does not record a live URL.
+
 ## Not in this deploy
 
 Pub/Sub, BigQuery, Gemini Live, Search grounding, Malayalam, and photo intake are not part of the service.

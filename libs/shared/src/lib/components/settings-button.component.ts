@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
-import { LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, SupportedLang } from '../services/language.service';
+import { LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, SupportedLang } from '../services/language.service';
 import { ThemeMode, ThemeService } from '../services/theme.service';
 
 /** Globe button that opens a bottom sheet (language + theme). Shared by public and coordinator apps. */
@@ -20,10 +20,20 @@ import { ThemeMode, ThemeService } from '../services/theme.service';
         <h2>{{ 'settings.title' | rdTranslate }}</h2>
         <h3>{{ 'settings.language' | rdTranslate }}</h3>
         <div class="opts">
-          @for (l of langs; track l.code) {
-            <button type="button" class="opt" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" (click)="setLang(l.code)">
-              {{ l.label }} <span class="native">{{ l.nativeName }}</span>
+          @for (l of primaryLangs; track l.code) {
+            <button type="button" class="opt" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="setLang(l.code)">
+              {{ l.nativeName }}
             </button>
+          }
+          <button type="button" class="opt more" data-testid="lang-more" [attr.aria-expanded]="moreOpen()" (click)="moreOpen.set(!moreOpen())">
+            {{ 'settings.moreLangs' | rdTranslate }}
+          </button>
+          @if (moreOpen()) {
+            @for (l of moreLangs; track l.code) {
+              <button type="button" class="opt" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="setLang(l.code)">
+                {{ l.label }} <span class="native">{{ l.nativeName }}</span>
+              </button>
+            }
           }
         </div>
         <h3>{{ 'settings.theme' | rdTranslate }}</h3>
@@ -42,7 +52,7 @@ import { ThemeMode, ThemeService } from '../services/theme.service';
       background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:999px; font:600 15px/1 var(--rd-font-family); cursor:pointer; }
     .rd-set-btn:focus-visible, .opt:focus-visible, .seg button:focus-visible, .done:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
     .rd-backdrop { position:fixed; inset:0; background:var(--scrim); z-index:1000; animation: fade 200ms var(--ease); }
-    .rd-sheet { position:fixed; z-index:1001; left:0; right:0; bottom:0; max-width:480px; margin:0 auto; background:var(--surface); color:var(--text);
+    .rd-sheet { position:fixed; z-index:1001; left:0; right:0; bottom:0; max-width:480px; max-height:calc(100vh - 12px); overflow-y:auto; margin:0 auto; background:var(--surface); color:var(--text);
       border-radius:24px 24px 0 0; padding:12px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow:var(--e3); animation: up 200ms var(--ease); outline:none; }
     .grab { width:40px; height:4px; border-radius:2px; background:var(--border); margin:0 auto 12px; }
     h2 { margin:0 0 8px; font-size:22px; } h3 { margin:16px 0 8px; font-size:15px; color:var(--text-2); font-weight:600; }
@@ -63,7 +73,9 @@ import { ThemeMode, ThemeService } from '../services/theme.service';
 export class SettingsButtonComponent {
   readonly lang = inject(LanguageService);
   readonly theme = inject(ThemeService);
-  readonly langs = SUPPORTED_LANGUAGES;
+  readonly primaryLangs = PRIMARY_LANGUAGES;
+  readonly moreLangs = MORE_LANGUAGES;
+  readonly moreOpen = signal(false);
   readonly themes: { m: ThemeMode; k: string }[] = [
     { m: 'system', k: 'settings.themeSystem' }, { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' },
   ];
@@ -72,14 +84,14 @@ export class SettingsButtonComponent {
   private opener: HTMLElement | null = null;
 
   showCode = () => true;
-  langCode = () => ({ en: 'EN', hi: 'HI', hinglish: 'HG', ta: 'TA' }[this.lang.currentLang()]);
+  langCode = () => ({ en: 'EN', hi: 'HI', hinglish: 'HG', ml: 'ML' }[this.lang.currentLang()]);
 
   open(): void {
     this.opener = document.activeElement as HTMLElement;
     this.isOpen.set(true);
     setTimeout(() => this.sheet()?.nativeElement.focus());
   }
-  close(): void { this.isOpen.set(false); this.opener?.focus(); }
+  close(): void { this.isOpen.set(false); this.moreOpen.set(false); this.opener?.focus(); }
   setLang(c: SupportedLang): void { this.lang.setLanguage(c); }
   @HostListener('document:keydown.escape') onEsc(): void { if (this.isOpen()) this.close(); }
 }

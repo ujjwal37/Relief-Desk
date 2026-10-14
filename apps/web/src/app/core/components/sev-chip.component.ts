@@ -22,7 +22,7 @@ import type { UrgencyBandKey } from '@rd/shared';
     </span>
   `,
   styles: [`
-    .chip { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; font:700 13px/1.2 var(--rd-font-family); white-space:nowrap; }
+    .chip { display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:var(--r2); border:1px solid transparent; font:600 12px/1.25 var(--rd-font-family); white-space:nowrap; }
     .critical { background:var(--sev-crit-t); color:var(--sev-crit); }
     .high { background:var(--sev-high-t); color:var(--sev-high); }
     .medium { background:var(--sev-med-t); color:var(--sev-med); }

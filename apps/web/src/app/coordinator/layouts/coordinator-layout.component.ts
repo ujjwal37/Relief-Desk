@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AuthService, LanguageService, RdTranslatePipe, SUPPORTED_LANGUAGES, ThemeMode, ThemeService } from '@rd/shared';
+import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
+import { ApiClientService, AuthService, LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, ThemeMode, ThemeService } from '@rd/shared';
 import { ScenarioService } from '../../core/services/scenario.service';
 import { CoordUiService } from '../../core/services/coord-ui.service';
+import { LiveEventsService } from '../../core/live-events.service';
 import { TourComponent } from '../../core/components/tour.component';
 
 @Component({
@@ -15,6 +17,7 @@ import { TourComponent } from '../../core/components/tour.component';
 })
 export class CoordinatorLayoutComponent implements OnDestroy {
   readonly authService = inject(AuthService);
+  readonly live = inject(LiveEventsService);
   readonly ui = inject(CoordUiService);
   readonly theme = inject(ThemeService);
   readonly lang = inject(LanguageService);
@@ -26,27 +29,76 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   readonly wideEnough = signal(true);
   readonly showPhone = computed(() => this.demoOn() && this.wideEnough());
   readonly menuOpen = signal(false);
+  readonly guideOpen = signal(false);
+  private api = inject(ApiClientService);
   readonly compactNav = signal(false);
-  readonly langs = SUPPORTED_LANGUAGES;
+  readonly primaryLangs = PRIMARY_LANGUAGES;
+  readonly moreLangs = MORE_LANGUAGES;
+  readonly langMore = signal(false);
   readonly themes: { m: ThemeMode; k: string }[] = [
     { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' }, { m: 'system', k: 'settings.themeSystem' },
   ];
   readonly initial = computed(() => (this.authService.currentUser()?.email || 'D').charAt(0).toUpperCase());
+  readonly liveLabel = computed(() => {
+    const state = this.live.state();
+    if (state === 'live') return 'coord.live';
+    if (state === 'offline') return 'coord.liveOff';
+    return 'coord.liveRetry';
+  });
+  readonly path = signal('');
+  readonly dispatchedOn = computed(() => /(?:\?|&)status=dispatched(?:&|$)/.test(this.path()));
+  readonly homeOn = computed(() => {
+    const path = this.path().split('?')[0];
+    return (path === '/coordinator/command' || path.startsWith('/coordinator/command/')) && !this.dispatchedOn();
+  });
 
   private media?: MediaQueryList;
   private onMedia = (event: MediaQueryListEvent): void => { this.wideEnough.set(event.matches); };
   private stopQuery?: () => void;
 
   constructor() {
+    effect(() => {
+      if (!this.menuOpen()) this.langMore.set(false);
+    });
     this.theme.ensureDefault('light');
     this.media = window.matchMedia('(min-width: 600px)');
     this.wideEnough.set(this.media.matches);
     this.media.addEventListener('change', this.onMedia);
     const sub = this.route.queryParamMap.subscribe((params) => { this.demoOn.set(params.get('demo') === '1'); });
-    this.stopQuery = () => sub.unsubscribe();
+    this.path.set(this.router.url);
+    const nav = this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(() => this.path.set(this.router.url));
+    this.stopQuery = () => { sub.unsubscribe(); nav.unsubscribe(); };
     this.scenarioService.ensureLoaded();
     this.ui.loadAlerts();
+    this.live.connectDesk();
     this.syncCompactNav();
+    this.guideOpen.set(!this.guideDismissed());
+  }
+
+  private guideDismissed(): boolean {
+    try {
+      return localStorage.getItem('rd_guide_dismissed') === '1' || localStorage.getItem('rd_tour_done') === '1';
+    } catch {
+      return true;
+    }
+  }
+
+  dismissGuide(): void {
+    this.guideOpen.set(false);
+    try { localStorage.setItem('rd_guide_dismissed', '1'); } catch { /* private mode */ }
+  }
+
+  resetDemo(): void {
+    if (!window.confirm(this.lang.translate('ux.resetDemoConfirm'))) return;
+    this.menuOpen.set(false);
+    this.api.resetDemo().subscribe({ next: () => location.reload() });
+  }
+
+  loadFullScenario(): void {
+    if (!window.confirm(this.lang.translate('ux.loadFullConfirm'))) return;
+    this.menuOpen.set(false);
+    this.api.loadFullScenario().subscribe({ next: () => location.reload() });
   }
 
   syncCompactNav(): void {
@@ -61,6 +113,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.media?.removeEventListener('change', this.onMedia);
     this.stopQuery?.();
+    this.live.stop();
   }
 
   toggleDemo(): void {
@@ -68,7 +121,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.router.navigate([], { relativeTo: this.route, queryParams: { demo: this.demoOn() ? null : '1' }, queryParamsHandling: 'merge' });
   }
 
-  /** Search filters the Cases queue, so typing on another tab opens Cases with the query kept. */
+  /** Search filters the Home queue, so typing on another tab opens Home with the query kept. */
   onSearch(event: Event): void {
     this.ui.searchQuery.set((event.target as HTMLInputElement).value);
     if (!this.router.url.startsWith('/coordinator/command')) {

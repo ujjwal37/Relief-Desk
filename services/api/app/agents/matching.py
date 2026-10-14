@@ -1,5 +1,6 @@
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional
 from pydantic import BaseModel
 from app.models.firestore_models import (
@@ -42,6 +43,25 @@ class MatchProposal(BaseModel):
     no_nearby: bool = False
     wait_minutes: Optional[int] = None
     wait_team_name: Optional[str] = None
+
+
+def _explain_together(request: StoredRequest, candidates: list, use_model: bool = False) -> list:
+    """Team explanations come from the template by default.
+
+    Ranking runs on every case open and after every report, so a model call here would queue
+    behind intake on a slow model. use_model=True asks the Explainer for each team.
+    """
+    if not use_model:
+        return [explainer_agent.generate_template_fallback(request, res, breakdown) for res, breakdown, _ in candidates]
+    if len(candidates) < 2:
+        return [explainer_agent.explain(request, res, breakdown) for res, breakdown, _ in candidates]
+    workers = min(4, len(candidates))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = [
+            pool.submit(explainer_agent.explain, request, res, breakdown)
+            for res, breakdown, _ in candidates
+        ]
+        return [item.result() for item in futures]
 
 
 class MatchingAgent:
@@ -94,7 +114,8 @@ class MatchingAgent:
             wait_minutes, wait_team_name = _nearest_finish(request, resources)
 
         proposals: List[MatchProposal] = []
-        for res, breakdown, is_fallback in top_candidates:
+        explanations = _explain_together(request, top_candidates)
+        for (res, breakdown, is_fallback), explanation in zip(top_candidates, explanations):
             # Check if there is an existing match in storage
             existing = [
                 m
@@ -103,7 +124,6 @@ class MatchingAgent:
             ]
 
             is_overcommit = people_needed > res.capacity_remaining
-            explanation = explainer_agent.explain(request, res, breakdown)
 
             if existing:
                 match = existing[0]

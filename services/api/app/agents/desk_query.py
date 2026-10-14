@@ -18,20 +18,20 @@ VULNERABLE = ["child", "elderly", "disabled", "pregnant", "medical_need"]
 OPEN = {RequestStatus.NEW.value, RequestStatus.NEEDS_RECHECK.value, RequestStatus.MATCHED.value}
 
 TYPE_WORDS = {
-    "rescue": ["rescue", "trapped", "stranded", "boat", "roof", "बचाव", "फंसे", "bachao", "phanse", "மீட்பு", "രക്ഷ"],
-    "food": ["food", "water", "hungry", "खाना", "पानी", "khana", "paani", "உணவு", "ഭക്ഷണം"],
-    "medical": ["medical", "medicine", "insulin", "doctor", "injured", "दवा", "dawai", "dawa", "मेडिकल", "மருந்து", "മരുന്ന്"],
-    "shelter": ["shelter", "camp", "आश्रय", "आसरा", "முகாம்", "ക്യാമ്പ്"],
+    "rescue": ["rescue", "trapped", "stranded", "boat", "roof", "बचाव", "फंसे", "bachao", "phanse", "രക്ഷ"],
+    "food": ["food", "water", "hungry", "खाना", "पानी", "khana", "paani", "ഭക്ഷണം"],
+    "medical": ["medical", "medicine", "insulin", "doctor", "injured", "दवा", "dawai", "dawa", "मेडिकल", "മരുന്ന്"],
+    "shelter": ["shelter", "camp", "आश्रय", "आसरा", "ക്യാമ്പ്"],
 }
 VULN_WORDS = {
-    "elderly": ["elderly", "old", "senior", "aged", "बुजुर्ग", "बूढ़े", "buzurg", "bujurg", "budhe", "முதியோர்", "வயதான", "പ്രായമായ"],
-    "child": ["child", "children", "kid", "baby", "infant", "बच्चे", "बच्चा", "bacche", "bachche", "குழந்தை", "കുട്ടി"],
-    "pregnant": ["pregnant", "गर्भवती", "garbhvati", "கர்ப்பிணி", "ഗർഭിണി"],
-    "disabled": ["disabled", "wheelchair", "विकलांग", "divyang", "மாற்றுத்திறனாளி"],
+    "elderly": ["elderly", "old", "senior", "aged", "बुजुर्ग", "बूढ़े", "buzurg", "bujurg", "budhe", "പ്രായമായ"],
+    "child": ["child", "children", "kid", "baby", "infant", "बच्चे", "बच्चा", "bacche", "bachche", "കുട്ടി"],
+    "pregnant": ["pregnant", "गर्भवती", "garbhvati", "ഗർഭിണി"],
+    "disabled": ["disabled", "wheelchair", "विकलांग", "divyang"],
     "medical_need": ["dialysis", "oxygen", "bedridden"],
 }
 WAITING_WORDS = ["waiting", "still", "open", "pending", "unassigned", "not yet", "इंतज़ार", "इंतजार", "intezaar",
-                 "intezar", "baaki", "बाकी", "காத்திருக்", "കാത്തിരി"]
+                 "intezar", "baaki", "बाकी", "കാത്തിരി"]
 
 FUNCTION = {
     "name": "search_cases",
@@ -64,7 +64,7 @@ def ward_catalogue() -> str:
 def system_prompt() -> str:
     return (
         "You turn a flood-relief coordinator's question into one call to search_cases. "
-        "The question may be in English, Hindi, Hinglish, Malayalam or Tamil. "
+        "The question may be in English, Hindi, Hinglish or Malayalam. "
         "Map place names to ward ids, and a district name to all of its wards. Wards: "
         + ward_catalogue()
         + ". 'Waiting', 'still', 'pending' or 'not yet helped' means waiting_only=true. "
@@ -162,25 +162,68 @@ def _call_function(question: str, timeout_s: float):
     return dict(calls[0].args or {}), tokens
 
 
+def _test_model_filters(question: str, key: str, post=None) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+    """openai_compat: one forced search_cases tool call, or the same schema as JSON when the
+    server has no tool support. Cached in memory by question hash. `post` is for tests."""
+    from app.llm import client as llm
+    from app.llm import openai_compat as oc
+    from app.llm.ai_queue import DESK
+
+    c = llm.llm_client
+    cache_key = f"{oc.PROVIDER}:{oc.model()}:{key}"
+    meta: Dict[str, Any] = {"provider": oc.PROVIDER, "model": oc.model(), "vendor": oc.vendor(),
+                            "latency_ms": 0, "tokens": None, "fallback_reason": None}
+    started = time.monotonic()
+    remembered = c._local_cache.get(cache_key)
+    if remembered is not None:
+        meta.update(latency_ms=int((time.monotonic() - started) * 1000), mode="cache")
+        return clean_filters(json.loads(remembered)), meta
+    try:
+        with c.guard.slots.slot(DESK):
+            started = time.monotonic()
+            args, tokens, mode = oc.call_function(system_prompt(), question, FUNCTION, post=post)
+        filters = clean_filters(args)
+    except Exception as exc:
+        meta.update(provider="fallback", model=None, vendor=None, fallback_reason=oc.failure_reason(exc),
+                    latency_ms=int((time.monotonic() - started) * 1000))
+        return None, meta
+    c._local_cache[cache_key] = json.dumps(filters)
+    meta.update(tokens=tokens, mode=mode, latency_ms=int((time.monotonic() - started) * 1000))
+    return filters, meta
+
+
 def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
     """One function call. Returns (filters or None, ai metadata). `call` is for tests."""
     from app.llm import client as llm
 
+    from app.llm.ai_queue import DESK
+
     c = llm.llm_client
     meta: Dict[str, Any] = {"provider": "fallback", "model": None, "latency_ms": 0, "tokens": None, "fallback_reason": None}
     from app.llm import antigravity as ag
+    from app.llm import openai_compat as oc
 
+    key = c.cache_key("desk_query:" + system_prompt(), question.strip())
+    if call is None and oc.enabled():
+        return _test_model_filters(question, key)
     if call is None and ag.antigravity_enabled():
         started = time.monotonic()
+        remembered = c._local_cache.get(key)
+        if remembered is not None:
+            meta.update(provider=ag.PROVIDER, model=ag.MODEL, latency_ms=int((time.monotonic() - started) * 1000))
+            return clean_filters(json.loads(remembered)), meta
         schema = json.dumps(FUNCTION["parameters"])
         try:
-            raw, tokens = ag.call_antigravity(
-                system_prompt(), f"Question: {question}\n\nReturn the search_cases arguments as one JSON object matching: {schema}")
+            # The coordinator is waiting on this answer, so it goes ahead of queued reports.
+            with c.guard.slots.slot(DESK):
+                raw, tokens = ag.call_antigravity(
+                    system_prompt(), f"Question: {question}\n\nReturn the search_cases arguments as one JSON object matching: {schema}")
             filters = clean_filters(json.loads(ag.extract_json(raw)))
         except Exception:
             meta["fallback_reason"] = "error"
             meta["latency_ms"] = int((time.monotonic() - started) * 1000)
             return None, meta
+        c._local_cache[key] = json.dumps(filters)
         meta.update(provider=ag.PROVIDER, model=ag.MODEL, tokens=tokens,
                     latency_ms=int((time.monotonic() - started) * 1000))
         return filters, meta
@@ -190,7 +233,6 @@ def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], 
     if c.guard.circuit_open():
         meta["fallback_reason"] = "circuit_open"
         return None, meta
-    key = c.cache_key("desk_query:" + system_prompt(), question.strip())
     cached = c.get_cached(key) if call is None else None
     if cached:
         try:
@@ -203,14 +245,13 @@ def gemini_filters(question: str, call=None) -> Tuple[Optional[Dict[str, Any]], 
     timeout_s = float(settings.GEMINI_TIMEOUT_S or 12.0)
     call = call or _call_function
     try:
-        fut = llm._GEMINI_POOL.submit(call, question, timeout_s)
-        args, tokens = fut.result(timeout=timeout_s)
+        with c.guard.slots.slot(DESK):
+            started = time.monotonic()
+            fut = llm._GEMINI_POOL.submit(call, question, timeout_s)
+            args, tokens = fut.result(timeout=timeout_s)
         c.guard.record_success()
     except Exception as exc:  # quota, timeout, SDK error: the rules answer instead
-        c.guard.record_failure()
-        text = str(exc)
-        meta["fallback_reason"] = "quota" if ("429" in text or "RESOURCE_EXHAUSTED" in text) else (
-            "timeout" if "Timeout" in type(exc).__name__ else "error")
+        meta["fallback_reason"] = c.note_failure(exc)
         meta["latency_ms"] = int((time.monotonic() - started) * 1000)
         return None, meta
     filters = clean_filters(args)
@@ -270,8 +311,11 @@ def ask(question: str, requests: Iterable[Any], call=None) -> Dict[str, Any]:
     t_search = int((time.monotonic() - t1) * 1000)
     shown = {k: v for k, v in filters.items() if k != "reason"}
     as_json = json.dumps(shown, ensure_ascii=False)
+    from app.llm.providers import display_name
+
     trace = [
         {"agent": "Understand question", "status": "complete", "provider": ai["provider"], "model": ai.get("model"),
+         "provider_label": display_name(ai["provider"]) if ai.get("model") else "Rules", "vendor": ai.get("vendor"),
          "latency_ms": ai.get("latency_ms") or t_parse, "tokens": ai.get("tokens"),
          "input": question, "output": as_json, "note": ai.get("fallback_reason")},
         {"agent": "Search cases (read-only)", "status": "complete", "provider": "tool", "model": None,

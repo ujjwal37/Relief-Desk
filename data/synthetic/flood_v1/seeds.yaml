@@ -787,8 +787,6 @@ incidents:
   - lang: en
     text: Flood water entering 1st floor near Nedumudi Boat Jetty. 8 people including 3 children and 2
       elderly stranded on rooftop, urgent boat needed.
-  - lang: ta
-    text: "நெடுமுடி படகுத்துறை அருகே வெள்ளம் முதல் தளத்தில் நுழைந்தது. 8 பேர், அதில் 3 குழந்தைகள் மற்றும் 2 முதியவர்கள், மாடியில் சிக்கியுள்ளனர். உடனே படகு அனுப்பவும்."
 - id: INC-002
   type: medical
   ward_id: ward_1
@@ -817,8 +815,6 @@ incidents:
   - lang: en
     text: Elderly father having severe diabetic emergency near Kainakary LP School, house surrounded by
       chest-deep flood water.
-  - lang: ta
-    text: "கைனகரி தொடக்கப்பள்ளி அருகே முதிய தந்தைக்கு கடுமையான சர்க்கரை நோய் அவசரம். வீடு மார்பளவு வெள்ளத்தில் சூழப்பட்டுள்ளது."
 - id: INC-003
   type: medical
   ward_id: ward_2
@@ -847,8 +843,6 @@ incidents:
   - lang: en
     text: Pregnant woman in full labor trapped behind Champakulam School, road inundated with 4ft water.
       Urgent medical boat.
-  - lang: ta
-    text: "சம்பாக்குளம் பள்ளிக்குப் பின்னால் கர்ப்பிணி பெண் பிரசவ வலியில் சிக்கியுள்ளார். சாலையில் 4 அடி தண்ணீர். உடனே மருத்துவப் படகு வேண்டும்."
 - id: INC-004
   type: rescue
   ward_id: ward_12
@@ -877,8 +871,6 @@ incidents:
   - lang: en
     text: Lake embankment breached near Kalpetta. 12 people stranded including 1 wheelchair user and 4
       small kids. Water rising rapidly.
-  - lang: ta
-    text: "கல்பற்ற அணைக்கரை உடைந்தது. 12 பேர் சிக்கியுள்ளனர், அதில் ஒரு சக்கர நாற்காலி பயனரும் 4 சிறு குழந்தைகளும் உள்ளனர். தண்ணீர் வேகமாக உயர்கிறது."
 - id: INC-005
   type: rescue
   ward_id: ward_4
@@ -905,8 +897,6 @@ incidents:
   - lang: en
     text: Wall collapsed near Clock Tower Aluva due to rushing flood water, 6 people clinging to roof
       terrace.
-  - lang: ta
-    text: "ஆலுவா கடிகாரக் கோபுரம் அருகே வெள்ள நீரால் சுவர் இடிந்தது. 6 பேர் மாடித் திண்ணையில் ஒட்டிக்கொண்டுள்ளனர்."
 - id: INC-006
   type: medical
   ward_id: ward_7
@@ -935,8 +925,6 @@ incidents:
   - lang: en
     text: Severe laceration and electrical shock near Power Plant Gate, severe bleeding, urgent paramedic
       boat.
-  - lang: ta
-    text: "மின் நிலைய வாயில் அருகே ஆழமான வெட்டுக்காயமும் மின் அதிர்ச்சியும் ஏற்பட்டுள்ளது. கடுமையான இரத்தப்போக்கு. உடனே மருத்துவப் படகு வேண்டும்."
 - id: INC-007
   type: rescue
   ward_id: ward_3
@@ -963,8 +951,6 @@ incidents:
   - lang: en
     text: 5 people trapped on Nedumudi Bridge bridge pillars, flood current violent, urgent motorized rescue
       boat.
-  - lang: ta
-    text: "நெடுமுடி பாலம் தூண்களில் 5 பேர் சிக்கியுள்ளனர். வெள்ள ஓட்டம் கடுமை. உடனே இயந்திரப் படகு வேண்டும்."
 - id: INC-008
   type: medical
   ward_id: ward_5
@@ -990,8 +976,6 @@ incidents:
     text: St Jude hospital ke paas oxygen cylinder khatam ho raha hai 1 ghante me, road par paani hai.
   - lang: en
     text: Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.
-  - lang: ta
-    text: "செயின்ட் ஜூட் மருத்துவமனை அருகே மூச்சுத்திணறல் நோயாளிக்கு ஆக்சிஜன் ஒரு மணி நேரத்தில் தீர்ந்துவிடும். சாலை துண்டிக்கப்பட்டுள்ளது."
 - id: INC-009
   type: rescue
   ward_id: ward_11
@@ -1019,8 +1003,6 @@ incidents:
   - lang: en
     text: Submerged bus near ISBT Bus Terminal, 15 passengers stranded on roof with water rising to roof
       level.
-  - lang: ta
-    text: "பேருந்து நிலையம் அருகே பேருந்து மூழ்கியது. 15 பயணிகள் கூரையில் சிக்கியுள்ளனர். தண்ணீர் கூரை வரை உயர்கிறது."
 - id: INC-010
   type: rescue
   ward_id: ward_8
@@ -1046,8 +1028,6 @@ incidents:
     text: Mala School ke peeche 9 log tin shed par baithe hain, 6 feet water, bachhe ro rahe hain.
   - lang: en
     text: Family of 9 stranded on tin roof behind Mala School, water level at 6 feet and rising.
-  - lang: ta
-    text: "மாலா பள்ளிக்குப் பின்னால் தகரக் கூரையில் 9 பேர் கொண்ட குடும்பம் சிக்கியுள்ளது. தண்ணீர் 6 அடி உயரத்தில் மேலும் உயர்கிறது."
 - id: INC-011
   type: food
   ward_id: ward_2
@@ -1076,8 +1056,6 @@ incidents:
   - lang: en
     text: 18 people stranded on 1st floor of Champakulam market with no drinking water or food for 24
       hours.
-  - lang: ta
-    text: "சம்பாக்குளம் சந்தையின் முதல் தளத்தில் 18 பேர் சிக்கியுள்ளனர். 24 மணி நேரமாக குடிநீரும் உணவும் இல்லை."
 - id: INC-012
   type: medical
   ward_id: ward_9
@@ -1106,8 +1084,6 @@ incidents:
   - lang: en
     text: Cardiac medication needed urgently for elderly patient near Anthikad Bridge, stranded due to
       street flooding.
-  - lang: ta
-    text: "அந்திக்கட்டு பாலம் அருகே முதிய நோயாளிக்கு இதய மருந்து உடனே வேண்டும். தெரு வெள்ளத்தில் சிக்கியுள்ளார்."
 - id: INC-013
   type: shelter
   ward_id: ward_1
@@ -1136,8 +1112,6 @@ incidents:
   - lang: en
     text: 22 displaced flood victims sheltered in Mata Mandir veranda, compound starting to flood, need
       shelter transfer.
-  - lang: ta
-    text: "மாதா கோயில் முற்றத்தில் 22 வெள்ளப் பாதிப்பு மக்கள் தங்கியுள்ளனர். வளாகம் வெள்ளமாகத் தொடங்குகிறது. வேறு முகாம் வேண்டும்."
 - id: INC-014
   type: rescue
   ward_id: ward_6
@@ -1163,8 +1137,6 @@ incidents:
     text: St Mary school ke caretaker house me paani ghus gaya hai, pregnant lady hai boat se nikalo.
   - lang: en
     text: Quarters flooded near St. Mary Convent, pregnant mother and 2 children require boat evacuation.
-  - lang: ta
-    text: "செயின்ட் மேரி கான்வென்ட் அருகே குடியிருப்பு வெள்ளத்தில் மூழ்கியது. கர்ப்பிணி தாயும் 2 குழந்தைகளும் படகில் வெளியேற வேண்டும்."
 - id: INC-015
   type: food
   ward_id: ward_10
@@ -1191,8 +1163,6 @@ incidents:
       rations needed.
   - lang: en
     text: 14 residents marooned in apartment near Puthumala, food packets and potable water urgently requested.
-  - lang: ta
-    text: "புதுமலை அருகே அடுக்குமாடி வீட்டில் 14 பேர் சிக்கியுள்ளனர். உணவுப் பொட்டலங்களும் குடிநீரும் உடனே வேண்டும்."
 - id: INC-016
   type: rescue
   ward_id: ward_7
@@ -1220,8 +1190,6 @@ incidents:
   - lang: en
     text: Contaminated floodwater inundating worker barracks near Industrial Community Hall. 11 workers
       require rescue.
-  - lang: ta
-    text: "தொழிற்சாலை சமுதாய மண்டபம் அருகே தொழிலாளர் தங்குமிடத்தில் அசுத்த வெள்ளம் நுழைந்தது. 11 தொழிலாளர்களை மீட்க வேண்டும்."
 - id: INC-017
   type: food
   ward_id: ward_4
@@ -1249,8 +1217,6 @@ incidents:
   - lang: en
     text: 30 displaced flood victims sheltered in Jama Masjid complex in Aluva require immediate dry food
       rations.
-  - lang: ta
-    text: "ஆலுவா ஜமா மஸ்ஜித் வளாகத்தில் தங்கிய 30 வெள்ளப் பாதிப்பு மக்களுக்கு உடனே உலர் உணவு வேண்டும்."
 - id: INC-018
   type: medical
   ward_id: ward_11
@@ -1278,8 +1244,6 @@ incidents:
   - lang: en
     text: Compound leg fracture outside Truck Union Bhawan, patient in severe shock, urgent boat transport
       to hospital.
-  - lang: ta
-    text: "லாரி சங்க மண்டபத்துக்கு வெளியே காலில் கூட்டு எலும்பு முறிவு. நோயாளி அதிர்ச்சியில் உள்ளார். உடனே மருத்துவமனைக்கு படகு வேண்டும்."
 - id: INC-019
   type: rescue
   ward_id: ward_5
@@ -1306,8 +1270,6 @@ incidents:
   - lang: en
     text: Staff residential quarters flooded behind Varapuzha School, 8 people including 5 children need
       rescue.
-  - lang: ta
-    text: "வரப்புழா பள்ளிக்குப் பின்னால் ஊழியர் குடியிருப்பு வெள்ளத்தில் மூழ்கியது. 8 பேர், அதில் 5 குழந்தைகள், மீட்பு வேண்டும்."
 - id: INC-020
   type: food
   ward_id: ward_12
@@ -1334,8 +1296,6 @@ incidents:
       needed.
   - lang: en
     text: 25 flood refugees on terrace of Kalpetta School, acute shortage of baby food and drinking water.
-  - lang: ta
-    text: "கல்பற்ற பள்ளி மாடியில் 25 வெள்ள அகதிகள் உள்ளனர். குழந்தை உணவும் குடிநீரும் கடுமையாகப் பற்றாக்குறை."
 - id: INC-021
   type: medical
   ward_id: ward_8
@@ -1363,8 +1323,6 @@ incidents:
       boat.
   - lang: en
     text: High fever and seizure emergency for 4yo child near Mala Health Centre, street flooded waist-deep.
-  - lang: ta
-    text: "மாலா ஆரம்ப சுகாதார நிலையம் அருகே 4 வயது குழந்தைக்கு அதிக காய்ச்சலும் வலிப்பும். தெரு இடுப்புளவு வெள்ளம்."
 - id: INC-022
   type: rescue
   ward_id: ward_9
@@ -1392,8 +1350,6 @@ incidents:
   - lang: en
     text: Canal overflow inundating houses near Anthikad School, water rising rapidly, 7 residents need
       evacuation.
-  - lang: ta
-    text: "அந்திக்கட்டு பள்ளி அருகே கால்வாய் நிரம்பி வீடுகளில் தண்ணீர் நுழைந்தது. வேகமாக உயர்கிறது. 7 பேரை வெளியேற்ற வேண்டும்."
 - id: INC-023
   type: shelter
   ward_id: ward_6
@@ -1422,8 +1378,6 @@ incidents:
   - lang: en
     text: Slum shanties flooded behind Collectorate in Kothamangalam, 16 displaced people need immediate
       shelter.
-  - lang: ta
-    text: "கோதமங்கலம் ஆட்சியர் அலுவலகத்துக்குப் பின்னால் குடிசைகள் வெள்ளத்தில் மூழ்கின. 16 பேருக்கு உடனே தங்குமிடம் வேண்டும்."
 - id: INC-024
   type: food
   ward_id: ward_3
@@ -1448,8 +1402,6 @@ incidents:
     text: Nedumudi School jetty pe 20 log cut off hain, no cooked food available since morning.
   - lang: en
     text: 20 boat operators and volunteers cut off at Nedumudi School jetty require cooked food packets.
-  - lang: ta
-    text: "நெடுமுடி பள்ளி துறைமுகத்தில் 20 படகு ஓட்டுநர்களும் தன்னார்வலர்களும் துண்டிக்கப்பட்டுள்ளனர். சமைத்த உணவுப் பொட்டலம் வேண்டும்."
 - id: INC-025
   type: food
   ward_id: ward_2
@@ -1477,8 +1429,6 @@ incidents:
       24 hours.
   - lang: en
     text: Family safe on upper floor near Ram Mandir Champakulam, road flooded 2ft, dry rations requested.
-  - lang: ta
-    text: "சம்பாக்குளம் ராமர் கோயில் அருகே குடும்பம் மேல் தளத்தில் பாதுகாப்பாக உள்ளது. சாலையில் 2 அடி தண்ணீர். உலர் உணவு வேண்டும்."
 - id: INC-026
   type: shelter
   ward_id: ward_8
@@ -1505,8 +1455,6 @@ incidents:
     text: Mala Health Centre basement seepage, need tarpaulin sheets and dry space to keep inventory.
   - lang: en
     text: Basement seepage near Mala Health Centre, traders require tarpaulin and dry storage space.
-  - lang: ta
-    text: "மாலா ஆரம்ப சுகாதார நிலையம் அருகே அடித்தளத்தில் நீர் கசிகிறது. வணிகர்களுக்கு தார்ப்பாய் மற்றும் உலர் சேமிப்பு இடம் வேண்டும்."
 - id: INC-027
   type: info
   ward_id: ward_11
@@ -1531,8 +1479,6 @@ incidents:
     text: Vythiri Bridge open hai kya ambulance aur private car ke liye? Please clarify.
   - lang: en
     text: Requesting confirmation if Vythiri Bridge is submerged or accessible for light vehicles.
-  - lang: ta
-    text: "வைத்திரி பாலம் மூழ்கியுள்ளதா அல்லது சிறிய வாகனங்களுக்கு திறந்துள்ளதா என்று உறுதிப்படுத்த வேண்டும்."
 - id: INC-028
   type: food
   ward_id: ward_5
@@ -1560,8 +1506,6 @@ incidents:
       distribution.
   - lang: en
     text: Community kitchen at Varapuzha Gurudwara requires bulk wheat flour and cooking gas supplies.
-  - lang: ta
-    text: "வரப்புழா குருத்வாரா சமுதாய சமையலுக்கு அதிக கோதுமை மாவும் சமையல் எரிவாயுவும் வேண்டும்."
 - id: INC-029
   type: medical
   ward_id: ward_10
@@ -1588,8 +1532,6 @@ incidents:
     text: Meppadi Relief Camp ke paas regular BP medicine delivery needed for senior citizen couple.
   - lang: en
     text: Routine medicine delivery requested for elderly couple near Meppadi Relief Camp.
-  - lang: ta
-    text: "மேப்பாடி நிவாரண முகாம் அருகே முதிய தம்பதியருக்கு வழக்கமான மருந்து கொண்டு சேர்க்க வேண்டும்."
 - id: INC-030
   type: shelter
   ward_id: ward_9
@@ -1616,8 +1558,6 @@ incidents:
     text: Anthikad Relief Camp ke paas 10 construction laborers need dry shelter space and blankets.
   - lang: en
     text: 10 construction workers need dry shelter and blankets near Anthikad Relief Camp.
-  - lang: ta
-    text: "அந்திக்கட்டு நிவாரண முகாம் அருகே 10 கட்டிடத் தொழிலாளர்களுக்கு உலர் தங்குமிடமும் போர்வைகளும் வேண்டும்."
 - id: INC-031
   type: food
   ward_id: ward_1
@@ -1642,8 +1582,6 @@ incidents:
     text: Kainakary Church has 15 people sheltered, drinking water cans needed by evening.
   - lang: en
     text: Drinking water cans needed for 15 sheltered persons at Kainakary Church.
-  - lang: ta
-    text: "கைனகரி தேவாலயம் இடத்தில் தங்கிய 15 பேருக்கு குடிநீர் கேன்கள் வேண்டும்."
 - id: INC-032
   type: rescue
   ward_id: ward_4
@@ -1671,8 +1609,6 @@ incidents:
   - lang: en
     text: 3 shopkeepers stranded on mezzanine in Sarafa cloth market, water 2.5ft, non-critical boat assist
       requested.
-  - lang: ta
-    text: "சரஃபா துணிச் சந்தையின் இடைத்தளத்தில் 3 கடைக்காரர்கள் சிக்கியுள்ளனர். தண்ணீர் 2.5 அடி. அவசரம் இல்லாத படகு உதவி வேண்டும்."
 - id: INC-033
   type: info
   ward_id: ward_6
@@ -1698,8 +1634,6 @@ incidents:
     text: Kothamangalam metro station se metro service functional hai kya East Kerala side?
   - lang: en
     text: Seeking information regarding Metro operations from Kothamangalam station.
-  - lang: ta
-    text: "கோதமங்கலம் நிலையத்திலிருந்து மெட்ரோ இயங்குகிறதா என்ற தகவல் வேண்டும்."
 - id: INC-034
   type: shelter
   ward_id: ward_12
@@ -1725,8 +1659,6 @@ incidents:
     text: Kalpetta Shelter is at max capacity, 18 people waiting outside need redirection info.
   - lang: en
     text: Kalpetta Shelter full, 18 newly arrived evacuees need relocation to secondary facility.
-  - lang: ta
-    text: "கல்பற்ற தங்குமிடம் நிரம்பியது. புதிதாக வந்த 18 பேரை வேறு இடத்துக்கு மாற்ற வேண்டும்."
 - id: INC-035
   type: info
   ward_id: ward_3
@@ -1752,8 +1684,6 @@ incidents:
     text: Water level gauge reading at Nedumudi Relief Camp is 1.2m above red mark, logging status.
   - lang: en
     text: Reporting water level reading at Nedumudi Relief Camp as 1.2m over danger mark.
-  - lang: ta
-    text: "நெடுமுடி நிவாரண முகாம் இடத்தில் நீர்மட்டம் ஆபத்துக் கோட்டுக்கு மேல் 1.2 மீட்டர் என்று தெரிவிக்கிறோம்."
 - id: INC-036
   type: info
   ward_id: ward_2
@@ -1778,8 +1708,6 @@ incidents:
     text: Is Champakulam Shelter parking waterlogged?
   - lang: en
     text: Asking if Champakulam Shelter parking is flooded or safe for vehicle.
-  - lang: ta
-    text: "சம்பாக்குளம் தங்குமிடம் வாகன நிறுத்துமிடம் வெள்ளமா அல்லது வாகனத்துக்கு பாதுகாப்பானதா என்று கேட்கிறோம்."
 - id: INC-037
   type: shelter
   ward_id: ward_8
@@ -1804,8 +1732,6 @@ incidents:
     text: Mala Boat Jetty hall has capacity for 30 evacuees, offering space to administration.
   - lang: en
     text: Mala Boat Jetty committee offering hall space for 30 displaced people.
-  - lang: ta
-    text: "மாலா படகுத்துறை குழு 30 இடம்பெயர்ந்த மக்களுக்கு மண்டப இடம் வழங்கத் தயாராக உள்ளது."
 - id: INC-038
   type: info
   ward_id: ward_7
@@ -1830,8 +1756,6 @@ incidents:
     text: Chalakudy River Jetty tracks are dry as of 4:30pm.
   - lang: en
     text: Chalakudy River Jetty reports tracks are currently dry.
-  - lang: ta
-    text: "சாலக்குடி ஆற்றுத்துறையில் தண்டவாளம் இப்போது வறண்டுள்ளது என்று தெரிவிக்கிறோம்."
 - id: INC-039
   type: food
   ward_id: ward_10
@@ -1857,8 +1781,6 @@ incidents:
     text: Meppadi main market has sufficient grocery wholesale stock available.
   - lang: en
     text: Meppadi market association confirms sufficient grain stocks available for relief procurement.
-  - lang: ta
-    text: "மேப்பாடி சந்தை சங்கம் நிவாரணக் கொள்முதலுக்கு போதுமான தானிய இருப்பு உள்ளது என்று உறுதி செய்கிறது."
 - id: INC-040
   type: info
   ward_id: ward_12
@@ -1883,5 +1805,3 @@ incidents:
     text: Tree fallen on road near Kalpetta Town, blocking vehicle movement around Kalpetta.
   - lang: en
     text: Fallen tree blocking roadway near Kalpetta Town, requires municipal clearance team.
-  - lang: ta
-    text: "கல்பற்ற நகரம் அருகே விழுந்த மரம் சாலையை மறிக்கிறது. நகராட்சி குழு வேண்டும்."

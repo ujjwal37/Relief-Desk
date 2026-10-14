@@ -74,7 +74,7 @@ class ASRService:
         audio_bytes: Optional[bytes] = None,
         lang_hint: str = "hi",
     ) -> ASRResult:
-        """Transcribes incoming audio note (Hindi, Hinglish, English, Tamil)."""
+        """Transcribes a synthetic voice note in English or Hindi."""
         # 1. Direct Voice Note ID Match (Hero demo path)
         if voice_note_id and voice_note_id in self._notes_cache:
             note = self._notes_cache[voice_note_id]
@@ -103,7 +103,7 @@ class ASRService:
                 client = genai.Client(api_key=settings.GEMINI_API_KEY)
                 prompt = f"""You are a crisis dispatch speech-to-text transcriber.
 Transcribe this emergency voice recording verbatim.
-Supported languages: Hindi (Devanagari script), Hinglish (Latin script), English, Tamil.
+Supported languages: English and Hindi (Devanagari script).
 Return ONLY the raw transcription without any commentary or quotation marks."""
 
                 response = client.models.generate_content(

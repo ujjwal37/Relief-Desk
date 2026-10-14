@@ -19,3 +19,13 @@ def reset_demo(coordinator: CoordinatorUser = Depends(get_current_coordinator)):
     summary = storage_service.reset_demo()
     summary["actor"] = coordinator.email
     return summary
+
+
+@router.post("/demo/full")
+def load_full_scenario(coordinator: CoordinatorUser = Depends(get_current_coordinator)):
+    """Load the full flood pack into the running demo. Reset returns to the small seed."""
+    if not settings.DEMO_MODE and (coordinator.email or "").lower() != DEMO_COORDINATOR_EMAIL:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Demo seed is only available in demo mode or for the demo coordinator")
+    summary = storage_service.load_full_scenario()
+    summary["actor"] = coordinator.email
+    return summary

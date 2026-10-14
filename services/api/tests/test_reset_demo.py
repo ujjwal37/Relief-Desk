@@ -7,7 +7,18 @@ client = TestClient(app)
 AUTH = {"Authorization": "Bearer demo-coordinator-token"}
 
 
+def _restore_full():
+    storage_service.load_full_scenario()
+
+
 def test_reset_demo_reloads_kerala_seeds():
+    try:
+        _reset_reloads_kerala_seeds()
+    finally:
+        _restore_full()
+
+
+def _reset_reloads_kerala_seeds():
     storage_service.save_report_raw(
         raw_text="temporary synthetic note that reset must drop",
         channel="text",
@@ -22,7 +33,8 @@ def test_reset_demo_reloads_kerala_seeds():
     response = client.post("/api/demo/reset", headers=AUTH)
     assert response.status_code == 200
     body = response.json()
-    assert body["incidents"] >= 1
+    assert body["seed"] == "small"
+    assert body["incidents"] == 2
     assert body["resources"] >= 1
     assert storage_service.get_report("RESET-TEMP") is None
     assert storage_service.get_request("INC-001") is not None
@@ -37,7 +49,10 @@ def test_reset_works_for_demo_coordinator_with_demo_mode_off(monkeypatch):
     from app.config import settings
 
     monkeypatch.setattr(settings, "DEMO_MODE", False)
-    assert client.post("/api/demo/reset", headers=AUTH).status_code == 200
+    try:
+        assert client.post("/api/demo/reset", headers=AUTH).status_code == 200
+    finally:
+        _restore_full()
 
 
 def test_reset_refused_for_other_coordinator_with_demo_mode_off(monkeypatch):

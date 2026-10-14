@@ -12,23 +12,15 @@ from typing import Dict, Optional
 _CHILD = (
     "bachcha", "baccha", "bachha", "bachhe", "bacche", "bache", "bachcha",
     "child", "children", "baby", "kid", "kids", "बच्चा", "बच्चे", "बच्ची", "बालक",
-    "குழந்தை", "குழந்தைகள்", "சிறுவன்", "சிறுமி", "குழந்தைக்கு",
 )
 _ELDERLY = (
     "bujurg", "buzurg", "budha", "budhiya", "elderly", "senior", "dada", "dadi",
     "बुजुर्ग", "बूढ़", "बुजुर्ग", "दादी", "दादा",
-    "முதியவர்", "முதியவரு", "முதிய", "வயதான", "பாட்டி", "தாத்தா", "வயோதிகர்",
 )
-_PREGNANT = ("pregnant", "pregnancy", "garbhvati", "गर्भवती", "प्रेग्नेंट", "கர்ப்பிணி")
-_DISABLED = ("disabled", "handicap", "wheelchair", "divyang", "दिव्यांग", "अपंग", "மாற்றுத்திறன்")
+_PREGNANT = ("pregnant", "pregnancy", "garbhvati", "गर्भवती", "प्रेग्नेंट")
+_DISABLED = ("disabled", "handicap", "wheelchair", "divyang", "दिव्यांग", "अपंग")
 _MEDICAL = (
     "medical", "oxygen", "insulin", "doctor", "hospital", "ऑक्सीजन", "दवा", "बीमार",
-    "ஆக்சிஜன்", "மருத்துவம்", "மருத்துவர்", "நோயாளி", "மருந்து", "ஆஸ்துமா",
-)
-_TA_DIGITS = str.maketrans("௦௧௨௩௪௫௬௭௮௯", "0123456789")
-_TA_NUMBER_WORDS = (
-    ("பத்து", 10), ("ஒன்பது", 9), ("எட்டு", 8), ("ஏழு", 7), ("ஆறு", 6),
-    ("ஐந்து", 5), ("நான்கு", 4), ("மூன்று", 3), ("இரண்டு", 2), ("ஒன்று", 1), ("ஒரு", 1),
 )
 _STOP = {
     "par", "pe", "per", "mein", "me", "mai", "hai", "hain", "ke", "ki", "aur",
@@ -39,7 +31,7 @@ _STOP = {
 def _has_any(text: str, words: tuple) -> bool:
     lower = text.lower()
     for word in words:
-        if re.search(r"[\u0900-\u097F\u0B80-\u0BFF]", word):
+        if re.search(r"[\u0900-\u097F]", word):
             if word in text:
                 return True
             continue
@@ -58,10 +50,23 @@ def vulnerable_flags(text: str) -> Dict[str, bool]:
     }
 
 
+_DEVA_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
+
+_HI_NUMBER_WORDS = {
+    "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "पाँच": 5,
+    "छह": 6, "छः": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
+}
+
+
+def _ascii_digits(text: str) -> str:
+    return text.translate(_DEVA_DIGITS)
+
+
 def extract_place(text: str) -> Optional[str]:
     """Pull a ward plus road, or a trailing landmark, out of a spoken report."""
     if not text:
         return None
+    text = _ascii_digits(text)
     ward = re.search(
         r"((?:ward|वार्ड)\s*\d+\b(?:\s+[\w\u0900-\u097F.]{2,}){0,4})",
         text,
@@ -118,12 +123,52 @@ def _group_people_count(text: str) -> Optional[int]:
     return total if found and total > 0 else None
 
 
-def people_count(text: str) -> Optional[int]:
+def people_bounds(text: str) -> Optional[tuple]:
+    """(low, high, label) for '4 people' or '2-3 people'. The label keeps the words the citizen used."""
     if not text:
         return None
-    normalized = text.translate(_TA_DIGITS)
+    normalized = _ascii_digits(text)
+    ranged = re.search(
+        r"(\d+)\s*(?:-|–|—|\bto\b)\s*(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति)(?:ों|ें)?(?!\w)",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+    if ranged:
+        low, high = sorted((int(ranged.group(1)), int(ranged.group(2))))
+        return low, high, f"{low}-{high}"
+    count = _people_count_single(normalized)
+    if count is None:
+        return None
+    return count, count, str(count)
+
+
+def people_count(text: str) -> Optional[int]:
+    """People needed. A range uses the upper bound, so '2-3 people' counts as 3."""
+    bounds = people_bounds(text)
+    return None if bounds is None else bounds[1]
+
+
+def span_upper(span: str) -> int:
+    numbers = [int(part) for part in re.findall(r"\d+", span or "")]
+    return max(numbers) if numbers else 0
+
+
+def counts_note(spans: list) -> Optional[str]:
+    """'Counts differ: 2-3 vs 4-5' when the reports do not name the same number."""
+    ordered = []
+    for span in spans:
+        if span and span not in ordered:
+            ordered.append(span)
+    if len(ordered) < 2:
+        return None
+    return "Counts differ: " + " vs ".join(ordered)
+
+
+def _people_count_single(normalized: str) -> Optional[int]:
+    if not normalized:
+        return None
     match = re.search(
-        r"(\d+)\s*(?:log|लोग|people|persons|insaan|பேர்|பேர்கள்|நபர்|நபர்கள்)(?!\w)",
+        r"(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति)(?:ों|ें)?(?!\w)",
         normalized,
         flags=re.IGNORECASE,
     )
@@ -140,9 +185,13 @@ def people_count(text: str) -> Optional[int]:
     grouped = _group_people_count(normalized)
     if grouped:
         return grouped
-    for word, count in _TA_NUMBER_WORDS:
-        if re.search(rf"{word}\s*(?:பேர்|பேர்கள்|நபர்|நபர்கள்)", text):
-            return count
+    spoken = "|".join(sorted(_HI_NUMBER_WORDS, key=len, reverse=True))
+    hindi = re.search(
+        rf"({spoken})\s*(?:लोग|व्यक्ति)(?:ों|ें)?(?!\w)",
+        normalized,
+    )
+    if hindi:
+        return _HI_NUMBER_WORDS[hindi.group(1)]
     return None
 
 
@@ -172,8 +221,9 @@ def infer_incident_type(text: str) -> Optional[str]:
     ):
         return "medical"
     if has_latin("bachao", "rescue", "stranded", "fanse", "rooftop") or has_phrase(
-        "chat par", "chhat par", "छत", "फंसे", "फंस", "fas gaye",
+        "chat par", "chhat par", "छत", "फंसे", "फँसे", "फंस", "fas gaye",
         "boat bhejo", "boat needed", "rescue boat", "send a boat", "boat chahiye",
+        "नाव", "बचाओ", "बचाव",
     ):
         return "rescue"
     if has_latin("beghar", "tarpaulin") or has_phrase(

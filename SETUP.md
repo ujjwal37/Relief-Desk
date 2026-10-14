@@ -142,19 +142,19 @@ SUPPORTED_LANGS=en,hi,hinglish,ta
 Also create `.gitignore` entries: `.env`, `.venv/`, `node_modules/`, `dist/`, `.angular/`, `*.key`, `android/`, `ios/` (if not needed).
 
 ## 6. i18n (multilingual UI and reports)
-Languages: English (`en`), हिन्दी (`hi`), Hinglish (`hinglish`, Latin-script Hindi), and one regional language: தமிழ் (`ta`) (swap for বাংলা `bn` if preferred; only the JSON file and font change).
+Languages: English (`en`) and Hindi (`hi`) are primary. Hinglish (`hinglish`) and Malayalam (`ml`) sit behind More on the language switcher.
 
 **UI strings.** Use `@ngx-translate/core` (runtime language switch without rebuild; better for a live demo switcher than build-time `@angular/localize`).
 ```bash
 npm i @ngx-translate/core @ngx-translate/http-loader
 ```
-- One JSON per language in `libs/shared/src/i18n/`: `en.json`, `hi.json`, `hinglish.json`, `ta.json`. Same keys in all files, namespaced: `queue.title`, `why.approve`, `alerts.silentZone`, ...
+- One JSON per language in `libs/shared/src/lib/i18n/`: `en.json`, `hi.json`, `hinglish.json`, `ml.json`. Same keys in all files, namespaced: `queue.title`, `why.approve`, `alerts.silentZone`, ...
 - Never hard-code visible text in templates; always `{{ 'key' | translate }}`. A CI check (`scripts/check-i18n.mjs`) fails if a key is missing in any file.
-- A `LanguageService` in `libs/shared` stores the choice in localStorage, sets `<html lang>`, and switches font stacks. The switcher component (EN / हिन्दी / Hinglish / தமிழ்) sits in the coordinator top bar and the public header.
-- Fonts: `Inter` + `Noto Sans Devanagari` + `Noto Sans Tamil` (self-host via `@fontsource/*` so rendering works offline); body text min 14 px on dashboard, 16 px on the phone app; check high contrast (WCAG AA).
-- Numbers/dates: `Intl.DateTimeFormat` / `Intl.NumberFormat` with `hi-IN` / `ta-IN` locale.
+- A `LanguageService` in `libs/shared` stores the choice in localStorage, sets `<html lang>`, and switches font stacks. The switcher shows EN and हिंदी up front. Hinglish and Malayalam are under More.
+- Fonts: `Inter` + `Noto Sans Devanagari` + `Noto Sans Malayalam` (self-host via `@fontsource/*` so rendering works offline); body text min 14 px on dashboard, 16 px on the phone app; check high contrast (WCAG AA).
+- Numbers/dates: `Intl.DateTimeFormat` / `Intl.NumberFormat` with `hi-IN` locale.
 
-**Free-text reports (user content).** Not translated by JSON. The intake agent (Gemini) detects the language, stores `raw_text` untouched, and produces `text_en` and a translation to the coordinator's selected language (`translations: {en, hi, ta}`). Coordinator UI shows original beside translation, labelled "AI translation". Translations are cached by hash; if translation confidence is low, flag for human review. Explainer agent outputs `text_en` and `text_hi` (and `text_ta` if time permits) with the numeric-consistency check from BUILD_BRIEF section 4.1.
+**Free-text reports (user content).** Not translated by JSON. The intake agent (Gemini) detects the language, stores `raw_text` untouched, and produces `text_en` and a Hindi translation (`translations: {en, hi}`). Coordinator UI shows original beside translation, labelled "AI translation". Translations are cached by hash; if translation confidence is low, flag for human review. Explainer agent outputs `text_en` and `text_hi` with the numeric-consistency check from BUILD_BRIEF section 4.1.
 Static safety strings (e.g. 112 banner, fixed first-aid wording for the dog pack) are fixed, human-reviewed translations in the JSON files, never LLM generated at runtime.
 
 ## 7. Run locally
@@ -167,12 +167,12 @@ cd services/api && source .venv/bin/activate && uvicorn app.main:app --reload --
 ng serve web --port 4200
 # demo mode with phone frame: http://localhost:4200/coordinator?demo=1
 ```
-Proxy `/api` to `localhost:8000` with `proxy.conf.json`.
+Proxy `/api` to `localhost:8000` with `apps/web/proxy.conf.js`. `/api/events` is not buffered.
 
 ## 8. Sanity checks (all must pass before TASKS T-001 is DONE)
 - [ ] `curl localhost:8000/healthz` returns `{"status":"ok"}` (and does not call Gemini).
 - [ ] `ng serve web` loads; `/` shows the landing choices, `/report` works without login, `/coordinator` redirects to login; language switcher changes the text of at least 3 labels.
-- [ ] Hindi and Tamil glyphs render (no boxes) in both layouts.
+- [ ] Hindi and Malayalam glyphs render (no boxes) in both layouts.
 - [ ] Python: a 1-call script with your key prints a Gemini reply (`GEMINI_MODEL`), and with `GEMINI_ENABLED=false` returns the cached demo response.
 - [ ] Firestore emulator: write and read one doc from the API.
 - [ ] Maps key loads a map on localhost and fails from a non-allowed referrer.

@@ -1,46 +1,80 @@
 <section class="teams">
   <header class="head">
     <h1>{{ 'coord.teams' | rdTranslate }}</h1>
-    <p>{{ 'coord.teamsLead' | rdTranslate }}</p>
   </header>
 
-  <div class="filters" role="group" [attr.aria-label]="'coord.teams' | rdTranslate">
-    <button type="button" [class.on]="typeFilter() === 'all'" (click)="typeFilter.set('all')">{{ 'coord.allTypes' | rdTranslate }}</button>
-    @for (k of ['boat', 'medical', 'food', 'shelter']; track k) {
-      <button type="button" [class.on]="typeFilter() === k" (click)="typeFilter.set(k)">{{ kindLabel(k) }}</button>
-    }
-    <span class="gap"></span>
-    <button type="button" [class.on]="statusFilter() === 'all'" (click)="statusFilter.set('all')">{{ 'coord.allStatuses' | rdTranslate }}</button>
-    @for (s of ['available', 'dispatched', 'en_route', 'on_scene', 'returning', 'depleted']; track s) {
-      <button type="button" [class.on]="statusFilter() === s" (click)="statusFilter.set(s)">{{ ('coord.resStatus.' + s) | rdTranslate }}</button>
-    }
+  <div class="strip" role="group" [attr.aria-label]="'coord.teamStrip' | rdTranslate">
+    <button type="button" [class.on]="strip() === 'free'" [attr.aria-pressed]="strip() === 'free'" (click)="setStrip('free')">{{ 'coord.teamFree' | rdTranslate }} {{ counts().free }}</button>
+    <button type="button" [class.on]="strip() === 'busy'" [attr.aria-pressed]="strip() === 'busy'" (click)="setStrip('busy')">{{ 'coord.teamBusy' | rdTranslate }} {{ counts().busy }}</button>
+    <button type="button" [class.on]="strip() === 'notUpdated'" [attr.aria-pressed]="strip() === 'notUpdated'" (click)="setStrip('notUpdated')">{{ 'coord.notUpdated' | rdTranslate }} {{ counts().notUpdated }}</button>
   </div>
 
+  <div class="team-map">
+    <rd-map-provider [pins]="teamPins()" [legs]="teamLegs()" [center]="mapCenter()" [fitAll]="teamLegs().length === 0" [highlightId]="highlightId()"></rd-map-provider>
+    @if (legendKinds().length) {
+      <div class="legend" [attr.aria-label]="'ui.mapKey' | rdTranslate">
+        @for (kind of legendKinds(); track kind) {
+          <span>{{ kindLabel(kind) }}</span>
+        }
+      </div>
+    }
+  </div>
   @if (notice()) { <p class="note" role="status">{{ notice() }}</p> }
   <ul class="list">
     @for (team of filtered(); track team.id) {
-      <li class="card">
-        <span class="swatch" [style.background]="fill(team.kind)" aria-hidden="true"></span>
-        <div class="body">
-          <h2>{{ team.name }}</h2>
-          <p class="meta">{{ kindLabel(team.kind) }} · {{ team.capacity_remaining }}/{{ team.capacity_total }} {{ 'coord.seats' | rdTranslate }}</p>
-          <p class="can">{{ canDo(team) }}</p>
-          <p class="where">{{ area(team) }} · {{ 'coord.updated' | rdTranslate }} {{ ageLabel(team) }}
-            @if (stale(team)) { <strong class="stale">{{ 'coord.staleTeam' | rdTranslate }}</strong> }
-          </p>
-          @if (team.assigned_request_id) {
-            <p class="assigned">{{ 'coord.assigned' | rdTranslate }} {{ team.assigned_request_id }}</p>
-          }
-          @if (team.simulated) { <p class="sim">{{ 'coord.simulated' | rdTranslate }}</p> }
-          <a class="confirm" [routerLink]="['/team', team.id]">{{ 'team.open' | rdTranslate }}</a>
-          <form class="loc" (submit)="saveLocation(team, $event)">
-            <span>{{ 'coord.updateLocation' | rdTranslate }}</span>
-            <label>{{ 'coord.lat' | rdTranslate }} <input name="lat" type="number" step="any" [value]="team.lat" /></label>
-            <label>{{ 'coord.lng' | rdTranslate }} <input name="lng" type="number" step="any" [value]="team.lng" /></label>
-            <button type="submit">{{ 'coord.saveLocation' | rdTranslate }}</button>
-          </form>
-        </div>
-        <span class="status" [class.free]="statusKey(team) === 'available'">{{ statusLabel(team) }}</span>
+      <li class="card" [class.open]="openId() === team.id">
+        <button type="button" class="row" (click)="toggle(team.id)" (mouseenter)="highlightId.set(team.id)" (mouseleave)="highlightId.set(null)" [attr.aria-expanded]="openId() === team.id" [attr.aria-label]="team.name + ', ' + kindLabel(team.kind)">
+          <span class="icon" [style.color]="fill(team.kind)" aria-hidden="true">
+            @switch (team.kind) {
+              @case ('medical') {
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              }
+              @case ('food') {
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 10h12v2a6 6 0 0 1-12 0v-2zM8 10V7M12 10V6M16 10V7"/></svg>
+              }
+              @case ('shelter') {
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11 12 4l8 7M6 10v9h12v-9"/></svg>
+              }
+              @default {
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15c2 2 4 2 6 0s4-2 6 0 4 2 6 0"/><path d="M12 15V6l5 3"/></svg>
+              }
+            }
+          </span>
+          <span class="name">{{ team.name }}</span>
+          <span class="status" [class.free]="bucket(team) === 'free'" [class.late]="bucket(team) === 'notUpdated'">{{ statusLabel(team) }}</span>
+          <span class="leg">{{ leg(team) }}</span>
+          <time class="age" [class.stale]="checkInLate(team)" [attr.datetime]="team.location_updated_at || null" [attr.title]="checkInLate(team) ? ('coord.notUpdated' | rdTranslate) : null">{{ ageLabel(team) }}</time>
+          <span class="chev" aria-hidden="true">{{ openId() === team.id ? '▾' : '▸' }}</span>
+        </button>
+        @if (openId() === team.id) {
+          <div class="detail">
+            <h3>{{ 'coord.teamSize' | rdTranslate }}</h3>
+            <p>{{ seats(team) }}</p>
+            <p>{{ canDo(team) }}</p>
+            @if (team.assigned_request_id) {
+              <p>{{ 'coord.assigned' | rdTranslate }} {{ team.assigned_request_id }}</p>
+            }
+            @if (team.simulated) { <p>{{ 'coord.simulated' | rdTranslate }}</p> }
+            <h3>{{ 'coord.teamHistory' | rdTranslate }}</h3>
+            @if (team.location_trail?.length) {
+              <ol class="trail">
+                @for (point of team.location_trail; track point.at) {
+                  <li>{{ point.at }}</li>
+                }
+              </ol>
+            } @else {
+              <p>{{ 'coord.teamNoHistory' | rdTranslate }}</p>
+            }
+            <h3>{{ 'coord.teamActions' | rdTranslate }}</h3>
+            <a class="confirm" [routerLink]="['/team', team.id]">{{ 'team.open' | rdTranslate }}</a>
+            <form class="loc" (submit)="saveLocation(team, $event)">
+              <span>{{ 'coord.updateLocation' | rdTranslate }}</span>
+              <label>{{ 'coord.lat' | rdTranslate }} <input name="lat" type="number" step="any" [value]="team.lat" /></label>
+              <label>{{ 'coord.lng' | rdTranslate }} <input name="lng" type="number" step="any" [value]="team.lng" /></label>
+              <button type="submit">{{ 'coord.saveLocation' | rdTranslate }}</button>
+            </form>
+          </div>
+        }
       </li>
     } @empty {
       <li class="empty">{{ 'coord.teamsEmpty' | rdTranslate }}</li>

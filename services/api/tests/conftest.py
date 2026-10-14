@@ -17,3 +17,13 @@ from app.config import settings  # noqa: E402
 def _no_live_gemini(monkeypatch):
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "replace-me")
     yield
+
+
+@pytest.fixture(autouse=True)
+def _finish_intake_inside_the_request(monkeypatch):
+    """Tests read the finished case from the POST body.
+
+    Production starts a thread and returns first. A test that checks that
+    path replaces `_spawn` itself.
+    """
+    monkeypatch.setattr("app.agents.pipeline._spawn", lambda fn: fn())

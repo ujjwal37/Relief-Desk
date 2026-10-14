@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { LanguageService, RdTranslatePipe } from '@rd/shared';
 
 export interface TraceStepView {
@@ -7,12 +7,17 @@ export interface TraceStepView {
   output: string | null;
   model: string | null;
   provider: string | null;
+  vendor?: string | null;
   latencyMs: number | null;
   input: string | null;
   tools: string[];
   asked: string | null;
   raw: string | null;
   note: string | null;
+  sentence?: string;
+  linkId?: string | null;
+  badge?: 'gemini' | 'rules' | 'test';
+  hasDetails?: boolean;
 }
 
 @Component({
@@ -30,23 +35,76 @@ export class TraceStepComponent {
   readonly open = input(false);
   readonly toggled = output<void>();
   readonly retry = output<void>();
+  readonly rawAll = signal(false);
+  readonly promptAll = signal(false);
+  readonly copied = signal('');
 
   timeText(): string | null {
     this.lang.currentLang();
     const ms = this.step().latencyMs;
-    if (ms == null || Number.isNaN(ms)) return null;
+    if (ms == null || Number.isNaN(ms) || ms <= 0) return null;
     if (ms < 1000) return this.lang.translate('ux.ms').replace('{n}', String(Math.round(ms)));
     return this.lang.translate('ux.seconds').replace('{n}', (ms / 1000).toFixed(1));
   }
 
-  modelText(): string {
+  badgeWord(): string {
     this.lang.currentLang();
     const step = this.step();
-    if (step.model) {
-      return step.provider === 'cache' ? `${step.model} · ${this.lang.translate('ux.badgeRecorded')}` : step.model;
+    if (step.badge === 'test') return this.lang.translate('flow.badgeTest');
+    if (step.badge === 'gemini') return this.lang.translate('flow.badgeGemini');
+    if (step.badge === 'rules') return this.lang.translate('flow.badgeRules');
+    const test = step.provider === 'openai_compat' || step.provider === 'antigravity-local';
+    if (test) return this.lang.translate('flow.badgeTest');
+    if (step.provider === 'gemini' && step.status === 'done') return this.lang.translate('flow.badgeGemini');
+    return this.lang.translate('flow.badgeRules');
+  }
+
+  sentence(): string {
+    return this.step().sentence || '';
+  }
+  beforeLink(): string {
+    const id = this.step().linkId || '';
+    const text = this.sentence();
+    const at = text.indexOf(id);
+    return at >= 0 ? text.slice(0, at) : text;
+  }
+  afterLink(): string {
+    const id = this.step().linkId || '';
+    const text = this.sentence();
+    const at = text.indexOf(id);
+    return at >= 0 ? text.slice(at + id.length) : '';
+  }
+
+  showDetails(): boolean {
+    return !!this.step().hasDetails;
+  }
+
+  pretty(value: string | null): string {
+    if (!value) return '';
+    try {
+      return JSON.stringify(JSON.parse(value), null, 2);
+    } catch {
+      return value;
     }
-    if (step.provider === 'fallback') return this.lang.translate('ux.badgeOffline');
-    if (step.provider === 'tool') return this.lang.translate('ux.noModel');
-    return this.lang.translate('ux.notRecorded');
+  }
+
+  clipped(value: string | null, lines: number, all: boolean): string {
+    const text = this.pretty(value);
+    if (all) return text;
+    const parts = text.split('\n');
+    return parts.length > lines ? parts.slice(0, lines).join('\n') : text;
+  }
+
+  needsClip(value: string | null, lines: number): boolean {
+    return this.pretty(value).split('\n').length > lines;
+  }
+
+  copy(kind: string, value: string | null): void {
+    const text = this.pretty(value);
+    if (!text || typeof navigator === 'undefined' || !navigator.clipboard) return;
+    void navigator.clipboard.writeText(text).then(() => {
+      this.copied.set(kind);
+      setTimeout(() => this.copied.set(''), 1200);
+    });
   }
 }

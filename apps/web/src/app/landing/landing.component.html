@@ -9,19 +9,18 @@
 
   <main class="main">
     <section class="left">
-      <p class="pill">{{ 'landing.pill' | rdTranslate }}</p>
       <h1 class="h1-mobile">{{ 'landing.h1' | rdTranslate }}</h1>
       <h1 class="h1-desk">
         <span>{{ 'landing.deskLine1' | rdTranslate }}</span>
         <span>{{ 'landing.deskLine2' | rdTranslate }}</span>
         <span class="accent">{{ 'landing.deskLine3' | rdTranslate }}</span>
       </h1>
-      <p class="lead lead-mobile">{{ 'landing.lead' | rdTranslate }}</p>
-      <p class="lead lead-desk">{{ 'landing.deskSub' | rdTranslate }}</p>
+      <p class="judge problem">{{ 'landing.problem' | rdTranslate }}</p>
+      <p class="judge does">{{ 'landing.does' | rdTranslate }}</p>
       <p class="scenario">{{ 'landing.scenarioLabel' | rdTranslate }}</p>
 
       <div class="cards">
-        <a routerLink="/report" class="sos">
+        <a class="sos" href="/report-preview" target="_blank" rel="noopener">
           <span class="sos-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg></span>
           <span class="badge">{{ 'landing.noSignup' | rdTranslate }}</span>
           <span class="sos-title">{{ 'landing.needHelp' | rdTranslate }}</span>

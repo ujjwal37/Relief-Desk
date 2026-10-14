@@ -8,7 +8,8 @@ A multilingual crisis-reporting and coordination prototype built for the Google 
 Live demo: `<URL to add>` | Demo video: `<link to add>` | Coordinator demo login: see Demo section
 
 ## Demo
-One PWA, two roles. Open the live URL: **"I need help / report"** needs no login. **"I'm a coordinator"** goes to `/coordinator/login`.
+One PWA, two roles. `/` is the two-card welcome. **"I need help"** opens the reporter at `/report` (no login). **"I'm a coordinator"** goes to `/coordinator/login`.
+The **Enter as demo coordinator** button is shown when the API runs with `DEMO_MODE=true`. That is the default in `services/api/app/config.py`. Set `DEMO_MODE=true` in the API environment if the button is missing. `?demo=1` on the login link shows the button as well. Do not commit secrets; the API reads `services/api/.env`, which stays out of git.
 Demo coordinator (synthetic, demo-only): email `demo-coordinator@reliefdesk.internal` / password `KeralaRelief2026!` (created by `scripts/seed.py`).
 Side-by-side demo mode: add `?demo=1` on desktop.
 
@@ -16,7 +17,7 @@ Side-by-side demo mode: add `?demo=1` on desktop.
 In floods and other disasters, coordinators are buried in noisy messages: the same request arrives many times, updates get lost, rumours mix with real calls, and the most vulnerable people can be lost in a first-come-first-served queue. Reports of past floods in Kerala (2018) and Chennai (2015) describe duplicate entries, stale requests and a hoax. `<add sources before publishing>`
 
 ## What it does
-- **Report** by text in English, Hindi, Hinglish, or Tamil, or by a canned synthetic voice note. See what the system understood, then track status. Gemini Live voice is not built.
+- **Report** by text in English or Hindi. The phone form, example prompts, and the mic (`en-IN` or `hi-IN`) follow that choice. Hinglish and Malayalam stay in the language menu under More. One canned Hindi voice note and the other sample notes are English. See what the system understood, then track status in the same language. Gemini Live voice is not built.
 - **Understand:** Intake validates a structured request (type, place, people, vulnerable people, urgency) and keeps the original message. With a real `GEMINI_API_KEY`, that call goes to Gemini. With no key, the same fields come from the deterministic rules.
 - **Dedupe:** merges duplicates with visible evidence; treats "now 5 people" as an update that raises urgency; every merge can be undone or split.
 - **Rank:** vulnerability-weighted urgency with a plain-language reason, adjustable weights and an audit log.
@@ -69,7 +70,7 @@ ADK 2.11 warns that `SequentialAgent` and `ParallelAgent` are deprecated in favo
 | Explainer text | `GEMINI_MODEL` | `app/agents/explainer.py`, `pipeline.py` | The stored note is the tool sentence plus "not medical or legal advice" unless a live call replaces it. Not scored on the split |
 | Assist dispatcher | `GEMINI_MODEL` | `app/agents/dispatcher.py` | Tool order, reject, and the two-coordinator hold are tested without a model call |
 | Benchmark column | `GEMINI_MODEL` | `bench/gemini_eval.py` | `measured: false`, reason `no_api_key`, n=168, date 2026-10-11 |
-| Recorded replay | `AI_MODE=replay` | `data/ai_cache`, `scripts/record_ai.py` | The directory in git has no transcripts. `make record-ai` writes them only after a real call |
+| Recorded replay | `AI_MODE=replay` | `data/ai_cache`, `scripts/record_ai.py` | `fixture.json` lists the prompts with no replies. `make record-ai` writes transcripts only after a real call |
 | Health | none | `GET /api/health/ai` in `app/api/health.py` | Returns provider, model, cache hit rate, and quota. It does not return the key |
 
 Not built: Gemini Live voice, Search grounding, Malayalam, photo intake, Pub/Sub, BigQuery.
@@ -119,9 +120,9 @@ python scripts/reset_demo
 
 ### Live Gemini versus the recorded demo
 
-`DEMO_MODE=true` still loads the synthetic scenario and the demo login. It does not block Gemini. A real `GEMINI_API_KEY` calls the model named by `GEMINI_MODEL` (currently `gemini-3.8-flash`, from the Gemini models page dated 2026-10-09). No key, a placeholder key, or `GEMINI_ENABLED=false` uses the deterministic fallback. The case stores `ai.provider` as `gemini`, `cache`, or `fallback`, and the AI reading line shows Gemini, Recorded Gemini run, or Offline fallback.
+`DEMO_MODE=true` still loads the synthetic scenario and the demo login. It does not block Gemini. A real `GEMINI_API_KEY` calls the model named by `GEMINI_MODEL` (currently `gemini-3.8-flash`, from the Gemini models page dated 2026-10-09). No key, a placeholder key, or `GEMINI_ENABLED=false` uses the deterministic fallback. The case stores `ai.provider` as `gemini`, `cache`, or `fallback`, and the AI reading line shows Gemini, Recorded (Gemini), or Offline fallback.
 
-`data/ai_cache` is empty in git. `make record-ai` writes it only after a real key returns Gemini JSON for the seeded reports. `AI_MODE=replay` serves those files as Recorded Gemini run. A new report that is not in the cache still calls Gemini when a key is set.
+`data/ai_cache/fixture.json` lists the demo seed and the scripted phone reports with no model replies. `make record-ai` writes the hash files only after a real key returns Gemini JSON. `AI_MODE=replay` serves those files as Recorded (Gemini). A listed prompt that is still empty does not call Gemini. A new report that is not in the catalog still calls Gemini when a key is set.
 
 Set the key only in `services/api/.env`. Do not commit it.
 
@@ -132,6 +133,20 @@ AI_MODE=auto
 ```
 
 A timeout, a 429, or invalid JSON after one repair retry uses the deterministic fallback and records `ai.fallback_reason`. CI mocks the client and does not call Gemini.
+
+Each report makes one model call: the same JSON reply carries the facts, the type, and the English and Hindi text. Calls wait in a priority queue, critical cases first and Ask the desk ahead of reports. `AI_CONCURRENCY` (default 2) is how many run at once; set it to 1 for a local model that serves one call at a time. A full queue does not fall back to rules. The case shows "AI analysing…" until its turn. Merges and possible duplicates are decided before that call, from embeddings or from local similarity and rules, so they show within seconds. Approve does not wait on the queue.
+
+### Test provider: NVIDIA NIM or another OpenAI-compatible API (local testing only)
+
+`LLM_PROVIDER=openai_compat` sends the intake call and Ask the desk to an OpenAI-compatible chat API instead of Gemini. The default is NVIDIA NIM (`OPENAI_COMPAT_BASE_URL=https://integrate.api.nvidia.com/v1`, `OPENAI_COMPAT_MODEL=meta/llama-3.3-70b-instruct`). Put `OPENAI_COMPAT_API_KEY` only in `services/api/.env`; `.env.example` holds a placeholder. A server on `localhost` runs without a key.
+
+- Intake asks for JSON mode (`response_format: json_object`). A server that rejects that gets the same prompt without it, and an invalid reply gets one repair, then rules.
+- Ask the desk forces one `search_cases` tool call. A server without tool support gets the same schema as a JSON request.
+- Duplicate retrieval uses `OPENAI_COMPAT_EMBED_MODEL` (for example `nvidia/llama-3.2-nv-embedqa-1b-v2`) when it is set, otherwise local similarity and rules. Gemini embeddings are not called in this mode.
+- The trace, the case card and Ask the desk say "Test model (NVIDIA)" (or `OPENAI_COMPAT_LABEL`), never Gemini. Replies are cached in memory only, so `data/ai_cache` stays Gemini output.
+- `make bench` refuses this provider. `python bench/run_bench.py --allow-test-provider` runs a smoke test, writes `bench/results/test-provider/` (gitignored), and leaves `latest.json` and `RESULTS.md` alone. The Gemini column stays unmeasured. `make record-ai` always refuses it.
+
+`npx playwright test` starts its own API on port 8100 with `AI_MODE=fallback` and its own web server on 4300, so a dev server on 8000 or 4200 is never reused.
 
 ## Deploy
 

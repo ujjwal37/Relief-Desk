@@ -16,6 +16,7 @@ from app.api.alerts import router as alerts_router
 from app.api.benchmark import router as benchmark_router
 from app.api.demo import router as demo_router
 from app.api.desk import router as desk_router
+from app.api.events import router as events_router
 
 logging.basicConfig(
     level=settings.LOG_LEVEL,
@@ -27,6 +28,14 @@ logger = logging.getLogger("relief_desk.api")
 async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s...", settings.PROJECT_NAME, settings.VERSION)
     logger.info("Gemini enabled: %s (Model: %s)", settings.GEMINI_ENABLED, settings.GEMINI_MODEL)
+    from app.llm import openai_compat as oc
+
+    if oc.requested():
+        logger.info(
+            "LLM_PROVIDER=openai_compat: %s, model %s, embeddings %s, %s. Local testing only; never Gemini numbers.",
+            oc.label(), oc.model(), oc.embed_model() or "off (local similarity)",
+            "on" if oc.enabled() else "off (no key, or AI_MODE replay/fallback)",
+        )
     logger.info("Demo mode: %s", settings.DEMO_MODE)
     yield
     logger.info("Shutting down %s...", settings.PROJECT_NAME)
@@ -60,6 +69,7 @@ app.include_router(alerts_router)
 app.include_router(benchmark_router)
 app.include_router(demo_router)
 app.include_router(desk_router)
+app.include_router(events_router)
 
 @app.get("/")
 def root():

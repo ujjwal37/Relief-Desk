@@ -3,18 +3,18 @@
 .panel {
   position: absolute; top: 48px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 24px));
   max-height: calc(100% - 72px); overflow: auto; background: var(--surface); color: var(--text);
-  border: 1px solid var(--border); border-radius: 16px; padding: 16px;
+  border: 1px solid var(--border); border-radius: var(--r3); padding: 16px;
 }
-.panel.sheet { top: auto; bottom: 0; left: 0; transform: none; width: 100%; max-height: calc(100% - 64px); border-radius: 20px 20px 0 0; }
+.panel.sheet { top: auto; bottom: 0; left: 0; transform: none; width: 100%; max-height: calc(100% - 64px); border-radius: var(--r4) var(--r4) 0 0; }
 .grab { width: 40px; height: 4px; border-radius: 4px; background: var(--border); margin: 0 auto 8px; }
 header { display: flex; align-items: center; gap: 8px; }
-h2 { margin: 0; font-size: 22px; flex: 1; }
-h3 { margin: 0 0 6px; font-size: 17px; }
-.chip { height: 26px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 999px; background: var(--brand-tint); color: var(--brand); font: 700 13px/1 var(--rd-font-family); }
+h2 { margin: 0; font-size: 24px; flex: 1; }
+h3 { margin: 0 0 6px; font-size: 16px; }
+.chip { height: 26px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 999px; background: var(--brand-tint); color: var(--brand); font: 600 13px/1 var(--rd-font-family); }
 .x { min-height: 44px; min-width: 44px; border: 0; background: transparent; color: var(--text); cursor: pointer; }
 .guard {
   display: flex; align-items: center; gap: 8px; margin: 10px 0; padding: 8px 10px;
-  background: var(--brand-tint); color: var(--text); border-radius: 10px; font-size: 15px; font-weight: 700;
+  background: var(--brand-tint); color: var(--text); border-radius: 10px; font-size: 14px; font-weight: 600;
 }
 .guard svg { color: var(--brand); flex: none; }
 .card, .shortage { border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin-bottom: 8px; }
@@ -22,14 +22,14 @@ h3 { margin: 0 0 6px; font-size: 17px; }
 .card.ended { background: var(--surface-2); color: var(--text-2); }
 .card.ok { background: var(--ok-t); color: var(--text); }
 .team, .hold, .help, .bar p, .card p { font-size: 13px; color: var(--text-2); }
-.card p span { font-weight: 700; color: var(--text); }
+.card p span { font-weight: 600; color: var(--text); }
 .btns { display: flex; gap: 8px; }
 button.reject, button.approve, .card > button, .bar > button {
-  min-height: 44px; padding: 0 14px; border-radius: 10px; font: 700 15px/1 var(--rd-font-family); cursor: pointer;
+  min-height: 44px; padding: 0 14px; border-radius: 10px; font: 600 14px/1 var(--rd-font-family); cursor: pointer;
 }
 button.reject { background: transparent; color: var(--sev-crit); border: 1px solid var(--sev-crit); }
 button.approve, .bar > button { background: var(--brand); color: var(--on-brand); border: 0; }
 .bar { position: sticky; bottom: 0; background: var(--surface); padding-top: 8px; }
 .bar button:disabled { opacity: .5; }
 .help { margin: 8px 0; }
-.done { color: var(--ok); font-weight: 700; font-size: 15px; }
+.done { color: var(--ok); font-weight: 600; font-size: 14px; }

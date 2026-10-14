@@ -38,10 +38,32 @@ class StoredReport(BaseModel):
     source_id: str = "anon"
     trust_level: str = "anonymous"  # "official" | "verified_volunteer" | "registered" | "anonymous"
     request_id: Optional[str] = None
+    # The case the desk should open. A merge points at the existing case.
+    case_id: Optional[str] = None
+    joined_existing: bool = False
+    incident_type: Optional[str] = None
+    summary: Optional[str] = None
+    place_text: Optional[str] = None
+    ward_id: Optional[str] = None
     status_token: Optional[str] = None
     flags: List[str] = Field(default_factory=list)
     synthetic: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class ReportQuote(BaseModel):
+    report_id: str
+    text: str
+    people_span: Optional[str] = None
+
+
+class PossibleDuplicate(BaseModel):
+    target_id: str
+    confidence: float = 0.0
+    similarity: float = 0.0
+    distance_km: Optional[float] = None
+    minutes: Optional[float] = None
+    note: str = ""
 
 
 class StoredRequest(BaseModel):
@@ -49,12 +71,21 @@ class StoredRequest(BaseModel):
     event_id: str = "event_kerala_flood"
     pack_id: str = "flood"
     type: IncidentType = IncidentType.OTHER
+    # The type the reporter picked. Tips use it until classification finishes.
+    picked_type: Optional[str] = None
     place_text: Optional[str] = None
     place_cell: Optional[str] = None
     ward_id: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
     people_count: Optional[int] = None
+    # The citizen's own words for the count, such as "2-3" or "4".
+    people_span: Optional[str] = None
+    count_spans: List[str] = Field(default_factory=list)
+    count_note: Optional[str] = None
+    report_quotes: List[ReportQuote] = Field(default_factory=list)
+    dedupe_trace: Optional[str] = None
+    possible_duplicate: Optional[PossibleDuplicate] = None
     vulnerable: VulnerableFlags = Field(default_factory=VulnerableFlags)
     hazard: HazardType = HazardType.UNKNOWN
     urgency_score: float = 0.0

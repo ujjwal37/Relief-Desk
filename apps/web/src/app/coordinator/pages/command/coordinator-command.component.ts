@@ -11,19 +11,24 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { HostListener, effect } from '@angular/core';
+import { HostListener, effect, untracked } from '@angular/core';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { SevChipComponent } from '../../../core/components/sev-chip.component';
 import { AgentBadgeComponent } from '../../agents/agent-badge.component';
 import { AgentTraceDrawerComponent } from '../../agents/agent-trace-drawer.component';
-import { AnalysingCardComponent } from '../../agents/analysing-card.component';
 import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
-import { AskDeskComponent } from '../../agents/ask-desk.component';
+import { testProviderWord } from '../../agents/provider-label';
+import { JustReportedStripComponent } from '../../just-reported-strip.component';
+import { LIVE_CHANNEL } from '../../../core/live-report';
+import { DeskStore } from '../../../core/desk-store';
+import { LiveEventsService } from '../../../core/live-events.service';
 import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
-import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { etaMinutes, etaPhrase, legTitle, quoteFromProposal, teamTone, TONE_COLOR, vehiclePath, TravelQuote } from '../../../core/maps/map-markers';
+import { teamsFreeCounts, teamsFreeLabel } from '../../team-status';
 import {
   ApiClientService,
   RdTranslatePipe,
@@ -68,11 +73,10 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
     RdTranslatePipe,
     AgentBadgeComponent,
     AgentTraceDrawerComponent,
-    AnalysingCardComponent,
     AssistBannerComponent,
     AssistPanelComponent,
     MergedChipComponent,
-    AskDeskComponent,
+    JustReportedStripComponent,
   ],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
@@ -89,6 +93,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   // Reactive state signals
   readonly requests = signal<StoredRequest[]>([]);
   readonly selectedRequestId = signal<string>('INC-001');
+  readonly mapFocus = signal(0);
+  /** Team row under the pointer. Its line draws thicker. */
+  readonly highlightId = signal<string | null>(null);
   readonly matches = signal<MatchProposal[]>([]);
   readonly resources = signal<StoredResource[]>([]);
   readonly mapPins = computed<MapPin[]>(() => {
@@ -102,12 +109,57 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         lat: req.lat,
         lng: req.lng,
         title: req.place_text || req.id,
+        marker: 'case',
+        tone: urgencyBand(req.urgency_score),
       });
     }
     for (const res of this.resources()) {
-      pins.push({ id: res.id, lat: res.lat, lng: res.lng, title: res.name });
+      pins.push({
+        id: res.id,
+        lat: res.lat,
+        lng: res.lng,
+        title: res.name,
+        marker: 'team',
+        vehicle: res.kind,
+        tone: teamTone(res),
+      });
     }
     return pins;
+  });
+  /** The suggested team, then the next best, at most three. */
+  readonly candidateMatches = computed<MatchProposal[]>(() => {
+    const top = this.matches().slice(0, 3);
+    const active = this.activeProposal();
+    if (active && !top.some((row) => row.resource_id === active.resource_id)) {
+      return [...top.slice(0, 2), active];
+    }
+    return top;
+  });
+  /** Next-best teams for More details — excludes the Send card pick. */
+  readonly otherTeams = computed<MatchProposal[]>(() => {
+    const active = this.activeProposal()?.resource_id;
+    return this.matches().filter((row) => row.resource_id !== active).slice(0, 3);
+  });
+  readonly chooserMatches = computed<MatchProposal[]>(() => this.matches().slice(0, 5));
+  readonly rejectReasons = ['coord.rjRoad', 'coord.rjElsewhere', 'coord.rjWrong'] as const;
+  /** Lines from the selected case to its top three teams. Drawn on the schematic and on Google Maps. */
+  readonly mapLegs = computed<MapLeg[]>(() => {
+    const req = this.selectedRequest();
+    if (!req || req.lat == null || req.lng == null) return [];
+    const suggested = this.activeProposal()?.resource_id;
+    const legs: MapLeg[] = [];
+    for (const prop of this.candidateMatches()) {
+      const team = this.resources().find((row) => row.id === prop.resource_id);
+      if (!team) continue;
+      legs.push({
+        id: prop.resource_id,
+        from: { lat: req.lat, lng: req.lng },
+        to: { lat: team.lat, lng: team.lng },
+        title: this.legLabel(prop),
+        suggested: prop.resource_id === suggested,
+      });
+    }
+    return legs;
   });
   readonly filterType = signal<string>('all');
   readonly areaFilter = signal<string>('all');
@@ -119,28 +171,53 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private writingFilters = false;
   private filterSub: Subscription | null = null;
   readonly freshIds = signal<Set<string>>(new Set());
+  readonly flashIds = signal<Set<string>>(new Set());
+  private flashTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private queueWatermark = '';
   private pollTimer: ReturnType<typeof setInterval> | null = null;
-  readonly briefingOpen = signal(true);
   readonly narrow = signal(false);
   readonly resetNote = signal<string | null>(null);
 
-  /** Undo this session's merges and dispatches by reloading the synthetic seeds (demo coordinator only). */
+  /** Undo this session's merges and dispatches by reloading the two-case demo. */
   resetDemo(): void {
     if (!window.confirm(this.langService.translate('ux.resetDemoConfirm'))) return;
     this.apiClient.resetDemo().subscribe({
       next: () => {
         this.resetNote.set('ux.resetDemoDone');
-        this.loadRequests(true);
+        this.reloadAfterSeed();
       },
       error: () => this.resetNote.set('ux.resetDemoFailed'),
     });
+  }
+
+  /** Replace the two-case demo with the full flood pack. */
+  loadFullScenario(): void {
+    if (!window.confirm(this.langService.translate('ux.loadFullConfirm'))) return;
+    this.apiClient.loadFullScenario().subscribe({
+      next: () => {
+        this.resetNote.set('ux.loadFullDone');
+        this.reloadAfterSeed();
+      },
+      error: () => this.resetNote.set('ux.loadFullFailed'),
+    });
+  }
+
+  private reloadAfterSeed(): void {
+    this.queueWatermark = '';
+    this.loadRequests();
+    this.loadResources();
   }
   readonly mobilePane = signal<'cases' | 'map'>('cases');
   readonly sheetOpen = signal(false);
   private media: MediaQueryList | null = null;
   readonly openSection = signal<'why' | 'reports' | null>(null);
   readonly showOriginal = signal(false);
+  readonly moreOpen = signal(false);
+  readonly rejectOpen = signal(false);
+  readonly approving = signal(false);
+  readonly choseTeam = signal(false);
+  readonly offline = signal(typeof navigator !== 'undefined' && navigator.onLine === false);
+  readonly vehiclePath = vehiclePath;
   readonly traceRequestId = signal<string | null>(null);
   readonly assistOpen = signal(false);
   readonly assist = signal<{ proposals: AssistProposalView[]; shortages: AssistShortageView[] }>({ proposals: [], shortages: [] });
@@ -165,10 +242,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly isWeightsDrawerOpen = signal<boolean>(false);
   readonly isOvercommitModalOpen = signal<boolean>(false);
   readonly isRejectModalOpen = signal<boolean>(false);
-  readonly actionToast = signal<{ text: string; type: 'success' | 'warning' } | null>(null);
-  readonly selectedTranslationLang = signal<'en' | 'hi' | 'ta'>('en');
+  readonly actionToast = signal<{ text: string; type: 'success' | 'warning'; undo?: boolean } | null>(null);
+  readonly lastSentId = signal<string | null>(null);
+  readonly selectedTranslationLang = signal<'en' | 'hi'>('en');
 
   private initialSelectDone = false;
+  private focusRequestId: string | null = null;
+  private liveChannel?: { close: () => void };
   pendingMatch: MatchProposal | null = null;
   rejectReasonText = '';
 
@@ -202,7 +282,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }
     const bf = this.bandFilter();
     if (bf === 'dispatched') {
-      list = list.filter((r) => this.isDispatched(r));
+      list = list.filter((r) => this.isDispatched(r) || this.isCompleted(r))
+        .sort((a, b) => Number(this.isCompleted(a)) - Number(this.isCompleted(b)));
     } else if (bf === 'completed') {
       list = list.filter((r) => this.isCompleted(r));
     } else {
@@ -236,22 +317,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     };
   });
   readonly criticalCount = computed<number>(() => this.counts().critical);
-  readonly teamsFree = computed(() => {
-    const teams = this.resources();
-    return {
-      free: teams.filter((r) => r.status === 'available' && r.capacity_remaining > 0).length,
-      total: teams.length,
-    };
-  });
-  readonly quietCount = computed(() => this.ui.alerts().filter((a) => a.kind === 'silent_zone').length);
-  readonly briefing = computed(() => {
+  readonly teamsFree = computed(() => teamsFreeCounts(this.resources()));
+  teamsFreeLine(): string {
     this.langService.currentLang();
-    const c = this.counts();
-    const t = (k: string, n: number) => this.langService.translate(k).replace('{n}', String(n));
-    if (c.critical > 0) return t('coord.briefNow', c.critical);
-    if (c.high > 0) return t('coord.briefSoon', c.high);
-    return this.langService.translate('coord.briefNone');
-  });
+    return teamsFreeLabel((key) => this.langService.translate(key), this.resources());
+  }
+  readonly quietCount = computed(() => this.ui.alerts().filter((a) => a.kind === 'silent_zone').length);
   /** Schematic district outlines in lat/lng, south to north, around the seeded wards. */
   private readonly districtRings: { id: string; ring: [number, number][] }[] = [
     { id: 'alappuzha', ring: [[9.34, 76.30], [9.34, 76.55], [9.70, 76.52], [9.72, 76.31]] },
@@ -259,18 +330,33 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     { id: 'thrissur', ring: [[10.15, 76.02], [10.18, 76.48], [10.62, 76.42], [10.58, 76.02]] },
     { id: 'wayanad', ring: [[11.42, 75.95], [11.46, 76.28], [11.78, 76.24], [11.74, 75.96]] },
   ];
+  /** Open cases, or the selected case plus its candidate teams so the line is on screen. */
   readonly mapFrame = computed(() => {
-    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r));
-    if (!open.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
-    const lats = open.map((r) => r.lat as number);
-    const lngs = open.map((r) => r.lng as number);
+    const req = this.selectedRequest();
+    const teams = this.matches()
+      .map((prop) => this.resources().find((row) => row.id === prop.resource_id))
+      .filter((team): team is StoredResource => !!team && Number.isFinite(team.lat) && Number.isFinite(team.lng));
+    const focused = req?.lat != null && req.lng != null && teams.length > 0;
+    const points = focused
+      ? [{ lat: req.lat as number, lng: req.lng as number }, ...teams.map((team) => ({ lat: team.lat, lng: team.lng }))]
+      : this.requests()
+          .filter((row) => row.lat != null && row.lng != null && !this.isCompleted(row))
+          .map((row) => ({ lat: row.lat as number, lng: row.lng as number }));
+    if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
+    const lats = points.map((point) => point.lat);
+    const lngs = points.map((point) => point.lng);
     const minLa = Math.min(...lats);
     const maxLa = Math.max(...lats);
     const minLo = Math.min(...lngs);
     const maxLo = Math.max(...lngs);
-    const padLa = Math.max(0.08, (maxLa - minLa) * 0.18);
-    const padLo = Math.max(0.08, (maxLo - minLo) * 0.18);
+    const padLa = focused ? Math.max(0.012, (maxLa - minLa) * 0.45) : Math.max(0.08, (maxLa - minLa) * 0.18);
+    const padLo = focused ? Math.max(0.012, (maxLo - minLo) * 0.45) : Math.max(0.08, (maxLo - minLo) * 0.18);
     return { minLa: minLa - padLa, maxLa: maxLa + padLa, minLo: minLo - padLo, maxLo: maxLo + padLo };
+  });
+  readonly mapCenter = computed(() => {
+    const req = this.selectedRequest();
+    if (req?.lat != null && req.lng != null) return { lat: req.lat, lng: req.lng };
+    return { lat: 10.5, lng: 76.3 };
   });
   project(lat: number, lng: number): { x: number; y: number } {
     const frame = this.mapFrame();
@@ -305,6 +391,69 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     ];
   });
   readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
+  /** Selected case plus its candidate teams stay bright. Everything else fades. */
+  readonly drawnPins = computed(() => {
+    const focus = this.selectedRequest();
+    const teamIds = new Set(this.candidateMatches().map((row) => row.resource_id));
+    const suggested = this.activeProposal()?.resource_id;
+    return this.svgPins().map((pin) => {
+      const kept = !focus || pin.id === focus.id || (pin.kind === 'team' && teamIds.has(pin.id));
+      const resource = pin.kind === 'team' ? this.resources().find((row) => row.id === pin.id) : undefined;
+      const tone = resource ? teamTone(resource) : 'free';
+      return {
+        ...pin,
+        dim: !kept,
+        suggested: pin.kind === 'team' && pin.id === suggested && kept,
+        fill: resource ? TONE_COLOR[tone] : '',
+        path: vehiclePath(resource?.kind),
+        fade: tone === 'stale' ? 0.4 : 1,
+      };
+    });
+  });
+  /** Zoom the district diagram onto the open case and its three teams. */
+  readonly mapViewBox = computed(() => {
+    const legs = this.focusLegs();
+    if (!legs.length) return '0 0 600 480';
+    const xs = legs.flatMap((leg) => [leg.x1, leg.x2]);
+    const ys = legs.flatMap((leg) => [leg.y1, leg.y2]);
+    const minX = Math.max(0, Math.min(...xs) - 80);
+    const minY = Math.max(0, Math.min(...ys) - 80);
+    const maxX = Math.min(600, Math.max(...xs) + 80);
+    const maxY = Math.min(480, Math.max(...ys) + 80);
+    return `${minX} ${minY} ${Math.max(120, maxX - minX)} ${Math.max(120, maxY - minY)}`;
+  });
+  readonly focusLegs = computed(() => {
+    const req = this.selectedRequest();
+    if (!req || req.lat == null || req.lng == null) return [];
+    const origin = this.project(req.lat, req.lng);
+    const suggested = this.activeProposal()?.resource_id;
+    const legs: { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; label: string; suggested: boolean }[] = [];
+    for (const prop of this.candidateMatches()) {
+      const team = this.resources().find((row) => row.id === prop.resource_id);
+      if (!team) continue;
+      const at = this.project(team.lat, team.lng);
+      legs.push({
+        id: prop.resource_id,
+        x1: origin.x,
+        y1: origin.y,
+        x2: at.x,
+        y2: at.y,
+        lx: (origin.x + at.x) / 2,
+        ly: (origin.y + at.y) / 2 - 8,
+        label: this.legLabel(prop),
+        suggested: prop.resource_id === suggested,
+      });
+    }
+    return legs;
+  });
+  readonly legendBands = computed(() => {
+    const present = new Set(this.drawnPins().filter((pin) => pin.kind === 'req' && !pin.dim).map((pin) => pin.band));
+    return (['critical', 'high', 'medium', 'low'] as const).filter((band) => present.has(band));
+  });
+  readonly legendKinds = computed(() => {
+    const present = new Set(this.drawnPins().filter((pin) => pin.kind === 'team' && !pin.dim).map((pin) => pin.team));
+    return (['boat', 'medical', 'food', 'shelter'] as const).filter((kind) => present.has(kind));
+  });
   readonly movementTrail = computed(() => {
     const req = this.selectedRequest();
     const team = req ? this.assignedTeam(req) : undefined;
@@ -319,21 +468,37 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
 
   etaMinutes(km: number): number {
-    return Math.max(1, Math.round((km / 20) * 60));
+    return etaMinutes(km);
   }
-  aiKind(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' {
+  private travel(prop: MatchProposal): TravelQuote {
+    const team = this.resources().find((row) => row.id === prop.resource_id);
+    return quoteFromProposal(prop, team?.status === 'available');
+  }
+  /** Same string as the map line and the reporter quote. */
+  legLabel(prop: MatchProposal): string {
+    this.langService.currentLang();
+    return legTitle(this.travel(prop), (key) => this.langService.translate(key));
+  }
+  aiKind(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' | 'test' {
+    if (this.testWord(req)) return 'test';
     if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'recorded';
     if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') return 'gemini';
     return 'fallback';
   }
+  /** Who read this report, e.g. "Test model (NVIDIA)". Never Gemini for a test provider. */
+  aiSourceText(req: StoredRequest): string {
+    this.langService.currentLang();
+    const kind = this.aiKind(req);
+    if (kind === 'test') return this.testWord(req) || '';
+    return this.langService.translate(kind === 'gemini' ? 'coord.aiGemini' : kind === 'recorded' ? 'coord.aiRecorded' : 'coord.aiOffline');
+  }
+  private testWord(req: StoredRequest): string | null {
+    const intake = (req.trace || []).find((row) => row.agent === 'Intake');
+    return testProviderWord(req.ai?.provider || req.ai_source, intake?.vendor, (key) => this.langService.translate(key));
+  }
   etaText(prop: MatchProposal): string {
     this.langService.currentLang();
-    const km = prop.breakdown?.distance_km ?? 0;
-    const minutes = prop.eta_minutes ?? this.etaMinutes(km);
-    if (prop.no_nearby || km > 30 || minutes > 90) {
-      return this.langService.translate('coord.noNearbyTeam');
-    }
-    return this.langService.translate('coord.etaMin').replace('{n}', String(minutes));
+    return etaPhrase(this.travel(prop), (key) => this.langService.translate(key));
   }
   assignedTeam(req: StoredRequest): StoredResource | undefined {
     return this.resources().find((team) => team.id === req.assigned_resource_id);
@@ -349,7 +514,111 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   isCompleted(r: StoredRequest): boolean {
     return r.status === 'completed' || r.status === 'resolved' || r.status === 'closed';
   }
+  dispatchStep(r: StoredRequest): number {
+    const status = String(r.status);
+    if (status === 'in_progress' || status === 'on_scene') return 3;
+    if (status === 'accepted' || status === 'en_route') return 2;
+    if (this.isDispatched(r)) return 1;
+    return 0;
+  }
   fitPct(p: MatchProposal): number { return Math.round(p.score); }
+  queueNeed(r: StoredRequest): string {
+    this.langService.currentLang();
+    const key = ({ rescue: 'coord.queueNeedBoat', animal_attack: 'coord.queueNeedBoat', medical: 'coord.queueNeedMedical',
+      food: 'coord.queueNeedFood', shelter: 'coord.queueNeedShelter' } as Record<string, string>)[r.type || ''];
+    return key ? this.langService.translate(key) : '';
+  }
+  queueNeedLine(r: StoredRequest): string {
+    this.langService.currentLang();
+    const flags = r.vulnerable || { child: false, elderly: false, disabled: false, pregnant: false, medical_need: false };
+    const on = (['child', 'elderly', 'disabled', 'pregnant', 'medical_need'] as const).filter((k) => !!flags[k]);
+    const n = r.people_count || 0;
+    const parts: string[] = [];
+    if (on.length === 1 && on[0] === 'child' && n) parts.push(this.langService.translate('coord.nChildren').replace('{n}', String(n)));
+    else if (on.length === 1 && on[0] === 'elderly' && n) parts.push(this.langService.translate('coord.nElderly').replace('{n}', String(n)));
+    else {
+      if (flags.child) parts.push(this.langService.translate('coord.metaChildren'));
+      if (flags.elderly) parts.push(this.langService.translate('coord.metaElderly'));
+      if (flags.disabled) parts.push(this.langService.translate('coord.metaDisabled'));
+      if (flags.pregnant) parts.push(this.langService.translate('coord.metaPregnant'));
+      if (flags.medical_need) parts.push(this.langService.translate('coord.metaMedical'));
+    }
+    const need = this.queueNeed(r);
+    if (need) parts.push(need);
+    return parts.join(' · ');
+  }
+  locationLine(r: StoredRequest): string {
+    const ward = r.ward_id
+      ? r.ward_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      : '';
+    return [ward, r.place_text].filter(Boolean).join(' · ');
+  }
+  dupTitle(r: StoredRequest): string {
+    this.langService.currentLang();
+    return this.langService.translate('coord.dupOf').replace('{id}', r.possible_duplicate?.target_id || '');
+  }
+  needsDupReview(r: StoredRequest): boolean {
+    const decision = String((r as StoredRequest & { dedupe_decision?: string }).dedupe_decision || '').toLowerCase();
+    if (decision === 'review') return true;
+    if (decision && decision !== 'review') return false;
+    return !!r.possible_duplicate?.target_id;
+  }
+  checkThisLine(r: StoredRequest): string {
+    this.langService.currentLang();
+    return this.langService.translate('coord.checkThis').replace('{n}', String(this.getTranslationConfidencePercent(r)));
+  }
+  dupEvidence(r: StoredRequest): string {
+    const hint = r.possible_duplicate;
+    if (!hint) return '';
+    this.langService.currentLang();
+    const parts: string[] = [];
+    if (hint.similarity != null && hint.similarity > 0) parts.push(`${Math.round(hint.similarity * 100)}%`);
+    if (hint.distance_km != null && hint.distance_km > 0) parts.push(`${Number(hint.distance_km).toFixed(1)} km`);
+    if (hint.minutes != null && hint.minutes > 0) parts.push(`${Math.round(hint.minutes)} min`);
+    return parts.join(' · ');
+  }
+  factLine(r: StoredRequest): string {
+    this.langService.currentLang();
+    const people = `${r.people_count || 1} ${this.langService.translate('coord.people')}`;
+    const ward = r.ward_id ? r.ward_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '';
+    const extra = r.hazard ? r.hazard.replace(/_/g, ' ') : (r.place_text || '');
+    return [people, ward, extra].filter(Boolean).join(' · ');
+  }
+  hasVulnerable(r: StoredRequest): boolean {
+    const flags = r.vulnerable;
+    return !!(flags && (flags.child || flags.elderly || flags.disabled || flags.pregnant || flags.medical_need));
+  }
+  sendTeamLabel(_name?: string): string {
+    this.langService.currentLang();
+    return this.langService.translate('coord.send');
+  }
+  whyLine(prop: MatchProposal): string {
+    this.langService.currentLang();
+    if (this.choseTeam()) return this.langService.translate('coord.whyChose');
+    const b = prop.breakdown;
+    const ranked = [
+      { n: b?.distance_score || 0, t: this.langService.translate('coord.whyClosest') },
+      { n: b?.capacity_fit_score || 0, t: this.langService.translate('coord.whySeats') },
+      { n: b?.urgency_score || 0, t: this.langService.translate('coord.whyUrgent') },
+      { n: b?.vulnerability_fit_score || 0, t: this.langService.translate('coord.whyVuln') },
+    ].sort((a, b2) => b2.n - a.n).slice(0, 2).map((row) => row.t);
+    const second = ranked[1] ? ranked[1].charAt(0).toLocaleLowerCase() + ranked[1].slice(1) : '';
+    const built = ranked.length >= 2
+      ? this.langService.translate('coord.whyJoin').replace('{a}', ranked[0]).replace('{b}', second)
+      : (ranked[0] || '');
+    if (built.length > 90) return built.slice(0, 89).trim();
+    return built || this.langService.translate('coord.whyFallback');
+  }
+  waitTime(r: StoredRequest): string {
+    this.langService.currentLang();
+    let mins = r.wait_minutes ?? 0;
+    if (!mins && r.created_at) {
+      const t = new Date(r.created_at).getTime();
+      if (!Number.isNaN(t)) mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+    }
+    const time = mins >= 60 ? `${Math.round(mins / 60)} h` : `${mins} min`;
+    return this.langService.translate('coord.waitingTime').replace('{time}', time);
+  }
   waitChip(r: StoredRequest): string {
     const pts = Math.round(r.wait_points || 0);
     if (pts < 1) return '';
@@ -357,7 +626,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const time = mins >= 60 ? `${Math.round(mins / 60)} h` : `${mins} min`;
     return this.langService.translate('coord.waitChip').replace('{time}', time).replace('{n}', String(pts));
   }
-  ageLabel(r: StoredRequest): string { return this.agoPhrase(r.created_at, 'reported'); }
+  ageLabel(r: StoredRequest): string {
+    this.langService.currentLang();
+    if (!r.created_at) return '';
+    const m = Math.max(0, Math.round((Date.now() - new Date(r.created_at).getTime()) / 60000));
+    if (m < 1) return this.langService.translate('coord.justNow');
+    if (m < 60) return this.langService.translate('coord.minAgo').replace('{n}', String(m));
+    return this.langService.translate('coord.reportedHour').replace('{n}', String(Math.round(m / 60)));
+  }
   updatedLabel(r: StoredRequest): string { return this.agoPhrase(r.updated_at, 'updated'); }
   fullStamp(iso?: string | null): string {
     if (!iso) return '';
@@ -401,8 +677,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
   toggleSection(s: 'why' | 'reports'): void { this.openSection.set(this.openSection() === s ? null : s); }
   setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void { this.bandFilter.set(f); this.writeFilters(); }
-  pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); }
+  pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); this.choseTeam.set(true); }
   closeWeights(): void { this.ui.weightsOpen.set(false); }
+
+  @HostListener('window:offline')
+  onOffline(): void { this.offline.set(true); }
+  @HostListener('window:online')
+  onOnline(): void { this.offline.set(false); }
 
   @HostListener('document:keydown', ['$event'])
   onKey(e: KeyboardEvent): void {
@@ -416,6 +697,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (e.key === 'a') (document.querySelector('.btn-approve') as HTMLElement | null)?.focus();
   }
 
+  private readonly desk = inject(DeskStore);
+  private readonly live = inject(LiveEventsService);
+
   readonly availableBoatsCount = computed<number>(() => {
     const boats = this.resources().filter((res) => res.kind === 'boat');
     return boats.filter((b) => b.capacity_remaining > 0).length || 4;
@@ -424,20 +708,28 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   constructor() {
     effect((onCleanup) => {
       if (this.actionToast()) {
-        const id = setTimeout(() => this.actionToast.set(null), 5000);
+        const id = setTimeout(() => this.actionToast.set(null), 8000);
         onCleanup(() => clearTimeout(id));
       }
     });
     effect(() => {
       const ui = this.langService.currentLang();
-      const mapped = ui === 'ta' ? 'ta' : ui === 'en' ? 'en' : 'hi';
+      const mapped = ui === 'en' || ui === 'ml' ? 'en' : 'hi';
       this.selectedTranslationLang.set(mapped);
+    });
+    effect(() => {
+      if (!this.desk.casesReady()) return;
+      const incoming = this.desk.requests();
+      untracked(() => this.applyQueue(incoming, false));
+    });
+    effect(() => {
+      if (!this.desk.teamsReady()) return;
+      this.resources.set(this.desk.resources());
     });
   }
 
   ngOnInit(): void {
     this.ui.loadAlerts();
-    if (!this.ui.tourDone()) setTimeout(() => this.ui.startTour(), 900);
     this.scenarioService.ensureLoaded();
     this.loadRequests();
     this.loadResources();
@@ -448,6 +740,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.watchViewport();
     window.addEventListener('message', this.handleDemoMessage);
     document.addEventListener('visibilitychange', this.onQueueVisibility);
+    try {
+      const channel = new BroadcastChannel(LIVE_CHANNEL);
+      channel.onmessage = (event) => this.onLiveReport(event.data);
+      this.liveChannel = channel;
+    } catch {
+      // BroadcastChannel is missing in this browser. The poll still picks the report up.
+    }
   }
 
   ngOnDestroy(): void {
@@ -456,7 +755,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.media?.removeEventListener('change', this.onMedia);
     window.removeEventListener('message', this.handleDemoMessage);
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
+    this.liveChannel?.close();
     if (this.analysedTimer) clearTimeout(this.analysedTimer);
+    for (const timer of this.flashTimers.values()) clearTimeout(timer);
+    this.flashTimers.clear();
   }
 
   private watchViewport(): void {
@@ -492,10 +794,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.stopQueuePoll();
     this.pollTimer = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
+      if (this.live.state() === 'live') return;
       this.loadRequests(true);
       this.loadResources();
       this.loadAssist();
-    }, 4000);
+    }, 5000);
   }
 
   private stopQueuePoll(): void {
@@ -509,10 +812,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (event.origin !== window.location.origin) {
       return;
     }
-    if (event.data?.type === 'rd-report-submitted') {
-      this.loadRequests();
-    }
+    this.onLiveReport(event.data);
   };
+
+  /** A phone in this window, a popup, or another tab just saved a report. Show that case. */
+  onLiveReport(data: { type?: string; requestId?: string } | null): void {
+    if (data?.type !== 'rd-report-submitted') return;
+    if (data.requestId) this.focusRequestId = data.requestId;
+    this.loadRequests();
+  }
 
   loadRequests(incremental = false): void {
     const since = incremental ? this.queueWatermark : undefined;
@@ -540,15 +848,40 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (row.updated_at && row.updated_at > this.queueWatermark) this.queueWatermark = row.updated_at;
     }
     this.noteFinished(previousStatus, next);
+    const joined = { ...this.desk.joined() };
+    for (const row of incoming) {
+      if (row.merged_into) joined[row.id] = row.merged_into;
+    }
+    next = next.filter((row) => !row.merged_into && !joined[row.id]);
     const keep = this.selectedRequestId();
+    const moved = keep ? joined[keep] : undefined;
     this.requests.set(next);
+    if (previous.size) {
+      for (const row of next) {
+        if (!previous.has(row.id)) this.flashRow(row.id);
+      }
+    }
     this.freshIds.set(fresh);
     this.ui.lastRefresh.set(Date.now());
+    const focus = this.focusRequestId;
+    if (focus && next.some((row) => row.id === focus)) {
+      this.focusRequestId = null;
+      this.initialSelectDone = true;
+      this.selectRequest(focus);
+      const reveal = (): void => document.querySelector(`[data-case-id="${focus}"]`)?.scrollIntoView({ block: 'nearest' });
+      if (typeof queueMicrotask === 'function') queueMicrotask(reveal);
+      return;
+    }
     if (!this.initialSelectDone && next.length > 0) {
       this.initialSelectDone = true;
       const pick = next.find((row) => !this.isDispatched(row) && !this.isCompleted(row)) || next[0];
       this.selectedRequestId.set(pick.id);
+      this.ui.selectedCaseId.set(pick.id);
       this.loadMatches(pick.id);
+      return;
+    }
+    if (moved && next.some((row) => row.id === moved)) {
+      this.selectRequest(moved);
       return;
     }
     if (keep && next.some((row) => row.id === keep)) {
@@ -561,6 +894,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   loadMatches(requestId: string): void {
     this.apiClient.getRequestMatches(requestId, 5).subscribe({
       next: (proposals) => {
+        if (this.selectedRequestId() !== requestId) return;
         this.matches.set(proposals);
       },
       error: (err) => {
@@ -757,11 +1091,40 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }, wait + 30);
   }
 
+  /** A Just reported chip: show that case in the queue and pan the map to it. */
+  openReported(caseId: string): void {
+    if (!this.filteredRequests().some((row) => row.id === caseId)) this.bandFilter.set('all');
+    this.selectRequest(caseId, true);
+    const reveal = (): void => document.querySelector(`[data-case-id="${caseId}"]`)?.scrollIntoView({ block: 'nearest' });
+    if (typeof queueMicrotask === 'function') queueMicrotask(reveal);
+  }
+
+  private flashRow(id: string): void {
+    const next = new Set(this.flashIds());
+    next.add(id);
+    this.flashIds.set(next);
+    const prev = this.flashTimers.get(id);
+    if (prev) clearTimeout(prev);
+    this.flashTimers.set(id, setTimeout(() => {
+      const left = new Set(this.flashIds());
+      left.delete(id);
+      this.flashIds.set(left);
+      this.flashTimers.delete(id);
+    }, 1400));
+  }
+
   selectRequest(id: string, openSheet = false): void {
     this.selectedRequestId.set(id);
+    this.mapFocus.update((n) => n + 1);
+    this.ui.selectedCaseId.set(id);
     this.matchIdx.set(0);
     this.openSection.set(this.ui.demoWhy ? 'why' : null);
     this.showOriginal.set(false);
+    this.moreOpen.set(false);
+    this.changeOpen.set(false);
+    this.rejectOpen.set(false);
+    this.choseTeam.set(false);
+    this.approving.set(false);
     this.loadMatches(id);
     if (openSheet && this.narrow()) this.sheetOpen.set(true);
   }
@@ -801,6 +1164,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       this.areaFilter.set(params.get('area') || 'all');
       const time = params.get('time');
       if (time === 'hour' || time === 'today' || time === 'all') this.timeFilter.set(time);
+      const focus = params.get('case');
+      if (focus && focus !== this.selectedRequestId()) {
+        this.focusRequestId = focus;
+        if (this.requests().some((row) => row.id === focus)) this.selectRequest(focus, true);
+      }
     });
   }
 
@@ -865,12 +1233,20 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
 
   approveMatch(prop: MatchProposal, allowOvercommit = false): void {
+    if (this.approving()) return;
+    this.approving.set(true);
     this.apiClient.approveMatch(prop.match_id, allowOvercommit).subscribe({
       next: (approved) => {
+        this.approving.set(false);
+        this.lastSentId.set(prop.request_id);
         this.actionToast.set({
-          text: `✓ Dispatch Approved: ${prop.resource_name} dispatched for ${this.selectedRequest()?.place_text || prop.request_id}`,
+          text: this.langService.translate('coord.sentUndo')
+            .replace('{team}', prop.resource_name)
+            .replace('{id}', prop.request_id),
           type: 'success',
+          undo: true,
         });
+        setTimeout(() => this.clearToast(), 8000);
 
         // Update local request status
         const target = this.requests().find((r) => r.id === prop.request_id);
@@ -891,8 +1267,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
         // Reload matches for updated state
         this.loadMatches(prop.request_id);
+        const next = this.filteredRequests().find((row) => row.id !== prop.request_id && !this.isDispatched(row) && !this.isCompleted(row));
+        if (next) this.selectRequest(next.id);
       },
       error: (err) => {
+        this.approving.set(false);
         if (err.status === 400 && err.error?.detail?.includes('Overcommit')) {
           this.pendingMatch = prop;
           this.isOvercommitModalOpen.set(true);
@@ -956,7 +1335,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   openRejectModal(prop: MatchProposal): void {
     this.pendingMatch = prop;
     this.rejectReasonText = '';
-    this.isRejectModalOpen.set(true);
+    this.rejectOpen.set(true);
+    this.isRejectModalOpen.set(false);
+  }
+  pickRejectReason(key: string): void {
+    this.rejectReasonText = this.langService.translate(key);
   }
 
   closeRejectModal(): void {
@@ -975,6 +1358,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
             type: 'warning',
           });
           this.closeRejectModal();
+          this.rejectOpen.set(false);
           this.loadMatches(match.request_id);
         },
         error: (err) => {
@@ -983,6 +1367,43 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         },
       });
     }
+  }
+
+  countSpans(req: StoredRequest): string[] {
+    const spans = (req.count_spans || []).filter((span) => !!span);
+    return spans.length > 1 ? spans : [];
+  }
+
+  countsDiffer(req: StoredRequest): string {
+    this.langService.currentLang();
+    const spans = this.countSpans(req).join(' vs ');
+    return this.langService.translate('coord.countsDiffer').replace('{spans}', spans);
+  }
+
+  confirmMerge(req: StoredRequest): void {
+    const hint = req.possible_duplicate;
+    if (!hint?.target_id) return;
+    this.apiClient.mergeRequests(hint.target_id, req.id, [hint.note || 'Coordinator confirmed the duplicate']).subscribe({
+      next: () => this.loadRequests(),
+      error: (err) => console.error('Error merging duplicate:', err),
+    });
+  }
+
+  keepSeparate(req: StoredRequest): void {
+    this.apiClient.keepSeparate(req.id).subscribe({
+      next: () => {
+        this.requests.set(this.requests().map((row) => (
+          row.id === req.id ? { ...row, possible_duplicate: null } : row
+        )));
+        this.loadRequests();
+      },
+      error: (err) => console.error('Error keeping reports separate:', err),
+    });
+  }
+  undoLastSend(): void {
+    const id = this.lastSentId();
+    this.clearToast();
+    if (id) this.selectRequest(id);
   }
 
   splitCluster(requestId: string): void {
@@ -1042,8 +1463,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (!text) return 'English';
     // Devanagari range
     if (/[\u0900-\u097F]/.test(text)) return 'Hindi';
-    // Tamil range
-    if (/[\u0B80-\u0BFF]/.test(text)) return 'Tamil';
+    if (/[\u0D00-\u0D7F]/.test(text)) return 'Malayalam';
     // Hinglish keywords
     const hinglishMarkers = [
       'paani', 'pani', 'badh', 'raha', 'hai', 'hain', 'ke', 'paas', 'chat',
@@ -1070,7 +1490,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return Math.round(req.translation_confidence * 100);
   }
 
-  setTranslationLang(lang: 'en' | 'hi' | 'ta'): void {
+  setTranslationLang(lang: 'en' | 'hi'): void {
     this.selectedTranslationLang.set(lang);
   }
 
@@ -1079,9 +1499,24 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (!req) return fallback;
     const ui = this.langService.currentLang();
     const map = req.translations || {};
-    if (ui === 'hinglish' && map['hinglish']) return map['hinglish'];
     const lang = ui === 'hinglish' ? 'hi' : this.selectedTranslationLang();
-    if (map[lang]) return map[lang];
-    return req.ai_translation || req.urgency_reason || req.place_text || fallback;
+    const picks = [ui === 'hinglish' ? map['hinglish'] : '', map[lang], req.ai_translation, req.summary, req.raw_text];
+    for (const pick of picks) {
+      const text = reportLine(pick);
+      if (text) return text;
+    }
+    return req.place_text || fallback;
   }
+}
+
+const INTERNAL = /urgency score|vulnerable flags/i;
+
+/** A case title is what the reporter said. Scoring notes and the card's "| Vulnerable: …" tail never show. */
+export function reportLine(text: string | null | undefined): string {
+  const kept = (text || '')
+    .split(' | ')
+    .filter((part) => !/^\s*(vulnerable|hazard):/i.test(part))
+    .join(' ')
+    .trim();
+  return kept && !INTERNAL.test(kept) ? kept : '';
 }

@@ -1,7 +1,7 @@
 :host { display: inline-flex; }
 .badge {
   display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 8px;
-  border-radius: 999px; font: 700 13px/1 var(--rd-font-family); white-space: nowrap;
+  border-radius: 999px; font: 600 13px/1 var(--rd-font-family); white-space: nowrap;
 }
 .gemini { background: var(--brand-tint); color: var(--brand); }
 .fallback { background: var(--sev-high-t); color: var(--sev-high); }

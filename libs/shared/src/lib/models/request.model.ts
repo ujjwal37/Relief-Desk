@@ -141,6 +141,20 @@ export interface StoredRequest {
   lat: number | null;
   lng: number | null;
   people_count: number | null;
+  /** Citizen wording such as "2-3" or "4". */
+  people_span?: string | null;
+  count_spans?: string[];
+  count_note?: string | null;
+  report_quotes?: { report_id: string; text: string; people_span?: string | null }[];
+  dedupe_trace?: string | null;
+  possible_duplicate?: {
+    target_id: string;
+    confidence: number;
+    similarity: number;
+    distance_km?: number | null;
+    minutes?: number | null;
+    note?: string;
+  } | null;
   vulnerable: VulnerableFlags;
   hazard: HazardType;
   urgency_score: number;
@@ -160,11 +174,13 @@ export interface StoredRequest {
   merged_into?: string | null;
   flags?: string[];
   raw_text?: string | null;
+  /** The confirmed card summary. A case title falls back to it while the model works. */
+  summary?: string | null;
   ai_translation?: string | null;
-  /** "gemini" live, "recorded" cache, or "offline_fallback". */
-  ai_source?: 'gemini' | 'recorded' | 'offline_fallback' | 'antigravity-local';
+  /** "gemini" live, "recorded" cache, "offline_fallback", or a test provider that is never shown as Gemini. */
+  ai_source?: 'gemini' | 'recorded' | 'offline_fallback' | 'antigravity-local' | 'openai_compat';
   ai?: {
-    provider: 'gemini' | 'cache' | 'fallback' | 'antigravity-local';
+    provider: 'gemini' | 'cache' | 'fallback' | 'antigravity-local' | 'openai_compat';
     model?: string | null;
     latency_ms?: number;
     tokens?: number | null;
@@ -182,6 +198,11 @@ export interface StoredRequest {
     status: string;
     input_summary?: string;
     output?: string;
+    provider?: string | null;
+    /** English name of who answered, e.g. "Test model (NVIDIA)". */
+    provider_label?: string | null;
+    /** The name inside "Test model (...)" for a test provider. */
+    vendor?: string | null;
     model?: string;
     latency_ms?: number;
     tokens?: number | null;
@@ -242,6 +263,18 @@ export interface MatchProposal {
   wait_minutes?: number | null;
   wait_team_name?: string | null;
   overcommit_warning: boolean;
+}
+
+/** A citizen report from the last few minutes, for the desk's Just reported strip. */
+export interface RecentReport {
+  id: string;
+  case_id: string;
+  type: string;
+  summary: string;
+  ward_id: string | null;
+  place_text: string | null;
+  created_at: string;
+  joined_existing: boolean;
 }
 
 export interface StoredCluster {
@@ -318,6 +351,7 @@ export interface ReportStatusResponse {
   timeline: StatusTimelineStep[];
   while_you_wait_tips: string[];
   emergency_phone: string;
+  analysis_status?: string;
   synthetic: boolean;
 }
 

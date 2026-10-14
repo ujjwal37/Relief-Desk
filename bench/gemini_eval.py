@@ -82,18 +82,22 @@ def evaluate_gemini(
     rpm: float = 15.0,
     limit: Optional[int] = None,
     stop_after_misses: int = 3,
+    allow_test_provider: bool = False,
 ) -> Dict[str, Any]:
     """Rate-limited Gemini reads. A missing key does not invent a score.
 
     Cached replies (data/cache/llm) cost no quota, so a re-run resumes where a quota stop left off.
     Several misses in a row (quota or outage) stop the run; only answered messages are scored.
+    A test provider (openai_compat) never fills this column, even when it is allowed.
     """
-    from app.llm.antigravity import assert_not_antigravity
+    from app.llm.providers import active_test_provider, assert_gemini_only
 
-    assert_not_antigravity("benchmark")
+    assert_gemini_only("benchmark", allow_test_provider=allow_test_provider)
     if limit:
         messages = messages[:limit]
     count = len(messages)
+    if active_test_provider():
+        return blank("test_provider", count, date, rpm)
     if extract is None and not llm_client.gemini_live():
         return blank(_offline_reason(), count, date, rpm)
 

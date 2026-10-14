@@ -52,7 +52,36 @@ def test_call_parses_envelope_and_extracts_json(on):
     assert ag.extract_json(text) == '{"type": "food"}' and tokens == 42
     assert "--print" in seen["cmd"] and "--output-format" in seen["cmd"]
     assert "--dangerously-skip-permissions" not in seen["cmd"]
+    assert seen["kw"]["timeout"] == 30
+    assert "30s" in seen["cmd"]
+
+
+def test_timeout_is_capped_at_40_seconds(on):
+    seen = {}
+
+    def run(cmd, **kw):
+        seen["cmd"], seen["kw"] = cmd, kw
+        return _Proc(_env('{"type": "food"}'))
+
+    ag.call_antigravity("S", "U", timeout_s=180, run=run)
     assert seen["kw"]["timeout"] == 40
+    assert "40s" in seen["cmd"]
+
+
+def test_parses_envelope_that_is_not_the_last_line(on):
+    stdout = "agy: working\n" + _env('{"type": "food"}') + "\ndone\n"
+
+    text, tokens = ag.call_antigravity("S", "U", run=lambda c, **k: _Proc(stdout))
+    assert ag.extract_json(text) == '{"type": "food"}' and tokens == 42
+
+
+def test_empty_reply_logs_the_raw_output(on, caplog):
+    caplog.set_level("ERROR")
+    raw = "\n\n"
+    with pytest.raises(RuntimeError, match="empty reply"):
+        ag.call_antigravity("S", "U", run=lambda c, **k: _Proc(raw, stderr="cli waited 210s"))
+    assert "cli waited 210s" in caplog.text
+    assert "stdout=" in caplog.text
 
 
 def test_call_failures_raise(on):

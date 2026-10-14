@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiClientService, ReportStatusResponse, RdTranslatePipe } from '@rd/shared';
 import { MyRequestsService } from '../../../core/services/my-requests.service';
+import { LiveEventsService } from '../../../core/live-events.service';
 
 @Component({
   selector: 'app-status',
@@ -13,10 +14,11 @@ import { MyRequestsService } from '../../../core/services/my-requests.service';
   styleUrls: ['./status.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StatusComponent implements OnInit {
+export class StatusComponent implements OnInit, OnDestroy {
   private api = inject(ApiClientService);
   private route = inject(ActivatedRoute);
   private store = inject(MyRequestsService);
+  private live = inject(LiveEventsService);
 
   reportIdInput = signal('');
   tokenInput = signal('');
@@ -29,6 +31,9 @@ export class StatusComponent implements OnInit {
   invalidInput = signal(false);
   isNew = signal(false);
   private currentToken = '';
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private watchedId = '';
+  private stopEvents?: () => void;
 
   ngOnInit(): void {
     const q = this.route.snapshot.queryParams;
@@ -52,26 +57,80 @@ export class StatusComponent implements OnInit {
     }
   }
 
-  fetchStatus(reportId: string, token?: string): void {
+  ngOnDestroy(): void {
+    this.stopWatch();
+  }
+
+  /** Keep asking until a coordinator finishes the request, so the phone updates on its own. */
+  stillWaiting(status: string | undefined): boolean {
+    return status !== 'completed' && status !== 'resolved' && status !== 'closed';
+  }
+
+  fetchStatus(reportId: string, token?: string, silent = false): void {
     const cleanId = reportId.trim();
     if (!cleanId) return;
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
-    this.currentToken = token?.trim() || '';
-    this.api.getReportStatus(cleanId, token?.trim()).subscribe({
+    if (!silent) {
+      this.isLoading.set(true);
+      this.errorMessage.set(null);
+    }
+    const nextToken = token?.trim();
+    if (nextToken) this.currentToken = nextToken;
+    this.api.getReportStatus(cleanId, this.currentToken || undefined).subscribe({
       next: (data) => {
         this.statusData.set(data);
         this.showFind.set(false);
         this.isLoading.set(false);
         this.store.add(data.report_id || cleanId, this.currentToken);
+        if (this.stillWaiting(data.status)) this.watch(data.report_id || cleanId);
+        else this.stopWatch();
       },
       error: () => {
+        if (silent && this.statusData()) return;
         this.statusData.set(null);
         this.errorMessage.set('not-found');
         this.showFind.set(true);
         this.isLoading.set(false);
       },
     });
+  }
+
+  /** The stream is the update. A 2.5s poll runs only while that stream is down, inside the 3s approve budget. */
+  private watch(id: string): void {
+    this.startPoll();
+    if (!this.currentToken || this.watchedId === id) return;
+    this.stopEvents?.();
+    this.watchedId = id;
+    this.live.connectReport(id, this.currentToken);
+    this.stopEvents = this.live.onEvent(() => this.fetchStatus(id, this.currentToken, true));
+  }
+
+  private startPoll(): void {
+    if (this.pollTimer) return;
+    this.pollTimer = setInterval(() => {
+      if (this.live.state() === 'live') return;
+      const data = this.statusData();
+      const id = data?.report_id || this.reportIdInput().trim();
+      if (!id || !this.stillWaiting(data?.status)) {
+        this.stopPoll();
+        return;
+      }
+      this.fetchStatus(id, this.currentToken, true);
+    }, 2500);
+  }
+
+  private stopPoll(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  private stopWatch(): void {
+    this.stopPoll();
+    this.stopEvents?.();
+    this.stopEvents = undefined;
+    this.watchedId = '';
+    this.live.stop();
   }
 
   /** Accepts a request ID, or a pasted status link that carries id and token. */

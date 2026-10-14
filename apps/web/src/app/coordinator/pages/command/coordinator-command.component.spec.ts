@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { CoordinatorCommandComponent } from './coordinator-command.component';
 import { ApiClientService, StoredRequest, MatchProposal, StoredResource, UrgencyWeights } from '@rd/shared';
+import { MapProviderComponent } from '../../../core/maps/map-provider.component';
 
 describe('CoordinatorCommandComponent', () => {
   let component: CoordinatorCommandComponent;
@@ -133,16 +135,24 @@ describe('CoordinatorCommandComponent', () => {
       'markArrived',
       'completeRequest',
       'rejectMatch',
+      'mergeRequests',
+      'keepSeparate',
       'splitCluster',
       'getScenarios',
       'getMapsConfig',
       'getAssistProposals',
       'planAssist',
+      'resetDemo',
+      'loadFullScenario',
+      'getRecentReports',
     ]);
 
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
+    apiClientSpy.getRecentReports.and.returnValue(of([]));
     apiClientSpy.getAssistProposals.and.returnValue(of({ proposals: [], shortages: [] }));
     apiClientSpy.planAssist.and.returnValue(of({ proposals: [], shortages: [] }));
+    apiClientSpy.resetDemo.and.returnValue(of({ seed: 'small', incidents: 2 }));
+    apiClientSpy.loadFullScenario.and.returnValue(of({ seed: 'full', incidents: 40 }));
     apiClientSpy.getMapsConfig.and.returnValue(of({ enabled: false, apiKey: null }));
     apiClientSpy.getScenarios.and.returnValue(of([
       { id: 'flood', title: 'Urban Flood Relief', description: '', incident_types: ['rescue'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: [] },
@@ -172,7 +182,7 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.selectedRequestId()).toBe('INC-001');
     fixture.detectChanges();
     const opener = fixture.nativeElement.querySelector('.hooks .trace-chip') as HTMLButtonElement | null;
-    expect(opener?.textContent).toContain('View trace');
+    expect(opener?.textContent).toContain('How it decided');
   });
 
   it('should create and load ranked requests and resources', () => {
@@ -197,7 +207,7 @@ describe('CoordinatorCommandComponent', () => {
   it('should approve match, update request status, and display confirmation toast', () => {
     component.approveMatch(mockProposal);
     expect(apiClientSpy.approveMatch).toHaveBeenCalledWith('match_001', false);
-    expect(component.actionToast()?.text).toContain('Dispatch Approved');
+    expect(component.actionToast()?.text).toMatch(/Dispatch approved|Motorized Rescue Boat/);
     const updated = component.requests().find((r) => r.id === 'INC-001');
     expect(updated?.status).toBe('dispatched');
     expect(component.filteredRequests().some((r) => r.id === 'INC-001')).toBeFalse();
@@ -238,15 +248,6 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.teamsFree()).toEqual({ free: 2, total: 4 });
   });
 
-  it('wraps the briefing on a narrow screen', () => {
-    component.narrow.set(true);
-    fixture.detectChanges();
-    const banner = fixture.nativeElement.querySelector('.briefing') as HTMLElement;
-    const line = banner.querySelector('p') as HTMLElement;
-    expect(banner.classList.contains('wrap')).toBeTrue();
-    expect(getComputedStyle(line).whiteSpace).toBe('normal');
-  });
-
   it('tab counts follow the type, area and time filters, and areas use place names', () => {
     expect(component.counts().total).toBe(2);
     component.setFilterType('medical');
@@ -259,13 +260,10 @@ describe('CoordinatorCommandComponent', () => {
     component.setTime('hour');
     expect(component.counts().total).toBe(0);
     component.clearFilters();
-    fixture.detectChanges();
-    const options = Array.from(fixture.nativeElement.querySelectorAll('option') as NodeListOf<HTMLOptionElement>)
-      .map((option) => (option.textContent || '').trim());
-    expect(options).toContain('Chalakudy');
-    expect(options).toContain('Aluva');
-    expect(options.some((label) => /ward\s*\d+/i.test(label))).toBeFalse();
+    expect(component.placeName('ward_7')).toBe('Chalakudy');
+    expect(component.placeName('ward_4')).toBe('Aluva');
     expect(component.placeName('ward_12')).toBe('Kalpetta');
+    expect(/ward\s*\d+/i.test(component.placeName('ward_7'))).toBeFalse();
   });
 
   it('keeps type, area and time filters and can clear them', () => {
@@ -293,9 +291,9 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.currentWeights().w_vulnerability).toBe(45);
   });
 
-  it('should accurately detect original languages (Hindi, Tamil, Hinglish, English)', () => {
+  it('should accurately detect original languages (Hindi, Malayalam, Hinglish, English)', () => {
     expect(component.detectOriginalLanguage('पानी बहुत तेजी से बढ़ रहा है')).toBe('Hindi');
-    expect(component.detectOriginalLanguage('வெள்ளத்தில் சிக்கியுள்ளோம் காப்பாற்றுங்கள்')).toBe('Tamil');
+    expect(component.detectOriginalLanguage('വെള്ളം ഉയരുന്നു, സഹായം വേണം')).toBe('Malayalam');
     expect(component.detectOriginalLanguage('paani badh raha hai bachao jaldi')).toBe('Hinglish');
     expect(component.detectOriginalLanguage('Flood water rising rapidly please send boat')).toBe('English');
   });
@@ -324,7 +322,6 @@ describe('CoordinatorCommandComponent', () => {
       translations: {
         en: 'Water entered the house.',
         hi: 'घर में पानी घुस गया है।',
-        ta: 'வீட்டிற்குள் தண்ணீர் புகுந்தது.',
       },
     };
 
@@ -333,9 +330,67 @@ describe('CoordinatorCommandComponent', () => {
 
     component.setTranslationLang('hi');
     expect(component.getTranslationText(multiLangReq)).toBe('घर में पानी घुस गया है।');
+  });
 
-    component.setTranslationLang('ta');
-    expect(component.getTranslationText(multiLangReq)).toBe('வீட்டிற்குள் தண்ணீர் புகுந்தது.');
+  it('titles a case still being analysed with its summary, never the scoring note', () => {
+    component.setTranslationLang('en');
+    const analysing: StoredRequest = {
+      ...mockRequests[0],
+      ai_translation: null,
+      translations: {},
+      urgency_reason: 'Vulnerable flags: child, elderly (Urgency score: 44.7)',
+      summary: '5 people needing rescue | at Gandhi School | Vulnerable: child | Hazard: water_rising',
+      analysis_status: 'analysing',
+    };
+    expect(component.getTranslationText(analysing)).toBe('5 people needing rescue at Gandhi School');
+    expect(component.getTranslationText({ ...analysing, summary: null })).toBe(analysing.raw_text as string);
+    expect(component.getTranslationText({ ...analysing, summary: null, raw_text: 'Vulnerable flags: child (Urgency score: 44.7)' }))
+      .toBe(analysing.place_text as string);
+  });
+
+  it('builds a queue need line from flags and the needed team, never a scoring note', () => {
+    const line = component.queueNeedLine(mockRequests[0]);
+    expect(line.toLowerCase()).toContain('children');
+    expect(line.toLowerCase()).toContain('elderly');
+    expect(line.toLowerCase()).toMatch(/boat/);
+    expect(line).not.toMatch(/urgency score/i);
+    const onlyChild = component.queueNeedLine({
+      ...mockRequests[0],
+      people_count: 3,
+      vulnerable: { child: true, elderly: false, disabled: false, pregnant: false, medical_need: false },
+    });
+    expect(onlyChild.toLowerCase()).toMatch(/3 children/);
+    expect(onlyChild.toLowerCase()).toMatch(/boat/);
+  });
+
+  it('formats waiting time from wait_minutes or created_at', () => {
+    expect(component.waitTime({ ...mockRequests[0], wait_minutes: 12 })).toMatch(/12/);
+    const hourAgo = new Date(Date.now() - 70 * 60_000).toISOString();
+    expect(component.waitTime({ ...mockRequests[0], wait_minutes: 0, created_at: hourAgo })).toMatch(/1 h/);
+  });
+
+  it('shows a slim queue card and a Send card with one Why line', () => {
+    const card = fixture.nativeElement.querySelector('button.case') as HTMLElement;
+    expect(card.querySelector('.title')?.textContent).toContain('Water has entered');
+    expect(card.querySelector('.loc')?.textContent).toMatch(/^Ward 7 ·/);
+    expect(card.querySelector('.prio')?.textContent?.trim()).toBe('94');
+    expect(card.querySelector('.ico-chip.people')?.textContent).toContain('5');
+    expect(card.querySelector('.ico-chip.vuln')?.textContent).toContain('Vulnerable');
+    expect(card.textContent).not.toContain('Priority');
+    expect(card.querySelector('.need')).toBeNull();
+    const panel = fixture.nativeElement.querySelector('.detail') as HTMLElement;
+    expect(panel.querySelector('.send-kicker')?.textContent).toContain('Send: Motorized Rescue Boat #02');
+    expect((panel.querySelector('.facts') as HTMLElement).textContent).toContain('1.2 km · about 4 min');
+    expect(panel.querySelector('.why-line')?.textContent).toContain('Rescue Boat #02');
+    expect(panel.querySelector('.more-block')?.hasAttribute('hidden')).toBeTrue();
+    expect(component.sendTeamLabel('Boat 2')).toBe('Send: Boat 2');
+    expect(component.whyLine(mockProposal)).toContain('1.2 km');
+  });
+
+  it('keeps Ward N on the queue location line', () => {
+    expect(component.locationLine(mockRequests[0])).toMatch(/^Ward 7 ·/);
+    expect(component.locationLine({ ...mockRequests[0], ward_id: 'ward_12', place_text: 'Canal Road' }))
+      .toBe('Ward 12 · Canal Road');
   });
 
   it('merges a new report into the open queue and keeps the selected case', () => {
@@ -350,7 +405,10 @@ describe('CoordinatorCommandComponent', () => {
     component.applyQueue([live], true);
     expect(component.requests().some((row) => row.id === 'INC-LIVE')).toBeTrue();
     expect(component.freshIds().has('INC-LIVE')).toBeTrue();
+    expect(component.flashIds().has('INC-LIVE')).toBeTrue();
     expect(component.selectedRequestId()).toBe('INC-001');
+    component.openReported('INC-LIVE');
+    expect(component.selectedRequestId()).toBe('INC-LIVE');
   });
 
   it('shows Gemini or Offline fallback on the AI reading', () => {
@@ -376,7 +434,7 @@ describe('CoordinatorCommandComponent', () => {
     component.requests.set(rows);
     component.selectRequest('INC-001');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent as string).toContain('Recorded Gemini run');
+    expect(fixture.nativeElement.textContent as string).toContain('Recorded (Gemini)');
   });
 
   it('says there is no nearby team instead of an hours-long ETA', () => {
@@ -394,9 +452,18 @@ describe('CoordinatorCommandComponent', () => {
       breakdown: { ...mockProposal.breakdown, distance_km: 1.2 },
     };
     expect(component.etaText(near)).toBe('about 4 min');
+    const freeClose: MatchProposal = {
+      ...mockProposal,
+      eta_minutes: undefined,
+      no_nearby: true,
+      breakdown: { ...mockProposal.breakdown, distance_km: 12 },
+    };
+    expect(component.etaText(freeClose)).toBe('about 36 min');
+    expect(component.etaText(freeClose)).not.toContain('No nearby team');
   });
 
   it('fits open cases and labels the four Kerala districts without a river', () => {
+    component.matches.set([]);
     component.requests.set([
       { ...mockRequests[0], id: 'south', lat: 9.43, lng: 76.4, status: 'new' },
       { ...mockRequests[0], id: 'north', lat: 11.6, lng: 76.08, status: 'new' },
@@ -424,6 +491,84 @@ describe('CoordinatorCommandComponent', () => {
     }
   });
 
+  it('focuses the selected case, labels team lines, and lists only the kinds on the map', () => {
+    component.resources.set([
+      ...mockResources,
+      { ...mockResources[0], id: 'res_shelter', kind: 'shelter', name: 'School hall', lat: 26.86, lng: 80.94 },
+    ]);
+    fixture.detectChanges();
+    const pins = component.drawnPins();
+    expect(pins.find((pin) => pin.id === 'INC-001')?.dim).toBeFalse();
+    expect(pins.find((pin) => pin.id === 'INC-002')?.dim).toBeTrue();
+    expect(pins.find((pin) => pin.id === 'res_boat_02')?.suggested).toBeTrue();
+    expect(pins.find((pin) => pin.id === 'res_shelter')?.dim).toBeTrue();
+    expect(component.focusLegs().map((leg) => leg.label)).toEqual(['1.2 km · about 4 min']);
+    expect(component.mapLegs().map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
+    expect(component.mapLegs()[0].suggested).toBeTrue();
+    const provider = fixture.debugElement.query(By.css('rd-map-provider')).componentInstance as MapProviderComponent;
+    expect(provider.legs.map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
+    expect(provider.legs[0].suggested).toBeTrue();
+    expect(provider.fitAll).toBeFalse();
+    const frame = component.mapFrame();
+    expect(frame.minLa).toBeLessThan(26.85);
+    expect(frame.maxLa).toBeGreaterThan(26.852);
+    expect(frame.minLo).toBeLessThan(80.925);
+    expect(frame.maxLo).toBeGreaterThan(80.93);
+    for (const leg of component.focusLegs()) {
+      for (const value of [leg.x1, leg.x2, leg.lx]) {
+        expect(value).toBeGreaterThan(20);
+        expect(value).toBeLessThan(580);
+      }
+      for (const value of [leg.y1, leg.y2, leg.ly]) {
+        expect(value).toBeGreaterThan(10);
+        expect(value).toBeLessThan(470);
+      }
+    }
+    expect(component.legendBands()).toEqual(['critical']);
+    expect(component.legendKinds()).toEqual(['boat']);
+    const map = (fixture.nativeElement.querySelector('.svgmap') as HTMLElement).textContent || '';
+    const legend = (fixture.nativeElement.querySelector('.legend') as HTMLElement).textContent || '';
+    expect(map).toContain('1.2 km · about 4 min');
+    expect(legend).toContain('Needs help now');
+    expect(legend).toContain('Boat');
+    expect(legend).not.toContain('Shelter');
+    expect(legend).not.toContain('Help soon');
+    const boat = component.mapPins().find((pin) => pin.id === 'res_boat_02');
+    expect(boat?.vehicle).toBe('boat');
+    expect(boat?.marker).toBe('team');
+    const glyph = fixture.nativeElement.querySelector('.svgmap .pin path') as SVGPathElement;
+    expect(glyph.getAttribute('d')).toContain('M2 14.5');
+    const row = fixture.nativeElement.querySelector('.candidates li') as HTMLElement;
+    expect(row.textContent).toContain('1.2 km · about 4 min');
+    expect((fixture.nativeElement.querySelector('.facts') as HTMLElement).textContent).toContain('1.2 km · about 4 min');
+    row.dispatchEvent(new Event('mouseenter'));
+    fixture.detectChanges();
+    expect(provider.highlightId).toBe('res_boat_02');
+    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke')).toBe('#047857');
+    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke-width')).toBe('6');
+  });
+
+  it('draws lines only to the top three teams', () => {
+    const extra = [1, 2, 3].map((n) => ({
+      ...mockProposal,
+      match_id: `m${n}`,
+      resource_id: `res_${n}`,
+      resource_name: `Team ${n}`,
+      breakdown: { ...mockProposal.breakdown, distance_km: n },
+      eta_minutes: n * 3,
+    }));
+    component.resources.set([
+      ...mockResources,
+      ...extra.map((prop, n) => ({ ...mockResources[0], id: prop.resource_id, name: prop.resource_name, lat: 26.86 + n / 100, lng: 80.94 })),
+    ]);
+    component.matches.set([mockProposal, ...extra]);
+    fixture.detectChanges();
+    expect(component.mapLegs().length).toBe(3);
+    expect(component.focusLegs().length).toBe(3);
+    expect(component.mapLegs().map((leg) => leg.id)).not.toContain('res_3');
+    expect(component.candidateMatches().length).toBe(3);
+  });
+
   it('reloads the queue when the demo phone submits a report', () => {
     apiClientSpy.getRequests.calls.reset();
     component.handleDemoMessage({
@@ -431,6 +576,45 @@ describe('CoordinatorCommandComponent', () => {
       data: { type: 'rd-report-submitted', reportId: 'R-demo' },
     } as MessageEvent);
     expect(apiClientSpy.getRequests).toHaveBeenCalled();
+  });
+
+  it('opens the phone report on the queue and ignores a watermark', () => {
+    expect(component.selectedRequestId()).toBe('INC-001');
+    const live = {
+      ...mockRequests[0],
+      id: 'req_phone',
+      place_text: 'Temple Road',
+      urgency_score: 90,
+      updated_at: '2026-10-12T18:00:00+00:00',
+    };
+    apiClientSpy.getRequests.and.returnValue(of([...mockRequests, live]));
+    apiClientSpy.getRequests.calls.reset();
+    component.onLiveReport({ type: 'rd-report-submitted', requestId: 'req_phone' });
+    const args = apiClientSpy.getRequests.calls.mostRecent().args;
+    expect(args[2]).toBeUndefined();
+    expect(component.requests().some((row) => row.id === 'req_phone')).toBeTrue();
+    expect(component.selectedRequestId()).toBe('req_phone');
+  });
+
+  it('Reset demo and Load full scenario replace the whole queue', () => {
+    spyOn(window, 'confirm').and.returnValue(true);
+    apiClientSpy.getRequests.and.returnValue(of([mockRequests[0]]));
+    component.resetDemo();
+    expect(apiClientSpy.resetDemo).toHaveBeenCalled();
+    expect(component.requests().map((row) => row.id)).toEqual(['INC-001']);
+    apiClientSpy.getRequests.and.returnValue(of(mockRequests));
+    component.loadFullScenario();
+    expect(apiClientSpy.loadFullScenario).toHaveBeenCalled();
+    expect(component.requests().map((row) => row.id)).toEqual(['INC-001', 'INC-002']);
+  });
+
+  it('filters the open queue from the top search box', () => {
+    component.searchQuery.set('Gandhi');
+    fixture.detectChanges();
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-001']);
+    component.searchQuery.set('Canal Road');
+    fixture.detectChanges();
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-002']);
   });
 
   it('opens five agents from the selected case and keeps assist behind a review tap', () => {
@@ -474,7 +658,9 @@ describe('CoordinatorCommandComponent', () => {
     const live = { ...mockRequests[0], id: 'INC-NEW', analysis_status: 'analysing' as const, urgency_score: 99, trace: [{ agent: 'Intake', status: 'complete' as const, output: 'rescue' }] };
     component.applyQueue([live], true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-analysing-card')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="ai-analysing"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent as string).toContain('AI analysing…');
+    expect(fixture.nativeElement.querySelector('button.case')).not.toBeNull();
     expect(component.selectedRequestId()).toBe('INC-001');
     component.applyQueue([{
       ...live,
@@ -488,7 +674,43 @@ describe('CoordinatorCommandComponent', () => {
       })),
     }], true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-analysing-card')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="ai-analysing"]')).toBeNull();
     expect(fixture.nativeElement.textContent as string).toContain('Analysed by 5 agents in');
+  });
+
+  it('shows conflicting counts, each report, and merge or keep-separate', () => {
+    apiClientSpy.mergeRequests.and.returnValue(of({ cluster_id: 'c1' }));
+    apiClientSpy.keepSeparate.and.returnValue(of({ id: 'INC-DUP' }));
+    const dup: StoredRequest = {
+      ...mockRequests[0],
+      id: 'INC-DUP',
+      people_count: 5,
+      count_spans: ['2-3', '4-5'],
+      count_note: 'Counts differ: 2-3 vs 4-5',
+      report_quotes: [
+        { report_id: 'r1', text: '2-3 people at Oakbend' },
+        { report_id: 'r2', text: '4-5 people at Oakbend' },
+      ],
+      possible_duplicate: {
+        target_id: 'INC-001',
+        confidence: 0.6,
+        similarity: 0.55,
+        distance_km: 0.8,
+        minutes: 12,
+        note: 'Possible duplicate, review',
+      },
+    };
+    component.applyQueue([dup], false);
+    component.selectRequest('INC-DUP');
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Counts differ: 2-3 vs 4-5');
+    expect(text).toContain('Possible duplicate, review');
+    expect(text).toContain('2-3 people at Oakbend');
+    expect(text).toContain('4-5 people at Oakbend');
+    (fixture.nativeElement.querySelector('[data-testid="merge-dup"]') as HTMLButtonElement).click();
+    expect(apiClientSpy.mergeRequests).toHaveBeenCalledWith('INC-001', 'INC-DUP', jasmine.any(Array));
+    (fixture.nativeElement.querySelector('[data-testid="keep-dup"]') as HTMLButtonElement).click();
+    expect(apiClientSpy.keepSeparate).toHaveBeenCalledWith('INC-DUP');
   });
 });

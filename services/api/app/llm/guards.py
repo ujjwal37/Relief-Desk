@@ -4,6 +4,8 @@ import threading
 import time
 from typing import Callable
 
+from app.llm.ai_queue import PrioritySlots
+
 PHONE = re.compile(r"(?<!\d)(?:\+91[\s-]?)?[6-9]\d{9}(?!\d)")
 EMAIL = re.compile(r"[\w.+-]+@[\w.-]+\.\w+")
 ADVICE = (
@@ -22,7 +24,7 @@ class Guard:
         self.gap = 60.0 / per_minute if per_minute else 0.0
         self._next = 0.0
         self._lock = threading.Lock()
-        self.semaphore = threading.Semaphore(max_in_flight)
+        self.slots = PrioritySlots(max_in_flight)
         self.fail_limit = fail_limit
         self.failures = 0
         self.opened_at = 0.0
@@ -33,7 +35,17 @@ class Guard:
     def circuit_open(self) -> bool:
         if self.failures < self.fail_limit:
             return False
-        return (self.now() - self.opened_at) < self.open_for
+        if (self.now() - self.opened_at) < self.open_for:
+            return True
+        self.failures = 0
+        self.open_for = 30.0
+        return False
+
+    def trip(self, seconds: float) -> None:
+        """Open the circuit now, and keep it open for `seconds` (the daily reset)."""
+        self.failures = self.fail_limit
+        self.opened_at = self.now()
+        self.open_for = max(1.0, seconds)
 
     def wait_turn(self) -> None:
         with self._lock:

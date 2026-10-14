@@ -24,20 +24,15 @@ WARDS = [
 ]
 
 TYPES = ["rescue", "food", "medical", "shelter", "info"]
-LANGS = ["hi", "hinglish", "en", "ta"]
+HINDI_REPORT_ID = "DR-001"
 
 
 def _line(index: int, ward_name: str, people: int, kind: str) -> tuple[str, str]:
-    lang = LANGS[index % len(LANGS)]
-    if lang == "hi":
+    if f"DR-{index:03d}" == HINDI_REPORT_ID:
         text = f"वार्ड संदेश {index}: {ward_name} में {people} लोग पानी में फंसे हैं। नाव चाहिए। यह काल्पनिक रिपोर्ट है।"
-    elif lang == "hinglish":
-        text = f"Ward message {index}: {ward_name} mein {people} log paani mein fase hain, boat chahiye. Synthetic report."
-    elif lang == "ta":
-        text = f"செய்தி {index}: {ward_name} இல் {people} பேர் வெள்ளத்தில் சிக்கியுள்ளனர். படகு தேவை. செயற்கை அறிக்கை."
-    else:
-        text = f"Message {index}: {people} people stranded in {ward_name}. Need a boat. Synthetic scenario inspired by Kerala floods."
-    return lang, text
+        return "hi", text
+    text = f"Message {index}: {people} people stranded in {ward_name}. Need a boat. Synthetic scenario inspired by Kerala floods."
+    return "en", text
 
 
 def build_demo_reports() -> List[Dict[str, Any]]:
@@ -64,13 +59,13 @@ def build_demo_reports() -> List[Dict[str, Any]]:
 
     # Duplicates of the Nedumudi / ward 3 house (DR-003 sits in ward_3).
     dup_texts = [
-        ("hi", "नेदुमुडी बोट जेट्टी के पास वही घर, छत पर लोग हैं, नाव भेजो। दूसरी रिपोर्ट, काल्पनिक।"),
-        ("hinglish", "Nedumudi jetty wala same ghar, log chhat par hain, please boat. Duplicate report, synthetic."),
         ("en", "Same house near Nedumudi Boat Jetty, people on the roof, send a boat. Second reporter, synthetic."),
-        ("hi", "नेदुमुडी वाली गली में फिर से वही फंसे हुए लोग। नकल रिपोर्ट, काल्पनिक।"),
         ("en", "Another neighbour reporting the Nedumudi lane rescue. Synthetic duplicate."),
-        ("hinglish", "Ward 3 Nedumudi lane dobara: same family on roof. Synthetic duplicate."),
+        ("en", "Ward 3 Nedumudi lane again: same family on the roof. Synthetic duplicate."),
         ("en", "Third caller, same Nedumudi roof, still need a boat. Synthetic duplicate."),
+        ("en", "Same Nedumudi Boat Jetty house, people still on the roof. Synthetic duplicate."),
+        ("en", "Neighbour again at the Nedumudi lane, send a boat. Synthetic duplicate."),
+        ("en", "Another call for the same Nedumudi roof. Synthetic duplicate."),
     ]
     for offset, (lang, text) in enumerate(dup_texts, start=1):
         reports.append({
@@ -94,10 +89,10 @@ def build_demo_reports() -> List[Dict[str, Any]]:
         "ward_id": "ward_3",
         "lat": 9.430,
         "lng": 76.398,
-        "lang": "hinglish",
+        "lang": "en",
         "people": 5,
         "type": "rescue",
-        "text": "Nedumudi jetty par ab 5 log hain, paani badh raha hai. Pehle 3 the. Synthetic update.",
+        "text": "Nedumudi jetty now has 5 people and the water is still rising. Earlier there were 3. Synthetic update.",
         "source_id": "demo_update_01",
         "flags": ["update"],
         "duplicate_of": "INC-001",

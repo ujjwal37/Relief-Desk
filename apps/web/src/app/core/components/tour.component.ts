@@ -36,13 +36,13 @@ const STEPS: Step[] = [
   styles: [`
     .shade { position:fixed; inset:0; z-index:2000; }
     .spot { position:fixed; z-index:2001; border-radius:12px; box-shadow:0 0 0 9999px var(--scrim); outline:3px solid var(--brand); pointer-events:none; transition:all 200ms var(--ease); }
-    .card { position:fixed; z-index:2002; width:340px; max-width:calc(100vw - 24px); background:var(--surface); color:var(--text); border-radius:16px; padding:18px; box-shadow:var(--e3); outline:none; }
+    .card { position:fixed; z-index:2002; width:340px; max-width:calc(100vw - 24px); background:var(--surface); color:var(--text); border-radius:var(--r3); padding:18px; box-shadow:var(--e3); outline:none; }
     .step { margin:0 0 4px; font-size:13px; color:var(--text-2); font-weight:600; }
     h2 { margin:0 0 6px; font-size:18px; line-height:1.25; }
-    .body { margin:0 0 14px; font-size:15px; line-height:1.45; color:var(--text-2); }
+    .body { margin:0 0 14px; font-size:14px; line-height:1.45; color:var(--text-2); }
     .foot { display:flex; align-items:center; gap:8px; }
     .dots { display:inline-flex; gap:5px; flex:1; justify-content:center; } .dots i { width:7px; height:7px; border-radius:50%; background:var(--border); } .dots i.on { background:var(--brand); }
-    button { min-height:44px; border-radius:10px; border:0; font:700 15px var(--rd-font-family); cursor:pointer; padding:0 14px; }
+    button { min-height:44px; border-radius:10px; border:0; font:600 14px var(--rd-font-family); cursor:pointer; padding:0 14px; }
     .skip, .back { background:transparent; color:var(--text-2); } .next { background:var(--brand); color:var(--on-brand); }
     @media (prefers-reduced-motion: reduce) { .spot { transition:none; } }
   `],

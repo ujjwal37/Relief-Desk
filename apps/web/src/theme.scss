@@ -1,44 +1,96 @@
-/* Pine & Sand. Specified pairs only; derived tokens use color-mix of those pairs. */
+/* App-wide theme. Names stay the ones the screens already use.
+   Values follow a shadcn/ui card + emerald success palette (zinc neutrals,
+   8px radius, 4px spacing). Other tabs pick this up through the same variables. */
 :root, :root[data-theme='light'] {
-  --bg:#F5EFE3; --surface:#FFFDF8; --surface-2:#EDE5D3; --border:#D8C9A8;
-  --text:#1E2A24; --text-2:#4A5650; --muted:#5E6A60;
-  --brand:#1F5F52; --on-brand:#FFFFFF; --brand-tint:#DDEBE4;
-  --sev-crit:#B3261E; --sev-crit-t:#FBE3DF;
-  --sev-high:#8F5A00; --sev-high-t:#F8E8C4;
-  --sev-med:#2A5C8A; --sev-med-t:#DFE9F2;
-  --sev-low:#5B645E;
-  --ok:#2F6B2A; --ok-t:#E0EEDA;
-  --e1:0 1px 2px color-mix(in srgb, var(--text) 10%, transparent);
-  --e2:0 4px 12px color-mix(in srgb, var(--text) 14%, transparent);
-  --e3:0 12px 32px color-mix(in srgb, var(--text) 22%, transparent);
-  --scrim:color-mix(in srgb, var(--text) 52%, transparent);
+  --bg: #f4f4f5;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --border: #e4e4e7;
+  --text: #09090b;
+  --text-2: #71717a;
+  --muted: #71717a;
+  --brand: #047857;
+  --on-brand: #ffffff;
+  --brand-tint: #ecfdf5;
+  --sev-crit: #dc2626;
+  --sev-crit-t: #fef2f2;
+  --sev-high: #d97706;
+  --sev-high-t: #fffbeb;
+  --sev-med: #2563eb;
+  --sev-med-t: #eff6ff;
+  --sev-low: #64748b;
+  --ok: #059669;
+  --ok-t: #ecfdf5;
+  --e1: 0 1px 2px 0 rgb(0 0 0 / 5%);
+  --e2: 0 1px 3px 0 rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
+  --e3: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 10%);
+  --scrim: rgb(15 23 32 / 48%);
 }
 :root[data-theme='dark'] {
-  --bg:#161B18; --surface:#1E2622; --surface-2:#27322C; --border:#3A4740;
-  --text:#EEF2EA; --text-2:#B8C4B8; --muted:#93A094;
-  --brand:#7CC3A9; --on-brand:#0F211B; --brand-tint:#1F3A31;
-  --sev-crit:#FF9A8F; --sev-crit-t:#3E1D1A;
-  --sev-high:#E8B84A; --sev-high-t:#3A2D0F;
-  --sev-med:#8DBBE8; --sev-med-t:#1B2C3E;
-  --sev-low:#A0AAA2;
-  --ok:#8FD18A; --ok-t:#1F3320;
-  --e1:0 1px 2px color-mix(in srgb, var(--on-brand) 55%, transparent);
-  --e2:0 4px 12px color-mix(in srgb, var(--on-brand) 62%, transparent);
-  --e3:0 12px 32px color-mix(in srgb, var(--on-brand) 72%, transparent);
-  --scrim:color-mix(in srgb, var(--on-brand) 68%, transparent);
+  --bg: #0b1210;
+  --surface: #121a17;
+  --surface-2: #1a2420;
+  --border: #24302b;
+  --text: #ecf3ee;
+  --text-2: #a7b4ad;
+  --muted: #8b9a93;
+  --brand: #34d399;
+  --on-brand: #052e1c;
+  --brand-tint: #0f2a20;
+  --sev-crit: #f87171;
+  --sev-crit-t: #3b1515;
+  --sev-high: #fbbf24;
+  --sev-high-t: #3a2c0a;
+  --sev-med: #60a5fa;
+  --sev-med-t: #132338;
+  --sev-low: #94a3b8;
+  --ok: #34d399;
+  --ok-t: #0f2a20;
+  --e1: 0 1px 2px rgb(0 0 0 / 40%);
+  --e2: 0 4px 12px rgb(0 0 0 / 45%);
+  --e3: 0 12px 28px rgb(0 0 0 / 50%);
+  --scrim: rgb(0 0 0 / 62%);
 }
 :root {
-  --border-2:color-mix(in srgb, var(--text) 22%, var(--border));
-  --sos:var(--sev-crit); --sos-text:var(--sev-crit); --on-sos:var(--on-brand);
-  --amber:var(--sev-high); --amber-tint:var(--sev-high-t);
-  --green:var(--ok); --blue:var(--sev-med); --focus:var(--brand);
-  --map-bg:var(--surface-2);
-  --map-water:color-mix(in srgb, var(--brand) 24%, var(--surface));
-  --map-flood:color-mix(in srgb, var(--sev-med) 16%, transparent);
-  --map-flood-line:var(--sev-med);
-  --ease:cubic-bezier(.2,0,0,1);
-  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
-  --r1:8px; --r2:12px; --r3:16px; --r4:24px;
+  --border-2: color-mix(in srgb, var(--text) 16%, var(--border));
+  --sos: var(--sev-crit);
+  --sos-text: var(--sev-crit);
+  --on-sos: var(--on-brand);
+  --amber: var(--sev-high);
+  --amber-tint: var(--sev-high-t);
+  --green: var(--ok);
+  --blue: var(--sev-med);
+  --focus: var(--brand);
+  --map-bg: #f4f4f5;
+  --map-water: color-mix(in srgb, var(--brand) 16%, var(--surface));
+  --map-flood: color-mix(in srgb, var(--sev-med) 10%, transparent);
+  --map-flood-line: color-mix(in srgb, var(--sev-med) 55%, var(--border));
+  --ease: cubic-bezier(.2, 0, 0, 1);
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --r1: 6px;
+  --r2: 8px;
+  --r3: 12px;
+  --r4: 16px;
+  --card: var(--surface);
+  --card-fg: var(--text);
+  --primary: var(--brand);
+  --primary-fg: var(--on-brand);
+  --muted-fg: var(--muted);
+  --radius: var(--r2);
+  --banner-ok: #059669;
+  --banner-ok-fg: #ffffff;
+}
+:root[data-theme='dark'] {
+  --map-bg: #15201c;
+  --banner-ok: #059669;
+  --banner-ok-fg: #ffffff;
 }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}

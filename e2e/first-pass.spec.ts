@@ -1,10 +1,11 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { API } from './ports';
+import { resetDemo } from './reset-demo';
 
 const SHOTS = '/opt/cursor/artifacts/screenshots';
 const AUTH = { Authorization: 'Bearer demo-coordinator-token' };
-const API = 'http://127.0.0.1:8000';
 
 const VIEWPORTS = [
   { name: 'desktop', width: 1440, height: 900 },
@@ -14,6 +15,22 @@ const VIEWPORTS = [
 test.beforeAll(() => {
   fs.mkdirSync(SHOTS, { recursive: true });
 });
+
+test.beforeEach(async ({ request }) => {
+  await resetDemo(request);
+});
+
+async function clickCoordLink(page: Page, name: string): Promise<void> {
+  const nav = page.locator('nav.tabs').getByRole('link', { name, exact: true });
+  if (await nav.count() && await nav.isVisible()) {
+    await nav.click();
+    return;
+  }
+  const more = page.getByRole('button', { name: 'More', exact: true });
+  if (await more.isVisible()) await more.click();
+  else await page.getByRole('button', { name: 'Account menu' }).click();
+  await page.locator('.menu').getByRole('link', { name }).click();
+}
 
 async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SHOTS, `${name}.png`) });
@@ -54,7 +71,9 @@ test.describe('public and coordinator demo', () => {
       await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
 
       await page.goto('/');
-      await expect(page.getByRole('link', { name: 'Report an emergency' })).toBeVisible();
+      await expect(page.getByRole('link', { name: /I need help/ })).toBeVisible();
+      await expect(page.getByRole('link', { name: /I'm a coordinator/ })).toBeVisible();
+      await expect(page.getByText("coordinators can't see who to send first")).toBeVisible();
       await expect(page.getByRole('link', { name: /112/ }).first()).toBeVisible();
       await shot(page, `${viewport.name}-home-light`);
       await noHorizontalOverflow(page);
@@ -73,7 +92,7 @@ test.describe('public and coordinator demo', () => {
       expect(publicCode).toMatch(/^RD-/);
       await shot(page, `${viewport.name}-status`);
 
-      await page.goto('/');
+      await page.goto('/home');
       await expect(page.getByText(publicCode)).toBeVisible();
       await expect(page.getByText('Sent. A coordinator will review it.')).toBeVisible();
 
@@ -106,23 +125,26 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByRole('button', { name: 'Enter as demo coordinator' })).toBeVisible();
       await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
       await page.waitForURL(/\/coordinator\/command/);
+      const homeTab = page.locator('nav.tabs a').first();
+      await expect(homeTab).toHaveText('Home');
+      await expect(homeTab).toHaveClass(/on/);
       await expect(page.getByRole('heading', { name: 'Cases' })).toBeVisible();
       await expect(page.getByText('Synthetic scenario inspired by Kerala floods')).toBeVisible();
-      await page.getByLabel('Time').selectOption({ label: 'Last hour' });
       await expect(page.locator('button.case').first()).toBeVisible();
-      await page.getByLabel('Time').selectOption({ label: 'All time' });
+      const hindiCase = page.getByRole('option', { name: /3 children and 2/ });
+      await hindiCase.scrollIntoViewIfNeeded();
+      await hindiCase.click();
+      await page.getByRole('button', { name: 'More details' }).click();
+      await page.getByRole('button', { name: 'Show original' }).click();
+      await expect(page.getByText('तुरंत नाव भेजो')).toBeVisible();
 
       if (viewport.name === 'mobile') {
-        await expect(page.getByRole('tab', { name: 'Cases' })).toBeVisible();
-        await expect(page.getByRole('tab', { name: 'Map' })).toBeVisible();
-        await page.locator('button.case').first().click();
-        await expect(page.getByRole('button', { name: 'Back to cases' })).toBeVisible();
+        await expect(page.locator('button.case').first()).toBeVisible();
+        await expect(page.locator('.map-card')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Approve and send' })).toBeVisible();
         await shot(page, 'mobile-case-sheet');
         await noHorizontalOverflow(page);
-        await page.getByRole('button', { name: 'Back to cases' }).click();
-        await page.getByRole('tab', { name: 'Map' }).click();
-        await expect(page.locator('.map-card')).toBeVisible();
+        await page.locator('.map-card').scrollIntoViewIfNeeded();
         await shot(page, 'mobile-map');
         await noHorizontalOverflow(page);
       } else {
@@ -151,18 +173,15 @@ test.describe('public and coordinator demo', () => {
         },
       });
       expect(submitted.ok()).toBeTruthy();
-      if (viewport.name === 'mobile') await page.getByRole('tab', { name: 'Cases' }).click();
       const search = page.locator('#coord-search');
       if (await search.isVisible()) await search.fill(marker);
       await expect(page.getByRole('option', { name: new RegExp(marker) })).toBeVisible({ timeout: 12_000 });
       await page.getByRole('option', { name: new RegExp(marker) }).click();
-      if (viewport.name === 'mobile') {
-        await expect(page.getByRole('button', { name: 'Back to cases' })).toBeVisible();
-      }
       const approve = page.getByRole('button', { name: 'Approve and send' });
+      await approve.scrollIntoViewIfNeeded();
       await expect(approve).toBeEnabled();
       await approve.click();
-      await expect(page.locator('.toast')).toContainText('Dispatch Approved');
+      await expect(page.locator('.toast')).toContainText('Dispatch approved');
       const mobile = viewport.name === 'mobile';
       await closeCaseSheet(page, mobile);
       await page.getByRole('button', { name: 'Dispatched' }).click();
@@ -176,17 +195,17 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByRole('option', { name: new RegExp(marker) })).toBeVisible();
       await shot(page, `${viewport.name}-completed`);
 
-      await page.getByRole('link', { name: 'Teams' }).click();
+      await clickCoordLink(page, 'Teams');
       await expect(page.getByRole('heading', { name: 'Teams' })).toBeVisible();
       await expect(page.getByText(/boat|Naav|medical|Simulated|Nakli/i).first()).toBeVisible();
       await shot(page, `${viewport.name}-teams`);
 
-      await page.getByRole('link', { name: 'Alerts' }).click();
+      await clickCoordLink(page, 'Alerts');
       await expect(page.getByRole('heading', { name: 'Alerts' })).toBeVisible();
       await expect(page.getByText('Resource gap').first()).toBeVisible();
       await shot(page, `${viewport.name}-alerts`);
 
-      await page.getByRole('link', { name: 'Accuracy report' }).click();
+      await clickCoordLink(page, 'Accuracy report');
       await expect(page.getByRole('heading', { name: 'Accuracy report' })).toBeVisible();
       await expect(page.getByText('First come, first served').first()).toBeVisible();
       await expect(page.getByText('Synthetic reports, our own labels')).toBeVisible();
@@ -232,16 +251,16 @@ test.describe('public and coordinator demo', () => {
       await page.getByRole('button', { name: 'Done' }).click();
       await shot(page, `${viewport.name}-dark`);
       await page.getByRole('button', { name: 'Settings' }).click();
+      await expect(page.getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Hinglish' })).toHaveCount(0);
+      await page.getByTestId('lang-more').click();
+      await expect(page.getByRole('button', { name: 'Malayalam' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Hinglish' })).toBeVisible();
       await page.getByRole('button', { name: 'Light', exact: true }).click();
       await page.getByRole('button', { name: 'Hindi' }).click();
       await page.getByRole('button', { name: 'हो गया' }).click();
-      await expect(page.getByRole('heading', { name: 'हम कैसे मदद करें?' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'मुझे मदद चाहिए' })).toBeVisible();
       await shot(page, `${viewport.name}-hindi`);
-      await page.getByRole('button', { name: 'सेटिंग्स' }).click();
-      await page.getByRole('button', { name: 'Tamil' }).click();
-      await page.getByRole('button', { name: 'முடிந்தது' }).click();
-      await expect(page.getByRole('heading', { name: 'நாங்கள் எப்படி உதவலாம்?' })).toBeVisible();
-      await shot(page, `${viewport.name}-tamil`);
       await noHorizontalOverflow(page);
     });
   }

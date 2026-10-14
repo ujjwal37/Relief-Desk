@@ -1,18 +1,20 @@
 <div class="coordinator-shell" [class.with-phone]="showPhone()">
   <div class="coord-column">
-    <header class="top-nav">
+    <header class="top-nav dashboard-header">
       <a routerLink="/" class="brand" aria-label="Relief Desk">
         <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z" fill="var(--brand)"/><path d="M12 7v8M8 11h8" stroke="var(--on-brand)" stroke-width="2.2" stroke-linecap="round"/></svg>
         <span class="name">Relief Desk</span>
       </a>
 
       <nav class="tabs" [class.wrap]="compactNav()" [attr.aria-label]="'ui.coordNav' | rdTranslate">
-        <a routerLink="/coordinator/command" routerLinkActive="on">{{ 'coord.cases' | rdTranslate }}</a>
-        <a routerLink="/coordinator/teams" routerLinkActive="on">{{ 'coord.teams' | rdTranslate }}</a>
-        <a routerLink="/coordinator/alerts" routerLinkActive="on">{{ 'coord.alerts' | rdTranslate }}
-          @if (ui.alerts().length) { <span class="count" aria-label="{{ ui.alerts().length }}">{{ ui.alerts().length }}</span> }
-        </a>
-        <a routerLink="/coordinator/benchmark" routerLinkActive="on">{{ 'coord.accuracy' | rdTranslate }}</a>
+        <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge" [class.on]="homeOn()">{{ 'coord.home' | rdTranslate }}</a>
+        <a class="wide-only" routerLink="/coordinator/overview" routerLinkActive="on">{{ 'coord.overview' | rdTranslate }}</a>
+        <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge">{{ 'coord.cases' | rdTranslate }}</a>
+        <a routerLink="/coordinator/command" [queryParams]="{ status: 'dispatched' }" queryParamsHandling="merge" [class.on]="dispatchedOn()">{{ 'coord.filterDispatched' | rdTranslate }}</a>
+        <a class="wide-only" routerLink="/coordinator/teams" routerLinkActive="on">{{ 'coord.teams' | rdTranslate }}</a>
+        <a routerLink="/coordinator/agent" routerLinkActive="on">{{ 'coord.agent' | rdTranslate }}</a>
+        <a class="wide-only" routerLink="/coordinator/benchmark" routerLinkActive="on">{{ 'coord.accuracy' | rdTranslate }}</a>
+        <button type="button" class="more-tab" (click)="menuOpen.set(true)">{{ 'coord.more' | rdTranslate }}</button>
       </nav>
 
       <div class="search">
@@ -22,14 +24,19 @@
       </div>
 
       <div class="right">
-        <button type="button" class="tour-btn" (click)="takeTour()">{{ 'coord.tour' | rdTranslate }}</button>
-        <span class="live"><i></i>{{ 'coord.live' | rdTranslate }}</span>
+        <span class="live" data-testid="live-badge" [class.retry]="live.state() === 'reconnecting'" [class.off]="live.state() === 'offline'"><i></i>{{ liveLabel() | rdTranslate }}</span>
         <div class="menu-wrap">
           <button type="button" class="avatar" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate">{{ initial() }}</button>
           @if (menuOpen()) {
             <div class="menu-back" (click)="menuOpen.set(false)"></div>
             <div class="menu" role="menu">
               <p class="who">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</p>
+              <a class="item" routerLink="/coordinator/overview" (click)="menuOpen.set(false)">{{ 'coord.overview' | rdTranslate }}</a>
+              <a class="item" routerLink="/coordinator/teams" (click)="menuOpen.set(false)">{{ 'coord.teams' | rdTranslate }}</a>
+              <a class="item" routerLink="/coordinator/alerts" (click)="menuOpen.set(false)">{{ 'coord.alerts' | rdTranslate }}
+                @if (ui.alerts().length) { <span class="count">{{ ui.alerts().length }}</span> }
+              </a>
+              <a class="item" routerLink="/coordinator/benchmark" (click)="menuOpen.set(false)">{{ 'coord.accuracy' | rdTranslate }}</a>
               <h3>{{ 'coord.scenario' | rdTranslate }}</h3>
               <div class="seg stack">
                 @for (pack of scenarioService.scenarios(); track pack.id) {
@@ -44,10 +51,20 @@
               </div>
               <h3>{{ 'settings.language' | rdTranslate }}</h3>
               <div class="seg two">
-                @for (l of langs; track l.code) {
-                  <button type="button" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" (click)="lang.setLanguage(l.code)">{{ l.label }}</button>
+                @for (l of primaryLangs; track l.code) {
+                  <button type="button" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="lang.setLanguage(l.code)">{{ l.nativeName }}</button>
                 }
               </div>
+              <button type="button" class="item" data-testid="lang-more" [attr.aria-expanded]="langMore()" (click)="langMore.set(!langMore())">{{ 'settings.moreLangs' | rdTranslate }}</button>
+              @if (langMore()) {
+                <div class="seg two">
+                  @for (l of moreLangs; track l.code) {
+                    <button type="button" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="lang.setLanguage(l.code)">{{ l.label }}</button>
+                  }
+                </div>
+              }
+              <button type="button" class="item" (click)="resetDemo()">{{ 'ux.resetDemo' | rdTranslate }}</button>
+              <button type="button" class="item" (click)="loadFullScenario()">{{ 'ux.loadFull' | rdTranslate }}</button>
               <button type="button" class="item" (click)="openWeights()">{{ 'coord.weights' | rdTranslate }}</button>
               <button type="button" class="item" (click)="toggleDemo()">{{ (showPhone() ? 'demo.hide' : 'coord.demoPhone') | rdTranslate }}</button>
               <button type="button" class="item out" (click)="logout()">{{ 'coord.signOut' | rdTranslate }}</button>
@@ -56,6 +73,13 @@
         </div>
       </div>
     </header>
+
+    @if (guideOpen()) {
+      <p class="guide" role="note">
+        <span>{{ 'coord.guide' | rdTranslate }}</span>
+        <button type="button" (click)="dismissGuide()">{{ 'coord.guideDismiss' | rdTranslate }}</button>
+      </p>
+    }
 
     <main class="dashboard-body">
       <router-outlet></router-outlet>

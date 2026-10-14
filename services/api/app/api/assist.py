@@ -5,7 +5,7 @@ from typing import Dict, List, Set
 from fastapi import APIRouter, Depends
 
 from app.agents.dispatcher import find_teams, propose_assignment
-from app.api.auth import CoordinatorUser, get_current_coordinator
+from app.api.auth import DEMO_COORDINATOR_EMAIL, CoordinatorUser, get_current_coordinator
 from app.models.firestore_models import MatchState, RequestStatus
 from app.tools.storage import storage_service
 
@@ -15,6 +15,7 @@ HOLD = timedelta(minutes=10)
 _LAST_SHORTAGES: Dict[str, List[dict]] = {}
 SOUTH = {f"ward_{i}" for i in range(1, 7)}
 NORTH = {f"ward_{i}" for i in range(7, 13)}
+ALL_WARDS = SOUTH | NORTH
 CLOSED = {
     RequestStatus.DISPATCHED,
     RequestStatus.COMPLETED,
@@ -25,11 +26,33 @@ CLOSED = {
 }
 
 
+def is_demo_coordinator(email: str) -> bool:
+    return (email or "").lower() == DEMO_COORDINATOR_EMAIL
+
+
 def wards_for(email: str) -> Set[str]:
-    """South coordinators see Alappuzha and Ernakulam. North sees Thrissur and Wayanad."""
-    if (email or "").startswith("north-"):
+    """South sees Alappuzha and Ernakulam. North sees Thrissur and Wayanad.
+
+    The demo coordinator runs the whole synthetic flood, so a report from Ward 7
+    is not hidden from them. Other accounts stay on the south desk.
+    """
+    mail = (email or "").lower()
+    if mail.startswith("north-"):
         return set(NORTH)
+    if mail.startswith("south-"):
+        return set(SOUTH)
+    if is_demo_coordinator(mail):
+        return set(ALL_WARDS)
     return set(SOUTH)
+
+
+def visible_to(email: str, ward_id: str | None) -> bool:
+    """Unknown ward stays visible for the demo coordinator. A scoped desk does not guess."""
+    if is_demo_coordinator(email):
+        return True
+    if not ward_id:
+        return False
+    return ward_id in wards_for(email)
 
 
 def _kind(req) -> str:
@@ -92,13 +115,13 @@ def shortages_for(email: str) -> List[dict]:
 
 
 def scoped_proposals(email: str) -> List[dict]:
-    wards = wards_for(email)
+    """Only holds the dispatcher plan made. Ranked team candidates on each case are not assignments."""
     rows = []
     for match in storage_service.list_matches():
-        if match.state != MatchState.PROPOSED:
+        if match.state != MatchState.PROPOSED or not match.hold_expires_at:
             continue
         req = storage_service.get_request(match.request_id)
-        if req is None or req.ward_id not in wards:
+        if req is None or not visible_to(email, req.ward_id):
             continue
         rows.append(_row(match, _expired(match)))
     return rows
@@ -108,7 +131,7 @@ def plan_for(email: str) -> dict:
     wards = wards_for(email)
     cases = [
         req for req in storage_service.list_requests()
-        if not req.merged_into and req.status not in CLOSED and req.ward_id in wards
+        if not req.merged_into and req.status not in CLOSED and visible_to(email, req.ward_id)
     ]
     held = {row["request_id"] for row in scoped_proposals(email) if not row["expired"]}
     need: Dict[str, int] = {}

@@ -29,8 +29,8 @@ def test_rules_hinglish_and_hindi():
     assert h["ward_ids"] == ["ward_4"] and h["vulnerable"] == ["elderly"]
 
 
-def test_rules_tamil():
-    f = dq.rule_filters("Aluva வயதான காத்திருக்கும்")
+def test_rules_malayalam():
+    f = dq.rule_filters("Aluva പ്രായമായ കാത്തിരിക്കുന്നു")
     assert f["vulnerable"] == ["elderly"] and f["waiting_only"]
 
 
