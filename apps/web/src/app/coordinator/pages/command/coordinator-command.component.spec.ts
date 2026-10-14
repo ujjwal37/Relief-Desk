@@ -245,7 +245,7 @@ describe('CoordinatorCommandComponent', () => {
       { ...mockResources[0], id: 'food', kind: 'food', status: 'busy', capacity_remaining: 10 },
       { ...mockResources[0], id: 'med', kind: 'medical', status: 'available', capacity_remaining: 0 },
     ]);
-    expect(component.teamsFree()).toEqual({ free: 2, total: 4 });
+    expect(component.teamsFree()).toEqual({ free: 2, busy: 2, notUpdated: 0, total: 4 });
   });
 
   it('tab counts follow the type, area and time filters, and areas use place names', () => {

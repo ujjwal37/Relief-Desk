@@ -57,7 +57,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     if (analysis === 'failed' || analysis === 'error' || steps.some((step) => step.status === 'error')) {
       return 'failed' as const;
     }
-    if (this.rulesCount() > 0) return 'fallback' as const;
+    if (this.fallbackCount() > 0) return 'fallback' as const;
     return 'done' as const;
   });
 
@@ -117,7 +117,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
 
   fallbackText(): string {
     this.lang.currentLang();
-    return this.lang.translate('flow.fallbackBanner').replace('{n}', String(this.rulesCount()));
+    return this.lang.translate('flow.fallbackBanner').replace('{n}', String(this.fallbackCount()));
   }
 
   loadingText(): string {
@@ -179,8 +179,8 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private rulesCount(): number {
-    return this.steps().filter((step) => step.badge === 'rules').length;
+  private fallbackCount(): number {
+    return this.steps().filter((step) => step.provider === 'fallback' || step.status === 'fallback').length;
   }
 
   private visible(step: TraceStepView): boolean {
@@ -222,10 +222,12 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     };
   }
 
-  private stepBadge(raw?: NonNullable<StoredRequest['trace']>[number]): 'gemini' | 'rules' | 'test' {
+  private stepBadge(raw?: NonNullable<StoredRequest['trace']>[number]): 'gemini' | 'rules' | 'test' | 'tool' | 'cache' {
     const test = testProviderWord(raw?.provider, raw?.vendor, (key) => this.lang.translate(key));
     if (test) return 'test';
     const source = String(raw?.provider || '').toLowerCase();
+    if (source === 'tool') return 'tool';
+    if (source === 'cache') return 'cache';
     const ok = raw?.status !== 'fallback' && raw?.status !== 'error';
     if (ok && (source === 'gemini' || source === 'llm')) return 'gemini';
     return 'rules';
@@ -235,7 +237,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     const t = (key: string) => this.lang.translate(key);
     const req = this.request();
     const parsed = this.parse(raw?.output);
-    const cap = (text: string) => (text.length > 90 ? text.slice(0, 89).trim() : text);
+    const cap = (text: string) => text.trim();
     if (agent === 'Intake') {
       const need = String(parsed['need'] || parsed['type'] || req.type || t('coord.queueNeedBoat'));
       const people = String(parsed['people'] || req.people_count || 1);
@@ -250,9 +252,9 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
       return cap(t('flow.sentDedupeClear'));
     }
     if (agent === 'Triage') {
-      const band = String(parsed['band'] || (req.urgency_reason || '').split(':')[0] || 'critical');
+      const band = String(parsed['band'] || req.urgency_score || '');
       const reason = String(parsed['reason'] || req.urgency_reason || '');
-      return cap(t('flow.sentUrgency').replace('{band}', band).replace('{reason}', reason || band));
+      return reason || band;
     }
     if (agent === 'Matching') {
       const team = String(parsed['team'] || parsed['resource_name'] || req.assigned_resource_id || raw?.output || 'team');

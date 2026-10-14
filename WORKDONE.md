@@ -1260,3 +1260,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified (commands / screenshots): Installed Angular schema confirms allowedHosts support; dev-server compilation succeeded; HTTP requests with the ngrok Host header return 200 for / and proxied /healthz; an unapproved.example Host header remains blocked with 403; `git diff --check`.
 - Notes / risks / not done: Exact hostname allowed; no wildcard. API and application logic unchanged. Local fix committed; not pushed.
 - Next (suggested task id): none.
+
+### 2026-10-14 23:29 IST — IMP-01 — Codex (C lane)
+- What changed: Routed I need help directly to /report; removed duplicated and mid-word-clipped urgency text; separated Python tool, recorded Gemini and fallback labels; stopped falsely reporting every tool as a Gemini timeout. Only the inspected/recommended team's map line is shown. Added map loading shimmer, bounded script/config loading, and readable distance pills. Corrected Varapuzha clinic coordinates for INC-008 and an unfinished ambulance name.
+- Files: landing, trace drawer/step, coordinator command, map provider/service, shared catalogs, global distance-pill style, flood resources, focused specs; TASKS.md; WORKDONE.md.
+- How verified (commands / screenshots): Development build passed; i18n/template check passed; 10 focused Angular tests passed; 23 API tests passed covering nearby matching, approval, arrival, completion, released capacity and public status; git diff --check. No keyboard-mash typo found in data/scripts. Screenshots follow in IMP-04.
+- Notes / risks / not done: Existing themed coordinator shell is already shared across routes; preserved. Full API run initially used AI_MODE=fallback which prevented mocked live-call tests; subsequent runs use auto with placeholder keys enforced by conftest. Repaired a pre-existing incomplete Teams expectation that prevented Angular test compilation. No Gemini badges were fabricated.
+- Next (suggested task id): IMP-02.

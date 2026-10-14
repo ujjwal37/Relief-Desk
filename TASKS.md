@@ -181,3 +181,11 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | UI-REF-03 | Remove duplicate Agent-page suggestions and improve the chat workspace layout | C | DONE | UI-REF-02 | Starter questions appear once; existing chat behavior preserved; responsive light/dark screenshots and build/i18n checks pass |
 
 | DEV-01 | Allow the user ngrok hostname in the Angular dev server | C | DONE | UI-REF-03 | Host-header request serves the app on port 4200; API proxy healthy |
+
+## Walkthrough improvements (user requested 14 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| IMP-01 | Repair report entry, trace wording/provenance, map loading and candidate clutter; verify seed and lifecycle fixes | C | DONE | DEV-01 | Desktop/mobile entry works; complete urgency text; honest tool/cache/fallback labels; one default map leg; loading/error states; nearby medical and lifecycle regressions pass |
+| IMP-02 | Harden live Gemini/ADK reviews, record genuine demo traces, and add an isolated outage preview | C | DOING | IMP-01 | Configurable bounded timeout; validated semantic reviews never replace deterministic scores; true model/cache metadata; recordings only from real Gemini; outage preview leaves stored cases unchanged |
+| IMP-03 | Add a guarded five-report live surge demonstration and inventory-aware medical scenario | C | TODO | IMP-02 | Demo-only authenticated surge; spaced synthetic submissions through normal intake and SSE; no dispatch; stock constraints are deterministic and pack-driven; human approval remains required |
+| IMP-04 | Add bounded photo observations with explicit reporter review and capture updated screenshots | C | TODO | IMP-03 | Synthetic image size/type validation; actual Gemini multimodal call through budgets/timeouts; uncertain observations require confirmation; text/offline paths preserved; desktop/mobile/Hindi screenshots and regression checks |

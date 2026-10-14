@@ -865,7 +865,7 @@
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} free seat(s).",
     "sentExplain": "Wrote the one-line reason you see on the panel.",
-    "fallbackBanner": "{n} steps used rules instead of Gemini because Gemini timed out. Rules are the same checks a coordinator uses; the suggestion is still safe to review.",
+    "fallbackBanner": "{n} AI steps used the offline fallback. Open Details for the recorded reason. Python scoring and matching remain available.",
     "loading": "Working… step {k} of {n} · {t} s",
     "failed": "Couldn't finish the AI steps. The team match is missing, so there is no suggestion. You can retry or choose a team yourself.",
     "noTrace": "No AI record for this case",
@@ -879,7 +879,9 @@
     "copied": "Copied",
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
-    "waiting": "Waiting"
+    "waiting": "Waiting",
+    "badgeTool": "Python tool",
+    "badgeCache": "Recorded (Gemini)"
   },
   "uiRef": {
     "activeQueue": "Active queue",
@@ -890,5 +892,8 @@
     "recommendation": "Response recommendation",
     "teamFit": "Team fit",
     "reports": "Reports"
+  },
+  "map": {
+    "loading": "Loading sector map…"
   }
 }

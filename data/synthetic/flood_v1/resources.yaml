@@ -101,8 +101,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-MED-02
-  name: Kainakary Mobile Medical Van (Ambulance
-  name_hi: संगम विहार मोबाइल मेडिकल वैन (एम्बुलेंस
+  name: Kainakary Mobile Medical Van (Ambulance)
+  name_hi: कैनाकरी मोबाइल मेडिकल वैन (एम्बुलेंस)
   kind: medical
   ward_id: ward_1
   lat: 9.478
@@ -128,9 +128,9 @@ resources:
   name: Varapuzha Relief Clinic
   name_hi: वराप्पुषा राहत चिकित्सालय
   kind: medical
-  ward_id: ward_2
-  lat: 9.512
-  lng: 76.355
+  ward_id: ward_5
+  lat: 10.070
+  lng: 76.285
   capacity_total: 12
   capacity_remaining: 12
   status: available

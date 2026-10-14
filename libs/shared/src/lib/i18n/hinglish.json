@@ -865,7 +865,7 @@
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} khali seat.",
     "sentExplain": "Panel par dikhne wala one-line reason likha.",
-    "fallbackBanner": "{n} steps ne Gemini timeout ki wajah se rules use kiye. Rules wahi checks hain jo coordinator karta hai; suggestion review ke liye safe hai.",
+    "fallbackBanner": "{n} AI steps ne offline fallback use kiya. Wajah Details mein dekhein. Python scoring aur matching available hain.",
     "loading": "Kaam chal raha hai… step {k} / {n} · {t} s",
     "failed": "AI steps poore nahi hue. Team match nahi hai, isliye suggestion nahi. Retry karein ya khud team chunein.",
     "noTrace": "Is case ka AI record nahi",
@@ -879,7 +879,9 @@
     "copied": "Copy ho gaya",
     "fellBack": "Isliye wapas gaye",
     "modelLatency": "Model · latency",
-    "waiting": "Wait"
+    "waiting": "Wait",
+    "badgeTool": "Python tool",
+    "badgeCache": "Recorded (Gemini)"
   },
   "uiRef": {
     "activeQueue": "Active queue",
@@ -890,5 +892,8 @@
     "recommendation": "Madad ka sujhav",
     "teamFit": "Team fit",
     "reports": "Reports"
+  },
+  "map": {
+    "loading": "Sector map load ho raha hai…"
   }
 }

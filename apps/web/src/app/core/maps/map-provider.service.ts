@@ -1,3 +1,4 @@
+import { timeout } from 'rxjs';
 import { Injectable, inject } from '@angular/core';
 import { ApiClientService } from '@rd/shared';
 
@@ -16,7 +17,7 @@ export class MapProviderService {
     }
     if (!this.pending) {
       this.pending = new Promise((resolve) => {
-        this.api.getMapsConfig().subscribe({
+        this.api.getMapsConfig().pipe(timeout(6000)).subscribe({
           next: (cfg) => {
             if (!cfg?.enabled || !cfg.apiKey) {
               resolve('svg');
@@ -37,18 +38,20 @@ export class MapProviderService {
       return Promise.resolve(true);
     }
     return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(false), 10000);
+      const finish = (ok: boolean) => { clearTimeout(timer); resolve(ok); };
       const existing = document.querySelector('script[data-rd-maps="1"]') as HTMLScriptElement | null;
       if (existing) {
-        existing.addEventListener('load', () => resolve(true));
-        existing.addEventListener('error', () => resolve(false));
+        existing.addEventListener('load', () => finish(true), { once: true });
+        existing.addEventListener('error', () => finish(false), { once: true });
         return;
       }
       const script = document.createElement('script');
       script.async = true;
       script.dataset['rdMaps'] = '1';
       script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly`;
-      script.onload = () => resolve(!!(window as unknown as { google?: { maps?: unknown } }).google?.maps);
-      script.onerror = () => resolve(false);
+      script.onload = () => finish(!!(window as unknown as { google?: { maps?: unknown } }).google?.maps);
+      script.onerror = () => finish(false);
       document.head.appendChild(script);
     });
   }

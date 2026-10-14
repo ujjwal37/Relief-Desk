@@ -148,7 +148,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (!req || req.lat == null || req.lng == null) return [];
     const suggested = this.activeProposal()?.resource_id;
     const legs: MapLeg[] = [];
-    for (const prop of this.candidateMatches()) {
+    for (const prop of this.visibleMapMatches()) {
       const team = this.resources().find((row) => row.id === prop.resource_id);
       if (!team) continue;
       legs.push({
@@ -160,6 +160,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       });
     }
     return legs;
+  });
+  /** A secondary line appears only while its team is inspected. */
+  readonly visibleMapMatches = computed(() => {
+    const selected = this.highlightId() || this.activeProposal()?.resource_id;
+    return this.matches().filter((row) => row.resource_id === selected);
   });
   readonly filterType = signal<string>('all');
   readonly areaFilter = signal<string>('all');
@@ -428,7 +433,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const origin = this.project(req.lat, req.lng);
     const suggested = this.activeProposal()?.resource_id;
     const legs: { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; label: string; suggested: boolean }[] = [];
-    for (const prop of this.candidateMatches()) {
+    for (const prop of this.visibleMapMatches()) {
       const team = this.resources().find((row) => row.id === prop.resource_id);
       if (!team) continue;
       const at = this.project(team.lat, team.lng);

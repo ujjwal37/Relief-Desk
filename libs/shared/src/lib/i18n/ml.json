@@ -865,7 +865,7 @@
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} free seat(s).",
     "sentExplain": "Wrote the one-line reason you see on the panel.",
-    "fallbackBanner": "{n} steps used rules instead of Gemini because Gemini timed out. Rules are the same checks a coordinator uses; the suggestion is still safe to review.",
+    "fallbackBanner": "{n} AI ഘട്ടങ്ങൾ ഓഫ്‌ലൈൻ മാർഗം ഉപയോഗിച്ചു. കാരണം വിശദാംശങ്ങളിൽ കാണാം. പൈത്തൺ സ്കോറിംഗും പൊരുത്തപ്പെടുത്തലും ലഭ്യമാണ്.",
     "loading": "Working… step {k} of {n} · {t} s",
     "failed": "Couldn't finish the AI steps. The team match is missing, so there is no suggestion. You can retry or choose a team yourself.",
     "noTrace": "No AI record for this case",
@@ -879,7 +879,9 @@
     "copied": "Copied",
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
-    "waiting": "Waiting"
+    "waiting": "Waiting",
+    "badgeTool": "പൈത്തൺ ടൂൾ",
+    "badgeCache": "റെക്കോർഡ് ചെയ്തത് (Gemini)"
   },
   "uiRef": {
     "activeQueue": "സജീവ പട്ടിക",
@@ -890,5 +892,8 @@
     "recommendation": "സഹായ നിർദേശം",
     "teamFit": "സംഘത്തിന്റെ അനുയോജ്യത",
     "reports": "റിപ്പോർട്ടുകൾ"
+  },
+  "map": {
+    "loading": "മേഖലാ മാപ്പ് ലോഡ് ചെയ്യുന്നു…"
   }
 }

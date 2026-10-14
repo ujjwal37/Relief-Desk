@@ -114,3 +114,6 @@ app-public-layout ion-item, app-public-layout ion-label {
   --ion-font-size: 16px;
   font: var(--tp-body);
 }
+
+/* Google Maps labels are outside Angular's component-scoped styles. */
+.rd-distance-pill { background: rgba(15, 23, 42, .88); color: #fff; padding: 4px 10px; border-radius: 999px; white-space: nowrap; box-shadow: 0 2px 6px #0002; }

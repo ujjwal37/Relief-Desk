@@ -27,20 +27,19 @@ describe('AgentTraceDrawerComponent', () => {
   it('lists five agents, the parallel group, and the offline badge', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
-    expect(text).toContain('Intake');
-    expect(text).toContain('Duplicate check');
-    expect(text).toContain('Triage');
-    expect(text).toContain('Matching');
-    expect(text).toContain('Explainer');
-    expect(text).toContain('in parallel');
+    expect(text).toContain('Understood the report');
+    expect(text).toContain('Checked for duplicates');
+    expect(text).toContain('Rated urgency');
+    expect(text).toContain('Found the closest team');
+    expect(text).toContain('Explained the choice');
+    expect(text).toContain('At the same time');
     expect(fixture.nativeElement.querySelector('.run-badge')?.textContent).toContain('Rules');
     expect(text).not.toContain('Offline fallback');
-    expect(text).toContain('Not recorded');
-    expect(text).toContain('Gemini');
+    expect(text).toContain('Waiting');
     expect(text).toContain('Rules');
-    expect(text).toContain('Recorded');
+    expect(text).toContain('Python tool');
     expect(text).not.toContain('gemini-3.8-flash');
-    expect(fixture.nativeElement.querySelectorAll('.details').length).toBe(5);
+    expect(fixture.nativeElement.querySelectorAll('.details').length).toBe(3);
   });
 
   it('names a test provider honestly and never as Gemini', () => {
@@ -55,11 +54,22 @@ describe('AgentTraceDrawerComponent', () => {
       ],
     } as unknown as StoredRequest);
     local.detectChanges();
-    expect(local.nativeElement.querySelector('.run-badge')?.textContent).toContain('Test model (NVIDIA)');
-    expect(local.nativeElement.querySelector('[data-testid="trace-test-word"]')?.textContent).toContain('Test model (NVIDIA)');
+    expect(local.nativeElement.querySelector('.run-badge')?.textContent).toContain('Test model');
     const intake = local.nativeElement.querySelector('app-trace-step')?.textContent as string;
-    expect(intake).toContain('Test model (NVIDIA)');
+    expect(intake).toContain('Test model');
     expect(intake).not.toContain('Gemini');
+  });
+
+  it('shows a complete urgency reason once and does not call Python steps timeouts', () => {
+    const reason = 'Vulnerable flags: child, elderly, medical need + 7 persons + stranded on structure (Urgency score: 88)';
+    fixture.componentRef.setInput('request', { ...REQUEST, urgency_reason: reason, trace: [
+      { agent: 'Triage', status: 'complete', provider: 'tool', output: 'score 88', tool_calls: ['score_urgency'] },
+    ] });
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain(reason);
+    expect(text).not.toContain('Vulnerable flags: Vulnerable flags:');
+    expect(fixture.nativeElement.querySelector('.banner.warn')).toBeNull();
   });
 
   it('keeps a single step expanded', () => {
