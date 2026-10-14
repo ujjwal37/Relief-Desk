@@ -1,9 +1,9 @@
 :host { display:block; color:var(--text); }
-.home { padding:8px 16px 24px; display:flex; flex-direction:column; gap:14px; }
+.home { padding:16px 20px 28px; display:flex; flex-direction:column; gap:20px; }
 h1 { margin:8px 0 0; font:var(--tp-hero); }
-.sub { margin:0; color:var(--text-2); font-size:18px; }
-.report-btn { min-height:56px; display:flex; align-items:center; justify-content:center; gap:10px; border-radius:var(--r3); background:var(--sos); color:var(--on-sos); font:600 18px var(--rd-font-family); text-decoration:none; box-shadow:var(--e2); }
-.card { background:var(--card); border:1px solid var(--border); border-radius:var(--r3); padding:14px 16px; box-shadow:var(--e1); h2 { margin:0 0 8px; font-size:18px; font-weight: 600; display:flex; align-items:center; gap:8px; } }
+.sub { margin:0; color:var(--text-2); font-size:16px; }
+.report-btn { min-height:56px; display:flex; align-items:center; justify-content:center; gap:10px; border-radius:var(--r3); background:var(--brand); color:var(--on-brand); font:600 18px var(--rd-font-family); text-decoration:none; box-shadow:var(--e2); }
+.card { background:var(--card); border:1px solid var(--border); border-radius:var(--r3); padding:20px; box-shadow:var(--e1); h2 { margin:0 0 8px; font-size:18px; font-weight: 600; display:flex; align-items:center; gap:8px; } }
 .pending { font-size:14px; font-weight: 600; color:var(--sev-high); background:var(--sev-high-t); border-radius:999px; padding:2px 8px; }
 .pending-note { margin:0 0 8px; color:var(--text-2); font-size:16px; }
 .req { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }

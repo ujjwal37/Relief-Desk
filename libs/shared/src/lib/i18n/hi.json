@@ -877,5 +877,15 @@
     "fellBack": "वापस इसलिए गए",
     "modelLatency": "मॉडल · विलंब",
     "waiting": "प्रतीक्षा"
+  },
+  "uiRef": {
+    "activeQueue": "सक्रिय सूची",
+    "casesAction": "कार्रवाई की ज़रूरत वाले मामले",
+    "priority": "प्राथमिकता",
+    "areaIntelligence": "क्षेत्र की स्थिति",
+    "response": "सहायता",
+    "recommendation": "सहायता का सुझाव",
+    "teamFit": "टीम की उपयुक्तता",
+    "reports": "रिपोर्ट"
   }
 }

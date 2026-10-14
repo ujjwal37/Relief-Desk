@@ -147,16 +147,18 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .page.has-thread { justify-content: flex-start; }
     .page.has-thread .thread { flex: 1; overflow: auto; }
     .page .composer, .page .suggestions { flex: none; }
+    .page .composer { padding:12px; border:1px solid var(--border); border-radius:16px; background:var(--surface); box-shadow:var(--e1); }
     .page .cards, .page .trace { max-height: none; }
-    .page .row input { min-height: 48px; border-radius: var(--r2); padding: 0 16px; font-size: 14px; }
+    .page .row input { min-height: 52px; border-radius: 12px; padding: 0 16px; font-size: 14px; }
     .page .suggestions { justify-content: center; }
     .hello { margin: 0 0 16px; text-align: center; font-size: 32px; font-weight: 600; line-height: 1.25; }
     .empty { width: min(720px, 100%); margin: 0 auto 12px; }
     .examples { display: grid; gap: 10px; width: min(560px, 100%); margin: 0 auto; }
-    .example { text-align: left; border: 1px solid var(--border); border-radius: var(--r3); padding: 12px 14px; background: var(--surface); color: inherit; cursor: pointer; font: inherit; box-shadow: var(--e1); }
-    .example strong { display: block; margin: 2px 0; }
+    .example { text-align: left; border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; background: var(--surface); color: inherit; cursor: pointer; font: inherit; box-shadow: var(--e1); }
+    .example:hover { border-color:var(--brand); background:color-mix(in srgb,var(--brand) 3.5%,var(--surface)); }
+    .example strong { display: block; margin: 4px 0; color:var(--brand); }
     .example p { margin: 0; color: var(--text-2); font-size: 14px; }
-    .tag { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
+    .tag { font-size: 12px; font-weight: 600; letter-spacing:0; text-transform:none; color: var(--text-2); }
   `],
 })
 export class AskDeskComponent {

@@ -1,0 +1,209 @@
+[
+  {
+    "label": "command-1440-light-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "overview-1440-light-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "teams-1440-light-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "alerts-1440-light-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "accuracy-1440-light-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "agent-1440-light-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "landing-1440-light-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "login-1440-light-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "command-390-light-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "overview-390-light-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "teams-390-light-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "home-390-light-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "report-390-light-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "nearby-390-light-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "status-390-light-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "landing-390-light-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "login-390-light-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "command-1440-dark-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "dark",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "accuracy-1440-dark-en",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "dark",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "report-390-dark-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "dark",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "home-390-dark-en",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "dark",
+    "lang": "en",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "command-1440-light-hi",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "theme": "light",
+    "lang": "hi",
+    "rawKeys": [],
+    "errors": []
+  },
+  {
+    "label": "report-390-light-hi",
+    "width": 390,
+    "scrollWidth": 390,
+    "theme": "light",
+    "lang": "hi",
+    "rawKeys": [],
+    "errors": []
+  }
+]

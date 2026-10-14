@@ -26,7 +26,7 @@ h3 { margin: 0; font: var(--t-body); font-weight: 600; }
   min-height: 32px; margin-top: 4px; padding: 0; border: 0; background: transparent;
   color: var(--brand); font: 500 13px/18px var(--rd-font-family); cursor: pointer;
 }
-.box { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: #f4f4f5; font: var(--t-caption); }
+.box { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); font: var(--t-caption); }
 .line { margin: 0 0 6px; color: var(--text); }
 .line span { font-weight: 600; margin-right: 4px; }
 .tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }

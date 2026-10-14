@@ -14,7 +14,7 @@ import { AskDeskComponent } from '../../agents/ask-desk.component';
   `,
   styles: [`
     :host { display: block; height: 100%; min-height: 0; overflow: hidden; }
-    .agent { height: 100%; max-width: 760px; margin: 0 auto; padding: 12px 16px 8px; display: flex; flex-direction: column; }
+    .agent { height: 100%; max-width: 840px; margin: 0 auto; padding: 28px 24px; display: flex; flex-direction: column; }
     app-ask-desk { flex: 1; min-height: 0; display: block; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,

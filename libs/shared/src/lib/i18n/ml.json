@@ -877,5 +877,15 @@
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
     "waiting": "Waiting"
+  },
+  "uiRef": {
+    "activeQueue": "സജീവ പട്ടിക",
+    "casesAction": "നടപടി ആവശ്യമായ കേസുകൾ",
+    "priority": "മുൻഗണന",
+    "areaIntelligence": "പ്രദേശത്തെ സ്ഥിതി",
+    "response": "സഹായം",
+    "recommendation": "സഹായ നിർദേശം",
+    "teamFit": "സംഘത്തിന്റെ അനുയോജ്യത",
+    "reports": "റിപ്പോർട്ടുകൾ"
   }
 }

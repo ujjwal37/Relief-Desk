@@ -877,5 +877,15 @@
     "fellBack": "Isliye wapas gaye",
     "modelLatency": "Model · latency",
     "waiting": "Wait"
+  },
+  "uiRef": {
+    "activeQueue": "Active queue",
+    "casesAction": "Action chahiye waale cases",
+    "priority": "Priority",
+    "areaIntelligence": "Area ki sthiti",
+    "response": "Madad",
+    "recommendation": "Madad ka sujhav",
+    "teamFit": "Team fit",
+    "reports": "Reports"
   }
 }

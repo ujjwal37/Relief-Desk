@@ -877,5 +877,15 @@
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
     "waiting": "Waiting"
+  },
+  "uiRef": {
+    "activeQueue": "Active queue",
+    "casesAction": "Cases requiring action",
+    "priority": "Priority",
+    "areaIntelligence": "Area intelligence",
+    "response": "Response",
+    "recommendation": "Response recommendation",
+    "teamFit": "Team fit",
+    "reports": "Reports"
   }
 }

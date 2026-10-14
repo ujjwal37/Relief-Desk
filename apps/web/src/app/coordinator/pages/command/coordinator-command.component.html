@@ -19,7 +19,9 @@
         <app-assist-banner [count]="assist().proposals.length" (review)="assistOpen.set(true)" />
       }
       <div class="cases-head">
-        <h1 id="cases-h">{{ 'coord.cases' | rdTranslate }}</h1>
+        <span class="queue-kicker">{{ 'uiRef.activeQueue' | rdTranslate }}</span>
+        <h1 id="cases-h">{{ 'uiRef.casesAction' | rdTranslate }}</h1>
+        <span class="queue-total">{{ counts().total }}</span>
         @if (resetNote(); as n) { <span class="reset-note" role="status">{{ n | rdTranslate }}</span> }
         <p class="scenario">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
       </div>
@@ -49,16 +51,19 @@
           } @else {
             <div class="case-wrap" [class.sel]="selectedRequestId() === req.id" [class.row-flash]="flashIds().has(req.id)" [attr.data-case-id]="req.id">
               <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.data-band]="bandOf(req.urgency_score)" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
-                <span class="tone" aria-hidden="true"></span>
+                <span class="queue-status">
+                  <app-sev-chip [band]="bandOf(req.urgency_score)" />
+                  <span class="prio" [attr.title]="fullStamp(req.created_at)">{{ 'uiRef.priority' | rdTranslate }} {{ Math.round(req.urgency_score) }}</span>
+                </span>
                 <span class="q-top">
                   <span class="q-main">
                     <span class="title">{{ getTranslationText(req) }}</span>
                     <span class="loc">{{ locationLine(req) }}</span>
                   </span>
-                  <span class="prio" [attr.title]="fullStamp(req.created_at)">{{ Math.round(req.urgency_score) }}</span>
                 </span>
                 <span class="q-meta">
                   <span class="wait">{{ waitTime(req) }}</span>
+                  <span class="case-id">{{ req.id }}</span>
                   <span class="ico-chips">
                     <span class="ico-chip people">
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-7 1.7-7 4v2h14v-2c0-2.3-3.7-4-7-4z"/></svg>
@@ -90,11 +95,18 @@
 
     <!-- CENTRE -->
     <section class="centre">
-      <div class="tiles map-intel" data-testid="map-intel">
+      <div class="intelligence-card">
+        <div class="intelligence-heading">
+          <span class="intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3"/></svg></span>
+          <div><h2>{{ 'uiRef.areaIntelligence' | rdTranslate }}</h2><p>{{ selectedRequest()?.place_text || ('coord.scenarioLabel' | rdTranslate) }}</p></div>
+        </div>
+        <div class="tiles map-intel" data-testid="map-intel">
         <div class="tile t-now"><span class="lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5"/></svg>{{ 'coord.tileNow' | rdTranslate }}</span><span class="num">{{ counts().critical }}</span><span class="unit">{{ 'coord.unitCases' | rdTranslate }}</span></div>
         <div class="tile"><span class="lbl">{{ 'coord.tileSoon' | rdTranslate }}</span><span class="num">{{ counts().high }}</span><span class="unit">{{ 'coord.unitCases' | rdTranslate }}</span></div>
         <div class="tile"><span class="lbl">{{ 'coord.tileTeams' | rdTranslate }}</span><span class="num">{{ teamsFree().free }}</span><span class="unit">{{ teamsFreeLine() }}</span></div>
         <div class="tile"><span class="lbl">{{ 'coord.tileQuiet' | rdTranslate }}</span><span class="num">{{ quietCount() }}</span><span class="unit">{{ 'coord.unitQuiet' | rdTranslate }}</span></div>
+      </div>
+
       </div>
 
       <div class="map-card">
@@ -174,11 +186,22 @@
             </div>
           }
 
+          <div class="response-heading"><span>{{ 'uiRef.response' | rdTranslate }}</span><span class="response-reports">{{ req.merged_count || 1 }} {{ 'uiRef.reports' | rdTranslate }}</span></div>
+
           @if (isAnalysing(req) && !activeProposal()) {
             <div class="send-card skel"><p class="facts">{{ 'coord.findingTeam' | rdTranslate }}</p></div>
           } @else if (activeProposal(); as prop) {
+            <section class="recommendation-summary">
+              <p class="recommendation-label">{{ 'uiRef.recommendation' | rdTranslate }} <span class="ai-src">{{ aiSourceText(req) }}</span></p>
+              <p class="recommendation-reason">{{ prop.explanation || whyLine(prop) }}</p>
+              <div class="recommendation-stats">
+                <div><span>{{ 'ui.urgency' | rdTranslate }}</span><b>{{ Math.round(req.urgency_score) }}/100</b></div>
+                <div><span>{{ 'uiRef.teamFit' | rdTranslate }}</span><b>{{ fitPct(prop) }}%</b></div>
+                <div><span>{{ 'uiRef.reports' | rdTranslate }}</span><b>{{ req.merged_count || 1 }}</b></div>
+              </div>
+            </section>
             <div class="best send-card" data-tour="detail" [class.dim]="needsDupReview(req)">
-              <p class="send-kicker">{{ 'coord.send' | rdTranslate }}</p>
+              <p class="send-kicker">{{ 'coord.bestTeam' | rdTranslate }}</p>
               <div class="send-row">
                 <span class="veh" aria-hidden="true">
                   <svg viewBox="0 0 24 24" width="22" height="22"><path [attr.d]="vehiclePath(prop.resource_kind)" fill="currentColor"/></svg>
@@ -188,7 +211,7 @@
                   <div class="facts">{{ legLabel(prop) }}</div>
                 </div>
               </div>
-              <p class="why-line" [attr.title]="whyLine(prop)"><span class="why-k">{{ 'coord.whyColon' | rdTranslate }}</span> {{ whyLine(prop) }}</p>
+
               @if (prop.is_fallback && prop.fallback_label) { <p class="warnline">{{ prop.fallback_label | rdTranslate }}</p> }
               @if (prop.wait_minutes) { <p class="warnline">{{ waitLabel(prop) }}</p> }
               @if (prop.capacity_remaining < (req.people_count || 1) || prop.overcommit_warning) { <p class="warnline">{{ 'coord.overcommit' | rdTranslate }}</p> }
@@ -202,6 +225,11 @@
               <button type="button" class="how-link how-desk" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
             }
           }
+
+          <section class="report-summary">
+            <p class="cap">{{ 'coord.said' | rdTranslate }}</p>
+            <p class="quote">“{{ req.raw_text || getTranslationText(req) }}”</p>
+          </section>
 
           <button type="button" class="more-toggle" [attr.aria-expanded]="moreOpen()" (click)="moreOpen.set(!moreOpen())">
             {{ (moreOpen() ? 'coord.hideMoreDetails' : 'coord.moreDetails') | rdTranslate }}
@@ -356,10 +384,10 @@
               <button type="button" class="btn-approve">{{ 'coord.callDispatcher' | rdTranslate }}</button>
             </div>
           } @else if (activeProposal(); as prop) {
-            <div class="btns">
+            <div class="btns approval-buttons">
               <button type="button" class="btn-approve" [disabled]="needsDupReview(req) || offline() || approving()" (click)="approveMatch(prop)">{{ 'coord.approve' | rdTranslate }}</button>
               <div class="sec-row">
-                <button type="button" class="btn-sec" (click)="changeOpen.set(!changeOpen()); rejectOpen.set(false)" [attr.aria-expanded]="changeOpen()">{{ 'coord.chooseTeam' | rdTranslate }}</button>
+                <button type="button" class="btn-sec" (click)="changeOpen.set(!changeOpen()); rejectOpen.set(false)" [attr.aria-expanded]="changeOpen()" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">{{ 'confirm.change' | rdTranslate }}</button>
                 <button type="button" class="btn-quiet" (click)="rejectOpen.set(true); changeOpen.set(false); openRejectModal(prop)">{{ 'coord.reject' | rdTranslate }}</button>
               </div>
             </div>

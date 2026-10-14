@@ -1,7 +1,7 @@
 :host { position: relative; display: inline-flex; }
 .chip {
   min-height: 44px; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px;
-  border-radius: 999px; border: 0; cursor: pointer; background: var(--sev-med-t); color: var(--sev-med);
+  border-radius: 7px; border: 0; cursor: pointer; background: var(--brand-tint); color: var(--brand);
   font: 600 13px/1 var(--rd-font-family);
 }
 .pop {
