@@ -1239,3 +1239,10 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified (commands / screenshots): `npx ng build web --configuration=development`; `node scripts/check-i18n.mjs`; `git diff --check`; 23 Playwright browser/screenshot combinations with zero overflow, raw labels, or page errors; additional 1024/1366/1920 width and 390px form/confirmation checks. Screenshots and results: docs/design/reviews/ui-ref-01/README.md. Source comparison confirms TypeScript changes only in styles and identical existing template event bindings.
 - Notes / risks / not done: UI-only. Backend, services, routes, data, .env, map-provider logic, scoring, and dispatch behavior were not edited. No reports or dispatch approvals submitted during visual QA. Full behavior suites were not run. Map availability continues to depend on the existing Maps configuration/network.
 - Next (suggested task id): none.
+
+### 2026-10-14 22:26 IST — UI-REF-02 — Codex (C frontend lane)
+- What changed: Removed Cases and Dispatched from the coordinator top navigation; updated the existing navigation test expectations.
+- Files: apps/web/src/app/coordinator/layouts/coordinator-layout.component.{html,spec.ts}; TASKS.md; WORKDONE.md.
+- How verified (commands / screenshots): `npx ng build web --configuration=development`; Playwright checks at 1440px and 390px confirm both links are absent and the case queue Dispatched filter remains; `git diff --check`.
+- Notes / risks / not done: Navigation template only; no route, filtering, or dispatch logic changed. Existing test assertion updated; unit suite not run.
+- Next (suggested task id): none.

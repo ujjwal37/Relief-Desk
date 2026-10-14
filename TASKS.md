@@ -175,3 +175,5 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | ID | Task | Owner | Status | Depends | Acceptance criteria |
 |---|---|---|---|---|---|
 | UI-REF-01 | Align the existing UI with `/home/sr/Downloads/relief-desk-ui-redesign`, extending its palette and component treatment across other pages; preserve logic | C | DONE | STAB-01 | UI-only diff; development build and i18n check pass; desktop/mobile screenshots reviewed |
+
+| UI-REF-02 | Remove redundant Cases and Dispatched top navigation links | C | DONE | UI-REF-01 | Both links absent on desktop/mobile; case queue filters preserved; development build passes |

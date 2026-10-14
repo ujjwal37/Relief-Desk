@@ -83,7 +83,8 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     expect(getComputedStyle(nav).overflow).not.toBe('auto');
     const labels = Array.from(nav.querySelectorAll('a, button')).map((el) => (el.textContent || '').trim());
     expect(labels.some((label) => label.includes('Home'))).toBeTrue();
-    expect(labels.some((label) => label.includes('Cases'))).toBeTrue();
+    expect(labels.some((label) => label === 'Cases')).toBeFalse();
+    expect(labels.some((label) => label === 'Dispatched')).toBeFalse();
     expect(labels.some((label) => label.includes('Agent'))).toBeTrue();
     expect(labels.join(' ')).not.toContain('Overview');
     expect(labels.join(' ')).not.toContain('Accuracy report');
