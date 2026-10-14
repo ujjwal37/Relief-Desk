@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth import DEMO_COORDINATOR_EMAIL, CoordinatorUser, get_current_coordinator
@@ -29,3 +30,49 @@ def load_full_scenario(coordinator: CoordinatorUser = Depends(get_current_coordi
     summary = storage_service.load_full_scenario()
     summary["actor"] = coordinator.email
     return summary
+
+
+def require_demo_mode():
+    if not settings.DEMO_MODE:
+        raise HTTPException(status_code=403, detail="Synthetic demonstrations require DEMO_MODE")
+
+
+class SurgeResponse(BaseModel):
+    run_id: str
+    running: bool
+    submitted: int
+    failed: int
+    total: int
+
+
+class ScenarioSeedResponse(BaseModel):
+    pack_id: str
+    loaded: bool
+
+
+@router.post("/demo/simulate-surge", status_code=202, response_model=SurgeResponse)
+def simulate_surge(coordinator: CoordinatorUser = Depends(get_current_coordinator)):
+    require_demo_mode()
+    from app.tools.demo_surge import start_surge
+    try:
+        return start_surge(coordinator.email)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.get("/demo/surge", response_model=SurgeResponse)
+def surge_state(coordinator: CoordinatorUser = Depends(get_current_coordinator)):
+    require_demo_mode()
+    from app.tools.demo_surge import snapshot
+    return snapshot()
+
+
+@router.post("/demo/scenario/{pack_id}", response_model=ScenarioSeedResponse)
+def load_scenario(pack_id: str, coordinator: CoordinatorUser = Depends(get_current_coordinator)):
+    require_demo_mode()
+    from app.tools.scenario_loader import scenario_registry
+    if scenario_registry.get_scenario(pack_id) is None:
+        raise HTTPException(status_code=404, detail="Unknown scenario pack")
+    storage_service.load_missing_scenario(pack_id)
+    storage_service.record_audit(actor=coordinator.email, action="demo_scenario_loaded", target=pack_id, after={"synthetic": True})
+    return {"pack_id": pack_id, "loaded": True}

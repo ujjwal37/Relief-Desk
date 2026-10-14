@@ -28,6 +28,11 @@ class ExplainerAgent:
             f"to assist {people} people. Total match score is {breakdown.total_score} based on proximity and urgency."
         )
 
+        from app.tools.inventory import inventory_note
+        note = inventory_note(request, resource)
+        if note:
+            text_en += " " + note
+
         res_name_hi = resource.name_hi or resource.name
         text_hi = (
             f"{res_name_hi} {breakdown.distance_km} किमी दूर है और {people} लोगों की सहायता के लिए उपलब्ध है। "

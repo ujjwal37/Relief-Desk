@@ -19,6 +19,7 @@ ACTION_KIND = {
     "resource_created": "team.updated",
     "capacity_reserved": "team.updated",
     "capacity_released": "team.updated",
+    "supplies_consumed": "team.updated",
     "location_update": "team.updated",
     "team_confirm": "team.updated",
 }

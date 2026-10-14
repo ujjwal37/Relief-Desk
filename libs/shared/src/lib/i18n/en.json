@@ -230,7 +230,15 @@
   },
   "demo": {
     "phone": "Demo phone",
-    "hide": "Hide phone"
+    "hide": "Hide phone",
+    "surgeButton": "⚡ Simulate 5 reports",
+    "surgeRunning": "Simulating…",
+    "surgeProgress": "Synthetic surge: {n}/5 reports submitted.",
+    "surgeDone": "Submitted {n} synthetic reports. Analysis continues; review each dispatch.",
+    "surgeFailed": "Surge finished with errors; {n} reports submitted.",
+    "surgeUnavailable": "Surge unavailable or already running. Try again shortly.",
+    "scenarioFailed": "Scenario could not be loaded.",
+    "mergeNotice": "Reports joined into {id}. Review the updated count and evidence."
   },
   "settings": {
     "title": "Settings",
@@ -473,7 +481,8 @@
     "stepSent": "Sent",
     "stepAccepted": "Accepted",
     "stepOnWay": "On the way",
-    "stepOnScene": "On scene"
+    "stepOnScene": "On scene",
+    "referralStock": "Human-entered referral stock requirement"
   },
   "tour": {
     "next": "Next",

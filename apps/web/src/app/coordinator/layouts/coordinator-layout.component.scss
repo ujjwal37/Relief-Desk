@@ -67,3 +67,8 @@ h3 { margin:12px 0 6px; font-size:13px; font-weight: 600; color:var(--text-2); t
 
 @media (min-width: 901px) and (max-width: 1439px) { .top-nav { gap:16px; padding:0 20px; } .tabs a { font-size:13px; padding:0 9px; } .search { max-width:210px; } }
 @media (max-width: 900px) { .tabs.wrap { padding:3px 0; gap:2px; } .tabs.wrap a, .tabs.wrap button.more-tab { border-radius:7px; font-size:12px; } }
+
+.surge-button { border: 1px solid var(--border); border-radius: 8px; padding: 6px 9px; background: var(--surface); color: var(--brand); font-size: 12px; white-space: nowrap; cursor: pointer; }
+.surge-button:disabled { opacity: .6; cursor: wait; }
+.surge-note { margin: 0; padding: 8px 20px; color: var(--brand); background: var(--brand-tint); font-size: 13px; }
+@media (max-width: 900px) { .surge-button { font-size: 11px; max-width: 118px; white-space: normal; } }

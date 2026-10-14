@@ -12,9 +12,14 @@ export interface LiveEvent {
   id?: string;
   request_id?: string | null;
   request_ids?: string[];
+  run_id?: string;
+  running?: boolean;
+  submitted?: number;
+  failed?: number;
+  total?: number;
 }
 
-const NAMES = ['case.created', 'case.merged', 'case.updated', 'dispatch.created', 'team.updated', 'alert.created', 'heartbeat'];
+const NAMES = ['case.created', 'case.merged', 'case.updated', 'dispatch.created', 'team.updated', 'alert.created', 'heartbeat', 'demo.surge'];
 
 /** 1s, 2s, 4s… capped at 15s. */
 export function backoffMs(attempt: number): number {

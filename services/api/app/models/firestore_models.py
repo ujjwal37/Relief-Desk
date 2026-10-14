@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, NonNegativeInt, PositiveInt
 from app.models.schemas import (
     AiCall,
     IncidentType,
@@ -73,6 +73,9 @@ class StoredRequest(BaseModel):
     type: IncidentType = IncidentType.OTHER
     # The type the reporter picked. Tips use it until classification finishes.
     picked_type: Optional[str] = None
+    # Logistics from a human-entered referral, never inferred by a model.
+    required_supplies: Dict[str, PositiveInt] = Field(default_factory=dict)
+    routing_note: Optional[str] = None
     place_text: Optional[str] = None
     place_cell: Optional[str] = None
     ward_id: Optional[str] = None
@@ -174,6 +177,7 @@ class StoredResource(BaseModel):
     lng: float
     capacity_total: int
     capacity_remaining: int
+    supplies: Dict[str, NonNegativeInt] = Field(default_factory=dict)
     hold_request_id: Optional[str] = None
     hold_amount: int = 0
     status: ResourceStatus = ResourceStatus.AVAILABLE

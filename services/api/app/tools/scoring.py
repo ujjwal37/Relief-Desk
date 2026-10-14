@@ -157,6 +157,10 @@ class ScoringEngine:
         from app.models.schemas import IncidentType
         from app.tools.geo import haversine_distance
 
+        from app.tools.inventory import missing_supplies
+        if missing_supplies(req, res):
+            return None
+
         # Hard constraint 1: Capacity remaining must be > 0
         if res.capacity_remaining <= 0:
             return None

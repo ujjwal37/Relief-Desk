@@ -281,7 +281,7 @@ def finish(request_id: str) -> None:
     from app.llm.ai_queue import ai_priority, report_priority
 
     facts = {"type": req.type.value, "people": req.people_count, "vulnerable": req.vulnerable.model_dump(),
-             "hazard": req.hazard.value, "score": scored.score}
+             "hazard": req.hazard.value, "score": scored.score, "required_supplies": req.required_supplies, "routing_note": req.routing_note}
     dedupe_context = {"facts": facts, "tool_result": _dedupe_output(req)}
     triage_context = {"facts": facts, "breakdown": scored.breakdown, "reason": scored.reason}
 
@@ -305,7 +305,7 @@ def finish(request_id: str) -> None:
         "seats": best.capacity_remaining if best else 0,
     })
     matching_ms = int((time.perf_counter() - matching_started) * 1000)
-    explain_context = {"facts": facts, "matching": json.loads(matching_output), "free_teams": capacity["available"]}
+    explain_context = {"facts": facts, "matching": json.loads(matching_output), "free_teams": capacity["available"], "inventory_explanation": best.explanation if best else None}
     explained = review("Explainer", explain_context, explanation)
 
     def row(agent, result, tools, at):

@@ -132,6 +132,8 @@ export interface UrgencyWeights {
 }
 
 export interface StoredRequest {
+  required_supplies?: Record<string, number>;
+  routing_note?: string | null;
   id: string;
   event_id?: string;
   pack_id?: string;
@@ -231,6 +233,7 @@ export interface StoredResource {
   assigned_request_id?: string | null;
   area_name?: string | null;
   simulated?: boolean;
+  supplies?: Record<string, number>;
   location_trail?: { lat: number; lng: number; at: string }[];
 }
 

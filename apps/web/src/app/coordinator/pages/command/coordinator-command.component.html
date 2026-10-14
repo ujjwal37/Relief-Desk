@@ -278,6 +278,7 @@
                 <div class="score-facts">{{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ ('coord.kind.' + prop.resource_kind) | rdTranslate }}
                   @if (prop.simulated || assignedTeam(req)?.simulated) { <span class="tag">{{ 'coord.simulated' | rdTranslate }}</span> }
                 </div>
+                @if (req.routing_note) { <p class="reason-cap">{{ 'coord.referralStock' | rdTranslate }}</p><p class="expl">{{ req.routing_note }}</p> }
                 @if (prop.explanation) {
                   <p class="reason-cap">{{ 'coord.reasoning' | rdTranslate }}</p>
                   <p class="expl reason" data-testid="decision-reason">{{ prop.explanation }}</p>

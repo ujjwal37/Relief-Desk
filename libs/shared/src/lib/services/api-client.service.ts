@@ -106,6 +106,18 @@ export class ApiClientService {
     return this.http.get<any>(`/api/cases/${requestId}/merge`, this.getAuthHeaders());
   }
 
+  simulateSurge(): Observable<{ run_id: string; running: boolean; submitted: number; failed: number; total: number }> {
+    return this.http.post<{ run_id: string; running: boolean; submitted: number; failed: number; total: number }>('/api/demo/simulate-surge', {}, this.getAuthHeaders());
+  }
+
+  getSurgeState(): Observable<{ run_id: string; running: boolean; submitted: number; failed: number; total: number }> {
+    return this.http.get<{ run_id: string; running: boolean; submitted: number; failed: number; total: number }>('/api/demo/surge', this.getAuthHeaders());
+  }
+
+  loadScenarioDemo(packId: string): Observable<{ pack_id: string; loaded: boolean }> {
+    return this.http.post<{ pack_id: string; loaded: boolean }>(`/api/demo/scenario/${encodeURIComponent(packId)}`, {}, this.getAuthHeaders());
+  }
+
   /** Reload the two-case demo. The API allows it in demo mode or for the demo coordinator. */
   resetDemo(): Observable<any> {
     return this.http.post<any>('/api/demo/reset', {}, this.getAuthHeaders());

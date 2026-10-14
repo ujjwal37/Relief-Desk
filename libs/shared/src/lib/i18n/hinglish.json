@@ -230,7 +230,15 @@
   },
   "demo": {
     "phone": "Demo phone",
-    "hide": "Phone chhupayein"
+    "hide": "Phone chhupayein",
+    "surgeButton": "⚡ 5 reports ka demo",
+    "surgeRunning": "Demo chal raha hai…",
+    "surgeProgress": "Synthetic surge: {n}/5 reports bheji gayi.",
+    "surgeDone": "{n} synthetic reports bheji gayi. Analysis jaari hai; har dispatch review karein.",
+    "surgeFailed": "Surge mein errors; {n} reports bheji gayi.",
+    "surgeUnavailable": "Surge available nahi ya chal raha hai. Thodi der baad try karein.",
+    "scenarioFailed": "Scenario load nahi hua.",
+    "mergeNotice": "Reports {id} mein jodi gayi. Updated count aur evidence review karein."
   },
   "settings": {
     "title": "Settings",
@@ -473,7 +481,8 @@
     "stepSent": "Bheja",
     "stepAccepted": "Accept",
     "stepOnWay": "Raaste mein",
-    "stepOnScene": "Scene par"
+    "stepOnScene": "Scene par",
+    "referralStock": "Human-entered referral stock requirement"
   },
   "tour": {
     "next": "Aage",

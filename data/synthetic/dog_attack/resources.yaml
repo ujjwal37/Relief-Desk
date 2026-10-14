@@ -1,0 +1,26 @@
+version: 1
+scenario_pack: dog_attack
+event_id: event_kerala_flood
+resources:
+  - id: DOG-MED-01
+    name: Cedar Primary Clinic (synthetic)
+    name_hi: सीडर प्राथमिक चिकित्सालय (काल्पनिक)
+    kind: medical
+    ward_id: ward_2
+    lat: 9.432
+    lng: 76.411
+    capacity_total: 8
+    capacity_remaining: 8
+    supplies: {arv: 10, rig: 0}
+    synthetic: true
+  - id: DOG-MED-02
+    name: Riverbend Referral Unit (synthetic)
+    name_hi: रिवरबेंड रेफरल यूनिट (काल्पनिक)
+    kind: medical
+    ward_id: ward_2
+    lat: 9.459
+    lng: 76.411
+    capacity_total: 8
+    capacity_remaining: 8
+    supplies: {arv: 10, rig: 3}
+    synthetic: true
