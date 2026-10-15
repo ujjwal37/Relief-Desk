@@ -101,7 +101,7 @@ class MatchingAgent:
         using_fallback = False
 
         # Distance score is 0 past 10 km, so a far team with more seats can outrank a nearer one.
-        # Keep teams near the closest suitable team. If every team is far, keep the closest and show its real ETA.
+        # Keep teams near the closest suitable team. Boats beyond BOAT_MAX_KM are dropped.
         scored_candidates = _keep_nearer(scored_candidates)
 
         # Rank by arrival time first (boats by water, land teams by road estimate), then by seat fit.
@@ -197,6 +197,8 @@ class MatchingAgent:
 NEARBY_KM = 30.0
 # A team inside this radius is close enough to prefer over a farther cluster.
 PRACTICAL_KM = 40.0
+# Rescue boats farther than this are not offered; the card then says no suitable team nearby.
+BOAT_MAX_KM = 25.0
 
 
 # Land teams: straight-line km at 20 km/h (a road estimate; the map shows the real drive time).
@@ -243,6 +245,10 @@ NEAR_BAND_KM = 15.0
 
 
 def _keep_nearer(scored: list) -> list:
+    scored = [
+        item for item in scored
+        if not (travel_mode_for(item[0]) == "water" and item[1].distance_km > BOAT_MAX_KM)
+    ]
     if len(scored) <= 1:
         return scored
     nearest = min(item[1].distance_km for item in scored)

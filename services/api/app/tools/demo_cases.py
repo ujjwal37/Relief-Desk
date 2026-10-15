@@ -9,7 +9,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
-DEMO_TEAM_IDS = ("RES-BOAT-02", "RES-BOAT-03", "RES-MED-01")
+DEMO_TEAM_IDS = (
+    "RES-BOAT-02",
+    "RES-BOAT-03",
+    "RES-MED-01",
+    "RES-BOAT-05",
+    "RES-BOAT-06",
+    "RES-MED-06",
+)
 
 # (id, minutes ago, type, ward, lat, lng, people, hazard, vulnerable, status, en, hi, raw language)
 DEMO_CASES: List[Dict[str, Any]] = [
