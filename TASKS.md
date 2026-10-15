@@ -204,3 +204,4 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | XF-04 | Live agent trace over existing SSE | C | DONE | XF-03 | pipeline.step strip: extract, dedupe %, triage, team search, awaiting human |
 | XF-05 | SITREP from real counts + EN/HI/ML drafts only | C | DONE | XF-04 | Numbers from open cases/resources; send=false; 120s cache |
 | XF-06 | Boat vs road note in How it decided | C | DONE | XF-05 | Same haversine distance; no invented closures |
+| XF-07 | Local-test fixes: Routes API, nearby boats, roof/boat triage, distinct voice, duplicate sample, faster photo/sitrep | C | DONE | XF-06 | Road routes use Routes API; boats capped ~25 km with Chalakudy/Aluva teams; roof+window or boat rescue ≥ Urgent 60; voice sample is a distinct Aluva medicine case with live transcript; reworded duplicate shows Merge/Keep; photo downscaled with progress; sitrep cached/skeleton; stale tests updated |

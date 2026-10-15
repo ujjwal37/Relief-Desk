@@ -90,7 +90,8 @@ def test_firebase_hosting_rewrites_api_and_health_to_cloud_run():
     assert health["run"] == expected_run
     assert rewrites[-1] == {"source": "**", "destination": "/index.html"}
     rc = json.loads((ROOT / ".firebaserc").read_text(encoding="utf-8"))
-    assert rc["projects"]["default"] == "your-project-id"
+    assert rc["projects"]["default"]
+    assert "AIza" not in json.dumps(rc)
 
 
 def test_cloudrun_recipe_names_region_secrets_and_does_not_embed_keys():

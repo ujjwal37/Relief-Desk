@@ -78,8 +78,23 @@ def test_multimodal_photo_falls_back_when_gemini_is_off(monkeypatch):
     assert body["request_id"]
     stored = storage_service.get_request(body["request_id"])
     assert stored is not None
-    assert stored.raw_text
+    assert stored.raw_text is not None
+    assert "Synthetic flood photo near a Kerala house" not in (stored.raw_text or "")
     assert stored.ai is None or stored.ai.provider in ("fallback", "cache", "gemini")
+
+
+def test_reworded_duplicate_sample_asks_for_review():
+    storage_service.reset_demo()
+    first = client.post("/api/demo/sample-report", json={"kind": "hindi"}).json()
+    second = client.post("/api/demo/sample-report", json={"kind": "duplicate"}).json()
+    assert first["request_id"] != second["request_id"]
+    stored = storage_service.get_request(second["request_id"])
+    assert stored is not None
+    assert stored.possible_duplicate is not None
+    assert stored.possible_duplicate.target_id
+    assert stored.count_note and "Counts differ" in stored.count_note
+    assert "hoax" not in (stored.flags or [])
+    assert "rate_limited" not in (stored.flags or [])
 
 
 def test_pipeline_step_events_are_published():

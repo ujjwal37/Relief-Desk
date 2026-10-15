@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-from app.agents.matching import NEARBY_KM, matching_agent
+from app.agents.matching import BOAT_MAX_KM, NEARBY_KM, eta_for_distance, matching_agent
 from app.models.firestore_models import ResourceKind, StoredRequest
 from app.models.schemas import IncidentType, VulnerableFlags
 from app.tools.geo import haversine_distance
@@ -13,8 +13,8 @@ SEEDS = Path(__file__).resolve().parents[3] / "data" / "synthetic" / "flood_v1" 
 RESOURCES = Path(__file__).resolve().parents[3] / "data" / "synthetic" / "flood_v1" / "resources.yaml"
 
 
-def _eta(km: float) -> int:
-    return max(1, round((km / 20.0) * 60))
+def _eta(km: float, mode: str = "road") -> int:
+    return eta_for_distance(km, mode) or max(1, round((km / 20.0) * 60))
 
 
 def test_oxygen_case_matches_the_kainakary_clinic():
@@ -54,11 +54,11 @@ def test_kuttanad_rescue_offers_a_nearby_boat():
     best = proposals[0]
     assert best.no_nearby is False
     assert best.breakdown.distance_km < 15
-    assert best.eta_minutes == _eta(best.breakdown.distance_km)
+    assert best.eta_minutes == _eta(best.breakdown.distance_km, "water")
     assert best.eta_minutes < 45
 
 
-def test_chalakudy_rescue_is_outside_the_kuttanad_cluster():
+def test_chalakudy_rescue_gets_the_local_boat():
     storage_service.load_seed_resources()
     req = StoredRequest(
         id="req_chalakudy_rescue",
@@ -71,12 +71,13 @@ def test_chalakudy_rescue_is_outside_the_kuttanad_cluster():
     proposals = matching_agent.find_matches(req, top_n=5, save_to_storage=False)
     assert proposals
     best = proposals[0]
-    assert best.no_nearby is True
-    assert best.breakdown.distance_km > NEARBY_KM
-    assert best.eta_minutes is None
+    assert best.resource_id == "RES-BOAT-05"
+    assert best.no_nearby is False
+    assert best.breakdown.distance_km < 5
+    assert best.eta_minutes == _eta(best.breakdown.distance_km, "water")
 
 
-def test_a_request_with_no_team_within_30_km_hides_the_minute_eta():
+def test_a_request_with_no_boat_within_25_km_offers_nothing():
     storage_service.load_seed_resources()
     req = StoredRequest(
         id="req_far_cluster",
@@ -87,10 +88,8 @@ def test_a_request_with_no_team_within_30_km_hides_the_minute_eta():
         urgency_score=80.0,
     )
     proposals = matching_agent.find_matches(req, top_n=5, save_to_storage=False)
-    assert len(proposals) >= 2
-    assert all(p.breakdown.distance_km > NEARBY_KM for p in proposals)
-    assert all(p.no_nearby for p in proposals)
-    assert all(p.eta_minutes is None for p in proposals)
+    assert proposals == []
+    assert BOAT_MAX_KM <= NEARBY_KM
 
 
 def test_demo_teams_are_within_15_km_of_kuttanad_and_alappuzha():
@@ -102,8 +101,8 @@ def test_demo_teams_are_within_15_km_of_kuttanad_and_alappuzha():
     by_kind: dict = {}
     for team in resources:
         by_kind.setdefault(team["kind"], []).append(team)
-        if team["id"] == "RES-MED-04":
-            continue  # Varapuzha serves the oxygen case in Ernakulam.
+        if team["id"] in {"RES-MED-04", "RES-MED-06", "RES-BOAT-05", "RES-BOAT-06"}:
+            continue  # Northern teams serve Chalakudy / Aluva sample cases.
         for label, (lat, lng) in (("Kuttanad", kuttanad), ("Alappuzha", alappuzha)):
             km = haversine_distance(lat, lng, team["lat"], team["lng"])
             assert km <= 15, f"{team['id']} is {km:.1f} km from {label}"

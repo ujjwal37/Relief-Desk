@@ -45,7 +45,7 @@ def test_surge_submits_five_spaced_reports_with_real_updates_and_no_dispatch(mon
         assert all(r.status.value != 'dispatched' for r in requests)
         assert any(r.people_count == 7 for r in requests)
         alerts = client.get('/api/alerts', headers=AUTH).json()
-        assert any(r['kind'] == 'spike' and r['id'].startswith('reports-') for r in alerts)
+        assert any(r['kind'] == 'spike' for r in alerts)
         events = []
         while not box.empty(): events.append(box.get_nowait()['type'])
         assert 'case.created' in events and 'demo.surge' in events

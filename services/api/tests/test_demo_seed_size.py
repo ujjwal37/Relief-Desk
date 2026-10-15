@@ -6,6 +6,8 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.tools.geo import haversine_distance
+from app.config import settings
+from app.tools.demo_cases import DEMO_CASES, DEMO_TEAM_IDS
 from app.tools.storage import SMALL_CASE_IDS, SMALL_TEAM_IDS, active_seed_mode, storage_service
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -26,12 +28,14 @@ def test_reset_returns_two_cases_and_full_reloads_the_pack():
         assert reset.status_code == 200
         body = reset.json()
         assert body["seed"] == "small"
-        assert body["incidents"] == 2
-        assert body["resources"] == len(SMALL_TEAM_IDS)
+        demo_ids = {row["id"] for row in DEMO_CASES} if settings.DEMO_MODE else set()
+        extra_teams = {tid for tid in DEMO_TEAM_IDS if tid not in SMALL_TEAM_IDS} if settings.DEMO_MODE else set()
+        assert body["incidents"] == len(SMALL_CASE_IDS) + len(demo_ids)
+        assert body["resources"] == len(SMALL_TEAM_IDS) + len(extra_teams)
         ids = {row["id"] for row in client.get("/api/requests", headers=AUTH).json()}
-        assert ids == set(SMALL_CASE_IDS)
+        assert ids == set(SMALL_CASE_IDS) | demo_ids
         teams = {row["id"] for row in client.get("/api/resources", headers=AUTH).json()}
-        assert teams == set(SMALL_TEAM_IDS)
+        assert teams == set(SMALL_TEAM_IDS) | extra_teams
 
         full = client.post("/api/demo/full", headers=AUTH)
         assert full.status_code == 200
@@ -44,7 +48,7 @@ def test_reset_returns_two_cases_and_full_reloads_the_pack():
         back = client.post("/api/demo/reset", headers=AUTH)
         assert back.json()["seed"] == "small"
         after = {row["id"] for row in client.get("/api/requests", headers=AUTH).json()}
-        assert after == set(SMALL_CASE_IDS)
+        assert after == set(SMALL_CASE_IDS) | demo_ids
     finally:
         _restore_full()
 

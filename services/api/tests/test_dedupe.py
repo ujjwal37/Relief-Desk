@@ -43,7 +43,10 @@ def test_hero_case_update_escalates_urgency_and_keeps_history():
     decision = dedupe_agent.evaluate(
         raw_text=update_text,
         new_req=update_extracted,
-        candidates=candidates
+        candidates=candidates,
+        new_lat=26.852,
+        new_lng=80.925,
+        judge=False,
     )
 
     # Acceptance criteria verification:

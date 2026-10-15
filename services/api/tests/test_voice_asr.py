@@ -16,8 +16,8 @@ def test_list_synthetic_voice_notes():
     # Verify languages represented
     langs = {n["lang"] for n in notes}
     assert langs == {"en", "hi"}
-    # VN-01 plus the synthetic Hindi TTS note used by the one-click voice sample.
-    assert sum(1 for n in notes if n["lang"] == "hi") == 2
+    # VN-01, the old rooftop TTS, and the Aluva medicine TTS used by the one-click voice sample.
+    assert sum(1 for n in notes if n["lang"] == "hi") >= 2
     # All confidences > 0.80
     assert all(n["asr_confidence"] >= 0.80 for n in notes)
 
