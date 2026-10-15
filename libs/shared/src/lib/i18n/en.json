@@ -482,7 +482,8 @@
     "stepAccepted": "Accepted",
     "stepOnWay": "On the way",
     "stepOnScene": "On scene",
-    "referralStock": "Human-entered referral stock requirement"
+    "referralStock": "Human-entered referral stock requirement",
+    "mapClear": "Clear selection"
   },
   "tour": {
     "next": "Next",
@@ -905,7 +906,8 @@
     "reports": "Reports"
   },
   "map": {
-    "loading": "Loading sector map…"
+    "loading": "Loading sector map…",
+    "routing": "Finding road route…"
   },
   "photo": {
     "add": "Add photo",

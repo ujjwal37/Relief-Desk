@@ -56,6 +56,9 @@ export interface MapLeg {
     }
     @if (mode === 'google') {
       <div #canvas class="rd-google-map" role="application" aria-label="Relief map"></div>
+      @if (routing() > 0) {
+        <div class="rd-route-loading" role="status"><i aria-hidden="true"></i>{{ 'map.routing' | rdTranslate }}</div>
+      }
     } @else {
       <ng-content></ng-content>
       @if (builtin()) {
@@ -87,6 +90,10 @@ export interface MapLeg {
     @keyframes rd-map-pulse { to { background-position: -200% 0; } }
     @media (prefers-reduced-motion: reduce) { .rd-map-loading { animation: none; } }
     .rd-leg { font-size: 13px; font-weight: 700; fill: #0f1720; }
+    .rd-route-loading { position: absolute; z-index: 6; top: 10px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--e1); font-size: 12px; font-weight: 600; pointer-events: none; }
+    .rd-route-loading i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand, #047857); animation: rd-spin .8s linear infinite; }
+    @keyframes rd-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .rd-route-loading i { animation: none; } }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -97,6 +104,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   /** Shown when Google Maps is off and the page did not supply its own schematic. */
   readonly builtin = signal(false);
   readonly loading = signal(true);
+  /** Road routes still on their way. Lines stay hidden until theirs arrives. */
+  readonly routing = signal(0);
   private destroyed = false;
   private loadTimer?: ReturnType<typeof setTimeout>;
   private readyListener?: { remove: () => void };
@@ -112,6 +121,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   @Input() highlightId: string | null = null;
   /** Group case pins into urgency-coloured clusters (Overview). */
   @Input() cluster = false;
+  /** Pin drawn larger and on top, kept out of clusters, and framed when no line is drawn. */
+  @Input() selectedId: string | null = null;
   @Output() pinSelect = new EventEmitter<string>();
 
   @ViewChild('canvas') canvas?: ElementRef<HTMLDivElement>;
@@ -174,7 +185,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     } else {
       this.lastCenter = panIfMoved(this.map, this.lastCenter, this.center);
     }
-    const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []) + '#' + (this.highlightId || '');
+    const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []) + '#' + (this.highlightId || '') + '#' + (this.selectedId || '');
     if (this.mode !== 'google' || pinKey === this.lastPinKey) {
       return;
     }
@@ -310,12 +321,13 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         maps.event?.addListenerOnce(this.map, 'idle', ready);
         this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
       }
-      const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []) + '#' + (this.highlightId || '');
+      const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []) + '#' + (this.highlightId || '') + '#' + (this.selectedId || '');
       this.lastPinKey = pinKey;
       this.markers.forEach((marker) => marker.setMap?.(null));
       this.lines.forEach((line) => line.setMap?.(null));
       this.clusterer?.clearMarkers();
       const seq = ++this.drawSeq;
+      const waitForRoad = !routingBroken && !!maps.DirectionsService;
       this.lines = this.legs.map((leg) => {
         const hot = !!this.highlightId && this.highlightId === leg.id;
         return new maps.Polyline({
@@ -324,6 +336,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           strokeColor: leg.suggested ? '#047857' : '#6b7280',
           strokeWeight: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
           geodesic: true,
+          visible: !waitForRoad,
         });
       });
       const labelFor = new Map<string, unknown>();
@@ -339,22 +352,25 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         },
         icon: { path: maps.SymbolPath?.CIRCLE ?? 0, scale: 0, labelOrigin: maps.Point ? new maps.Point(0, -22) : undefined },
         clickable: false,
+        visible: !waitForRoad,
       }); labelFor.set(leg.id, m); return m; });
       const clustered: unknown[] = [];
       this.markers = this.pins.map((pin) => {
+        const hot = !!this.selectedId && pin.id === this.selectedId;
         const url = markerDataUrl(pin);
         const icon = url
           ? {
               url,
-              scaledSize: maps.Size ? new maps.Size(32, 32) : undefined,
-              anchor: maps.Point ? new maps.Point(16, 16) : undefined,
+              scaledSize: maps.Size ? new maps.Size(hot ? 46 : 32, hot ? 46 : 32) : undefined,
+              anchor: maps.Point ? new maps.Point(hot ? 23 : 16, hot ? 23 : 16) : undefined,
             }
           : undefined;
-        const grouped = this.cluster && pin.marker === 'case';
+        const grouped = this.cluster && pin.marker === 'case' && !hot;
         const marker = new maps.Marker({
           map: grouped ? null : this.map,
           position: { lat: pin.lat, lng: pin.lng },
           title: pin.title,
+          zIndex: hot ? 2000 : undefined,
           ...(icon ? { icon } : {}),
         });
         marker.addListener?.('click', () => this.pinSelect.emit(pin.id));
@@ -409,7 +425,9 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   /** Swap each straight line for the road route and its drive time. Straight stays on failure. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private routeLegs(maps: any, seq: number, labelFor: Map<string, unknown>): void {
-    if (routingBroken || !maps.DirectionsService || !this.legs.length) return;
+    if (!this.legs.length) { this.routing.set(0); return; }
+    if (routingBroken || !maps.DirectionsService) { this.routing.set(0); return; }
+    this.routing.set(this.legs.length);
     const service = new maps.DirectionsService();
     this.legs.forEach((leg, i) => {
       const key = `${leg.to.lat.toFixed(5)},${leg.to.lng.toFixed(5)}>${leg.from.lat.toFixed(5)},${leg.from.lng.toFixed(5)}`;
@@ -441,13 +459,23 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         job.then((r) => { if (!r) ROUTES.delete(key); });
       }
       job.then((route) => {
-        if (!route || seq !== this.drawSeq || this.destroyed || !route.path.length) return;
+        if (seq !== this.drawSeq || this.destroyed) return;
+        this.routing.update((n) => Math.max(0, n - 1));
+        this.cdr.markForCheck();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const line = this.lines[i] as any;
-        line?.setOptions?.({ path: route.path, geodesic: false });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const label = labelFor.get(leg.id) as any;
+        if (!route || !route.path.length) {
+          // Routing really failed: fall back to the straight line and its estimate.
+          line?.setVisible?.(true);
+          label?.setVisible?.(true);
+          return;
+        }
+        line?.setOptions?.({ path: route.path, geodesic: false, visible: true });
+        if (this.legs.length === 1 || leg.suggested) this.fitPath(route.path);
         if (label) {
+          label.setVisible?.(true);
           const mid = route.path[Math.floor(route.path.length / 2)];
           label.setPosition?.(mid);
           const cur = label.getLabel?.() || {};
@@ -457,8 +485,24 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     });
   }
 
+  private fitPath(path: { lat: number; lng: number }[]): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const g = (window as any).google?.maps;
+    if (!this.map?.fitBounds || !g?.LatLngBounds || !path.length) return;
+    const bounds = new g.LatLngBounds();
+    path.forEach((p) => bounds.extend(p));
+    this.map.fitBounds(bounds, 56);
+  }
+
   /** A full pin set wins when asked. Otherwise lines frame the open case. */
   private fitView(maps: GoogleMapsNs): void {
+    const chosen = this.selectedId ? this.pins.find((p) => p.id === this.selectedId) : null;
+    if (chosen && !this.legs.length) {
+      this.map?.panTo?.({ lat: chosen.lat, lng: chosen.lng });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.map as any)?.setZoom?.(14);
+      return;
+    }
     if (this.fitAll && (this.pins.length || this.legs.length)) {
       this.fitPins(maps);
       return;

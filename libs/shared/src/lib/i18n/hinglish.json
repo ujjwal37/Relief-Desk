@@ -482,7 +482,8 @@
     "stepAccepted": "Accept",
     "stepOnWay": "Raaste mein",
     "stepOnScene": "Scene par",
-    "referralStock": "Human-entered referral stock requirement"
+    "referralStock": "Human-entered referral stock requirement",
+    "mapClear": "Selection hatayein"
   },
   "tour": {
     "next": "Aage",
@@ -905,7 +906,8 @@
     "reports": "Reports"
   },
   "map": {
-    "loading": "Sector map load ho raha hai…"
+    "loading": "Sector map load ho raha hai…",
+    "routing": "Road route dhoondh rahe hain…"
   },
   "photo": {
     "add": "Photo jodein",
