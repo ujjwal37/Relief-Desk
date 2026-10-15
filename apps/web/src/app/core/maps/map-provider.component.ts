@@ -20,10 +20,10 @@ import {
 } from '@angular/core';
 import { boatMinutes, haversineKm, markerDataUrl, TONE_COLOR, vehiclePath, PinTone, VehicleKind } from './map-markers';
 import { MapProviderService } from './map-provider.service';
+import { computeRoadRoute, RoadRoute, RoutingDeniedError } from './road-route';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
 /** Road route for one team->case pair. Shared by every map so a leg is routed once. */
-interface RoadRoute { path: { lat: number; lng: number }[]; km: string; mins: string; meters: number; seconds: number }
 const ROUTES = new Map<string, Promise<RoadRoute | null>>();
 let routingBroken = false;
 
@@ -330,7 +330,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
       this.lines.forEach((line) => line.setMap?.(null));
       this.clusterer?.clearMarkers();
       const seq = ++this.drawSeq;
-      const waitForRoad = !routingBroken && !!maps.DirectionsService;
+      const waitForRoad = !routingBroken;
       this.lines = this.legs.map((leg) => {
         const hot = !!this.highlightId && this.highlightId === leg.id;
         return new maps.Polyline({
@@ -431,38 +431,19 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
 
   /** Swap each straight line for the road route and its drive time. Straight stays on failure. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private routeLegs(maps: any, seq: number, labelFor: Map<string, unknown>): void {
+  private routeLegs(_maps: any, seq: number, labelFor: Map<string, unknown>): void {
     if (!this.legs.length) { this.routing.set(0); return; }
     const roadCount = this.legs.filter((leg) => leg.mode !== 'water').length;
-    if (routingBroken || !maps.DirectionsService || !roadCount) { this.routing.set(0); return; }
+    if (routingBroken || !roadCount) { this.routing.set(0); return; }
     this.routing.set(roadCount);
-    const service = new maps.DirectionsService();
     this.legs.forEach((leg, i) => {
       if (leg.mode === 'water') return;
       const key = `${leg.to.lat.toFixed(5)},${leg.to.lng.toFixed(5)}>${leg.from.lat.toFixed(5)},${leg.from.lng.toFixed(5)}`;
       let job = ROUTES.get(key);
       if (!job) {
-        job = new Promise<RoadRoute | null>((resolve) => {
-          try {
-            service.route(
-              { origin: leg.to, destination: leg.from, travelMode: maps.TravelMode?.DRIVING ?? 'DRIVING' },
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (res: any, status: string) => {
-                const r = res?.routes?.[0];
-                const l = r?.legs?.[0];
-                if (status !== 'OK' || !r || !l) {
-                  if (status === 'REQUEST_DENIED') routingBroken = true;
-                  resolve(null);
-                  return;
-                }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const path = (r.overview_path || []).map((p: any) => ({ lat: p.lat(), lng: p.lng() }));
-                resolve({ path, km: l.distance?.text || '', mins: l.duration?.text || '', meters: l.distance?.value || 0, seconds: l.duration?.value || 0 });
-              },
-            );
-          } catch {
-            resolve(null);
-          }
+        job = computeRoadRoute(leg.to, leg.from, this.maps.apiKey).catch((err) => {
+          if (err instanceof RoutingDeniedError) routingBroken = true;
+          return null;
         });
         ROUTES.set(key, job);
         job.then((r) => { if (!r) ROUTES.delete(key); });
@@ -569,8 +550,6 @@ interface GoogleMapsNs {
     fitBounds?: (bounds: unknown, padding?: number) => void;
   };
   LatLngBounds?: new () => { extend: (pos: { lat: number; lng: number }) => void };
-  DirectionsService?: new () => unknown;
-  TravelMode?: { DRIVING: string };
   Marker: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void; addListener?: (event: string, fn: () => void) => void };
   Polyline: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void };
   SymbolPath?: { CIRCLE: number };
