@@ -17,9 +17,17 @@ export interface LiveEvent {
   submitted?: number;
   failed?: number;
   total?: number;
+  agent?: string;
+  status?: string;
+  summary?: string;
+  similarity?: number;
+  match_id?: string;
+  tier?: string;
+  score?: number;
+  team?: string;
 }
 
-const NAMES = ['case.created', 'case.merged', 'case.updated', 'dispatch.created', 'team.updated', 'alert.created', 'heartbeat', 'demo.surge'];
+const NAMES = ['case.created', 'case.merged', 'case.updated', 'dispatch.created', 'team.updated', 'alert.created', 'heartbeat', 'demo.surge', 'pipeline.step'];
 
 /** 1s, 2s, 4s… capped at 15s. */
 export function backoffMs(attempt: number): number {
@@ -34,6 +42,7 @@ export function kindsFor(type: string): DeskKind[] {
   if (type === 'dispatch.created') return ['cases', 'recent', 'alerts', 'teams'];
   if (type === 'team.updated') return ['teams'];
   if (type === 'alert.created') return ['alerts'];
+  if (type === 'pipeline.step') return [];
   return [];
 }
 

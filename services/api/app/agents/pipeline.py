@@ -19,6 +19,7 @@ from app.llm.client import llm_client
 from app.llm.guards import strip_advice
 from app.models.firestore_models import ResourceStatus, StoredRequest
 from app.models.schemas import IncidentType
+from app.tools.events import emit_pipeline_step
 from app.tools.scoring import scoring_engine
 from app.tools.storage import storage_service
 
@@ -267,6 +268,13 @@ def mark_analysing(request_id: str) -> None:
         for agent in _TRACE_AGENTS
     ]
     storage_service.save_request(req, actor="pipeline")
+    emit_pipeline_step(
+        request_id,
+        "extract",
+        "working",
+        (req.raw_text or "")[:180],
+        {"tier": None},
+    )
 
 
 def note_dedupe(req: StoredRequest) -> None:
@@ -278,6 +286,11 @@ def note_dedupe(req: StoredRequest) -> None:
             step["status"] = "complete"
             step["output"] = _dedupe_output(req)
             step["ts"] = datetime.now(timezone.utc).isoformat()
+    extra = {}
+    if req.possible_duplicate:
+        extra["similarity"] = req.possible_duplicate.similarity
+        extra["match_id"] = req.possible_duplicate.target_id
+    emit_pipeline_step(req.id, "dedupe", "complete", _dedupe_output(req), extra)
 
 
 def finish(request_id: str) -> None:
@@ -291,6 +304,20 @@ def finish(request_id: str) -> None:
     triage_at = time.perf_counter()
     req.urgency_score = scored.score
     req.urgency_reason = scored.reason
+    emit_pipeline_step(
+        request_id,
+        "extract",
+        "complete",
+        (req.raw_text or "")[:180],
+        {"type": req.type.value, "people": req.people_count},
+    )
+    emit_pipeline_step(
+        request_id,
+        "triage",
+        "complete",
+        scored.reason,
+        {"tier": scored.tier, "score": scored.score},
+    )
     kind = {"medical": "medical", "food": "food", "shelter": "shelter"}.get(req.type.value, "boat")
     capacity = check_capacity(kind)
     match_at = time.perf_counter()
@@ -333,6 +360,17 @@ def finish(request_id: str) -> None:
         "seats": best.capacity_remaining if best else 0,
     })
     matching_ms = int((time.perf_counter() - matching_started) * 1000)
+    emit_pipeline_step(
+        request_id,
+        "matching",
+        "complete",
+        matching_output,
+        {
+            "team": best.resource_name if best else None,
+            "tool": "find_teams",
+            "travel_mode": getattr(best, "travel_mode", None) if best else None,
+        },
+    )
     explain_context = {"facts": facts, "matching": json.loads(matching_output), "free_teams": capacity["available"], "inventory_explanation": best.explanation if best else None}
     explained = review("Explainer", explain_context, explanation)
 
@@ -368,6 +406,12 @@ def finish(request_id: str) -> None:
         latest.analysis = req.analysis
         latest.analysis_status = "complete"
         storage_service.save_request(latest, actor="pipeline")
+    emit_pipeline_step(
+        request_id,
+        "approval",
+        "waiting",
+        "Awaiting human approval. Nothing is dispatched until a coordinator approves.",
+    )
 
 
 def _dedupe_output(req: StoredRequest) -> str:

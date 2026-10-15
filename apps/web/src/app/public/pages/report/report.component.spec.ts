@@ -13,7 +13,7 @@ describe('ReportComponent confirmation gate', () => {
   const lastSynced = signal<SyncedReport | null>(null);
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj('ApiClientService', ['sendChatTurn', 'submitReport', 'getScenario', 'getScenarios']);
+    api = jasmine.createSpyObj('ApiClientService', ['sendChatTurn', 'submitReport', 'getScenario', 'getScenarios', 'submitSampleReport']);
     api.getScenarios.and.returnValue(of([
       { id: 'flood', title: 'Urban Flood Relief', description: '', incident_types: ['rescue'], tiles: [], follow_up_questions: {}, urgency_rules: {}, resource_types: [], safety_line_ids: ['call_112'] },
     ]));
@@ -36,6 +36,16 @@ describe('ReportComponent confirmation gate', () => {
       report_id: 'rpt_1',
       request_id: 'req_1',
       status_token: 'tok_1',
+      summary: 'ok',
+      urgency_score: 10,
+      dedupe_decision: 'new',
+      flags: [],
+      safety_line: 'Call 112',
+    }));
+    api.submitSampleReport.and.returnValue(of({
+      report_id: 'rpt_s',
+      request_id: 'req_s',
+      status_token: 'tok_s',
       summary: 'ok',
       urgency_score: 10,
       dedupe_decision: 'new',

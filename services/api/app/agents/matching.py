@@ -45,6 +45,8 @@ class MatchProposal(BaseModel):
     no_nearby: bool = False
     wait_minutes: Optional[int] = None
     wait_team_name: Optional[str] = None
+    # Honest boat-vs-road comparison from the same haversine distance. Never invents closures.
+    route_note: Optional[str] = None
 
 
 def _explain_together(request: StoredRequest, candidates: list, use_model: bool = False) -> list:
@@ -179,6 +181,7 @@ class MatchingAgent:
                     no_nearby=breakdown.distance_km > NEARBY_KM,
                     wait_minutes=wait_minutes if is_fallback else None,
                     wait_team_name=wait_team_name if is_fallback else None,
+                    route_note=route_compare_note(breakdown.distance_km, travel_mode_for(res)),
                 )
             )
 
@@ -214,6 +217,24 @@ def eta_for_distance(distance_km: float, mode: str = "road") -> Optional[int]:
         return None
     speed = BOAT_KMH if mode == "water" else LAND_KMH
     return max(1, round((distance_km / speed) * 60))
+
+
+def route_compare_note(distance_km: float, mode: str) -> Optional[str]:
+    """Boat vs road using the same measured distance. Does not invent road closures."""
+    if distance_km is None or distance_km < 0:
+        return None
+    water_min = max(1, round((distance_km / BOAT_KMH) * 60))
+    road_min = max(1, round((distance_km / LAND_KMH) * 60))
+    km = round(distance_km, 1)
+    if mode == "water":
+        return (
+            f"Boat chosen: {km} km by water about {water_min} min "
+            f"vs {km} km by road about {road_min} min (straight-line; no live road-closure feed)."
+        )
+    return (
+        f"Road chosen: {km} km by road about {road_min} min "
+        f"vs {km} km by water about {water_min} min (straight-line; no live road-closure feed)."
+    )
 
 
 # How much farther than the nearest team we still offer as an alternative.

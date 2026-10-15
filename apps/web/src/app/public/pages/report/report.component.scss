@@ -8,6 +8,7 @@
   .spark { width:64px; height:64px; border-radius:var(--r4); display:grid; place-items:center; color:var(--on-brand); background:var(--brand); }
   h2 { margin:4px 0 0; font:var(--tp-hero); } .where { margin:0; width:min(100%, 34ch); display:flex; flex-direction:row; align-items:center; gap:8px; font:var(--tp-body); color:var(--text-2); background:var(--surface-2); padding:8px 12px; border-radius:14px; } }
 .chips { display:flex; flex-direction:column; gap:10px; width:100%; max-width:420px; margin-top:8px; }
+.samples { display:flex; flex-direction:column; gap:8px; width:100%; max-width:420px; margin-top:8px; }
 .where span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .where .loc-change { flex:none; margin-left:auto; border:0; background:transparent; color:var(--brand); font:var(--tp-label); min-height:44px; padding:0; cursor:pointer; text-decoration:underline; }
 .chip { min-height:56px; border-radius:var(--r3); border:1px solid var(--border); background:var(--card); color:var(--text); font:var(--tp-label); cursor:pointer; padding:0 16px; text-align:left; box-shadow:var(--e1); }

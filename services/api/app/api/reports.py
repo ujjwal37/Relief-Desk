@@ -55,6 +55,8 @@ class ReportSubmitRequest(BaseModel):
     scenario_id: str = "flood"
     voice_note_id: Optional[str] = None
     audio_base64: Optional[str] = None
+    image_base64: Optional[str] = None
+    mime_type: Optional[str] = None
     structured: Optional[StructuredReportFacts] = None
     idempotency_key: Optional[str] = None
     raw_text: Optional[str] = None
@@ -101,6 +103,17 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     asr_confidence: Optional[float] = None
     report_text: str = payload.text or ""
 
+    media_bytes = None
+    media_mime = None
+    if payload.image_base64:
+        import base64
+
+        try:
+            media_bytes = base64.b64decode(payload.image_base64, validate=True)
+            media_mime = payload.mime_type or "image/jpeg"
+            payload.channel = "photo" if payload.channel == "text" else payload.channel
+        except Exception:
+            media_bytes = None
     if payload.channel == "voice" or payload.voice_note_id or payload.audio_base64:
         asr_res = asr_service.transcribe(
             voice_note_id=payload.voice_note_id,
@@ -111,6 +124,21 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         asr_confidence = asr_res.asr_confidence
         if not report_text.strip():
             report_text = transcript
+        if payload.audio_base64 and media_bytes is None:
+            import base64
+
+            try:
+                media_bytes = base64.b64decode(payload.audio_base64, validate=True)
+                media_mime = "audio/wav"
+            except Exception:
+                media_bytes = None
+        if payload.voice_note_id and media_bytes is None:
+            from pathlib import Path
+
+            wav = Path(__file__).resolve().parents[3] / "data" / "synthetic" / "voice" / f"{payload.voice_note_id}.wav"
+            if wav.exists():
+                media_bytes = wav.read_bytes()
+                media_mime = "audio/wav"
 
     # 1. Rate limiting check (flags only, never deletes)
     is_limited, _ = rate_limiter.check_and_record(payload.source_id)
@@ -187,6 +215,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         try:
             finished["response"] = _enrich_report(
                 payload, req_id, raw_report.id, report_text, citizen_text, flags, transcript, asr_confidence,
+                media_bytes, media_mime,
             )
         except Exception:
             logger.exception("Background intake failed for %s", req_id)
@@ -309,6 +338,8 @@ def _enrich_report(
     flags: List[str],
     transcript: Optional[str],
     asr_confidence: Optional[float],
+    media_bytes: Optional[bytes] = None,
+    media_mime: Optional[str] = None,
 ) -> ReportSubmitResponse:
     """Duplicate check first, from rules and embeddings, so a merge shows in seconds.
 
@@ -338,7 +369,7 @@ def _enrich_report(
         stored = storage_service.get_request(req_id) or req_obj
         return _response_for(raw_report, stored, decision.decision.value, flags, transcript, asr_confidence)
 
-    refined = _refine_with_model(payload, req_id, report_id, report_text, citizen_text, flags)
+    refined = _refine_with_model(payload, req_id, report_id, report_text, citizen_text, flags, media_bytes, media_mime)
     if refined is not None:
         decision = refined
     stored = storage_service.get_request(req_id) or req_obj
@@ -402,6 +433,8 @@ def _refine_with_model(
     report_text: str,
     citizen_text: str,
     flags: List[str],
+    media_bytes: Optional[bytes] = None,
+    media_mime: Optional[str] = None,
 ):
     """The one model call for this report. Critical cases get a slot first."""
     from app.agents.matching import matching_agent
@@ -409,7 +442,12 @@ def _refine_with_model(
 
     waiting = storage_service.get_request(req_id)
     with ai_priority(report_priority(waiting.urgency_score if waiting else 0)):
-        analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
+        if media_bytes and media_mime:
+            analysis = intake_agent.parse_media_report(
+                report_text, media_bytes, media_mime, language_hint=payload.lang
+            )
+        else:
+            analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
         ai_usage = llm_client.last_ai.model_copy()
     trans_res = _translation_for(report_text, analysis, ai_usage)
     ai_source = {"gemini": "gemini", "cache": "recorded", "antigravity-local": "antigravity-local",

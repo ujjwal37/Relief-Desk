@@ -99,7 +99,7 @@ export interface StructuredReportFacts {
 
 export interface ReportSubmitRequest {
   text: string;
-  channel?: 'text' | 'voice' | 'form';
+  channel?: 'text' | 'voice' | 'form' | 'photo';
   lang?: string;
   source_id?: string;
   location_pin?: { lat: number; lng: number };
@@ -109,6 +109,10 @@ export interface ReportSubmitRequest {
   idempotency_key?: string;
   /** Citizen's own words, kept separate from the machine summary. */
   raw_text?: string;
+  voice_note_id?: string;
+  audio_base64?: string;
+  image_base64?: string;
+  mime_type?: 'image/jpeg' | 'image/png' | 'image/webp';
 }
 
 export interface ReportSubmitResponse {
@@ -268,6 +272,8 @@ export interface MatchProposal {
   wait_minutes?: number | null;
   wait_team_name?: string | null;
   overcommit_warning: boolean;
+  travel_mode?: 'water' | 'road' | string;
+  route_note?: string | null;
 }
 
 /** A citizen report from the last few minutes, for the desk's Just reported strip. */

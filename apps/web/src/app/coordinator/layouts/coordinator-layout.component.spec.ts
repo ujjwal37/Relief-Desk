@@ -28,7 +28,13 @@ describe('CoordinatorLayoutComponent demo phone', () => {
           provide: ActivatedRoute,
           useValue: { queryParamMap: of(convertToParamMap(demo ? { demo } : {})) },
         },
-        { provide: ApiClientService, useValue: { getScenarios: () => of([]), getHealth: () => of({ demo_mode: false }) } },
+        { provide: ApiClientService, useValue: {
+          getScenarios: () => of([]),
+          getHealth: () => of({ demo_mode: false }),
+          getAiHealth: () => of({ provider: 'fallback', model: '', label: 'Rules fallback' }),
+          generateSitrep: () => of({ brief: '', counts: { pending: 0, by_tier: {}, rescue_open: 0, rooftop_like: 0, free_boats: 0, free_medical: 0, free_food: 0, free_shelter: 0, boat_gap: 0, gaps: [] }, drafts: { sms_en: '', sms_hi: '', sms_ml: '', whatsapp_en: '', whatsapp_hi: '', whatsapp_ml: '' }, ai: { provider: 'fallback' }, cached: false, send: false }),
+          submitSampleReport: () => of({ request_id: 'INC-S', report_id: 'r', status_token: 't', summary: '', urgency_score: 0, dedupe_decision: 'new', flags: [], safety_line: '' }),
+        } },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(CoordinatorLayoutComponent);
@@ -111,6 +117,14 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     expect(fixture.componentInstance.ui.searchQuery()).toBe('Chalakudy');
     expect(nav).toHaveBeenCalledWith('/coordinator/command');
     fixture.componentInstance.ui.searchQuery.set('');
+  });
+
+  it('shows an honest AI health pill from /api/health/ai', async () => {
+    const fixture = await setup(null, true);
+    const pill = fixture.nativeElement.querySelector('[data-testid="ai-health"]') as HTMLElement;
+    expect(pill).toBeTruthy();
+    expect(pill.textContent).toContain('Rules fallback');
+    expect(fixture.nativeElement.querySelector('[data-testid="restart-tour"]')).toBeTruthy();
   });
 
   it('hides the phone frame when demo mode is off', async () => {

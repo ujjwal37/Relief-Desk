@@ -194,3 +194,13 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | ID | Task | Owner | Status | Depends | Acceptance criteria |
 |---|---|---|---|---|---|
 | UI-REF-04 | Replace Angular browser icon with the website shield-and-cross logo | C | DONE | IMP-04 | SVG and ICO match website logo; served page references branded icon; production build passes |
+
+## AI x-factor (judge-visible Gemini, 15 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| XF-01 | Guided 6-step tour after demo login, Skip + Restart, EN/HI | C | DONE | STAB-01 | Welcome, sample report, urgency queue, case AI/route, How it decided, approve then Ask the desk |
+| XF-02 | Visible AI chips, original vs English, duplicate match card, honest Gemini live / Rules fallback pill | C | DONE | XF-01 | Pill from `/api/health/ai`; chips only when Gemini or recorded; no invented metrics |
+| XF-03 | One multimodal Gemini voice/photo intake + one-click synthetic samples | C | DONE | XF-02 | Hindi/voice/photo samples; fallback when Gemini is off; assets are synthetic |
+| XF-04 | Live agent trace over existing SSE | C | DONE | XF-03 | pipeline.step strip: extract, dedupe %, triage, team search, awaiting human |
+| XF-05 | SITREP from real counts + EN/HI/ML drafts only | C | DONE | XF-04 | Numbers from open cases/resources; send=false; 120s cache |
+| XF-06 | Boat vs road note in How it decided | C | DONE | XF-05 | Same haversine distance; no invented closures |

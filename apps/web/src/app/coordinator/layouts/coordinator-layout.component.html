@@ -22,6 +22,9 @@
       </div>
 
       <div class="right">
+        <span class="ai-pill" data-testid="ai-health" [class.live]="aiHealth()?.label === 'Gemini live'" [class.off]="aiHealth()?.label !== 'Gemini live'" [attr.title]="aiHealth()?.model || ''">{{ aiHealth()?.label || ('xfactor.rulesFallback' | rdTranslate) }}</span>
+        <button type="button" class="tour-btn keep" data-testid="restart-tour" (click)="takeTour()">{{ 'xfactor.restartTour' | rdTranslate }}</button>
+        <button type="button" class="tour-btn keep" data-testid="sitrep-open" (click)="openSitrep()">{{ 'xfactor.sitrepButton' | rdTranslate }}</button>
         <span class="live" data-testid="live-badge" [class.retry]="live.state() === 'reconnecting'" [class.off]="live.state() === 'offline'"><i></i>{{ liveLabel() | rdTranslate }}</span>
         @if (demoAllowed()) {
           <button type="button" class="surge-button" [disabled]="surgeBusy()" (click)="simulateSurge()">{{ (surgeBusy() ? 'demo.surgeRunning' : 'demo.surgeButton') | rdTranslate }}</button>
@@ -66,6 +69,8 @@
               }
               <button type="button" class="item" (click)="resetDemo()">{{ 'ux.resetDemo' | rdTranslate }}</button>
               <button type="button" class="item" (click)="loadFullScenario()">{{ 'ux.loadFull' | rdTranslate }}</button>
+              <button type="button" class="item" (click)="takeTour()">{{ 'xfactor.restartTour' | rdTranslate }}</button>
+              <button type="button" class="item" (click)="openSitrep()">{{ 'xfactor.sitrepButton' | rdTranslate }}</button>
               <button type="button" class="item" (click)="openWeights()">{{ 'coord.weights' | rdTranslate }}</button>
               <button type="button" class="item" (click)="toggleDemo()">{{ (showPhone() ? 'demo.hide' : 'coord.demoPhone') | rdTranslate }}</button>
               <button type="button" class="item out" (click)="logout()">{{ 'coord.signOut' | rdTranslate }}</button>
@@ -76,6 +81,7 @@
     </header>
 
     <p class="safety-note" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
+    <p class="problem" data-tour="welcome">{{ 'xfactor.problemLine' | rdTranslate }}</p>
     @if (mergeNotice()) { <p class="surge-note" role="status">{{ mergeNotice() }}</p> }
     @if (surgeNotice()) { <p class="surge-note" role="status">{{ surgeNotice() }}</p> }
     @if (guideOpen()) {
@@ -95,5 +101,8 @@
       <iframe [attr.title]="'ui.publicReport' | rdTranslate" src="/report"></iframe>
     </aside>
   }
-  <app-tour />
+  <app-tour (action)="onTourAction($event)" />
+  @if (sitrepOpen()) {
+    <app-sitrep-panel [report]="sitrep()" [busy]="sitrepBusy()" [error]="sitrepError()" (closed)="sitrepOpen.set(false)" />
+  }
 </div>

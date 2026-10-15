@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 import { testProviderWord } from './provider-label';
@@ -227,7 +227,9 @@ export class AskDeskComponent {
   private readonly api = inject(ApiClientService);
   private readonly lang = inject(LanguageService);
   readonly fullPage = input(false);
+  readonly seedQuestion = input('');
   readonly picked = output<string>();
+  private seeded = false;
   readonly suggestions = ['ux.suggestWaiting', 'ux.suggestElderly', 'ux.suggestBoats'];
   readonly examples = [
     { q: 'ux.suggestWaiting', a: 'ux.exampleA1' },
@@ -240,6 +242,16 @@ export class AskDeskComponent {
   readonly thread = signal<{ question: string; answer: DeskAnswer }[]>([]);
   readonly showTrace = signal(false);
   question = '';
+
+  constructor() {
+    effect(() => {
+      const seed = this.seedQuestion().trim();
+      if (!seed || this.seeded) return;
+      this.seeded = true;
+      this.question = seed;
+      this.ask();
+    });
+  }
 
   useSuggestion(key: string): void {
     this.question = this.lang.translate(key);

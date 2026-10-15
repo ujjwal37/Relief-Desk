@@ -34,6 +34,7 @@ class Guard:
         self.last_failure_at = 0.0
         self.last_failure_reason: str = ""
         self.last_success_at = 0.0
+        self.last_success_iso: str | None = None
         self.half_open = False
         # Repeated trips back off: 30 s, 2 min, 8 min, capped at 15 min.
         self.base_open = 30.0
@@ -66,10 +67,13 @@ class Guard:
             self.sleep(delay)
 
     def record_success(self) -> None:
+        from datetime import datetime, timezone
+
         self.failures = 0
         self.half_open = False
         self.open_for = self.base_open
         self.last_success_at = self.now()
+        self.last_success_iso = datetime.now(timezone.utc).isoformat()
 
     def note_reason(self, reason: str) -> None:
         self.last_failure_at = self.now()

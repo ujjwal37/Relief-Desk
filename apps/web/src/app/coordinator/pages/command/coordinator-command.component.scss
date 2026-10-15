@@ -104,6 +104,12 @@ button { font-family:var(--rd-font-family); -webkit-font-smoothing:antialiased; 
 .detail-scroll > * { flex-shrink:0; }
 .d-head { display:flex; align-items:center; justify-content:space-between; gap:8px; .id { font-size:11px; color:var(--muted); font-weight:400; font-variant-numeric:tabular-nums; } }
 h2 { margin:0; font:600 20px/26px var(--font-sans); letter-spacing:var(--t-panel-ls); color:var(--text); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.samples { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 0; }
+.samples button { min-height:32px; padding:0 10px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--brand); font:600 12px var(--rd-font-family); cursor:pointer; }
+.report-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.report-pair .quote { margin:4px 0 0; font-size:13px; line-height:1.45; }
+.route-note { margin:4px 0 0; font-size:12px; line-height:1.4; color:var(--text-2); }
+@media (max-width: 900px) { .report-pair { grid-template-columns:1fr; } }
 .fact-line { margin:0; font-size:14px; line-height:1.5; color:var(--text-2); }
 .check-line { margin:0; font-size:13px; color:var(--sev-high); }
 .place { margin:0 0 12px; color:var(--muted); font-size:14px; font-weight:400; }
