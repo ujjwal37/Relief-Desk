@@ -46,9 +46,13 @@ def create_coordinator_token(email: str = DEMO_COORDINATOR_EMAIL) -> str:
     return jwt.encode(payload, settings.JWT_SECRET, algorithm="HS256")
 
 
+def is_production() -> bool:
+    return (settings.ENV or "").strip().lower() in ("production", "prod")
+
+
 def verify_coordinator_token(token: str) -> CoordinatorUser:
-    # 1. Accept synthetic demo coordinator token
-    if token == DEMO_COORDINATOR_TOKEN:
+    # 1. The fixed demo token is public in the repo, so it only works outside production.
+    if token == DEMO_COORDINATOR_TOKEN and not is_production():
         return CoordinatorUser(
             uid="demo-coord-01",
             email=DEMO_COORDINATOR_EMAIL,
@@ -120,13 +124,37 @@ def get_current_coordinator(
     return verify_coordinator_token(token)
 
 
+def _password_ok(password: str) -> bool:
+    import hmac
+
+    configured = (settings.COORDINATOR_PASSWORD or "").strip()
+    if configured and hmac.compare_digest(password, configured):
+        return True
+    # The repo's demo password is public, so it only works outside production.
+    return not is_production() and hmac.compare_digest(password, DEMO_COORDINATOR_PASSWORD)
+
+
+def _demo_session() -> "LoginResponse":
+    return LoginResponse(
+        token=create_coordinator_token(DEMO_COORDINATOR_EMAIL),
+        email=DEMO_COORDINATOR_EMAIL,
+        role="coordinator",
+        display_name="Kerala Emergency Coordinator",
+    )
+
+
+@router.post("/auth/demo-login", response_model=LoginResponse)
+def demo_login():
+    """One-click judge login: a real signed JWT for the demo coordinator, only while DEMO_MODE is on."""
+    if not settings.DEMO_MODE:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Demo login is off")
+    return _demo_session()
+
+
 @router.post("/auth/login", response_model=LoginResponse)
 def login(creds: LoginRequest):
     email = creds.email.strip().lower()
-    if (
-        email == DEMO_COORDINATOR_EMAIL.lower()
-        and creds.password == DEMO_COORDINATOR_PASSWORD
-    ):
+    if email == DEMO_COORDINATOR_EMAIL.lower() and _password_ok(creds.password):
         token = create_coordinator_token(DEMO_COORDINATOR_EMAIL)
         return LoginResponse(
             token=token,

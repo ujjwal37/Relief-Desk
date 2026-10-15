@@ -28,7 +28,10 @@ export class AuthService {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored) as UserSession;
+        const session = JSON.parse(stored) as UserSession;
+        // The fixed demo token is refused in production. Sign in again for a real JWT.
+        if (session?.token === DEMO_COORDINATOR_TOKEN) return null;
+        return session;
       }
     } catch {
       // Fallback if localStorage parse fails
@@ -37,29 +40,35 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
-    const trimmedEmail = email.trim().toLowerCase();
-
-    // Verify against synthetic demo coordinator account or valid coordinator credentials
-    if (
-      trimmedEmail === DEMO_COORDINATOR_EMAIL.toLowerCase() &&
-      password === DEMO_COORDINATOR_PASSWORD
-    ) {
-      const session: UserSession = {
-        email: DEMO_COORDINATOR_EMAIL,
-        role: 'coordinator',
-        token: DEMO_COORDINATOR_TOKEN,
-        displayName: 'Kerala Emergency Coordinator',
-      };
-      this.persistSession(session);
-      return { success: true };
-    }
-
-    return { success: false, error: 'Invalid email or password' };
+    return this.signIn('/api/auth/login', { email: email.trim().toLowerCase(), password });
   }
 
+  /** One-click judge login. The API signs a real JWT while its demo mode is on. */
   async loginDemo(): Promise<boolean> {
-    const result = await this.login(DEMO_COORDINATOR_EMAIL, DEMO_COORDINATOR_PASSWORD);
+    const result = await this.signIn('/api/auth/demo-login', {});
     return result.success;
+  }
+
+  private async signIn(url: string, body: Record<string, string>): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) return { success: false, error: 'Invalid email or password' };
+      const data = (await res.json()) as { token: string; email: string; role: string; display_name?: string };
+      if (!data?.token || data.role !== 'coordinator') return { success: false, error: 'Invalid email or password' };
+      this.persistSession({
+        email: data.email,
+        role: 'coordinator',
+        token: data.token,
+        displayName: data.display_name || 'Kerala Emergency Coordinator',
+      });
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Could not reach the server. Try again.' };
+    }
   }
 
   logout(): void {

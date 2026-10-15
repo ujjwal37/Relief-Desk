@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     # Name in the trace label "Test model (<name>)". Empty derives it from the base URL host.
     OPENAI_COMPAT_LABEL: str = ""
     DEMO_MODE: bool = True
+    # "production" on Cloud Run. Locally it stays "development", where the fixed demo token
+    # and the demo password still work for dev and tests.
+    ENV: str = "development"
+    # Optional password for the coordinator form in production. Empty means only the
+    # one-click demo login (DEMO_MODE) can sign in there.
+    COORDINATOR_PASSWORD: str = ""
     # small: two cases and a few teams. full: the flood pack (benchmark and record_ai read the files directly).
     DEMO_SEED: str = "small"
 
