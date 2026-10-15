@@ -97,6 +97,7 @@ def test_route_compare_uses_the_same_distance():
     note = route_compare_note(0.7, "water")
     assert note is not None
     assert "0.7 km by water" in note
-    assert "0.7 km by road" in note
+    assert note.startswith("Boat team")
+    assert "by road" in note
     assert "no live road-closure" in note
     assert "82" not in note

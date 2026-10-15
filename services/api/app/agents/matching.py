@@ -228,12 +228,13 @@ def route_compare_note(distance_km: float, mode: str) -> Optional[str]:
     km = round(distance_km, 1)
     if mode == "water":
         return (
-            f"Boat chosen: {km} km by water about {water_min} min "
-            f"vs {km} km by road about {road_min} min (straight-line; no live road-closure feed)."
+            f"Boat team: {km} km by water, about {water_min} min. A boat can reach people cut off by "
+            f"flood water; by road it would be about {road_min} min, but only if roads are open "
+            f"(straight-line estimate; no live road-closure feed)."
         )
     return (
-        f"Road chosen: {km} km by road about {road_min} min "
-        f"vs {km} km by water about {water_min} min (straight-line; no live road-closure feed)."
+        f"Road team: {km} km by road, about {road_min} min (a boat would need about {water_min} min). "
+        f"Straight-line estimate; no live road-closure feed."
     )
 
 

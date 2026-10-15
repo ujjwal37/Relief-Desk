@@ -39,6 +39,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   private mergeTimer?: ReturnType<typeof setTimeout>;
   private stopSurge?: () => void;
   private surgePoll?: ReturnType<typeof setInterval>;
+  private aiHealthPoll?: ReturnType<typeof setInterval>;
   readonly demoOn = signal(false);
   readonly wideEnough = signal(true);
   readonly showPhone = computed(() => this.demoOn() && this.wideEnough());
@@ -87,10 +88,9 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.ui.loadAlerts();
     this.live.connectDesk();
     this.api.getHealth().subscribe({ next: (health) => this.demoAllowed.set(!!health.demo_mode), error: () => this.demoAllowed.set(false) });
-    this.api.getAiHealth?.().subscribe({
-      next: (health) => this.aiHealth.set(health),
-      error: () => this.aiHealth.set({ provider: 'fallback', model: '', label: 'Rules fallback' }),
-    });
+    this.refreshAiHealth();
+    // The pill reads "Rules fallback" until the first Gemini call succeeds; keep it current.
+    this.aiHealthPoll = setInterval(() => this.refreshAiHealth(), 15000);
     this.maybeStartTour();
     this.stopSurge = this.live.onEvent((event) => {
       if (event.type === 'case.merged' && event.request_ids?.[0]) {
@@ -143,6 +143,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.media?.removeEventListener('change', this.onMedia);
     clearInterval(this.surgePoll);
+    clearInterval(this.aiHealthPoll);
     clearTimeout(this.mergeTimer);
     this.stopSurge?.();
     this.stopQuery?.();
@@ -182,6 +183,13 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     }
     this.ui.finishTour();
     void this.router.navigate(['/coordinator/agent'], { queryParams: { ask: 'pending' } });
+  }
+
+  refreshAiHealth(): void {
+    this.api.getAiHealth?.().subscribe({
+      next: (health) => this.aiHealth.set(health),
+      error: () => this.aiHealth.set({ provider: 'fallback', model: '', label: 'Rules fallback' }),
+    });
   }
 
   sendSample(kind: 'hindi' | 'voice' | 'photo'): void {
