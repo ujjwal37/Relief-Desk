@@ -41,6 +41,18 @@ export function kindsFor(type: string): DeskKind[] {
  * One EventSource per page. The desk uses the coordinator token.
  * The status page uses its report id and status token, and only hears that case.
  */
+/** Cloud Run origin for the live stream. Firebase Hosting buffers rewritten responses, so a
+ * stream through it never reaches the browser. Override with window.RD_STREAM_BASE. */
+export const CLOUD_RUN_STREAM_BASE = 'https://relief-desk-api-495181973767.asia-south1.run.app';
+
+export function streamBase(): string {
+  if (typeof window === 'undefined') return '';
+  const override = (window as unknown as { RD_STREAM_BASE?: string }).RD_STREAM_BASE;
+  if (typeof override === 'string') return override.replace(/\/$/, '');
+  const host = window.location?.hostname || '';
+  return /\.(web\.app|firebaseapp\.com)$/.test(host) ? CLOUD_RUN_STREAM_BASE : '';
+}
+
 @Injectable({ providedIn: 'root' })
 export class LiveEventsService implements OnDestroy {
   private readonly auth = inject(AuthService);
@@ -73,14 +85,14 @@ export class LiveEventsService implements OnDestroy {
       return;
     }
     this.mode = 'desk';
-    this.open(`/api/events?token=${encodeURIComponent(token)}`);
+    this.open(`${streamBase()}/api/events?token=${encodeURIComponent(token)}`);
   }
 
   /** Reporter status. The server only forwards events for this case. */
   connectReport(reportId: string, statusToken: string): void {
     if (!reportId || !statusToken) return;
     this.mode = 'report';
-    this.open(`/api/events?report_id=${encodeURIComponent(reportId)}&status_token=${encodeURIComponent(statusToken)}`);
+    this.open(`${streamBase()}/api/events?report_id=${encodeURIComponent(reportId)}&status_token=${encodeURIComponent(statusToken)}`);
   }
 
   onEvent(listener: (event: LiveEvent) => void): () => void {
