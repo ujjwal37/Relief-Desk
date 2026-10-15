@@ -3,9 +3,9 @@ import { bandCounts, needsReview, urgencyBand } from './band.util';
 describe('band.util', () => {
   it('maps scores to the same bands used on cards', () => {
     expect(urgencyBand(94)).toBe('critical');
-    expect(urgencyBand(75)).toBe('critical');
-    expect(urgencyBand(74.9)).toBe('high');
-    expect(urgencyBand(70)).toBe('high');
+    expect(urgencyBand(80)).toBe('critical');
+    expect(urgencyBand(75)).toBe('high');
+    expect(urgencyBand(60)).toBe('high');
     expect(urgencyBand(55)).toBe('medium');
     expect(urgencyBand(10)).toBe('low');
   });
@@ -15,7 +15,7 @@ describe('band.util', () => {
     const c = bandCounts(list);
     expect(c.critical).toBe(list.filter((r) => urgencyBand(r.urgency_score) === 'critical').length);
     expect(c.critical).toBe(3);
-    expect(c.high).toBe(0);
+    expect(c.high).toBe(1);
     expect(c.critical + c.high + c.medium + c.low).toBe(c.total);
   });
 

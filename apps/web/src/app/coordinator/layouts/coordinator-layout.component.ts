@@ -1,16 +1,17 @@
 import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { ApiClientService, AuthService, LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, ThemeMode, ThemeService } from '@rd/shared';
+import { AiHealthResponse, ApiClientService, AuthService, LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, SitrepResponse, ThemeMode, ThemeService } from '@rd/shared';
 import { ScenarioService } from '../../core/services/scenario.service';
 import { CoordUiService } from '../../core/services/coord-ui.service';
 import { LiveEventsService } from '../../core/live-events.service';
 import { TourComponent } from '../../core/components/tour.component';
+import { SitrepPanelComponent } from '../agents/sitrep-panel.component';
 
 @Component({
   selector: 'app-coordinator-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, RdTranslatePipe, TourComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, RdTranslatePipe, TourComponent, SitrepPanelComponent],
   templateUrl: './coordinator-layout.component.html',
   styleUrl: './coordinator-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,12 +27,19 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
 
   readonly demoAllowed = signal(false);
+  readonly aiHealth = signal<AiHealthResponse | null>(null);
+  readonly sitrepOpen = signal(false);
+  readonly sitrepBusy = signal(false);
+  readonly sitrepError = signal(false);
+  readonly sitrep = signal<SitrepResponse | null>(null);
+  private sitrepAt = 0;
   readonly surgeBusy = signal(false);
   readonly surgeNotice = signal('');
   readonly mergeNotice = signal('');
   private mergeTimer?: ReturnType<typeof setTimeout>;
   private stopSurge?: () => void;
   private surgePoll?: ReturnType<typeof setInterval>;
+  private aiHealthPoll?: ReturnType<typeof setInterval>;
   readonly demoOn = signal(false);
   readonly wideEnough = signal(true);
   readonly showPhone = computed(() => this.demoOn() && this.wideEnough());
@@ -80,6 +88,11 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.ui.loadAlerts();
     this.live.connectDesk();
     this.api.getHealth().subscribe({ next: (health) => this.demoAllowed.set(!!health.demo_mode), error: () => this.demoAllowed.set(false) });
+    this.refreshAiHealth();
+    this.prewarmSitrep();
+    // The pill reads "Rules fallback" until the first Gemini call succeeds; keep it current.
+    this.aiHealthPoll = setInterval(() => this.refreshAiHealth(), 15000);
+    this.maybeStartTour();
     this.stopSurge = this.live.onEvent((event) => {
       if (event.type === 'case.merged' && event.request_ids?.[0]) {
         this.mergeNotice.set(this.lang.translate('demo.mergeNotice').replace('{id}', event.request_ids[0]));
@@ -131,6 +144,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.media?.removeEventListener('change', this.onMedia);
     clearInterval(this.surgePoll);
+    clearInterval(this.aiHealthPoll);
     clearTimeout(this.mergeTimer);
     this.stopSurge?.();
     this.stopQuery?.();
@@ -151,6 +165,79 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   }
   openWeights(): void { this.menuOpen.set(false); this.ui.weightsOpen.set(true); }
   takeTour(): void { this.menuOpen.set(false); this.router.navigateByUrl('/coordinator/command').then(() => setTimeout(() => this.ui.startTour(), 150)); }
+
+  private maybeStartTour(): void {
+    try {
+      if (sessionStorage.getItem('rd_start_tour') !== '1') return;
+      sessionStorage.removeItem('rd_start_tour');
+    } catch {
+      return;
+    }
+    void this.router.navigateByUrl('/coordinator/command').then(() => setTimeout(() => this.ui.startTour(), 280));
+  }
+
+  onTourAction(kind: 'sample' | 'ask'): void {
+    if (kind === 'sample') {
+      this.sendSample('hindi');
+      this.ui.tourStep.update((step) => Math.min(5, step + 1));
+      return;
+    }
+    this.ui.finishTour();
+    void this.router.navigate(['/coordinator/agent'], { queryParams: { ask: 'pending' } });
+  }
+
+  refreshAiHealth(): void {
+    this.api.getAiHealth?.().subscribe({
+      next: (health) => this.aiHealth.set(health),
+      error: () => this.aiHealth.set({ provider: 'fallback', model: '', label: 'Rules fallback' }),
+    });
+  }
+
+  sendSample(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): void {
+    if (this.surgeBusy()) return;
+    this.surgeBusy.set(true);
+    this.api.submitSampleReport(kind).subscribe({
+      next: (res) => {
+        this.surgeBusy.set(false);
+        this.surgeNotice.set(this.lang.translate('xfactor.sampleDone').replace('{id}', res.request_id));
+        void this.router.navigate(['/coordinator/command'], { queryParams: { case: res.request_id } });
+      },
+      error: () => {
+        this.surgeBusy.set(false);
+        this.surgeNotice.set(this.lang.translate('xfactor.sampleFailed'));
+      },
+    });
+  }
+
+  private prewarmSitrep(): void {
+    this.api.generateSitrep().subscribe({
+      next: (report) => {
+        this.sitrep.set(report);
+        this.sitrepAt = Date.now();
+      },
+      error: () => undefined,
+    });
+  }
+
+  openSitrep(): void {
+    this.menuOpen.set(false);
+    this.sitrepOpen.set(true);
+    this.sitrepError.set(false);
+    const now = Date.now();
+    if (this.sitrep() && now - this.sitrepAt < 120000) return;
+    this.sitrepBusy.set(true);
+    this.api.generateSitrep().subscribe({
+      next: (report) => {
+        this.sitrep.set(report);
+        this.sitrepBusy.set(false);
+        this.sitrepAt = Date.now();
+      },
+      error: () => {
+        this.sitrepBusy.set(false);
+        this.sitrepError.set(true);
+      },
+    });
+  }
   selectScenario(id: string): void {
     const open = () => { this.scenarioService.select(id); this.menuOpen.set(false); location.reload(); };
     if (this.demoAllowed()) this.api.loadScenarioDemo(id).subscribe({ next: open, error: () => this.surgeNotice.set(this.lang.translate('demo.scenarioFailed')) });

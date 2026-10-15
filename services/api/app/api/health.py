@@ -26,18 +26,21 @@ def ai_health():
     rate = (llm_client.cache_hits / looked) if looked else 0.0
     if oc.enabled():
         provider, model, label = oc.PROVIDER, oc.model(), oc.label()
-    elif llm_client.gemini_live() and not (llm_client.guard.circuit_open() or llm_client.guard.failing()):
-        # "Gemini (untested)" until this instance has had one successful live call.
-        tested = bool(llm_client.guard.last_success_at)
-        provider, model, label = "gemini", settings.GEMINI_MODEL, ("Gemini" if tested else "Gemini (untested)")
+    elif (
+        llm_client.gemini_live()
+        and bool(llm_client.guard.last_success_at)
+        and not (llm_client.guard.circuit_open() or llm_client.guard.failing())
+    ):
+        provider, model, label = "gemini", settings.GEMINI_MODEL, "Gemini live"
     else:
-        provider, model, label = "fallback", settings.GEMINI_MODEL, "Rules"
+        provider, model, label = "fallback", settings.GEMINI_MODEL, "Rules fallback"
     return {
         "provider": provider,
         "model": model,
         "label": label,
         "embed_model": (oc.embed_model() or None) if oc.requested() else settings.GEMINI_EMBED_MODEL,
         "cache_hit_rate": round(rate, 3),
+        "last_success_at": llm_client.guard.last_success_iso,
         "quota": {
             "daily_cap": llm_client.daily_cap,
             "calls": llm_client.call_count,

@@ -218,7 +218,8 @@ def test_approved_status_uses_the_match_distance_and_eta():
     assert status_res.status_code == 200
     data = status_res.json()
     assert data["eta_minutes"] == best.eta_minutes
-    assert data["eta_display"] == f"{_format_km(best.breakdown.distance_km)} km · about {best.eta_minutes} min"
+    suffix = " by boat" if best.travel_mode == "water" else ""
+    assert data["eta_display"] == f"{_format_km(best.breakdown.distance_km)} km · about {best.eta_minutes} min{suffix}"
     assert "~12" not in data["eta_display"]
 
 

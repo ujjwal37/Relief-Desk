@@ -59,7 +59,10 @@ export class CoordinatorLoginComponent {
     this.isSubmitting.set(true);
     const ok = await this.authService.loginDemo();
     this.isSubmitting.set(false);
-    if (ok) await this.goToDashboard();
+    if (ok) {
+      try { sessionStorage.setItem('rd_start_tour', '1'); } catch { /* private mode */ }
+      await this.goToDashboard();
+    }
   }
 
   forgot(event: Event): void {

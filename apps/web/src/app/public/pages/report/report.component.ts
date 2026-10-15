@@ -82,6 +82,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly slow = signal<boolean>(false);
   readonly reviewOpen = signal<boolean>(false);
   readonly photoUsed = signal(false);
+  readonly sampleBusy = signal(false);
   readonly kbOffset = signal<number>(0);
   private slowTimer: ReturnType<typeof setTimeout> | null = null;
   private voiceTimers: ReturnType<typeof setTimeout>[] = [];
@@ -402,6 +403,22 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     const words = this.sampleUtterance().split(' ');
     words.forEach((_, i) => {
       this.voiceTimers.push(setTimeout(() => this.transcript.set(words.slice(0, i + 1).join(' ')), 350 + i * 180));
+    });
+  }
+
+  sendSample(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): void {
+    if (this.sampleBusy() || this.isLoading()) return;
+    this.sampleBusy.set(true);
+    this.apiClient.submitSampleReport(kind).subscribe({
+      next: (res: ReportSubmitResponse) => {
+        this.sampleBusy.set(false);
+        this.myRequests.add(res.report_id, res.status_token, kind);
+        announceReport(res.report_id, res.request_id);
+        this.router.navigate(['/status'], {
+          queryParams: { id: res.report_id, token: res.status_token, new: 1 },
+        });
+      },
+      error: () => this.sampleBusy.set(false),
     });
   }
 

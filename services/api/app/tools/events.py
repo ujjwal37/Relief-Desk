@@ -89,6 +89,28 @@ def publish(event: dict[str, Any]) -> None:
             pass
 
 
+def emit_pipeline_step(
+    request_id: str,
+    agent: str,
+    status: str,
+    summary: str = "",
+    extra: Optional[dict[str, Any]] = None,
+) -> None:
+    """Live agent-trace row. Does not invent scores; callers pass measured values only."""
+    body: dict[str, Any] = {
+        "type": "pipeline.step",
+        "id": request_id,
+        "request_id": request_id,
+        "request_ids": [request_id],
+        "agent": agent,
+        "status": status,
+        "summary": (summary or "")[:240],
+    }
+    if extra:
+        body.update(extra)
+    publish(body)
+
+
 def emit_audit(action: str, target: str, after: Optional[dict[str, Any]]) -> None:
     kind = ACTION_KIND.get(action)
     if not kind:

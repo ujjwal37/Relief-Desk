@@ -1,4 +1,4 @@
-"""Rescue goes to a boat. A shelter is only a labelled fallback when no boat is free."""
+"""Rescue goes to a boat. Busy boats are not replaced with a shelter."""
 from app.agents.matching import matching_agent
 from app.models.firestore_models import ResourceKind, ResourceStatus
 from app.models.schemas import HazardType, IncidentType, VulnerableFlags
@@ -10,8 +10,8 @@ def _rescue(req_id: str) -> StoredRequest:
     return StoredRequest(
         id=req_id,
         type=IncidentType.RESCUE,
-        lat=26.852,
-        lng=80.940,
+        lat=9.436,
+        lng=76.398,
         people_count=4,
         hazard=HazardType.WATER_RISING,
         urgency_score=90.0,
@@ -29,7 +29,7 @@ def test_rescue_matches_a_boat_not_a_shelter():
     assert all(not p.is_fallback for p in proposals)
 
 
-def test_rescue_uses_labelled_shelter_only_when_boats_are_busy():
+def test_rescue_offers_nothing_when_boats_are_busy():
     storage_service.load_seed_resources()
     try:
         for boat in storage_service.list_resources(kind=ResourceKind.BOAT):
@@ -38,11 +38,6 @@ def test_rescue_uses_labelled_shelter_only_when_boats_are_busy():
         req.lat = 9.436
         req.lng = 76.398
         proposals = matching_agent.find_matches(req, top_n=3, save_to_storage=False)
-        assert proposals
-        assert proposals[0].is_fallback is True
-        assert proposals[0].resource_kind == ResourceKind.SHELTER
-        assert proposals[0].fallback_label == "coord.noBoatFree"
-        assert proposals[0].wait_minutes is not None and proposals[0].wait_minutes >= 1
-        assert proposals[0].wait_team_name
+        assert proposals == []
     finally:
         storage_service.load_seed_resources()

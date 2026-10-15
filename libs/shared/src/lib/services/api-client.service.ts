@@ -29,6 +29,48 @@ export interface HealthResponse {
   demo_mode: boolean;
 }
 
+export interface AiHealthResponse {
+  provider: string;
+  model: string;
+  label: string;
+  last_success_at?: string | null;
+  cache_hit_rate?: number;
+  quota?: {
+    daily_cap?: number;
+    calls?: number;
+    circuit?: string;
+    last_success?: boolean;
+    last_failure?: string | null;
+  };
+}
+
+export interface SitrepResponse {
+  brief: string;
+  counts: {
+    pending: number;
+    by_tier: Record<string, number>;
+    rescue_open: number;
+    rooftop_like: number;
+    free_boats: number;
+    free_medical: number;
+    free_food: number;
+    free_shelter: number;
+    boat_gap: number;
+    gaps: string[];
+  };
+  drafts: {
+    sms_en: string;
+    sms_hi: string;
+    sms_ml: string;
+    whatsapp_en: string;
+    whatsapp_hi: string;
+    whatsapp_ml: string;
+  };
+  ai: { provider: string; model?: string | null; fallback_reason?: string | null };
+  cached: boolean;
+  send: false;
+}
+
 export interface ChatTurnPayload {
   session_id?: string;
   message: string;
@@ -54,6 +96,18 @@ export class ApiClientService {
 
   getHealth(): Observable<HealthResponse> {
     return this.http.get<HealthResponse>('/api/health');
+  }
+
+  getAiHealth(): Observable<AiHealthResponse> {
+    return this.http.get<AiHealthResponse>('/api/health/ai');
+  }
+
+  generateSitrep(): Observable<SitrepResponse> {
+    return this.http.post<SitrepResponse>('/api/sitrep', {}, this.getAuthHeaders());
+  }
+
+  submitSampleReport(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): Observable<ReportSubmitResponse> {
+    return this.http.post<ReportSubmitResponse>('/api/demo/sample-report', { kind });
   }
 
   getScenarios(): Observable<ScenarioConfig[]> {

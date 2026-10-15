@@ -11,7 +11,7 @@ from app.tools.storage import storage_service
 
 client = TestClient(app)
 SPAM = "FREE MONEY click bit.ly win iphone send OTP"
-NEEDS_HELP = 75
+NEEDS_HELP = 60
 
 
 def test_spam_sample_is_flagged_and_stays_out_of_needs_help():

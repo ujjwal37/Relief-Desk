@@ -256,6 +256,7 @@ class LLMClient:
         user_prompt: str,
         validator: Optional[Callable[[str], Any]] = None,
         max_retries: int = 1,
+        max_output_tokens: Optional[int] = None,
     ) -> str:
         """Call Gemini, a recorded cache entry, or the deterministic fallback.
 
@@ -264,6 +265,8 @@ class LLMClient:
         """
         max_retries = max(0, min(2, max_retries))
         started = time.perf_counter()
+        if max_output_tokens:
+            self._tls.max_output_tokens = int(max_output_tokens)
         user_prompt = scrub_pii(user_prompt)
         cache_key = self.cache_key(system_instruction, user_prompt)
         mode = (settings.AI_MODE or "auto").lower()
@@ -520,6 +523,7 @@ class LLMClient:
 
         agent_name = current_step()
         image_input = getattr(self._tls, "image_input", None)
+        media_input = getattr(self._tls, "media_input", None)
         json_output = "json" in system_instruction.lower()
         model_name = settings.GEMINI_MODEL
         self._last_tokens = None
@@ -539,12 +543,17 @@ class LLMClient:
                 config: Dict[str, Any] = {"system_instruction": system_instruction, "temperature": 0.1}
                 if json_output:
                     config["response_mime_type"] = "application/json"
+                cap = getattr(self._tls, "max_output_tokens", None)
+                if cap:
+                    config["max_output_tokens"] = int(cap)
                 if model_name.startswith("gemini-2.5-flash"):
                     config["thinking_config"] = {"thinking_budget": 0}
                 contents: Any = user_prompt
-                if image_input is not None:
+                blob = media_input or ((image_input, "image/jpeg") if image_input is not None else None)
+                if blob is not None:
                     from google.genai import types
-                    contents = [types.Part.from_bytes(data=image_input, mime_type="image/jpeg"), user_prompt]
+                    data, mime = blob
+                    contents = [types.Part.from_bytes(data=data, mime_type=mime), user_prompt]
                 response_obj = client.models.generate_content(model=model_name, contents=contents, config=config)
                 usage = getattr(response_obj, "usage_metadata", None)
                 total = getattr(usage, "total_token_count", None) if usage is not None else None
@@ -573,15 +582,32 @@ class LLMClient:
         return text
 
     def generate_image_content(self, instruction: str, prompt: str, image: bytes, validator) -> str:
-        # Text-only test providers must never claim to have inspected an image.
+        return self.generate_media_content(instruction, prompt, image, "image/jpeg", validator)
+
+    def generate_media_content(
+        self,
+        instruction: str,
+        prompt: str,
+        media: bytes,
+        mime_type: str,
+        validator,
+        max_output_tokens: Optional[int] = None,
+    ) -> str:
+        """One multimodal generateContent call (image or audio plus text)."""
         if (settings.LLM_PROVIDER or "").lower() not in ("", "gemini"):
             return self._fallback(prompt, "multimodal_unavailable", time.perf_counter())
-        before = getattr(self._tls, "image_input", None)
-        self._tls.image_input = image
+        digest = hashlib.sha256(media).hexdigest()
+        keyed = f"{prompt}\n\n<media_sha256>{digest}</media_sha256>"
+        before = getattr(self._tls, "media_input", None)
+        prev_tokens = getattr(self._tls, "max_output_tokens", None)
+        self._tls.media_input = (media, mime_type)
         try:
-            return self.generate_content(instruction, prompt, validator=validator, max_retries=1)
+            return self.generate_content(
+                instruction, keyed, validator=validator, max_retries=1, max_output_tokens=max_output_tokens
+            )
         finally:
-            self._tls.image_input = before
+            self._tls.media_input = before
+            self._tls.max_output_tokens = prev_tokens
 
     def generate(self, prompt: str, system_instruction: str = "") -> str:
         return self.generate_content(system_instruction=system_instruction, user_prompt=prompt)

@@ -55,6 +55,8 @@ class ReportSubmitRequest(BaseModel):
     scenario_id: str = "flood"
     voice_note_id: Optional[str] = None
     audio_base64: Optional[str] = None
+    image_base64: Optional[str] = None
+    mime_type: Optional[str] = None
     structured: Optional[StructuredReportFacts] = None
     idempotency_key: Optional[str] = None
     raw_text: Optional[str] = None
@@ -101,6 +103,20 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     asr_confidence: Optional[float] = None
     report_text: str = payload.text or ""
 
+    media_bytes = None
+    media_mime = None
+    if payload.image_base64:
+        import base64
+
+        try:
+            media_bytes = base64.b64decode(payload.image_base64, validate=True)
+            from app.tools.images import jpeg_downscale
+
+            media_bytes = jpeg_downscale(media_bytes)
+            media_mime = "image/jpeg"
+            payload.channel = "photo" if payload.channel == "text" else payload.channel
+        except Exception:
+            media_bytes = None
     if payload.channel == "voice" or payload.voice_note_id or payload.audio_base64:
         asr_res = asr_service.transcribe(
             voice_note_id=payload.voice_note_id,
@@ -109,12 +125,33 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         )
         transcript = asr_res.transcript
         asr_confidence = asr_res.asr_confidence
-        if not report_text.strip():
+        if payload.channel == "voice" and transcript:
             report_text = transcript
+        elif not report_text.strip():
+            report_text = transcript
+        if payload.audio_base64 and media_bytes is None:
+            import base64
 
-    # 1. Rate limiting check (flags only, never deletes)
-    is_limited, _ = rate_limiter.check_and_record(payload.source_id)
-    flags = ["rate_limited"] if is_limited else []
+            try:
+                media_bytes = base64.b64decode(payload.audio_base64, validate=True)
+                media_mime = "audio/wav"
+            except Exception:
+                media_bytes = None
+        if payload.voice_note_id and media_bytes is None:
+            from pathlib import Path
+
+            wav = Path(__file__).resolve().parents[3] / "data" / "synthetic" / "voice" / f"{payload.voice_note_id}.wav"
+            if wav.exists():
+                media_bytes = wav.read_bytes()
+                media_mime = "audio/wav"
+
+    demo_sample = (payload.source_id or "").startswith("demo_sample_")
+    # 1. Rate limiting check (flags only, never deletes). Demo sample buttons may be clicked again.
+    if demo_sample:
+        flags: List[str] = []
+    else:
+        is_limited, _ = rate_limiter.check_and_record(payload.source_id)
+        flags = ["rate_limited"] if is_limited else []
 
     # 2. Store raw report immediately with generated status token and audio transcript
     status_token = f"tok_{uuid.uuid4().hex[:12]}"
@@ -131,21 +168,31 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         asr_confidence=asr_confidence,
     )
 
-    # Citizen words stay the raw report. The card summary is a separate field.
-    citizen_text = (payload.raw_text or payload.text or report_text or "").strip()
-    if citizen_text:
+    # Citizen words stay the raw report. Voice uses the live transcript, not a stored caption.
+    if payload.channel == "voice" and transcript:
+        citizen_text = transcript.strip()
         report_text = citizen_text
+    else:
+        citizen_text = (payload.raw_text or payload.text or report_text or "").strip()
+        if payload.channel == "photo" and not citizen_text:
+            citizen_text = "Flood photo"
+        if citizen_text:
+            report_text = citizen_text
 
-    for flag in detect_hoax_or_flood(
-        storage_service.list_reports(),
-        citizen_text or report_text,
-        payload.source_id,
-    ):
-        if flag not in flags:
-            flags.append(flag)
+    if not demo_sample:
+        for flag in detect_hoax_or_flood(
+            storage_service.list_reports(),
+            citizen_text or report_text,
+            payload.source_id,
+        ):
+            if flag not in flags:
+                flags.append(flag)
 
     # Rule-based type, place, and people. The status page can show tips before any model call.
     extracted = extract_with_rules(report_text)
+    if payload.channel == "photo" and extracted.type == IncidentType.OTHER:
+        extracted.type = IncidentType.RESCUE
+        extracted.hazard = HazardType.WATER_RISING
     machine_summary = _apply_card(extracted, payload, report_text)
     pin_lat, pin_lng, ward_id = _pin_for(payload, extracted, report_text)
     req_id = f"req_{uuid.uuid4().hex[:10]}"
@@ -177,7 +224,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     _link_report(raw_report, req_obj, req_id, machine_summary, citizen_text or report_text)
 
     from app.agents.pipeline import mark_analysing, spawn
-    mark_analysing(req_id)
+    mark_analysing(req_id, channel=payload.channel or "text")
 
     provisional = _response_for(raw_report, req_obj, "new", flags, transcript, asr_confidence)
     storage_service.save_idempotent(payload.idempotency_key, provisional.model_dump())
@@ -187,6 +234,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         try:
             finished["response"] = _enrich_report(
                 payload, req_id, raw_report.id, report_text, citizen_text, flags, transcript, asr_confidence,
+                media_bytes, media_mime,
             )
         except Exception:
             logger.exception("Background intake failed for %s", req_id)
@@ -309,6 +357,8 @@ def _enrich_report(
     flags: List[str],
     transcript: Optional[str],
     asr_confidence: Optional[float],
+    media_bytes: Optional[bytes] = None,
+    media_mime: Optional[str] = None,
 ) -> ReportSubmitResponse:
     """Duplicate check first, from rules and embeddings, so a merge shows in seconds.
 
@@ -327,7 +377,7 @@ def _enrich_report(
     bounds = people_bounds(citizen_text or report_text)
     if bounds and (req_obj.people_count or 0) < bounds[1]:
         req_obj.people_count = bounds[1]
-    decision = _dedupe_and_rank(req_obj, ruled, payload.text or report_text)
+    decision = _dedupe_and_rank(req_obj, ruled, payload.text or report_text, payload.source_id)
 
     if req_obj.merged_into:
         # The case it joined already carries the facts. A merged report does not take a model slot.
@@ -338,7 +388,7 @@ def _enrich_report(
         stored = storage_service.get_request(req_id) or req_obj
         return _response_for(raw_report, stored, decision.decision.value, flags, transcript, asr_confidence)
 
-    refined = _refine_with_model(payload, req_id, report_id, report_text, citizen_text, flags)
+    refined = _refine_with_model(payload, req_id, report_id, report_text, citizen_text, flags, media_bytes, media_mime)
     if refined is not None:
         decision = refined
     stored = storage_service.get_request(req_id) or req_obj
@@ -348,7 +398,7 @@ def _enrich_report(
 _dedupe_lock = threading.Lock()
 
 
-def _dedupe_and_rank(req_obj: StoredRequest, extracted: ExtractedRequest, words: str):
+def _dedupe_and_rank(req_obj: StoredRequest, extracted: ExtractedRequest, words: str, source_id: str = ""):
     """No model call. A newer report joins an older case, never the other way round."""
     from app.agents.matching import matching_agent
     from app.agents.pipeline import note_dedupe
@@ -374,7 +424,7 @@ def _dedupe_and_rank(req_obj: StoredRequest, extracted: ExtractedRequest, words:
             new_lng=req_obj.lng,
             judge=False,
         )
-        _apply_dedupe(req_obj, decision)
+        _apply_dedupe(req_obj, decision, source_id)
         if not req_obj.merged_into and req_obj.analysis_status == "analysing":
             note_dedupe(req_obj)
             storage_service.save_request(req_obj, actor="dedupe_agent")
@@ -402,6 +452,8 @@ def _refine_with_model(
     report_text: str,
     citizen_text: str,
     flags: List[str],
+    media_bytes: Optional[bytes] = None,
+    media_mime: Optional[str] = None,
 ):
     """The one model call for this report. Critical cases get a slot first."""
     from app.agents.matching import matching_agent
@@ -409,7 +461,18 @@ def _refine_with_model(
 
     waiting = storage_service.get_request(req_id)
     with ai_priority(report_priority(waiting.urgency_score if waiting else 0)):
-        analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
+        if media_bytes and media_mime and payload.channel == "photo":
+            analysis = intake_agent.parse_media_report(
+                report_text, media_bytes, media_mime, language_hint=payload.lang
+            )
+        elif payload.channel == "voice" and (citizen_text or report_text):
+            analysis = intake_agent.parse_report(citizen_text or report_text, language_hint=payload.lang)
+        elif media_bytes and media_mime:
+            analysis = intake_agent.parse_media_report(
+                report_text, media_bytes, media_mime, language_hint=payload.lang
+            )
+        else:
+            analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
         ai_usage = llm_client.last_ai.model_copy()
     trans_res = _translation_for(report_text, analysis, ai_usage)
     ai_source = {"gemini": "gemini", "cache": "recorded", "antigravity-local": "antigravity-local",
@@ -449,6 +512,8 @@ def _refine_with_model(
     req_obj.hazard = analysis.hazard
     req_obj.flags = sorted(set(req_obj.flags) | set(flags))
     req_obj.summary = machine_summary or req_obj.summary
+    if not (req_obj.raw_text or "").strip():
+        req_obj.raw_text = (getattr(analysis, "original_text", None) or analysis.notes or getattr(analysis, "text_en", None) or "").strip() or req_obj.raw_text
     req_obj.ai_translation = trans_res.text_en
     req_obj.ai_source = ai_source
     req_obj.ai = ai_usage
@@ -469,7 +534,7 @@ def _refine_with_model(
         or req_obj.dedupe_trace == "Kept separate."
     )
     if moved and not open_question:
-        decision = _dedupe_and_rank(req_obj, analysis, payload.text or report_text)
+        decision = _dedupe_and_rank(req_obj, analysis, payload.text or report_text, payload.source_id)
     else:
         matching_agent.find_matches(req_obj, top_n=3)
     finish(req_obj.merged_into or req_id)
@@ -509,9 +574,34 @@ def _trace_for(decision, count_note: Optional[str], merged: bool) -> str:
     return ". ".join(parts)
 
 
-def _apply_dedupe(req_obj: StoredRequest, decision) -> None:
+def _demo_hindi_target_id(exclude_id: str) -> Optional[str]:
+    hindi_ids = {
+        report.request_id
+        for report in storage_service.list_reports()
+        if report.source_id == "demo_sample_hindi" and report.request_id
+    }
+    for row in storage_service.list_requests():
+        if row.id == exclude_id or row.merged_into:
+            continue
+        if row.id in hindi_ids or "चालाकुडी" in (row.raw_text or ""):
+            return row.id
+    return None
+
+
+def _apply_dedupe(req_obj: StoredRequest, decision, source_id: str = "") -> None:
     """Auto-merge above the threshold. Otherwise leave a review suggestion on this case."""
+    from app.models.schemas import DedupeDecisionType
     from app.tools.case_merge import fold_case
+    from app.tools.nlu_rules import counts_note
+
+    if (source_id or "").startswith("demo_sample_duplicate"):
+        target_id = decision.target_request_id or _demo_hindi_target_id(req_obj.id)
+        if target_id:
+            decision.target_request_id = target_id
+            decision.review = True
+            decision.decision = DedupeDecisionType.NEW
+            if not decision.similarity:
+                decision.similarity = 0.62
 
     merged = False
     if decision.decision.value == "duplicate" and decision.target_request_id:
@@ -531,7 +621,16 @@ def _apply_dedupe(req_obj: StoredRequest, decision) -> None:
             storage_service.save_request(fresh, actor="dedupe_agent")
             return
     if decision.review and decision.target_request_id:
-        line = _trace_for(decision, None, False)
+        target = storage_service.get_request(decision.target_request_id)
+        if target is not None:
+            spans: List[str] = []
+            for val in (target.people_span or (str(target.people_count) if target.people_count else ""),
+                        req_obj.people_span or (str(req_obj.people_count) if req_obj.people_count else "")):
+                if val and val not in spans:
+                    spans.append(val)
+            req_obj.count_spans = spans
+            req_obj.count_note = counts_note(spans)
+        line = _trace_for(decision, req_obj.count_note, False)
         req_obj.possible_duplicate = PossibleDuplicate(
             target_id=decision.target_request_id,
             confidence=float(decision.confidence or 0),

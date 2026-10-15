@@ -83,3 +83,41 @@ def load_scenario(pack_id: str, coordinator: CoordinatorUser = Depends(get_curre
     storage_service.load_missing_scenario(pack_id)
     storage_service.record_audit(actor=coordinator.email, action="demo_scenario_loaded", target=pack_id, after={"synthetic": True})
     return {"pack_id": pack_id, "loaded": True}
+
+
+class SampleReportRequest(BaseModel):
+    kind: str = "hindi"  # hindi | voice | photo | duplicate
+
+
+@router.get("/demo/samples")
+def list_samples():
+    from app.tools.demo_samples import catalog
+    return catalog()
+
+
+@router.get("/demo/samples/{sample_id}")
+def get_sample_file(sample_id: str):
+    from fastapi.responses import FileResponse
+    from app.tools.demo_samples import sample_path
+    path = sample_path(sample_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Unknown sample")
+    media = "audio/wav" if path.suffix == ".wav" else "image/jpeg"
+    return FileResponse(path, media_type=media, filename=path.name)
+
+
+@router.post("/demo/sample-report")
+def submit_sample_report(payload: SampleReportRequest):
+    """One-click synthetic sample through the normal intake pipeline."""
+    from app.api.reports import ReportSubmitRequest, submit_report
+    from app.tools.demo_samples import sample_payload
+    from app.tools.storage import storage_service
+    try:
+        data = sample_payload(payload.kind)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if payload.kind.lower() == "duplicate":
+        has_hindi = any("चालाकुडी" in (row.raw_text or "") for row in storage_service.list_requests() if not row.merged_into)
+        if not has_hindi:
+            submit_report(ReportSubmitRequest(**sample_payload("hindi")))
+    return submit_report(ReportSubmitRequest(**data))

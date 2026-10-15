@@ -8,6 +8,8 @@ export type MapMode = 'google' | 'svg';
 export class MapProviderService {
   private api = inject(ApiClientService);
   private pending: Promise<MapMode> | null = null;
+  /** Browser Maps key from GET /api/config/maps. Used for Routes API REST as well. */
+  apiKey: string | null = null;
   /** Set when the browser key is rejected. Later maps stay on the SVG. */
   authFailed = false;
 
@@ -23,6 +25,7 @@ export class MapProviderService {
               resolve('svg');
               return;
             }
+            this.apiKey = cfg.apiKey;
             this.loadScript(cfg.apiKey).then((ok) => resolve(ok ? 'google' : 'svg'));
           },
           error: () => resolve('svg'),
@@ -49,7 +52,7 @@ export class MapProviderService {
       const script = document.createElement('script');
       script.async = true;
       script.dataset['rdMaps'] = '1';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&libraries=routes`;
       script.onload = () => finish(!!(window as unknown as { google?: { maps?: unknown } }).google?.maps);
       script.onerror = () => finish(false);
       document.head.appendChild(script);

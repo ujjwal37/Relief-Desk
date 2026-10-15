@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { LanguageService } from '@rd/shared';
 import { AskDeskComponent } from '../../agents/ask-desk.component';
 
 /** Full-page desk chat. A case chip opens that case. Nothing is dispatched from here. */
@@ -9,7 +10,7 @@ import { AskDeskComponent } from '../../agents/ask-desk.component';
   imports: [AskDeskComponent],
   template: `
     <section class="agent">
-      <app-ask-desk [fullPage]="true" (picked)="openCase($event)" />
+      <app-ask-desk [fullPage]="true" [seedQuestion]="seedQuestion()" (picked)="openCase($event)" />
     </section>
   `,
   styles: [`
@@ -22,6 +23,17 @@ import { AskDeskComponent } from '../../agents/ask-desk.component';
 })
 export class CoordinatorAgentComponent {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly lang = inject(LanguageService);
+  readonly seedQuestion = signal('');
+
+  constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      if (params.get('ask') === 'pending') {
+        this.seedQuestion.set(this.lang.translate('xfactor.askPending'));
+      }
+    });
+  }
 
   openCase(id: string): void {
     void this.router.navigate(['/coordinator/command'], { queryParams: { case: id } });

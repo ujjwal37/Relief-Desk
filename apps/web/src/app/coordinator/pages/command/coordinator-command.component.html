@@ -24,6 +24,12 @@
         <span class="queue-total">{{ counts().total }}</span>
         @if (resetNote(); as n) { <span class="reset-note" role="status">{{ n | rdTranslate }}</span> }
         <p class="scenario">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
+        <div class="samples" data-tour="sample">
+          <button type="button" data-testid="sample-hindi" (click)="sendSample('hindi')">{{ 'xfactor.sampleHindi' | rdTranslate }}</button>
+          <button type="button" data-testid="sample-voice" (click)="sendSample('voice')">{{ 'xfactor.sampleVoice' | rdTranslate }}</button>
+          <button type="button" data-testid="sample-photo" (click)="sendSample('photo')">{{ 'xfactor.samplePhoto' | rdTranslate }}</button>
+          <button type="button" data-testid="sample-duplicate" (click)="sendSample('duplicate')">{{ 'xfactor.sampleDuplicate' | rdTranslate }}</button>
+        </div>
       </div>
       <div class="filters" role="group">
         <button type="button" [class.on]="bandFilter() === 'all'" (click)="setBandFilter('all')">{{ 'coord.filterAll' | rdTranslate }} {{ counts().total }}</button>
@@ -176,14 +182,16 @@
             @if (req.flags?.includes('verify')) { <span class="verify-badge" style="display:inline-block;padding:0 7px;border-radius:999px;background:var(--sev-high-tint, #fef3c7);color:var(--sev-high, #b45309);font:600 11px/18px var(--rd-font-family);margin-left:6px" [attr.title]="'coord.verifyHint' | rdTranslate">{{ 'coord.verify' | rdTranslate }}</span> }
             <span class="id" [attr.title]="fullStamp(req.updated_at) || fullStamp(req.created_at)">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}</span>
           </div>
-          <h2>{{ getTranslationText(req) }}</h2>
-          <p class="fact-line">{{ factLine(req) }}</p>
+          <h2>{{ getTranslationText(req) }}@if (showGeminiChip(req)) { <app-gemini-chip [confidence]="fieldConf(req, 'type')" /> }</h2>
+          <p class="fact-line">{{ factLine(req) }}@if (showGeminiChip(req)) { <app-gemini-chip [confidence]="fieldConf(req, 'people')" /> }</p>
+          <app-pipeline-strip [steps]="pipelineSteps(req)" [analysing]="isAnalysing(req)" />
           @if (!offline() && !needsDupReview(req) && isLowTranslationConfidence(req)) {
             <p class="check-line">{{ checkThisLine(req) }}</p>
           }
           @if (!offline() && needsDupReview(req)) {
             <div class="dup-review" data-testid="dup-review">
-              <p>{{ dupTitle(req) }}</p>
+              <p>{{ dupAiLine(req) }}</p>
+              @if (req.count_note) { <p class="count-note" data-testid="counts-differ">{{ req.count_note }}</p> }
               <button type="button" data-testid="merge-dup" (click)="confirmMerge(req)">{{ 'coord.mergeReports' | rdTranslate }}</button>
               <button type="button" data-testid="keep-dup" (click)="keepSeparate(req)">{{ 'coord.keepSeparate' | rdTranslate }}</button>
             </div>
@@ -212,6 +220,7 @@
                 <div class="send-copy">
                   <div class="team">{{ prop.resource_name }}</div>
                   <div class="facts">{{ legLabel(prop) }}</div>
+                  @if (prop.route_note) { <p class="route-note" data-testid="route-note">{{ prop.route_note }}</p> }
                 </div>
               </div>
 
@@ -229,9 +238,15 @@
             }
           }
 
-          <section class="report-summary">
-            <p class="cap">{{ 'coord.said' | rdTranslate }}</p>
-            <p class="quote">“{{ req.raw_text || getTranslationText(req) }}”</p>
+          <section class="report-pair" data-testid="report-pair">
+            <div>
+              <p class="cap">{{ 'xfactor.originalReport' | rdTranslate }}</p>
+              <p class="quote">“{{ req.raw_text || req.place_text }}”</p>
+            </div>
+            <div>
+              <p class="cap">{{ 'xfactor.aiEnglish' | rdTranslate }}@if (showGeminiChip(req)) { <app-gemini-chip [confidence]="req.translation_confidence ?? fieldConf(req, 'type')" /> }</p>
+              <p class="quote">“{{ getTranslationText(req) }}”</p>
+            </div>
           </section>
 
           <button type="button" class="more-toggle" [attr.aria-expanded]="moreOpen()" (click)="moreOpen.set(!moreOpen())">
@@ -285,6 +300,7 @@
                   <p class="reason-cap">{{ 'coord.reasoning' | rdTranslate }}</p>
                   <p class="expl reason" data-testid="decision-reason">{{ prop.explanation }}</p>
                 }
+                @if (prop.route_note) { <p class="expl" data-testid="route-note-why">{{ prop.route_note }}</p> }
               </div>
 
               <div class="acc">

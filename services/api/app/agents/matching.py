@@ -45,6 +45,8 @@ class MatchProposal(BaseModel):
     no_nearby: bool = False
     wait_minutes: Optional[int] = None
     wait_team_name: Optional[str] = None
+    # Honest boat-vs-road comparison from the same haversine distance. Never invents closures.
+    route_note: Optional[str] = None
 
 
 def _explain_together(request: StoredRequest, candidates: list, use_model: bool = False) -> list:
@@ -99,7 +101,7 @@ class MatchingAgent:
         using_fallback = False
 
         # Distance score is 0 past 10 km, so a far team with more seats can outrank a nearer one.
-        # Keep teams near the closest suitable team. If every team is far, keep the closest and show its real ETA.
+        # Keep teams near the closest suitable team. Boats beyond BOAT_MAX_KM are dropped.
         scored_candidates = _keep_nearer(scored_candidates)
 
         # Rank by arrival time first (boats by water, land teams by road estimate), then by seat fit.
@@ -179,6 +181,7 @@ class MatchingAgent:
                     no_nearby=breakdown.distance_km > NEARBY_KM,
                     wait_minutes=wait_minutes if is_fallback else None,
                     wait_team_name=wait_team_name if is_fallback else None,
+                    route_note=route_compare_note(breakdown.distance_km, travel_mode_for(res)),
                 )
             )
 
@@ -194,6 +197,8 @@ class MatchingAgent:
 NEARBY_KM = 30.0
 # A team inside this radius is close enough to prefer over a farther cluster.
 PRACTICAL_KM = 40.0
+# Rescue boats farther than this are not offered; the card then says no suitable team nearby.
+BOAT_MAX_KM = 25.0
 
 
 # Land teams: straight-line km at 20 km/h (a road estimate; the map shows the real drive time).
@@ -216,11 +221,34 @@ def eta_for_distance(distance_km: float, mode: str = "road") -> Optional[int]:
     return max(1, round((distance_km / speed) * 60))
 
 
+def route_compare_note(distance_km: float, mode: str) -> Optional[str]:
+    """Boat vs road using the same measured distance. Does not invent road closures."""
+    if distance_km is None or distance_km < 0:
+        return None
+    water_min = max(1, round((distance_km / BOAT_KMH) * 60))
+    road_min = max(1, round((distance_km / LAND_KMH) * 60))
+    km = round(distance_km, 1)
+    if mode == "water":
+        return (
+            f"Boat team: {km} km by water, about {water_min} min. A boat can reach people cut off by "
+            f"flood water; by road it would be about {road_min} min, but only if roads are open "
+            f"(straight-line estimate; no live road-closure feed)."
+        )
+    return (
+        f"Road team: {km} km by road, about {road_min} min (a boat would need about {water_min} min). "
+        f"Straight-line estimate; no live road-closure feed."
+    )
+
+
 # How much farther than the nearest team we still offer as an alternative.
 NEAR_BAND_KM = 15.0
 
 
 def _keep_nearer(scored: list) -> list:
+    scored = [
+        item for item in scored
+        if not (travel_mode_for(item[0]) == "water" and item[1].distance_km > BOAT_MAX_KM)
+    ]
     if len(scored) <= 1:
         return scored
     nearest = min(item[1].distance_km for item in scored)

@@ -61,6 +61,12 @@
               <button type="button" class="chip" (click)="pickSuggestion(s.key)">{{ s.key | rdTranslate }}</button>
             }
           </div>
+          <div class="samples">
+            <button type="button" class="chip" data-testid="sample-hindi" [disabled]="sampleBusy()" (click)="sendSample('hindi')">{{ 'xfactor.sampleHindi' | rdTranslate }}</button>
+            <button type="button" class="chip" data-testid="sample-voice" [disabled]="sampleBusy()" (click)="sendSample('voice')">{{ 'xfactor.sampleVoice' | rdTranslate }}</button>
+            <button type="button" class="chip" data-testid="sample-photo" [disabled]="sampleBusy()" (click)="sendSample('photo')">{{ 'xfactor.samplePhoto' | rdTranslate }}</button>
+            <button type="button" class="chip" data-testid="sample-duplicate" [disabled]="sampleBusy()" (click)="sendSample('duplicate')">{{ 'xfactor.sampleDuplicate' | rdTranslate }}</button>
+          </div>
           <button type="button" class="link" (click)="openForm()">{{ 'report.preferForm' | rdTranslate }}</button>
         </section>
       }

@@ -24,9 +24,9 @@ from app.tools.storage import storage_service
 client = TestClient(app)
 AUTH = {"Authorization": "Bearer demo-coordinator-token"}
 SLOW_S = 12.0
-PIN_A = {"lat": 8.11, "lng": 77.21}
-PIN_B = {"lat": 8.30, "lng": 77.40}
-PIN_C = {"lat": 8.45, "lng": 77.55}
+PIN_A = {"lat": 9.418, "lng": 76.409}
+PIN_B = {"lat": 9.433, "lng": 76.402}
+PIN_C = {"lat": 9.472, "lng": 76.392}
 
 
 class _Reply:
@@ -44,7 +44,13 @@ class _SlowModels:
         self.busy = threading.Lock()
 
     def generate_content(self, model, contents, config):
-        report = re.search(r"<report>\n(.*?)\n</report>", contents, re.DOTALL).group(1)
+        blob = contents if isinstance(contents, str) else ""
+        if not blob and isinstance(contents, list):
+            blob = " ".join(str(part) for part in contents)
+        match = re.search(r"<report>\n?(.*?)\n?</report>", str(blob), re.DOTALL)
+        if not match:
+            return _Reply('{"text":"Tool review of the supplied facts."}')
+        report = match.group(1)
         with self.busy:
             self.started.append((time.perf_counter(), report))
             self.release.wait(SLOW_S)

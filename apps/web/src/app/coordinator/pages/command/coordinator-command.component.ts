@@ -18,7 +18,9 @@ import { AgentBadgeComponent } from '../../agents/agent-badge.component';
 import { AgentTraceDrawerComponent } from '../../agents/agent-trace-drawer.component';
 import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
+import { GeminiChipComponent } from '../../agents/gemini-chip.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
+import { PipelineLiveStep, PipelineStripComponent } from '../../agents/pipeline-strip.component';
 import { testProviderWord } from '../../agents/provider-label';
 import { JustReportedStripComponent } from '../../just-reported-strip.component';
 import { LIVE_CHANNEL } from '../../../core/live-report';
@@ -75,7 +77,9 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
     AgentTraceDrawerComponent,
     AssistBannerComponent,
     AssistPanelComponent,
+    GeminiChipComponent,
     MergedChipComponent,
+    PipelineStripComponent,
     JustReportedStripComponent,
   ],
   templateUrl: './coordinator-command.component.html',
@@ -229,6 +233,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly assist = signal<{ proposals: AssistProposalView[]; shortages: AssistShortageView[] }>({ proposals: [], shortages: [] });
   readonly analysedNote = signal<Record<string, { until: number; text: string }>>({});
   readonly analysedLive = signal('');
+  readonly pipelineById = signal<Record<string, PipelineLiveStep[]>>({});
+  private stopPipeline?: () => void;
   private traceOpener: HTMLElement | null = null;
   private analysedTimer: ReturnType<typeof setTimeout> | null = null;
   readonly traceRequest = computed(() => {
@@ -561,7 +567,35 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
   dupTitle(r: StoredRequest): string {
     this.langService.currentLang();
-    return this.langService.translate('coord.dupOf').replace('{id}', r.possible_duplicate?.target_id || '');
+    return this.dupAiLine(r);
+  }
+  dupAiLine(r: StoredRequest): string {
+    this.langService.currentLang();
+    const hint = r.possible_duplicate;
+    const pct = hint?.similarity != null ? Math.round(hint.similarity * 100) : 0;
+    return this.langService.translate('xfactor.dupMatch')
+      .replace('{id}', hint?.target_id || '')
+      .replace('{pct}', String(pct));
+  }
+  showGeminiChip(req: StoredRequest): boolean {
+    const kind = this.aiKind(req);
+    return kind === 'gemini' || kind === 'recorded';
+  }
+  fieldConf(req: StoredRequest, key: 'type' | 'place' | 'people' | 'vulnerable' | 'urgency'): number | null {
+    const value = req.confidence?.[key];
+    return typeof value === 'number' ? value : null;
+  }
+  pipelineSteps(req: StoredRequest): PipelineLiveStep[] {
+    return this.pipelineById()[req.id] || [];
+  }
+  sendSample(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): void {
+    this.apiClient.submitSampleReport(kind).subscribe({
+      next: (res) => {
+        this.focusRequestId = res.request_id;
+        this.loadRequests();
+      },
+      error: () => this.actionToast.set({ text: this.langService.translate('xfactor.sampleFailed'), type: 'warning' }),
+    });
   }
   needsDupReview(r: StoredRequest): boolean {
     const decision = String((r as StoredRequest & { dedupe_decision?: string }).dedupe_decision || '').toLowerCase();
@@ -744,6 +778,23 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.startQueuePoll();
     this.readFilters();
     this.watchViewport();
+    this.stopPipeline = this.live.onEvent((event) => {
+      if (event.type !== 'pipeline.step' || !event.request_id || !event.agent) return;
+      const row: PipelineLiveStep = {
+        agent: event.agent,
+        status: event.status || 'working',
+        summary: event.summary,
+        similarity: event.similarity,
+        match_id: event.match_id,
+        tier: event.tier,
+        score: event.score,
+        team: event.team,
+      };
+      const next = { ...this.pipelineById() };
+      const list = [...(next[event.request_id] || []).filter((step) => step.agent !== row.agent), row];
+      next[event.request_id] = list;
+      this.pipelineById.set(next);
+    });
     window.addEventListener('message', this.handleDemoMessage);
     document.addEventListener('visibilitychange', this.onQueueVisibility);
     try {
@@ -762,6 +813,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     window.removeEventListener('message', this.handleDemoMessage);
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
     this.liveChannel?.close();
+    this.stopPipeline?.();
     if (this.analysedTimer) clearTimeout(this.analysedTimer);
     for (const timer of this.flashTimers.values()) clearTimeout(timer);
     this.flashTimers.clear();

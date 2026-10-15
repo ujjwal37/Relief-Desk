@@ -19,8 +19,8 @@ def test_get_request_matches_proposals_breakdown():
     req = StoredRequest(
         id="req_match_agent_test",
         type=IncidentType.RESCUE,
-        lat=26.852,
-        lng=80.940,
+        lat=9.436,
+        lng=76.398,
         people_count=6,
         hazard=HazardType.WATER_RISING,
         urgency_score=88.0,
@@ -56,8 +56,8 @@ def test_approve_and_reject_match_api():
     req = StoredRequest(
         id="req_approve_api_test",
         type=IncidentType.RESCUE,
-        lat=26.852,
-        lng=80.940,
+        lat=9.436,
+        lng=76.398,
         people_count=4,
         status=RequestStatus.NEW,
     )

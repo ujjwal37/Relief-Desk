@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.main import app
+from app.tools.demo_cases import DEMO_CASES
 from app.tools.storage import storage_service
 
 client = TestClient(app)
@@ -34,7 +36,8 @@ def _reset_reloads_kerala_seeds():
     assert response.status_code == 200
     body = response.json()
     assert body["seed"] == "small"
-    assert body["incidents"] == 2
+    expected = 2 + (len(DEMO_CASES) if settings.DEMO_MODE else 0)
+    assert body["incidents"] == expected
     assert body["resources"] >= 1
     assert storage_service.get_report("RESET-TEMP") is None
     assert storage_service.get_request("INC-001") is not None

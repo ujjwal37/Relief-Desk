@@ -29,6 +29,10 @@
 .search kbd { position:absolute; right:10px; font:500 12px var(--rd-font-family); border:1px solid var(--border); border-radius:var(--r1); padding:0 6px; background:var(--surface); color:var(--text-2); }
 .right { display:flex; align-items:center; gap:12px; }
 .tour-btn { height:44px; padding:0 14px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); font:600 14px var(--rd-font-family); cursor:pointer; white-space:nowrap; }
+.ai-pill { display:inline-flex; align-items:center; padding:5px 10px; border-radius:6px; font-weight:600; font-size:12px; white-space:nowrap; border:1px solid var(--border); }
+.ai-pill.live { background:var(--brand-tint); color:var(--brand); border-color: color-mix(in srgb, var(--brand) 18%, var(--border)); }
+.ai-pill.off { background:var(--surface-2); color:var(--text-2); }
+.problem { flex:none; margin:0; padding:4px 16px; font-size:12px; font-weight:600; color:var(--text-2); background:var(--surface); border-bottom:1px solid var(--border); }
 .live { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border:1px solid color-mix(in srgb, var(--brand) 18%, var(--border)); border-radius:6px; background:var(--brand-tint); color:var(--brand); font-weight:600; font-size:12px; white-space:nowrap; }
 .live i { width:8px; height:8px; border-radius:50%; background:var(--brand); }
 .live.retry { background:var(--sev-high-t); color:var(--sev-high); }
@@ -52,7 +56,8 @@ h3 { margin:12px 0 6px; font-size:13px; font-weight: 600; color:var(--text-2); t
 .dashboard-body { flex:1; min-height:0; overflow:hidden; }
 .demo-phone { width:390px; flex:none; border-left:1px solid var(--border); background:var(--surface); }
 .demo-phone iframe { width:100%; height:100%; border:0; }
-@media (max-width: 1100px) { .tour-btn, .live { display:none; } .search { max-width:200px; } }
+@media (max-width: 1100px) { .tour-btn:not(.keep), .live { display:none; } .search { max-width:200px; } }
+@media (max-width: 760px) { .tour-btn.keep { display:none; } }
 @media (max-width: 900px) {
   .coordinator-shell, .coord-column { max-width:100%; overflow-x:hidden; }
   .top-nav { height:auto; min-height:48px; gap:8px; padding:4px 8px; min-width:0; }

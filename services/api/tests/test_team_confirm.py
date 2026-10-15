@@ -30,7 +30,7 @@ def test_resource_gap_when_no_suitable_team_is_free():
         for boat in storage_service.list_resources(kind=ResourceKind.BOAT):
             boat.status = ResourceStatus.BUSY
         alerts = live_alerts_from_storage(storage_service)
-        gap = [item for item in alerts if item.id == "gap-none-boat"]
+        gap = [item for item in alerts if item.id in ("gap-boat", "gap-none-boat")]
         assert gap
         assert gap[0].kind == "resource_gap"
         assert gap[0].title == "Resource gap"

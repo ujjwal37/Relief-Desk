@@ -13,6 +13,7 @@ describe('live event routing', () => {
     expect(kindsFor('team.updated')).toEqual(['teams']);
     expect(kindsFor('alert.created')).toEqual(['alerts']);
     expect(kindsFor('heartbeat')).toEqual([]);
+    expect(kindsFor('pipeline.step')).toEqual([]);
   });
 
   it('waits longer between reconnects, up to 15 seconds', () => {

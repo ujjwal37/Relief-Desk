@@ -1027,6 +1027,7 @@ class StorageService:
             if settings.DEMO_MODE:
                 from app.tools.demo_cases import load_demo_cases
                 incidents += load_demo_cases(self)
+                resources = len(self._resources)
         _attach_recorded(self)
         self.record_audit(
             actor="reset_demo",
@@ -1034,6 +1035,15 @@ class StorageService:
             target="storage",
             after={"resources": resources, "incidents": incidents, "scenario_packs": packs, "seed": mode},
         )
+        try:
+            import sys
+            import threading
+            from app.agents.sitrep import prewarm_sitrep
+
+            if "pytest" not in sys.modules:
+                threading.Thread(target=prewarm_sitrep, daemon=True).start()
+        except Exception:
+            pass
         return {"resources": resources, "incidents": incidents, "scenario_packs": packs, "demo": demo, "seed": mode}
 
     def load_missing_scenario(self, pack_id: str) -> None:

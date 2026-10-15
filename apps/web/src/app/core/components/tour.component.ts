@@ -1,15 +1,18 @@
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, effect, inject, output, signal, viewChild } from '@angular/core';
 import { LanguageService, RdTranslatePipe } from '@rd/shared';
 import { CoordUiService } from '../services/coord-ui.service';
 
-interface Step { target: string; title: string; body: string; }
+interface Step { target: string; title: string; body: string; action?: 'sample' | 'ask'; }
 const STEPS: Step[] = [
-  { target: 'cases', title: 'tour.s1t', body: 'tour.s1b' },
-  { target: 'detail', title: 'tour.s2t', body: 'tour.s2b' },
-  { target: 'actions', title: 'tour.s3t', body: 'tour.s3b' },
+  { target: 'welcome', title: 'tour.s1t', body: 'tour.s1b' },
+  { target: 'sample', title: 'tour.s2t', body: 'tour.s2b', action: 'sample' },
+  { target: 'cases', title: 'tour.s3t', body: 'tour.s3b' },
+  { target: 'detail', title: 'tour.s4t', body: 'tour.s4b' },
+  { target: 'how', title: 'tour.s5t', body: 'tour.s5b' },
+  { target: 'actions', title: 'tour.s6t', body: 'tour.s6b', action: 'ask' },
 ];
 
-/** Guided tour: spotlight + tooltip card. Focus-trapped, Esc closes, no library. */
+/** Guided spotlight tour (driver.js-style, no extra CSS theme). Skip + 6 clickable steps. */
 @Component({
   selector: 'app-tour',
   standalone: true,
@@ -24,6 +27,12 @@ const STEPS: Step[] = [
         <p class="step">{{ stepLabel() }}</p>
         <h2>{{ steps[ui.tourStep()].title | rdTranslate }}</h2>
         <p class="body">{{ steps[ui.tourStep()].body | rdTranslate }}</p>
+        @if (steps[ui.tourStep()].action === 'sample') {
+          <button type="button" class="act" data-testid="tour-sample" (click)="doAction('sample')">{{ 'xfactor.sampleHindi' | rdTranslate }}</button>
+        }
+        @if (steps[ui.tourStep()].action === 'ask') {
+          <button type="button" class="act" data-testid="tour-ask" (click)="doAction('ask')">{{ 'xfactor.askPending' | rdTranslate }}</button>
+        }
         <div class="foot">
           <button type="button" class="skip" (click)="skip()">{{ 'coord.dismissTour' | rdTranslate }}</button>
           <span class="dots" aria-hidden="true">@for (s of steps; track $index) { <i [class.on]="$index === ui.tourStep()"></i> }</span>
@@ -40,6 +49,7 @@ const STEPS: Step[] = [
     .step { margin:0 0 4px; font-size:13px; color:var(--text-2); font-weight:600; }
     h2 { margin:0 0 6px; font-size:18px; line-height:1.25; }
     .body { margin:0 0 14px; font-size:14px; line-height:1.45; color:var(--text-2); }
+    .act { width:100%; min-height:44px; margin:0 0 10px; border:1px solid var(--border); border-radius:10px; background:var(--brand-tint); color:var(--brand); font:600 14px var(--rd-font-family); cursor:pointer; }
     .foot { display:flex; align-items:center; gap:8px; }
     .dots { display:inline-flex; gap:5px; flex:1; justify-content:center; } .dots i { width:7px; height:7px; border-radius:50%; background:var(--border); } .dots i.on { background:var(--brand); }
     button { min-height:44px; border-radius:10px; border:0; font:600 14px var(--rd-font-family); cursor:pointer; padding:0 14px; }
@@ -50,6 +60,7 @@ const STEPS: Step[] = [
 export class TourComponent {
   readonly ui = inject(CoordUiService);
   readonly steps = STEPS;
+  readonly action = output<'sample' | 'ask'>();
   private lang = inject(LanguageService);
   private card = viewChild<ElementRef<HTMLElement>>('card');
   readonly rect = signal({ top: 0, left: 0, width: 0, height: 0 });
@@ -71,15 +82,16 @@ export class TourComponent {
   go(d: number): void { this.ui.tourStep.update((s) => Math.min(STEPS.length - 1, Math.max(0, s + d))); }
   next(): void { this.last() ? this.skip() : this.go(1); }
   skip(): void { this.ui.finishTour(); }
+  doAction(kind: 'sample' | 'ask'): void { this.action.emit(kind); }
 
   @HostListener('window:resize') place(): void {
     if (!this.ui.tourOpen()) return;
     const el = document.querySelector(`[data-tour="${STEPS[this.ui.tourStep()].target}"]`) as HTMLElement | null;
     const r = el?.getBoundingClientRect();
     const pad = 6;
-    const box = r ? { top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 } : { top: 0, left: 0, width: 0, height: 0 };
+    const box = r ? { top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 } : { top: 12, left: 12, width: 0, height: 0 };
     this.rect.set(box);
-    const cw = 340, ch = 220, vw = window.innerWidth, vh = window.innerHeight;
+    const cw = 340, ch = 260, vw = window.innerWidth, vh = window.innerHeight;
     let left = box.left + box.width + 16;
     if (left + cw > vw - 12) left = box.left - cw - 16;
     if (left < 12) left = Math.max(12, Math.min(vw - cw - 12, box.left + 16));

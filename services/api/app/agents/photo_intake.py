@@ -74,10 +74,10 @@ def validate_image(payload: PhotoInput) -> bytes:
                     raise ValueError('Choose a still photo')
                 image.load()
                 clean = ImageOps.exif_transpose(image).convert('RGB')
-                clean.thumbnail((1600, 1600))
+                clean.thumbnail((768, 768))
                 output = io.BytesIO()
                 # Re-encode only pixels: location/EXIF and other metadata are omitted.
-                clean.save(output, format='JPEG', quality=85)
+                clean.save(output, format='JPEG', quality=70)
                 return output.getvalue()
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError, Image.DecompressionBombWarning) as exc:
         raise ValueError('Choose a valid PNG, JPEG or WebP photo') from exc

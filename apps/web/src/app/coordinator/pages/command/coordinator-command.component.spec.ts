@@ -145,12 +145,17 @@ describe('CoordinatorCommandComponent', () => {
       'resetDemo',
       'loadFullScenario',
       'getRecentReports',
+      'submitSampleReport',
     ]);
 
     mockResources[0].location_updated_at = new Date().toISOString();
     mockRequests[0].trace = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'].map((agent) => ({ agent, status: 'complete', provider: 'tool', output: 'Python checks completed', tool_calls: [] }));
     apiClientSpy.getRequests.and.returnValue(of(mockRequests));
     apiClientSpy.getRecentReports.and.returnValue(of([]));
+    apiClientSpy.submitSampleReport.and.returnValue(of({
+      report_id: 'rpt_s', request_id: 'INC-S', status_token: 'tok', summary: 'ok',
+      urgency_score: 80, dedupe_decision: 'new', flags: [], safety_line: 'Call 112',
+    }));
     apiClientSpy.getAssistProposals.and.returnValue(of({ proposals: [], shortages: [] }));
     apiClientSpy.planAssist.and.returnValue(of({ proposals: [], shortages: [] }));
     apiClientSpy.resetDemo.and.returnValue(of({ seed: 'small', incidents: 2 }));
@@ -711,6 +716,7 @@ describe('CoordinatorCommandComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Counts differ: 2-3 vs 4-5');
     expect(text).toContain('Possible duplicate, review');
+    expect(text).toContain('AI found this matches INC-001 (55% similar)');
     expect(text).toContain('2-3 people at Oakbend');
     expect(text).toContain('4-5 people at Oakbend');
     (fixture.nativeElement.querySelector('[data-testid="merge-dup"]') as HTMLButtonElement).click();
