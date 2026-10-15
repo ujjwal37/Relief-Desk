@@ -170,3 +170,27 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 - [x] T-UX-03 coordinator dashboard (briefing, sticky approve bar, tour, theme/language menu, shared band counts), public layout + tab bar, report chat, review, status, nearby, alerts, accuracy report, DEMO_MODE-gated demo entry. Unit tests: web 40 + shared 8 green. Not done: undo-after-approve toast (no un-approve API), photo attach in composer, separate public Home tab screen (landing is home), coordinator detail slide-over close control below 1280px.
 - [x] P0 public entry: Home screen, My requests, Find my request, 4-tab bar on all public pages, request ID copy/share on status.
 - [x] Alerts map overhaul (ward outlines, typed numbered pins, zoom/dim, key); home coordinator button; i18n template lint.
+
+## Reference UI alignment (user requested 14 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| UI-REF-01 | Align the existing UI with `/home/sr/Downloads/relief-desk-ui-redesign`, extending its palette and component treatment across other pages; preserve logic | C | DONE | STAB-01 | UI-only diff; development build and i18n check pass; desktop/mobile screenshots reviewed |
+
+| UI-REF-02 | Remove redundant Cases and Dispatched top navigation links | C | DONE | UI-REF-01 | Both links absent on desktop/mobile; case queue filters preserved; development build passes |
+
+| UI-REF-03 | Remove duplicate Agent-page suggestions and improve the chat workspace layout | C | DONE | UI-REF-02 | Starter questions appear once; existing chat behavior preserved; responsive light/dark screenshots and build/i18n checks pass |
+
+| DEV-01 | Allow the user ngrok hostname in the Angular dev server | C | DONE | UI-REF-03 | Host-header request serves the app on port 4200; API proxy healthy |
+
+## Walkthrough improvements (user requested 14 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| IMP-01 | Repair report entry, trace wording/provenance, map loading and candidate clutter; verify seed and lifecycle fixes | C | DONE | DEV-01 | Desktop/mobile entry works; complete urgency text; honest tool/cache/fallback labels; one default map leg; loading/error states; nearby medical and lifecycle regressions pass |
+| IMP-02 | Harden live Gemini/ADK reviews, record genuine demo traces, and add an isolated outage preview | C | DONE | IMP-01 | Configurable bounded timeout; validated semantic reviews never replace deterministic scores; true model/cache metadata; recordings only from real Gemini; outage preview leaves stored cases unchanged |
+| IMP-03 | Add a guarded five-report live surge demonstration and inventory-aware medical scenario | C | DONE | IMP-02 | Demo-only authenticated surge; spaced synthetic submissions through normal intake and SSE; no dispatch; stock constraints are deterministic and pack-driven; human approval remains required |
+| IMP-04 | Add bounded photo observations with explicit reporter review and capture updated screenshots | C | DONE | IMP-03 | Synthetic image size/type validation; actual Gemini multimodal call through budgets/timeouts; uncertain observations require confirmation; text/offline paths preserved; desktop/mobile/Hindi screenshots and regression checks |
+
+## Browser branding (user requested 15 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| UI-REF-04 | Replace Angular browser icon with the website shield-and-cross logo | C | DONE | IMP-04 | SVG and ICO match website logo; served page references branded icon; production build passes |

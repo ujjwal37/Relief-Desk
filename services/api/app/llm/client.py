@@ -63,12 +63,21 @@ def _is_transient(exc: BaseException) -> bool:
     return text.startswith(("500", "503", "504")) or "UNAVAILABLE" in text or "DEADLINE_EXCEEDED" in text
 
 
+class _DailyCallCap(RuntimeError):
+    pass
+
+
+class _RetryLimit(RuntimeError):
+    pass
+
+
 class LLMClient:
     def __init__(self):
         self.call_count = 0
         self.daily_cap = settings.GEMINI_DAILY_CALL_CAP
         self._tls = threading.local()
         self._cache_lock = threading.Lock()
+        self._budget_lock = threading.Lock()
         self.last_source = "offline_fallback"
         self.last_ai = AiCall(provider="fallback", fallback_reason="not_called")
         self._last_tokens: Optional[int] = None
@@ -94,6 +103,14 @@ class LLMClient:
             return False
         key = (settings.GEMINI_API_KEY or "").strip()
         return key not in _PLACEHOLDER_KEYS
+
+    @property
+    def _last_tokens(self) -> Optional[int]:
+        return getattr(self._tls, "tokens", None)
+
+    @_last_tokens.setter
+    def _last_tokens(self, value: Optional[int]) -> None:
+        self._tls.tokens = value
 
     @property
     def last_ai(self) -> AiCall:
@@ -245,6 +262,7 @@ class LLMClient:
         max_retries is the number of repair attempts after invalid JSON. The
         default is one repair, then fallback.
         """
+        max_retries = max(0, min(2, max_retries))
         started = time.perf_counter()
         user_prompt = scrub_pii(user_prompt)
         cache_key = self.cache_key(system_instruction, user_prompt)
@@ -301,9 +319,9 @@ class LLMClient:
 
         current_prompt = user_prompt
         repairs_left = max_retries
+        self._tls.network_attempts = 0
         try:
             while True:
-                self.call_count += 1
                 text = self._call_with_retry(system_instruction, current_prompt)
                 if validator:
                     try:
@@ -339,6 +357,10 @@ class LLMClient:
 
     def note_failure(self, exc: BaseException) -> str:
         """Count a live failure. A per-day 429 opens the circuit until the reset and is not retried."""
+        if isinstance(exc, _DailyCallCap):
+            return "daily_cap"
+        if isinstance(exc, _RetryLimit):
+            return "retry_limit"
         if _is_daily_quota(exc):
             self.guard.trip(seconds_until_pacific_midnight())
             logger.warning("Gemini daily quota is exhausted. Circuit open until the Pacific midnight reset.")
@@ -441,15 +463,24 @@ class LLMClient:
 
     def _call_with_retry(self, system_instruction: str, user_prompt: str) -> str:
         """One live call, plus a single short retry on a transient 503/504/500."""
-        try:
+        def once() -> str:
+            if getattr(self._tls, "network_attempts", 0) >= 3:
+                raise _RetryLimit("At most two retries per language call")
+            with self._budget_lock:
+                if self.call_count >= self.daily_cap:
+                    raise _DailyCallCap("Gemini daily call cap reached")
+                self.call_count += 1
+            self._tls.network_attempts = getattr(self._tls, "network_attempts", 0) + 1
             return self._call_gemini(system_instruction, user_prompt)
+
+        try:
+            return once()
         except Exception as exc:
             if not _is_transient(exc):
                 raise
             logger.warning("Gemini transient error (%s). Retrying once.", str(exc)[:80])
             self.guard.sleep(1.0)
-            self.call_count += 1
-            return self._call_gemini(system_instruction, user_prompt)
+            return once()
 
     def _make_genai_client(self, timeout_s: float):
         """Build the SDK client with an HTTP timeout so a stuck request cannot hold a slot forever."""
@@ -476,6 +507,12 @@ class LLMClient:
         from concurrent.futures import TimeoutError as FuturesTimeout
 
         timeout_s = float(timeout_s or settings.GEMINI_TIMEOUT_S or 12.0)
+        from app.llm.adk_runtime import current_step, run_text_agent
+
+        agent_name = current_step()
+        image_input = getattr(self._tls, "image_input", None)
+        json_output = "json" in system_instruction.lower()
+        model_name = settings.GEMINI_MODEL
         self._last_tokens = None
         self.guard.slots.acquire()
         try:
@@ -484,22 +521,39 @@ class LLMClient:
             self.guard.slots.release()
             raise
 
-        def _run() -> str:
+        def _run() -> tuple[str, Optional[int]]:
             client = self._make_genai_client(timeout_s)
-            response_obj = client.models.generate_content(
-                model=settings.GEMINI_MODEL,
-                contents=user_prompt,
-                config={"system_instruction": system_instruction, "temperature": 0.1},
-            )
-            usage = getattr(response_obj, "usage_metadata", None)
-            total = getattr(usage, "total_token_count", None) if usage is not None else None
-            self._last_tokens = int(total) if isinstance(total, int) else None
-            return response_obj.text or ""
+            used: Optional[int] = None
+
+            def transport() -> str:
+                nonlocal used
+                config: Dict[str, Any] = {"system_instruction": system_instruction, "temperature": 0.1}
+                if json_output:
+                    config["response_mime_type"] = "application/json"
+                if model_name.startswith("gemini-2.5-flash"):
+                    config["thinking_config"] = {"thinking_budget": 0}
+                contents: Any = user_prompt
+                if image_input is not None:
+                    from google.genai import types
+                    contents = [types.Part.from_bytes(data=image_input, mime_type="image/jpeg"), user_prompt]
+                response_obj = client.models.generate_content(model=model_name, contents=contents, config=config)
+                usage = getattr(response_obj, "usage_metadata", None)
+                total = getattr(usage, "total_token_count", None) if usage is not None else None
+                used = int(total) if isinstance(total, int) else None
+                return response_obj.text or ""
+
+            try:
+                return run_text_agent(agent_name, model_name, system_instruction, user_prompt, transport), used
+            finally:
+                close = getattr(client, "close", None)
+                if close:
+                    close()
 
         try:
             future = _GEMINI_POOL.submit(_run)
             try:
-                text = future.result(timeout=timeout_s)
+                text, tokens = future.result(timeout=timeout_s)
+                self._last_tokens = tokens
             except FuturesTimeout as exc:
                 future.cancel()
                 raise TimeoutError("Gemini timed out") from exc
@@ -508,6 +562,17 @@ class LLMClient:
         if not text.strip():
             raise RuntimeError("Gemini returned an empty reply")
         return text
+
+    def generate_image_content(self, instruction: str, prompt: str, image: bytes, validator) -> str:
+        # Text-only test providers must never claim to have inspected an image.
+        if (settings.LLM_PROVIDER or "").lower() not in ("", "gemini"):
+            return self._fallback(prompt, "multimodal_unavailable", time.perf_counter())
+        before = getattr(self._tls, "image_input", None)
+        self._tls.image_input = image
+        try:
+            return self.generate_content(instruction, prompt, validator=validator, max_retries=1)
+        finally:
+            self._tls.image_input = before
 
     def generate(self, prompt: str, system_instruction: str = "") -> str:
         return self.generate_content(system_instruction=system_instruction, user_prompt=prompt)

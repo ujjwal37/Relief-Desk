@@ -1,29 +1,27 @@
-/* App-wide theme. Names stay the ones the screens already use.
-   Values follow a shadcn/ui card + emerald success palette (zinc neutrals,
-   8px radius, 4px spacing). Other tabs pick this up through the same variables. */
+/* Shared surfaces and pine accents from the supplied relief-desk-ui-redesign. */
 :root, :root[data-theme='light'] {
-  --bg: #f4f4f5;
-  --surface: #ffffff;
-  --surface-2: #f4f4f5;
-  --border: #e4e4e7;
-  --text: #09090b;
-  --text-2: #71717a;
-  --muted: #71717a;
-  --brand: #047857;
+  --bg: oklch(0.975 0.006 90);
+  --surface: oklch(0.998 0.002 90);
+  --surface-2: oklch(0.955 0.008 100);
+  --border: oklch(0.89 0.012 95);
+  --text: oklch(0.22 0.025 188);
+  --text-2: oklch(0.52 0.02 190);
+  --muted: oklch(0.52 0.02 190);
+  --brand: oklch(0.39 0.082 178);
   --on-brand: #ffffff;
-  --brand-tint: #ecfdf5;
-  --sev-crit: #dc2626;
+  --brand-tint: oklch(0.944 0.018 170);
+  --sev-crit: oklch(0.56 0.19 28);
   --sev-crit-t: #fef2f2;
-  --sev-high: #d97706;
+  --sev-high: #a76416;
   --sev-high-t: #fffbeb;
   --sev-med: #2563eb;
   --sev-med-t: #eff6ff;
   --sev-low: #64748b;
-  --ok: #059669;
-  --ok-t: #ecfdf5;
-  --e1: 0 1px 2px 0 rgb(0 0 0 / 5%);
-  --e2: 0 1px 3px 0 rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%);
-  --e3: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 10%);
+  --ok: #176d59;
+  --ok-t: #e8f3ed;
+  --e1: 0 1px 2px rgb(25 49 43 / 4%);
+  --e2: 0 2px 8px rgb(25 49 43 / 6%);
+  --e3: 0 12px 36px rgb(25 49 43 / 12%);
   --scrim: rgb(15 23 32 / 48%);
 }
 :root[data-theme='dark'] {
@@ -34,8 +32,8 @@
   --text: #ecf3ee;
   --text-2: #a7b4ad;
   --muted: #8b9a93;
-  --brand: #34d399;
-  --on-brand: #052e1c;
+  --brand: #82cbb5;
+  --on-brand: #102c24;
   --brand-tint: #0f2a20;
   --sev-crit: #f87171;
   --sev-crit-t: #3b1515;
@@ -61,7 +59,7 @@
   --green: var(--ok);
   --blue: var(--sev-med);
   --focus: var(--brand);
-  --map-bg: #f4f4f5;
+  --map-bg: #e9eee4;
   --map-water: color-mix(in srgb, var(--brand) 16%, var(--surface));
   --map-flood: color-mix(in srgb, var(--sev-med) 10%, transparent);
   --map-flood-line: color-mix(in srgb, var(--sev-med) 55%, var(--border));
@@ -81,7 +79,7 @@
   --primary: var(--brand);
   --primary-fg: var(--on-brand);
   --muted-fg: var(--muted);
-  --radius: var(--r2);
+  --radius: var(--r3);
   --banner-ok: #059669;
   --banner-ok-fg: #ffffff;
 }

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <style>
+    .shield { fill: oklch(0.39 0.082 178); }
+    .cross { stroke: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      .shield { fill: #82cbb5; }
+      .cross { stroke: #102c24; }
+    }
+  </style>
+  <path class="shield" d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/>
+  <path class="cross" d="M12 7v8M8 11h8" fill="none" stroke-width="2.2" stroke-linecap="round"/>
+</svg>

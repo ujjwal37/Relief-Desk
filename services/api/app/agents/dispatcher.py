@@ -67,6 +67,9 @@ def propose_assignment(request_id: str, resource_id: str) -> dict:
     res = storage_service.get_resource(resource_id)
     if req is None or res is None:
         return {"ok": False, "explanation": "That case or team is not on the board."}
+    from app.tools.inventory import missing_supplies
+    if missing_supplies(req, res):
+        return {"ok": False, "dispatched": False, "explanation": "Required referral supplies are not in stock."}
     people = req.people_count or 1
     try:
         hold = storage_service.reserve_hold(request_id, resource_id, people, actor="dispatcher")

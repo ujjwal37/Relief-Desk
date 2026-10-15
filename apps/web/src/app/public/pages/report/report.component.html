@@ -16,8 +16,10 @@
     <div class="r-actions"><rd-call-pill /><rd-settings-button /></div>
   </header>
 
+  <p class="report-safety" role="note">{{ 'safety.banner' | rdTranslate }}</p>
   @if (mode() === 'form') {
     <div class="form-container">
+      @if (photoUsed()) { <p class="legal">{{ 'photo.reviewRequired' | rdTranslate }}</p> }
       <p class="form-sub">{{ 'confirm.nothingSent' | rdTranslate }}</p>
       <div class="quick-tiles">
         @for (tile of tiles(); track tile.id) {
@@ -43,6 +45,7 @@
     </div>
   } @else if (pendingCard() && reviewOpen()) {
     <div class="review-wrap">
+      @if (photoUsed()) { <p class="legal">{{ 'photo.reviewRequired' | rdTranslate }}</p> }
       <rd-confirmation-card [card]="pendingCard()!" [quote]="citizenWords()" [busy]="isLoading()" [smsHref]="offlineSync.getPrefilledSmsLink(pendingCard()!.summary)" (cardChange)="onCardEdited($event)" (send)="confirmAndSubmit($event)"></rd-confirmation-card>
       <button type="button" class="link back-chat" (click)="reviewOpen.set(false)">{{ 'report.back' | rdTranslate }}</button>
     </div>
@@ -89,6 +92,7 @@
     </div>
 
     <div class="composer-wrap">
+      <app-photo-intake [caption]="citizenWords() + ' ' + userInput()" [online]="offlineSync.isOnline()" (accepted)="usePhotoObservation($event)" />
       <p class="legal">{{ 'report.noMedical' | rdTranslate }}</p>
       <form class="composer" (submit)="$event.preventDefault(); sendUserMessage()">
         <textarea #ta rows="1" [attr.lang]="inputLocale()" [placeholder]="'report.placeholder2' | rdTranslate" [attr.aria-label]="'report.placeholder' | rdTranslate"

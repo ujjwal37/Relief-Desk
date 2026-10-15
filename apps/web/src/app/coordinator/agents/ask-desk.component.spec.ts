@@ -46,6 +46,7 @@ describe('AskDeskComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('ux.agentHello');
     expect(fixture.nativeElement.textContent).toContain('ux.exampleA1');
     expect(fixture.nativeElement.querySelectorAll('.example').length).toBe(3);
+    expect(fixture.nativeElement.querySelector('.suggestions')).toBeNull();
     expect(fixture.nativeElement.querySelector('form.composer')).not.toBeNull();
     fixture.componentInstance.question = 'elderly in Aluva';
     fixture.componentInstance.ask();
@@ -53,6 +54,7 @@ describe('AskDeskComponent', () => {
     expect(fixture.componentInstance.thread().length).toBe(1);
     expect(fixture.nativeElement.textContent).toContain('INC-001');
     expect(fixture.nativeElement.querySelector('.example')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.suggestions')).toBeNull();
     expect(fixture.nativeElement.querySelector('.hello')).toBeNull();
     expect(fixture.nativeElement.querySelector('form.composer')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.case-link')).not.toBeNull();

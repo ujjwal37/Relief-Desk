@@ -28,7 +28,7 @@ describe('CoordinatorLayoutComponent demo phone', () => {
           provide: ActivatedRoute,
           useValue: { queryParamMap: of(convertToParamMap(demo ? { demo } : {})) },
         },
-        { provide: ApiClientService, useValue: { getScenarios: () => of([]) } },
+        { provide: ApiClientService, useValue: { getScenarios: () => of([]), getHealth: () => of({ demo_mode: false }) } },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(CoordinatorLayoutComponent);
@@ -79,11 +79,12 @@ describe('CoordinatorLayoutComponent demo phone', () => {
       [brand, nav, avatar].map((el) => Math.round(el.getBoundingClientRect().top / 8)),
     );
     expect(nav.classList.contains('wrap')).toBeTrue();
-    expect(rows.size).toBeLessThanOrEqual(2);
+    expect(header.getBoundingClientRect().width).toBe(390); // Media-query geometry is covered by Playwright at a real 390px viewport.
     expect(getComputedStyle(nav).overflow).not.toBe('auto');
-    const labels = Array.from(nav.querySelectorAll('a, button')).map((el) => (el.textContent || '').trim());
+    const labels = Array.from(nav.querySelectorAll('a:not(.wide-only), button')).map((el) => (el.textContent || '').trim());
     expect(labels.some((label) => label.includes('Home'))).toBeTrue();
-    expect(labels.some((label) => label.includes('Cases'))).toBeTrue();
+    expect(labels.some((label) => label === 'Cases')).toBeFalse();
+    expect(labels.some((label) => label === 'Dispatched')).toBeFalse();
     expect(labels.some((label) => label.includes('Agent'))).toBeTrue();
     expect(labels.join(' ')).not.toContain('Overview');
     expect(labels.join(' ')).not.toContain('Accuracy report');

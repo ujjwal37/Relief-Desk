@@ -230,7 +230,15 @@
   },
   "demo": {
     "phone": "Demo phone",
-    "hide": "Hide phone"
+    "hide": "Hide phone",
+    "surgeButton": "⚡ Simulate 5 reports",
+    "surgeRunning": "Simulating…",
+    "surgeProgress": "Synthetic surge: {n}/5 reports submitted.",
+    "surgeDone": "Submitted {n} synthetic reports. Analysis continues; review each dispatch.",
+    "surgeFailed": "Surge finished with errors; {n} reports submitted.",
+    "surgeUnavailable": "Surge unavailable or already running. Try again shortly.",
+    "scenarioFailed": "Scenario could not be loaded.",
+    "mergeNotice": "Reports joined into {id}. Review the updated count and evidence."
   },
   "settings": {
     "title": "Settings",
@@ -473,7 +481,8 @@
     "stepSent": "Sent",
     "stepAccepted": "Accepted",
     "stepOnWay": "On the way",
-    "stepOnScene": "On scene"
+    "stepOnScene": "On scene",
+    "referralStock": "Human-entered referral stock requirement"
   },
   "tour": {
     "next": "Next",
@@ -841,7 +850,10 @@
     "margin": "Margin of error ±{n} points",
     "smallSample": "This gap is inside the margin of error on a small sample.",
     "scale": "0–100%",
-    "deskHowAnswered": "How I answered · {n} steps"
+    "deskHowAnswered": "How I answered · {n} steps",
+    "agentScope": "Case assistant",
+    "agentIntro": "Find requests by place, need, or who is still waiting.",
+    "agentFootnote": "Answers help you review cases. Approve dispatches from the case queue."
   },
   "flow": {
     "title": "How it decided",
@@ -862,7 +874,7 @@
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} free seat(s).",
     "sentExplain": "Wrote the one-line reason you see on the panel.",
-    "fallbackBanner": "{n} steps used rules instead of Gemini because Gemini timed out. Rules are the same checks a coordinator uses; the suggestion is still safe to review.",
+    "fallbackBanner": "{n} AI steps used the offline fallback. Open Details for the recorded reason. Python scoring and matching remain available.",
     "loading": "Working… step {k} of {n} · {t} s",
     "failed": "Couldn't finish the AI steps. The team match is missing, so there is no suggestion. You can retry or choose a team yourself.",
     "noTrace": "No AI record for this case",
@@ -876,6 +888,54 @@
     "copied": "Copied",
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
-    "waiting": "Waiting"
+    "waiting": "Waiting",
+    "badgeTool": "Python tool",
+    "badgeCache": "Recorded (Gemini)",
+    "simulateOutage": "Preview rules fallback",
+    "simulatedOnly": "Preview only. Stored traces and dispatch decisions are unchanged."
+  },
+  "uiRef": {
+    "activeQueue": "Active queue",
+    "casesAction": "Cases requiring action",
+    "priority": "Priority",
+    "areaIntelligence": "Area intelligence",
+    "response": "Response",
+    "recommendation": "Response recommendation",
+    "teamFit": "Team fit",
+    "reports": "Reports"
+  },
+  "map": {
+    "loading": "Loading sector map…"
+  },
+  "photo": {
+    "add": "Add photo",
+    "title": "Photo observations",
+    "preview": "Selected synthetic photo",
+    "ephemeral": "The image is analysed only when you tap below. It is not stored. Only details you review can be added to your report.",
+    "synthetic": "This is a synthetic demo image",
+    "remove": "Remove photo",
+    "offline": "Connect to analyse the photo, or continue with text.",
+    "analyse": "Analyse with Gemini",
+    "analysing": "Analysing…",
+    "unverified": "AI photo suggestions · unverified",
+    "reviewed": "I checked these observations against the photo",
+    "use": "Use reviewed details",
+    "invalid": "Choose a PNG, JPEG or WebP photo up to 2 MB.",
+    "unavailable": "Photo analysis is unavailable. You can still describe the scene and send your report.",
+    "confirmedWords": "I reviewed these photo observations: {observations}.",
+    "reviewRequired": "Photo details were reviewed by the reporter; check them again before sending.",
+    "water": {
+      "none": "No visible water",
+      "ground": "Water on the ground",
+      "knee": "Water appears knee-high",
+      "waist": "Water appears waist-high",
+      "roof": "Water near roof level",
+      "unclear": "Water level unclear"
+    },
+    "damage": {
+      "visible": "Possible structural damage visible",
+      "not_visible": "No structural damage visible",
+      "unclear": "Structural damage unclear"
+    }
   }
 }

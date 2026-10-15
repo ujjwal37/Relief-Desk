@@ -605,6 +605,7 @@ class StorageService:
                 ward_id=item["ward_id"],
                 lat=float(item["lat"]),
                 lng=float(item["lng"]),
+                supplies=item.get("supplies") or {},
                 capacity_total=int(item["capacity_total"]),
                 capacity_remaining=int(item.get("capacity_remaining", item["capacity_total"])),
                 status=ResourceStatus(item.get("status", "available")),
@@ -641,7 +642,12 @@ class StorageService:
     def list_matches(self) -> List[StoredMatch]:
         return list(self._matches.values())
 
-    def approve_match(
+    def approve_match(self, match_id: str, approved_by: str = "coordinator", allow_overcommit: bool = False) -> StoredMatch:
+        # Recheck stock and consume it in the same critical section as capacity.
+        with self._hold_lock:
+            return self._approve_match_locked(match_id, approved_by, allow_overcommit)
+
+    def _approve_match_locked(
         self,
         match_id: str,
         approved_by: str = "coordinator",
@@ -652,7 +658,17 @@ class StorageService:
         if not match:
             raise ValueError(f"Match {match_id} not found")
 
+        if match.state == MatchState.APPROVED:
+            return match  # An HTTP retry must not consume capacity or supplies twice.
+        if match.state != MatchState.PROPOSED:
+            raise ValueError("Only a proposed match can be approved")
         req = self._requests.get(match.request_id)
+        assigned = self._resources.get(match.resource_id)
+        from app.tools.inventory import missing_supplies
+        if req and assigned and missing_supplies(req, assigned):
+            raise ValueError("Required referral supplies are no longer in stock; choose another team")
+        if req and req.assigned_resource_id and req.status in (RequestStatus.DISPATCHED, RequestStatus.IN_PROGRESS):
+            raise ValueError("This case already has an assigned team")
         people_needed = req.people_count if (req and req.people_count) else 1
 
         # A hold already took the seats. Approving dispatches; it does not take them twice.
@@ -680,6 +696,12 @@ class StorageService:
             )
         assigned = self._resources.get(match.resource_id)
         if assigned and req:
+            if req.required_supplies:
+                before_supplies = assigned.model_dump()
+                for supply, amount in req.required_supplies.items():
+                    assigned.supplies[supply] -= amount
+                self.record_audit(actor=approved_by, action="supplies_consumed", target=assigned.id,
+                                  before=before_supplies, after=assigned.model_dump())
             assigned.assigned_request_id = req.id
             if not assigned.location_updated_at:
                 assigned.location_updated_at = assigned.updated_at
@@ -870,7 +892,12 @@ class StorageService:
 
                 minutes_ago = count % 50
                 stamp = (datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)).isoformat()
+                from app.tools.scenario_loader import scenario_registry
+                pack = scenario_registry.get_scenario(item.get("pack_id") or pack_id)
+                requirements = (pack.routing_profiles.get(item.get("routing_profile"), {}) if pack else {})
                 req = StoredRequest(
+                    required_supplies=dict(requirements),
+                    routing_note=item.get("routing_note"),
                     id=item["id"],
                     pack_id=item.get("pack_id") or pack_id,
                     type=IncidentType(item.get("type", "rescue")),
@@ -964,6 +991,23 @@ class StorageService:
         )
         return {"resources": resources, "incidents": incidents, "scenario_packs": packs, "demo": demo, "seed": mode}
 
+    def load_missing_scenario(self, pack_id: str) -> None:
+        """Append missing seed rows; switching views never replenishes used stock."""
+        from pathlib import Path
+        import yaml
+        base = Path(__file__).resolve().parents[4] / "data" / "synthetic" / pack_id
+        for name, collection, loader in (
+            ("seeds.yaml", "incidents", self.load_seed_incidents),
+            ("resources.yaml", "resources", self.load_seed_resources),
+        ):
+            path = base / name
+            if not path.exists():
+                continue
+            rows = yaml.safe_load(path.read_text(encoding="utf-8"))[collection]
+            exists = self.get_request if collection == "incidents" else self.get_resource
+            kwargs = {"pack_id": pack_id} if collection == "incidents" else {}
+            loader(str(path), only_ids=[row["id"] for row in rows if exists(row["id"]) is None], **kwargs)
+
     def load_scenario_pack_seeds(self) -> int:
         """Load data/synthetic/<scenario-id>/seeds.yaml for every pack. No per-scenario branch."""
         import os
@@ -975,6 +1019,9 @@ class StorageService:
             path = os.path.join(base_dir, "data", "synthetic", scenario.id, "seeds.yaml")
             if os.path.exists(path):
                 loaded += self.load_seed_incidents(path, pack_id=scenario.id)
+            resource_path = os.path.join(base_dir, "data", "synthetic", scenario.id, "resources.yaml")
+            if os.path.exists(resource_path):
+                self.load_seed_resources(resource_path)
         return loaded
 
 

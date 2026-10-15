@@ -107,3 +107,46 @@ def record_seeded_reports() -> int:
         )
     print(f"Wrote {written} new recorded Gemini replies ({kept} already recorded) to {REPLAY_DIR}")
     return written
+
+
+def record_seeded_traces(ids: list[str]) -> int:
+    """Record a small number of whole-case traces. Never synthesize Gemini provenance."""
+    _never_antigravity()
+    from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_agent
+    from app.agents.pipeline import finish
+    from app.llm.client import CACHE_DIR, REPLAY_DIR, llm_client
+    from app.llm.replay_seed import seed_prompt, trace_fingerprint
+    from app.tools.storage import storage_service
+
+    require_real_key(os.environ.get("GEMINI_API_KEY") or settings.GEMINI_API_KEY)
+    settings.AI_MODE = "auto"
+    settings.GEMINI_ENABLED = True
+    storage_service.load_full_scenario()
+    written = 0
+    for request_id in ids:
+        req = storage_service.get_request(request_id)
+        if req is None:
+            raise SystemExit(f"Unknown seed case: {request_id}")
+        intake_agent.parse_report(req.raw_text or "")
+        ai = llm_client.last_ai.model_copy()
+        if ai.provider != "gemini":
+            print(f"skip {request_id}: intake {ai.fallback_reason or ai.provider}", file=sys.stderr)
+            continue
+        key = llm_client.cache_key(SYSTEM_INTAKE_PROMPT, seed_prompt(req.raw_text))
+        runtime = CACHE_DIR / f"{key}.json"
+        req.ai = ai
+        req.ai_source = "gemini"
+        finish(request_id)
+        req = storage_service.get_request(request_id)
+        # A complete recording has genuine language responses and a Python Matching row.
+        if any(row.get("provider") not in ("gemini", "cache", "tool") for row in req.trace):
+            print(f"skip {request_id}: one or more reviews fell back", file=sys.stderr)
+            continue
+        REPLAY_DIR.mkdir(parents=True, exist_ok=True)
+        (REPLAY_DIR / f"{key}.json").write_text(runtime.read_text(encoding="utf-8"), encoding="utf-8")
+        payload = {"fingerprint": trace_fingerprint(req), "trace": req.trace, "analysis": req.analysis,
+                   "recorded_at": req.updated_at, "request_id": req.id}
+        (REPLAY_DIR / f"{key}.trace.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        written += 1
+        print(f"recorded genuine trace for {request_id}")
+    return written

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import List, Dict, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PositiveInt
 
 
 class ScenarioTile(BaseModel):
@@ -19,5 +19,6 @@ class ScenarioConfig(BaseModel):
     tiles: List[ScenarioTile] = Field(default_factory=list)
     follow_up_questions: Dict[str, Dict[str, str]] = Field(default_factory=dict)
     urgency_rules: Dict[str, float] = Field(default_factory=dict)
+    routing_profiles: Dict[str, Dict[str, PositiveInt]] = Field(default_factory=dict)
     resource_types: List[str] = Field(default_factory=list)
     safety_line_ids: List[str] = Field(default_factory=list)

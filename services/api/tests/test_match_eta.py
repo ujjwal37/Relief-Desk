@@ -102,6 +102,8 @@ def test_demo_teams_are_within_15_km_of_kuttanad_and_alappuzha():
     by_kind: dict = {}
     for team in resources:
         by_kind.setdefault(team["kind"], []).append(team)
+        if team["id"] == "RES-MED-04":
+            continue  # Varapuzha serves the oxygen case in Ernakulam.
         for label, (lat, lng) in (("Kuttanad", kuttanad), ("Alappuzha", alappuzha)):
             km = haversine_distance(lat, lng, team["lat"], team["lng"])
             assert km <= 15, f"{team['id']} is {km:.1f} km from {label}"
@@ -124,3 +126,15 @@ def test_demo_teams_are_within_15_km_of_kuttanad_and_alappuzha():
             for team in by_kind[kind]
         )
         assert nearest <= 15, f"{incident['id']} {kind} is {nearest} km"
+
+
+def test_seed_inc008_has_a_nearby_medical_team():
+    storage_service.load_seed_resources()
+    data = yaml.safe_load(SEEDS.read_text(encoding="utf-8"))
+    row = next(item for item in data["incidents"] if item["id"] == "INC-008")
+    req = StoredRequest(id="INC008-test", type="medical", lat=row["lat"], lng=row["lng"], people_count=row["people"])
+    best = matching_agent.find_matches(req, save_to_storage=False)[0]
+    assert best.resource_id == "RES-MED-04"
+    assert 1.5 <= best.breakdown.distance_km <= 3.5
+    assert best.no_nearby is False
+    assert best.eta_minutes == _eta(best.breakdown.distance_km)

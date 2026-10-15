@@ -67,13 +67,13 @@ ADK 2.11 warns that `SequentialAgent` and `ParallelAgent` are deprecated in favo
 | Intake JSON | `GEMINI_MODEL` default `gemini-3.8-flash` | `app/llm/client.py`, `app/agents/intake.py` | Mocked in `tests/test_gemini_live.py`. Live smoke skips unless `GEMINI_API_KEY` is a real key |
 | Duplicate judge | `GEMINI_MODEL` | `app/agents/dedupe.py` | Mocked in `tests/test_embedding_dedupe.py` |
 | Embeddings | `GEMINI_EMBED_MODEL=gemini-embedding-001`, task `SEMANTIC_SIMILARITY`, 768-d | `app/llm/embeddings.py` | Mocked. No key returns no vector and the lexical fallback runs |
-| Explainer text | `GEMINI_MODEL` | `app/agents/explainer.py`, `pipeline.py` | The stored note is the tool sentence plus "not medical or legal advice" unless a live call replaces it. Not scored on the split |
+| Explainer text | `GEMINI_MODEL` | `app/agents/explainer.py`, `pipeline.py` | Read-only ADK language reviews explain supplied Python results; invalid numbers fall back to the tool sentence. Not scored on the split |
 | Assist dispatcher | `GEMINI_MODEL` | `app/agents/dispatcher.py` | Tool order, reject, and the two-coordinator hold are tested without a model call |
 | Benchmark column | `GEMINI_MODEL` | `bench/gemini_eval.py` | `measured: false`, reason `no_api_key`, n=168, date 2026-10-11 |
 | Recorded replay | `AI_MODE=replay` | `data/ai_cache`, `scripts/record_ai.py` | `fixture.json` lists the prompts with no replies. `make record-ai` writes transcripts only after a real call |
 | Health | none | `GET /api/health/ai` in `app/api/health.py` | Returns provider, model, cache hit rate, and quota. It does not return the key |
 
-Not built: Gemini Live voice, Search grounding, Malayalam, photo intake, Pub/Sub, BigQuery.
+Not built: Gemini Live voice, Search grounding, Malayalam live voice, Pub/Sub, BigQuery. Photo observations are implemented with explicit reporter review; images are not stored.
 
 ## Benchmark (synthetic, our own labels)
 
@@ -157,7 +157,22 @@ There is no live Cloud Run URL in this repo. `deploy/cloudrun.md` is the recipe:
 Angular, Ionic, Capacitor, FastAPI, `google-adk==2.11.0`, `google-genai==2.29.0`. Model id `gemini-3.8-flash` and embedding id `gemini-embedding-001` come from the Gemini docs (models page dated 2026-10-09, embeddings page dated June 2025) and are set in `services/api/app/config.py`. Built with help from AI coding tools (Antigravity, Cursor).
 
 ## Roadmap (not built)
-Hourly local-news watch, weather alerts, SMS/WhatsApp intake, offline sync, more Indian languages.
+Hourly local-news watch, weather alerts, SMS/WhatsApp intake, full multi-device offline sync, more Indian languages.
 
 ## License
 `<choose>`
+
+
+Walkthrough upgrades: live language calls execute through `app/llm/adk_runtime.py` using ADK `LlmAgent` and `InMemoryRunner`. Intake is followed by independent duplicate/urgency language reviews, then deterministic matching and a language explanation. The declared `PIPELINE` is a reference graph; the production path in `pipeline.finish` runs the two reviews concurrently through the shared model gate. Models never set scores or dispatch. Default per-call timeout is 20s after quota/slot waiting; a sub-4s response is not guaranteed.
+
+`python scripts/record_ai.py --traces INC-001 INC-008` (with the API environment loaded) records actual seeded intake/review traces. Missing keys or fallback results never acquire Gemini provenance. Replay uses **Recorded (Gemini)** labels and an input fingerprint. The drawer's **Preview rules fallback** checkbox is local and makes no API writes. On 14 Oct, the API rejected `gemini-2.5-flash` for this account (404); `gemini-3.8-flash` returned high demand (503), while the configured `gemini-3.5-flash-lite` completed a genuine ADK call. Keep the model configurable and verify availability with your own account.
+
+
+In DEMO_MODE, the coordinator header's **Simulate 5 reports** submits five synthetic messages through normal intake, spaced two seconds apart. One run at a time, with a 30s cooldown; the endpoint requires coordinator auth and returns 403 outside demo mode. Progress uses SSE with a status-poll fallback. Actual merges/updates, score order and spike alerts are shown; no score or successful merge is scripted and no dispatch is approved automatically.
+
+The existing scenario menu can load the **Dog attack** pack even from the small demo. Its DOG-001 fixture contains a human-entered synthetic clinician referral requiring RIG stock. Routing profiles and facility stocks live in YAML; Python excludes unstocked facilities and rechecks/allocates stock atomically on human approval. Completing a case frees team capacity, but does not replenish allocated supplies. This is an inventory-routing demonstration, not clinical triage or a treatment/dose recommendation.
+
+
+Photo observations: `/report` accepts PNG/JPEG/WebP synthetic demo images up to 2 MB. **Analyse with Gemini** sends pixels and the report caption through the shared guards; metadata is stripped and the image is not retained. The schema allows only visible water/damage observations. The reporter must check them before adding details to the draft, then review and send as usual. A model outage leaves text/form/offline reporting available. No injury diagnosis or AI verification badge is produced.
+
+[Walkthrough coverage and verification](docs/reviews/walkthrough-improvements.md) · [Updated screenshots](docs/design/reviews/walkthrough-improvements/README.md).

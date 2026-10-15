@@ -2,6 +2,8 @@ version: 1
 scenario_pack: dog_attack
 incidents:
 - id: DOG-001
+  routing_profile: clinician_referral_rig
+  routing_note: Synthetic clinician referral specifies RIG availability. Coordinator must confirm facility stock.
   type: animal_attack
   ward_id: ward_2
   lat: 9.422
@@ -21,7 +23,7 @@ incidents:
     text: Synthetic report. A child near Champakulam School was bitten. Please send
       transport to the hospital.
   - lang: hi
-    text: काल्पनिक रिपोर्ट। गांधी हाई स्कूल के पास एक बच्चे को कुत्ते ने काटा है।
+    text: काल्पनिक रिपोर्ट। चंपाकुलम स्कूल के पास एक बच्चे को कुत्ते ने काटा है।
       अस्पताल तक ले जाने की गाड़ी चाहिए।
 - id: DOG-002
   type: animal_attack
@@ -63,8 +65,8 @@ incidents:
 - id: DOG-004
   type: animal_attack
   ward_id: ward_8
-  lat: 26.866
-  lng: 80.951
+  lat: 10.241
+  lng: 76.267
   people: 1
   vulnerable:
     child: false

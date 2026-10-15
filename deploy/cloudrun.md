@@ -262,4 +262,4 @@ Then note the same URL in `WORKDONE.md` (new entry, do not edit old ones) and in
 
 ## Not in this deploy
 
-Pub/Sub, BigQuery, Gemini Live, Search grounding, and photo intake are not part of the service. Firestore rules are not applied, because this process does not store cases in Firestore. The PWA languages are English, Hindi, Hinglish, and Malayalam.
+Pub/Sub, BigQuery, Gemini Live, and Search grounding are not part of the service. Photo observations are: the API checks a PNG, JPEG, or WebP in memory and does not store the image. `requirements.txt` pins Pillow for that check, and the image install picks it up with the other dependencies. Firestore rules are not applied, because this process does not store cases in Firestore. The PWA languages are English, Hindi, Hinglish, and Malayalam. The model call timeout in `deploy/cloudrun.env.yaml` is 20 seconds, matching `GEMINI_TIMEOUT_S` in `services/api/app/config.py`.

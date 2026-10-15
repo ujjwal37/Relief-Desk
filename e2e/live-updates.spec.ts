@@ -6,8 +6,8 @@ test.beforeEach(async ({ request }) => {
 });
 
 test('a phone report updates the desk, and an approval updates the phone, with no reload', async ({ browser }) => {
-  const tag = `live${Date.now().toString(36).replace(/[0-9]/g, 'x')}`;
-  const place = `Kainakary Ferry ${tag}`;
+  const tag = `Demo ${Date.now().toString().slice(-6)}`;
+  const place = `Kainakary Ferry Jetty (${tag})`;
   const deskContext = await browser.newContext({ viewport: { width: 1366, height: 768 } });
   const phoneContext = await browser.newContext({
     viewport: { width: 390, height: 844 },

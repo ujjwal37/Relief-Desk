@@ -230,7 +230,15 @@
   },
   "demo": {
     "phone": "Demo phone",
-    "hide": "Phone chhupayein"
+    "hide": "Phone chhupayein",
+    "surgeButton": "⚡ 5 reports ka demo",
+    "surgeRunning": "Demo chal raha hai…",
+    "surgeProgress": "Synthetic surge: {n}/5 reports bheji gayi.",
+    "surgeDone": "{n} synthetic reports bheji gayi. Analysis jaari hai; har dispatch review karein.",
+    "surgeFailed": "Surge mein errors; {n} reports bheji gayi.",
+    "surgeUnavailable": "Surge available nahi ya chal raha hai. Thodi der baad try karein.",
+    "scenarioFailed": "Scenario load nahi hua.",
+    "mergeNotice": "Reports {id} mein jodi gayi. Updated count aur evidence review karein."
   },
   "settings": {
     "title": "Settings",
@@ -473,7 +481,8 @@
     "stepSent": "Bheja",
     "stepAccepted": "Accept",
     "stepOnWay": "Raaste mein",
-    "stepOnScene": "Scene par"
+    "stepOnScene": "Scene par",
+    "referralStock": "Human-entered referral stock requirement"
   },
   "tour": {
     "next": "Aage",
@@ -841,7 +850,10 @@
     "margin": "Margin of error ±{n} points",
     "smallSample": "Yeh gap is chhote sample ke margin ke andar hai.",
     "scale": "0–100%",
-    "deskHowAnswered": "Maine kaise jawab diya · {n} steps"
+    "deskHowAnswered": "Maine kaise jawab diya · {n} steps",
+    "agentScope": "Case assistant",
+    "agentIntro": "Jagah, zaroorat, ya abhi bhi intezaar kar rahe logon ke requests khojein.",
+    "agentFootnote": "Jawab cases review karne mein madad karte hain. Dispatch ki manzoori case queue se dein."
   },
   "flow": {
     "title": "AI ne kaise decide kiya",
@@ -862,7 +874,7 @@
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} khali seat.",
     "sentExplain": "Panel par dikhne wala one-line reason likha.",
-    "fallbackBanner": "{n} steps ne Gemini timeout ki wajah se rules use kiye. Rules wahi checks hain jo coordinator karta hai; suggestion review ke liye safe hai.",
+    "fallbackBanner": "{n} AI steps ne offline fallback use kiya. Wajah Details mein dekhein. Python scoring aur matching available hain.",
     "loading": "Kaam chal raha hai… step {k} / {n} · {t} s",
     "failed": "AI steps poore nahi hue. Team match nahi hai, isliye suggestion nahi. Retry karein ya khud team chunein.",
     "noTrace": "Is case ka AI record nahi",
@@ -876,6 +888,54 @@
     "copied": "Copy ho gaya",
     "fellBack": "Isliye wapas gaye",
     "modelLatency": "Model · latency",
-    "waiting": "Wait"
+    "waiting": "Wait",
+    "badgeTool": "Python tool",
+    "badgeCache": "Recorded (Gemini)",
+    "simulateOutage": "Rules fallback preview dekhein",
+    "simulatedOnly": "Sirf preview. Saved traces aur dispatch decisions nahi badalte."
+  },
+  "uiRef": {
+    "activeQueue": "Active queue",
+    "casesAction": "Action chahiye waale cases",
+    "priority": "Priority",
+    "areaIntelligence": "Area ki sthiti",
+    "response": "Madad",
+    "recommendation": "Madad ka sujhav",
+    "teamFit": "Team fit",
+    "reports": "Reports"
+  },
+  "map": {
+    "loading": "Sector map load ho raha hai…"
+  },
+  "photo": {
+    "add": "Photo jodein",
+    "title": "Photo se mile observations",
+    "preview": "Chuni hui synthetic photo",
+    "ephemeral": "Neeche tap karne par image analyse hogi. Image save nahi hoti. Sirf aapke review kiye details report mein judenge.",
+    "synthetic": "Yeh synthetic demo image hai",
+    "remove": "Photo hatayein",
+    "offline": "Photo analyse karne ke liye connect karein, ya text se jaari rakhein.",
+    "analyse": "Gemini se analyse karein",
+    "analysing": "Analysis jaari hai…",
+    "unverified": "AI photo suggestions · verify nahi hue",
+    "reviewed": "Maine observations ko photo se milakar check kiya",
+    "use": "Reviewed details use karein",
+    "invalid": "2 MB tak PNG, JPEG ya WebP photo chunein.",
+    "unavailable": "Photo analysis available nahi. Aap scene likhkar report bhej sakte hain.",
+    "confirmedWords": "Maine yeh photo observations review kiye: {observations}.",
+    "reviewRequired": "Photo details reporter ne review kiye; bhejne se pehle dobara check karein.",
+    "water": {
+      "none": "Paani nahi dikh raha",
+      "ground": "Zameen par paani",
+      "knee": "Paani ghutnon tak lag raha",
+      "waist": "Paani kamar tak lag raha",
+      "roof": "Paani chhat ke paas",
+      "unclear": "Paani ka level clear nahi"
+    },
+    "damage": {
+      "visible": "Structure ka possible damage dikh raha",
+      "not_visible": "Structure ka damage nahi dikh raha",
+      "unclear": "Structure ka damage clear nahi"
+    }
   }
 }

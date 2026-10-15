@@ -1,3 +1,4 @@
+import { PhotoAnalysis, PhotoInput } from '../models/request.model';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -104,6 +105,22 @@ export class ApiClientService {
 
   getMerge(requestId: string): Observable<any> {
     return this.http.get<any>(`/api/cases/${requestId}/merge`, this.getAuthHeaders());
+  }
+
+  analysePhoto(payload: PhotoInput): Observable<PhotoAnalysis> {
+    return this.http.post<PhotoAnalysis>('/api/intake/photo', payload);
+  }
+
+  simulateSurge(): Observable<{ run_id: string; running: boolean; submitted: number; failed: number; total: number }> {
+    return this.http.post<{ run_id: string; running: boolean; submitted: number; failed: number; total: number }>('/api/demo/simulate-surge', {}, this.getAuthHeaders());
+  }
+
+  getSurgeState(): Observable<{ run_id: string; running: boolean; submitted: number; failed: number; total: number }> {
+    return this.http.get<{ run_id: string; running: boolean; submitted: number; failed: number; total: number }>('/api/demo/surge', this.getAuthHeaders());
+  }
+
+  loadScenarioDemo(packId: string): Observable<{ pack_id: string; loaded: boolean }> {
+    return this.http.post<{ pack_id: string; loaded: boolean }>(`/api/demo/scenario/${encodeURIComponent(packId)}`, {}, this.getAuthHeaders());
   }
 
   /** Reload the two-case demo. The API allows it in demo mode or for the demo coordinator. */

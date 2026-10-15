@@ -161,6 +161,20 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
         baseline = max(1, sorted(counts.values())[len(counts) // 2])
         alerts.extend(spike_alerts(counts, baseline=baseline))
 
+    # Count arrivals, including merged copies, rather than only surviving cases.
+    from datetime import datetime, timezone
+    recent_counts: Dict[str, int] = {}
+    now = datetime.now(timezone.utc)
+    for report in storage.list_reports():
+        try:
+            recent = (now - datetime.fromisoformat(report.created_at)).total_seconds() <= 1200
+        except (ValueError, TypeError):
+            recent = False
+        if report.ward_id and recent:
+            recent_counts[report.ward_id] = recent_counts.get(report.ward_id, 0) + 1
+    for alert in spike_alerts(recent_counts, baseline=1):
+        alerts.append(alert.model_copy(update={"id": f"reports-{alert.id}", "age_label": "just now"}))
+
     demand: Dict[str, int] = {}
     for req in requests:
         if req.status.value in ("resolved", "closed"):

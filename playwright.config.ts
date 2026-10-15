@@ -16,13 +16,13 @@ export default defineConfig({
   reporter: [['list'], ['json', { outputFile: 'e2e/results.json' }]],
   use: {
     baseURL: WEB,
-    channel: 'chrome',
+    launchOptions: { executablePath: process.env['CHROME_BIN'] || '/usr/bin/chromium' },
     trace: 'retain-on-failure',
     screenshot: 'off',
   },
   webServer: [
     {
-      command: `AI_MODE=fallback LLM_PROVIDER= DEMO_SEED=full /tmp/rd-venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port ${API_PORT}`,
+      command: `DEMO_MODE=true GOOGLE_MAPS_API_KEY=replace-me AI_MODE=fallback GEMINI_API_KEY=replace-me LLM_PROVIDER= DEMO_SEED=full .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port ${API_PORT}`,
       cwd: 'services/api',
       url: `${API}/healthz`,
       reuseExistingServer: true,

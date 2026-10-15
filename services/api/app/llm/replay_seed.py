@@ -1,6 +1,7 @@
 """Mark seeded demo cases whose intake reading was recorded from a real Gemini call."""
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 
@@ -13,6 +14,13 @@ def seed_prompt(raw_text: str) -> str:
     from app.agents.intake import intake_user_prompt
 
     return intake_user_prompt(raw_text or "", None)
+
+
+def trace_fingerprint(req) -> str:
+    facts = {"raw": req.raw_text, "type": req.type.value, "people": req.people_count,
+             "vulnerable": req.vulnerable.model_dump(), "hazard": req.hazard.value,
+             "lat": req.lat, "lng": req.lng}
+    return hashlib.sha256(json.dumps(facts, sort_keys=True).encode()).hexdigest()
 
 
 def attach_recorded_ai(storage) -> int:
@@ -40,6 +48,19 @@ def attach_recorded_ai(storage) -> int:
             continue
         req.ai = AiCall(provider="cache", model=meta.get("model"), tokens=meta.get("tokens"), cached=True)
         req.ai_source = "recorded"
+        trace_path = llm.REPLAY_DIR / f"{key}.trace.json"
+        if trace_path.exists():
+            try:
+                recording = json.loads(trace_path.read_text(encoding="utf-8"))
+                trace = recording.get("trace") or []
+                if recording.get("fingerprint") == trace_fingerprint(req) and len(trace) == 5 and all(
+                    row.get("provider") in ("gemini", "cache", "tool") for row in trace
+                ):
+                    req.trace = [{**row, "provider": "cache" if row.get("provider") in ("gemini", "cache") else "tool",
+                                  "recorded_at": recording.get("recorded_at")} for row in trace]
+                    req.analysis = recording.get("analysis") or {}
+            except (OSError, ValueError, TypeError):
+                logger.warning("Ignoring invalid trace recording for %s", req.id)
         attached += 1
     if attached:
         logger.info("Attached %d recorded Gemini readings to seeded cases.", attached)

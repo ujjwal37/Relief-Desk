@@ -1,0 +1,105 @@
+{
+  "fingerprint": "eefa08c408be6ed20e41a415cbf27abfd19a10fd6ceb112655a2eae37c038f3b",
+  "trace": [
+    {
+      "agent": "Intake",
+      "status": "complete",
+      "input_summary": "Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.",
+      "output": "Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 3371,
+      "tokens": 1605,
+      "tool_calls": [],
+      "ts": "2026-10-14T18:28:31.403191+00:00",
+      "fallback_reason": null
+    },
+    {
+      "agent": "Dedupe",
+      "status": "complete",
+      "input_summary": "Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.",
+      "output": "The deduplication tool marked this medical report as distinct, featuring 7 stranded individuals with an urgency score of 83.8. The incident involves vulnerable populations including children, the elderly, and those with medical needs.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 3329,
+      "tokens": 270,
+      "tool_calls": [],
+      "ts": "2026-10-14T18:28:31.403201+00:00",
+      "fallback_reason": null,
+      "cached": false
+    },
+    {
+      "agent": "Triage",
+      "status": "complete",
+      "input_summary": "Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.",
+      "output": "The final urgency score of 83.8 is derived from a vulnerability score of 100.0, a hazard score of 80.0, and 52.9 points for 7 people stranded with child, elderly, and medical needs. Additional breakdown factors include a type priority of 16.0 and 0.9 wait points for 6 minutes of wait time.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 3005,
+      "tokens": 430,
+      "tool_calls": [
+        "score_urgency"
+      ],
+      "ts": "2026-10-14T18:28:31.403204+00:00",
+      "fallback_reason": null,
+      "cached": false
+    },
+    {
+      "agent": "Matching",
+      "status": "complete",
+      "input_summary": "Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.",
+      "output": "{\"team\": \"Varapuzha Relief Clinic\", \"km\": 1.65, \"kind\": \"medical\", \"match_score\": 90.9, \"seats\": 12}",
+      "provider": "tool",
+      "provider_label": "Rules",
+      "vendor": null,
+      "model": null,
+      "latency_ms": 0,
+      "tokens": null,
+      "tool_calls": [
+        "check_capacity",
+        "match_score"
+      ],
+      "ts": "2026-10-14T18:28:31.403207+00:00"
+    },
+    {
+      "agent": "Explainer",
+      "status": "complete",
+      "input_summary": "Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.",
+      "output": "Varapuzha Relief Clinic is 1.65 km away with 12 capacity to assist 7 people, yielding a match score of 90.9 and an urgency score of 83.8. The incident involves 7 stranded people with vulnerable members present, and 7 free teams are available.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 1636,
+      "tokens": 385,
+      "tool_calls": [],
+      "ts": "2026-10-14T18:28:31.403209+00:00",
+      "fallback_reason": null,
+      "cached": false
+    }
+  ],
+  "analysis": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "intake": "Oxygen running out in 1 hour for critical respiratory patient stranded near St. Jude Hospital.",
+    "dedupe": "The deduplication tool marked this medical report as distinct, featuring 7 stranded individuals with an urgency score of 83.8. The incident involves vulnerable populations including children, the elderly, and those with medical needs.",
+    "triage": {
+      "score": 83.8,
+      "reason": "Vulnerable flags: child, elderly, medical need + 7 persons + stranded on structure (Urgency score: 83.8)"
+    },
+    "matching": {
+      "kind": "medical",
+      "available": 7,
+      "dispatched": false
+    },
+    "explainer": "Varapuzha Relief Clinic is 1.65 km away with 12 capacity to assist 7 people, yielding a match score of 90.9 and an urgency score of 83.8. The incident involves 7 stranded people with vulnerable members present, and 7 free teams are available."
+  },
+  "recorded_at": "2026-10-14T18:28:31.403265+00:00",
+  "request_id": "INC-008"
+}

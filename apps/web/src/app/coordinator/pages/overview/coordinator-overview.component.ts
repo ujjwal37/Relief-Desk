@@ -62,32 +62,32 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
   `,
   styles: [`
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
-    .summary { flex: none; padding: 12px 16px 8px; }
+    .summary { flex: none; padding: 28px 28px 16px; }
     h1 { margin: 0; font: var(--t-page, 600 24px/30px var(--rd-font-family)); letter-spacing: var(--t-page-ls, -0.02em); }
-    .lead-line { margin: 6px 0 8px; color: var(--text); font: 500 14px/20px var(--rd-font-family); }
+    .lead-line { margin: 6px 0 8px; color: var(--text-2); font: 400 14px/22px var(--rd-font-family); }
     p { margin: 4px 0 8px; color: var(--text-2); font-size: 14px; }
     .stage {
       flex: 1; min-height: 0; display: grid;
       grid-template-columns: minmax(0, 1fr) 380px;
-      gap: 12px; padding: 0 12px 12px;
+      gap: 20px; padding: 0 28px 28px;
     }
     app-coordinator-alerts { width: 380px; min-height: 0; height: 100%; overflow: hidden; display: block; }
     .map-stage {
-      position: relative; min-height: 0; border-radius: var(--r3); overflow: hidden;
+      position: relative; min-height: 0; border-radius: 16px; overflow: hidden; box-shadow:var(--e1);
       border: 1px solid var(--border); background: var(--map-bg);
     }
     rd-map-provider { position: absolute; top: 56px; right: 0; bottom: 0; left: 0; display: block; }
     .chips {
       position: absolute; z-index: 2; top: 0; left: 0; right: 0; height: 56px;
       display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 10px;
-      pointer-events: auto;
+      pointer-events: auto; background:var(--surface); border-bottom:1px solid var(--border);
     }
     .chips button {
-      min-height: 32px; padding: 0 10px; border-radius: 999px;
+      min-height: 32px; padding: 0 10px; border-radius: 7px;
       border: 1px solid var(--border); background: var(--surface); color: var(--text);
       font: 600 12px var(--rd-font-family); cursor: pointer;
     }
-    .chips button.on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+    .chips button.on { background: var(--brand-tint); border-color:transparent; color: var(--brand); }
     .legend {
       position: absolute; z-index: 2; bottom: 10px; left: 10px; display: flex; flex-wrap: wrap;
       max-width: 280px; gap: 6px 10px; background: var(--surface); border: 1px solid var(--border);
@@ -101,6 +101,8 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     .disc { width: 20px; height: 20px; border-radius: 50%; background: var(--sev-crit); color: #fff; display: inline-grid; place-items: center; font: 600 12px/20px var(--rd-font-family); font-style: normal; font-variant-numeric: tabular-nums; overflow: visible; }
     @media (max-width: 900px) {
       :host { overflow: auto; }
+      .summary { padding:20px 16px 12px; }
+      .stage { padding:0 16px 20px; gap:16px; }
       .stage { grid-template-columns: 1fr; overflow: visible; }
       .map-stage { min-height: 420px; }
       .chips { height: auto; min-height: 44px; padding: 6px 8px; }

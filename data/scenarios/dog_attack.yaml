@@ -43,6 +43,10 @@ urgency_rules:
   child_boost: 15
   elderly_boost: 15
   medical_need_boost: 20
+# The profile represents a clinician's synthetic referral, not an AI treatment rule.
+routing_profiles:
+  clinician_referral_rig:
+    rig: 1
 resource_types:
   - medical
 safety_line_ids:

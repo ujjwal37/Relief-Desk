@@ -16,7 +16,7 @@ export interface TraceStepView {
   note: string | null;
   sentence?: string;
   linkId?: string | null;
-  badge?: 'gemini' | 'rules' | 'test';
+  badge?: 'gemini' | 'rules' | 'test' | 'tool' | 'cache';
   hasDetails?: boolean;
 }
 
@@ -50,6 +50,8 @@ export class TraceStepComponent {
   badgeWord(): string {
     this.lang.currentLang();
     const step = this.step();
+    if (step.badge === 'tool') return this.lang.translate('flow.badgeTool');
+    if (step.badge === 'cache') return this.lang.translate('flow.badgeCache');
     if (step.badge === 'test') return this.lang.translate('flow.badgeTest');
     if (step.badge === 'gemini') return this.lang.translate('flow.badgeGemini');
     if (step.badge === 'rules') return this.lang.translate('flow.badgeRules');

@@ -53,7 +53,7 @@ describe('CoordinatorTeamsComponent', () => {
     expect(provider.fitAll).toBeTrue();
     expect(provider.pins.map((pin) => pin.id).sort()).toEqual(['b1', 'd1', 'm1', 's1']);
     expect(text).toContain('Chalakudy');
-    expect(text).not.toContain('INC-9');
+    expect(text).toContain('On INC-9');
     expect(fixture.nativeElement.querySelector('form.loc')).toBeNull();
     expect(cmp.checkInLate(rows[0])).toBeFalse();
     expect(cmp.checkInLate(rows[3])).toBeTrue();
@@ -139,7 +139,7 @@ describe('CoordinatorTeamsComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('4 of 12 seats free');
     expect(text).toContain('2026-10-12T10:00:00Z');
-    expect(text).not.toContain('INC-9');
+    expect(text).toContain('On INC-9');
     const form = fixture.nativeElement.querySelector('form.loc') as HTMLFormElement;
     const inputs = form.querySelectorAll('input');
     (inputs[0] as HTMLInputElement).value = '9.5';

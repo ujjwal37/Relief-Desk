@@ -132,6 +132,8 @@ export interface UrgencyWeights {
 }
 
 export interface StoredRequest {
+  required_supplies?: Record<string, number>;
+  routing_note?: string | null;
   id: string;
   event_id?: string;
   pack_id?: string;
@@ -199,6 +201,8 @@ export interface StoredRequest {
     input_summary?: string;
     output?: string;
     provider?: string | null;
+    fallback_reason?: string | null;
+    cached?: boolean;
     /** English name of who answered, e.g. "Test model (NVIDIA)". */
     provider_label?: string | null;
     /** The name inside "Test model (...)" for a test provider. */
@@ -229,6 +233,7 @@ export interface StoredResource {
   assigned_request_id?: string | null;
   area_name?: string | null;
   simulated?: boolean;
+  supplies?: Record<string, number>;
   location_trail?: { lat: number; lng: number; at: string }[];
 }
 
@@ -355,3 +360,23 @@ export interface ReportStatusResponse {
   synthetic: boolean;
 }
 
+
+export interface PhotoReading {
+  water_level: 'none' | 'ground' | 'knee' | 'waist' | 'roof' | 'unclear';
+  structural_damage: 'visible' | 'not_visible' | 'unclear';
+  confidence: number;
+}
+
+export interface PhotoAnalysis {
+  reading: PhotoReading | null;
+  ai: { provider: string; model?: string | null; latency_ms?: number; fallback_reason?: string | null };
+  needs_human_review: true;
+  image_stored: false;
+}
+
+export interface PhotoInput {
+  image_base64: string;
+  mime_type: 'image/jpeg' | 'image/png' | 'image/webp';
+  caption: string;
+  synthetic: true;
+}

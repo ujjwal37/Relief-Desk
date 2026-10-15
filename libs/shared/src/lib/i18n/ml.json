@@ -230,7 +230,15 @@
   },
   "demo": {
     "phone": "ഡെമോ ഫോൺ",
-    "hide": "ഫോൺ മറയ്ക്കുക"
+    "hide": "ഫോൺ മറയ്ക്കുക",
+    "surgeButton": "⚡ 5 റിപ്പോർട്ട് ഡെമോ",
+    "surgeRunning": "ഡെമോ നടക്കുന്നു…",
+    "surgeProgress": "കൃത്രിമ ഡെമോ: {n}/5 റിപ്പോർട്ടുകൾ അയച്ചു.",
+    "surgeDone": "{n} കൃത്രിമ റിപ്പോർട്ടുകൾ അയച്ചു. വിശകലനം തുടരുന്നു; ഓരോ വിന്യാസവും പരിശോധിക്കുക.",
+    "surgeFailed": "ഡെമോയിൽ പിശകുകൾ; {n} റിപ്പോർട്ടുകൾ അയച്ചു.",
+    "surgeUnavailable": "ഡെമോ ലഭ്യമല്ല അല്ലെങ്കിൽ നടക്കുന്നു. പിന്നീട് ശ്രമിക്കുക.",
+    "scenarioFailed": "സാഹചര്യം ലോഡ് ആയില്ല.",
+    "mergeNotice": "റിപ്പോർട്ടുകൾ {id} ലേക്ക് ചേർത്തു. പുതുക്കിയ എണ്ണവും തെളിവും പരിശോധിക്കുക."
   },
   "settings": {
     "title": "ക്രമീകരണം",
@@ -473,7 +481,8 @@
     "stepSent": "Sent",
     "stepAccepted": "Accepted",
     "stepOnWay": "On the way",
-    "stepOnScene": "On scene"
+    "stepOnScene": "On scene",
+    "referralStock": "മനുഷ്യൻ രേഖപ്പെടുത്തിയ റഫറൽ സ്റ്റോക്ക് ആവശ്യം"
   },
   "tour": {
     "next": "അടുത്തത്",
@@ -841,7 +850,10 @@
     "margin": "പിശക് മാർജിൻ ±{n} പോയിന്റ്",
     "smallSample": "ചെറിയ മാതൃകയിൽ ഈ വ്യത്യാസം പിശക് മാർജിനുള്ളിലാണ്.",
     "scale": "0–100%",
-    "deskHowAnswered": "How I answered · {n} steps"
+    "deskHowAnswered": "How I answered · {n} steps",
+    "agentScope": "കേസ് സഹായി",
+    "agentIntro": "സ്ഥലം, ആവശ്യം, അല്ലെങ്കിൽ ഇപ്പോഴും കാത്തിരിക്കുന്നവർ എന്നിവയുടെ അടിസ്ഥാനത്തിൽ അപേക്ഷകൾ കണ്ടെത്തുക.",
+    "agentFootnote": "കേസുകൾ വിലയിരുത്താൻ ഉത്തരങ്ങൾ സഹായിക്കുന്നു. സംഘങ്ങളെ അയയ്ക്കാനുള്ള അംഗീകാരം കേസ് പട്ടികയിൽ നിന്ന് നൽകുക."
   },
   "flow": {
     "title": "How it decided",
@@ -862,7 +874,7 @@
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} free seat(s).",
     "sentExplain": "Wrote the one-line reason you see on the panel.",
-    "fallbackBanner": "{n} steps used rules instead of Gemini because Gemini timed out. Rules are the same checks a coordinator uses; the suggestion is still safe to review.",
+    "fallbackBanner": "{n} AI ഘട്ടങ്ങൾ ഓഫ്‌ലൈൻ മാർഗം ഉപയോഗിച്ചു. കാരണം വിശദാംശങ്ങളിൽ കാണാം. പൈത്തൺ സ്കോറിംഗും പൊരുത്തപ്പെടുത്തലും ലഭ്യമാണ്.",
     "loading": "Working… step {k} of {n} · {t} s",
     "failed": "Couldn't finish the AI steps. The team match is missing, so there is no suggestion. You can retry or choose a team yourself.",
     "noTrace": "No AI record for this case",
@@ -876,6 +888,54 @@
     "copied": "Copied",
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
-    "waiting": "Waiting"
+    "waiting": "Waiting",
+    "badgeTool": "പൈത്തൺ ടൂൾ",
+    "badgeCache": "റെക്കോർഡ് ചെയ്തത് (Gemini)",
+    "simulateOutage": "നിയമങ്ങൾ അടിസ്ഥാനമാക്കിയ മാർഗം കാണുക",
+    "simulatedOnly": "പ്രിവ്യൂ മാത്രം. സൂക്ഷിച്ച ട്രേസുകളും വിന്യാസ തീരുമാനങ്ങളും മാറില്ല."
+  },
+  "uiRef": {
+    "activeQueue": "സജീവ പട്ടിക",
+    "casesAction": "നടപടി ആവശ്യമായ കേസുകൾ",
+    "priority": "മുൻഗണന",
+    "areaIntelligence": "പ്രദേശത്തെ സ്ഥിതി",
+    "response": "സഹായം",
+    "recommendation": "സഹായ നിർദേശം",
+    "teamFit": "സംഘത്തിന്റെ അനുയോജ്യത",
+    "reports": "റിപ്പോർട്ടുകൾ"
+  },
+  "map": {
+    "loading": "മേഖലാ മാപ്പ് ലോഡ് ചെയ്യുന്നു…"
+  },
+  "photo": {
+    "add": "ഫോട്ടോ ചേർക്കുക",
+    "title": "ഫോട്ടോ നിരീക്ഷണങ്ങൾ",
+    "preview": "തിരഞ്ഞെടുത്ത കൃത്രിമ ഫോട്ടോ",
+    "ephemeral": "താഴെ ടാപ്പ് ചെയ്യുമ്പോൾ മാത്രം ചിത്രം വിശകലനം ചെയ്യും. ചിത്രം സൂക്ഷിക്കില്ല. നിങ്ങൾ പരിശോധിച്ച വിവരങ്ങൾ മാത്രം റിപ്പോർട്ടിൽ ചേർക്കാം.",
+    "synthetic": "ഇത് കൃത്രിമ ഡെമോ ചിത്രമാണ്",
+    "remove": "ഫോട്ടോ നീക്കുക",
+    "offline": "ഫോട്ടോ വിശകലനത്തിന് ഇന്റർനെറ്റ് വേണം, അല്ലെങ്കിൽ എഴുതി തുടരുക.",
+    "analyse": "Gemini ഉപയോഗിച്ച് വിശകലനം ചെയ്യുക",
+    "analysing": "വിശകലനം നടക്കുന്നു…",
+    "unverified": "AI ഫോട്ടോ നിർദേശങ്ങൾ · സ്ഥിരീകരിച്ചിട്ടില്ല",
+    "reviewed": "ഈ നിരീക്ഷണങ്ങൾ ഫോട്ടോയുമായി ഒത്തുനോക്കി",
+    "use": "പരിശോധിച്ച വിവരങ്ങൾ ഉപയോഗിക്കുക",
+    "invalid": "2 MB വരെയുള്ള PNG, JPEG അല്ലെങ്കിൽ WebP ഫോട്ടോ തിരഞ്ഞെടുക്കുക.",
+    "unavailable": "ഫോട്ടോ വിശകലനം ലഭ്യമല്ല. സംഭവം എഴുതി റിപ്പോർട്ട് അയയ്ക്കാം.",
+    "confirmedWords": "ഈ ഫോട്ടോ നിരീക്ഷണങ്ങൾ ഞാൻ പരിശോധിച്ചു: {observations}.",
+    "reviewRequired": "ഫോട്ടോ വിവരങ്ങൾ റിപ്പോർട്ടർ പരിശോധിച്ചു; അയയ്ക്കുംമുമ്പ് വീണ്ടും പരിശോധിക്കുക.",
+    "water": {
+      "none": "വെള്ളം കാണുന്നില്ല",
+      "ground": "നിലത്ത് വെള്ളം",
+      "knee": "മുട്ടോളം വെള്ളം പോലെ",
+      "waist": "അരയോളം വെള്ളം പോലെ",
+      "roof": "മേൽക്കൂരയ്ക്ക് സമീപം വെള്ളം",
+      "unclear": "ജലനിരപ്പ് വ്യക്തമല്ല"
+    },
+    "damage": {
+      "visible": "ഘടനയ്ക്ക് കേടുപാടുകൾ കാണാം",
+      "not_visible": "ഘടനയ്ക്ക് കേടുപാടുകൾ കാണുന്നില്ല",
+      "unclear": "ഘടനയുടെ കേടുപാടുകൾ വ്യക്തമല്ല"
+    }
   }
 }

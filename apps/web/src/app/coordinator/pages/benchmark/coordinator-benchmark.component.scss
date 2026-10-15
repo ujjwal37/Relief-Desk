@@ -1,5 +1,5 @@
 :host { display:block; height:100%; overflow:auto; color:var(--text); font-size:14px; }
-.bench-page { padding:16px; max-width:1100px; margin:0 auto; display:flex; flex-direction:column; gap:14px; min-width:0; }
+.bench-page { padding:28px; max-width:1240px; margin:0 auto; display:flex; flex-direction:column; gap:20px; min-width:0; }
 h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); }
 .sub { margin:4px 0 0; color:var(--text-2); font-size:14px; max-width:70ch; }
 .meta { margin:4px 0 0; font-size:13px; color:var(--text-2); }
@@ -8,14 +8,14 @@ h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); }
   border:1px dashed var(--sev-high); border-radius:999px; background:var(--sev-high-t); color:var(--sev-high);
   font:600 13px/1 var(--rd-font-family);
 }
-.grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
 .kpi { margin:8px 0 0; font:600 32px/36px var(--rd-font-family); font-variant-numeric:tabular-nums; }
 .table-wrap { overflow:auto; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
 .cases { width:100%; border-collapse:collapse; font:400 14px/20px var(--rd-font-family); }
-.cases th, .cases td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--border); }
-.cases th { font:500 13px/18px var(--rd-font-family); color:var(--muted); }
-.metric, .failures { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; box-shadow:var(--e1); min-width:0; }
-.metric h2, .failures h2 { margin:0 0 4px; font-size:16px; }
+.cases th, .cases td { text-align:left; padding:12px 16px; border-bottom:1px solid var(--border); }
+.cases th { font:500 12px/18px var(--rd-font-family); color:var(--muted); background:var(--surface-2); }
+.metric, .failures { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; box-shadow:var(--e1); min-width:0; }
+.metric h2, .failures h2 { margin:0 0 8px; font:var(--t-title); }
 .means, .key, .base, .miss, .failures p, .failures li { margin:0 0 6px; color:var(--text-2); font-size:13px; line-height:1.4; }
 .miss { color:var(--text); font-weight: 600; }
 .pair { display:grid; grid-template-columns:52px minmax(0,1fr); gap:8px; align-items:center; margin:0 0 8px; }
@@ -40,6 +40,6 @@ h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); }
 @media (prefers-reduced-motion: reduce) { .skel i { animation:none; } }
 @media (max-width: 800px) {
   .grid { grid-template-columns:1fr; }
-  .bench-page { padding:12px; }
+  .bench-page { padding:20px 16px; gap:16px; }
   .table-wrap { display:none; }
 }

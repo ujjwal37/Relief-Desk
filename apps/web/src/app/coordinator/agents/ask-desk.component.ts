@@ -40,11 +40,21 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
         <h2 id="ask-desk-h">{{ 'ux.deskTitle' | rdTranslate }}</h2>
         <p class="hint">{{ 'ux.deskHint' | rdTranslate }}</p>
       } @else {
-        <h2 id="ask-desk-h" class="sr">{{ 'ux.deskTitle' | rdTranslate }}</h2>
+        <header class="workspace-bar">
+          <div>
+            <h2 id="ask-desk-h">{{ 'ux.deskTitle' | rdTranslate }}</h2>
+            <p class="hint">{{ 'ux.deskHint' | rdTranslate }}</p>
+          </div>
+          <span class="scope">{{ 'ux.agentScope' | rdTranslate }}</span>
+        </header>
       }
       @if (fullPage() && !thread().length) {
         <div class="empty">
-          <p class="hello">{{ 'ux.agentHello' | rdTranslate }}</p>
+          <div class="welcome">
+            <span class="welcome-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7z"/></svg></span>
+            <p class="hello">{{ 'ux.agentHello' | rdTranslate }}</p>
+            <p class="welcome-copy">{{ 'ux.agentIntro' | rdTranslate }}</p>
+          </div>
           <div class="examples">
             @for (ex of examples; track ex.q) {
               <button type="button" class="example" (click)="useSuggestion(ex.q)">
@@ -97,23 +107,30 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
       @if (error()) {
         <p class="err" role="alert">{{ 'ux.deskError' | rdTranslate }}</p>
       }
-      <form class="row composer" (ngSubmit)="ask()">
-        <input
-          name="q"
-          [(ngModel)]="question"
-          [placeholder]="'ux.deskPlaceholder' | rdTranslate"
-          [attr.aria-label]="'ux.deskTitle' | rdTranslate"
-          maxlength="300"
-        />
-        <button type="submit" class="btn" [disabled]="busy() || !question.trim()">
-          {{ (busy() ? 'ux.deskAsking' : 'ux.deskAsk') | rdTranslate }}
-        </button>
-      </form>
-      <div class="suggestions">
-        @for (key of suggestions; track key) {
-          <button type="button" (click)="useSuggestion(key)">{{ key | rdTranslate }}</button>
+      <div class="composer-dock">
+        <form class="row composer" (ngSubmit)="ask()">
+          <input
+            name="q"
+            [(ngModel)]="question"
+            [placeholder]="'ux.deskPlaceholder' | rdTranslate"
+            [attr.aria-label]="'ux.deskTitle' | rdTranslate"
+            maxlength="300"
+          />
+          <button type="submit" class="btn" [disabled]="busy() || !question.trim()">
+            {{ (busy() ? 'ux.deskAsking' : 'ux.deskAsk') | rdTranslate }}
+          </button>
+        </form>
+        @if (fullPage()) {
+          <p class="composer-note">{{ 'ux.agentFootnote' | rdTranslate }}</p>
         }
       </div>
+      @if (!fullPage()) {
+        <div class="suggestions">
+          @for (key of suggestions; track key) {
+            <button type="button" (click)="useSuggestion(key)">{{ key | rdTranslate }}</button>
+          }
+        </div>
+      }
     </section>
   `,
   styles: [`
@@ -142,21 +159,65 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .bubble.user { margin: 0; align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: var(--r3) var(--r3) var(--r1) var(--r3); background: var(--brand-tint); font-weight: 600; }
     .bubble.desk { align-self: stretch; padding: 12px 14px; border-radius: var(--r3); border: 1px solid var(--border); background: var(--surface); }
     .thread { display: flex; flex-direction: column; gap: 10px; }
-    .page { position: relative; display: flex; flex-direction: column; justify-content: center; height: 100%; min-height: 0; margin: 0; padding: 8px 0 12px; background: transparent; border: 0; box-shadow: none; }
-    .page .thread { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
-    .page.has-thread { justify-content: flex-start; }
-    .page.has-thread .thread { flex: 1; overflow: auto; }
-    .page .composer, .page .suggestions { flex: none; }
-    .page .cards, .page .trace { max-height: none; }
-    .page .row input { min-height: 48px; border-radius: var(--r2); padding: 0 16px; font-size: 14px; }
-    .page .suggestions { justify-content: center; }
-    .hello { margin: 0 0 16px; text-align: center; font-size: 32px; font-weight: 600; line-height: 1.25; }
-    .empty { width: min(720px, 100%); margin: 0 auto 12px; }
-    .examples { display: grid; gap: 10px; width: min(560px, 100%); margin: 0 auto; }
-    .example { text-align: left; border: 1px solid var(--border); border-radius: var(--r3); padding: 12px 14px; background: var(--surface); color: inherit; cursor: pointer; font: inherit; box-shadow: var(--e1); }
-    .example strong { display: block; margin: 2px 0; }
-    .example p { margin: 0; color: var(--text-2); font-size: 14px; }
-    .tag { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
+    .page {
+      position:relative; display:flex; flex-direction:column; gap:24px; height:100%; min-height:0;
+      margin:0; padding:24px 28px 18px; border:1px solid var(--border); border-radius:16px;
+      background:var(--surface); box-shadow:var(--e1);
+    }
+    .workspace-bar { flex:none; display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+    .workspace-bar h2 { margin:0 0 4px; font:var(--t-panel); letter-spacing:var(--t-panel-ls); }
+    .workspace-bar .hint { margin:0; opacity:1; color:var(--text-2); font:var(--t-label); }
+    .scope { flex:none; padding:5px 10px; border:1px solid color-mix(in srgb,var(--brand) 18%,var(--border)); border-radius:7px; background:var(--brand-tint); color:var(--brand); font:500 12px/18px var(--font-sans); }
+    .page .thread { display:flex; flex-direction:column; gap:18px; min-height:0; }
+    .page.has-thread .thread { flex:1; overflow:auto; padding:4px 4px 12px; }
+    .page .cards, .page .trace { max-height:none; }
+    .empty { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); align-items:center; gap:48px; width:100%; margin:0; padding:12px 8px; }
+    .welcome { max-width:380px; }
+    .welcome-icon { display:grid; place-items:center; width:56px; height:56px; margin-bottom:24px; border-radius:16px; color:var(--brand); background:var(--brand-tint); }
+    .hello { margin:0 0 16px; font:600 36px/42px var(--font-sans); letter-spacing:-.035em; text-wrap:balance; }
+    .welcome-copy { max-width:32ch; margin:0; font:400 16px/25px var(--font-sans); color:var(--text-2); }
+    .examples { display:grid; gap:12px; width:100%; margin:0; }
+    .example { position:relative; text-align:left; border:1px solid var(--border); border-radius:12px; padding:16px 40px 16px 18px; background:var(--bg); color:inherit; cursor:pointer; font:inherit; transition:background 120ms var(--ease),border-color 120ms var(--ease); }
+    .example::after { content:'\\203A'; position:absolute; top:50%; right:18px; transform:translateY(-50%); font-size:24px; font-weight:400; color:var(--brand); }
+    .example:hover { border-color:var(--brand); background:var(--brand-tint); }
+    .example strong { display:block; margin:6px 0 4px; font:600 15px/21px var(--font-sans); }
+    .example p { margin:0; color:var(--text-2); font:400 13px/20px var(--font-sans); }
+    .tag { display:inline-flex; font:500 11px/16px var(--font-sans); color:var(--brand); }
+    .page .composer-dock { flex:none; margin-top:auto; }
+    .page .composer { padding:8px; border:1px solid var(--border); border-radius:12px; background:var(--bg); }
+    .page .composer:focus-within { border-color:var(--brand); box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 8%,transparent); }
+    .page .row input { min-height:44px; border:0; outline:0; background:transparent; border-radius:8px; padding:0 10px; font:var(--t-body); }
+    .page .row .btn { min-height:44px; padding:0 22px; font:600 14px/20px var(--font-sans); }
+    .composer-note { margin:10px 0 0; color:var(--muted); font:400 12px/18px var(--font-sans); text-align:center; }
+    .page .bubble.user { font:500 14px/22px var(--font-sans); padding:12px 16px; }
+    .page .bubble.desk { padding:20px; box-shadow:var(--e1); }
+    .page .case { padding:12px; background:var(--bg); border-radius:10px; }
+    .page .case:hover { border-color:var(--brand); background:var(--brand-tint); }
+    .page .reason { font:400 14px/22px var(--font-sans); margin-bottom:14px; }
+    .page .link { margin-top:10px; color:var(--brand); }
+    @media (max-width:1100px) { .empty { gap:28px; padding:8px 0; } .hello { font-size:30px; line-height:36px; } }
+    @media (max-width:700px) {
+      .page { padding:16px; gap:16px; overflow:auto; border-radius:12px; }
+      .workspace-bar { gap:8px; padding-bottom:14px; }
+      .workspace-bar .hint { font-size:12px; line-height:18px; }
+      .scope { display:none; }
+      .empty { display:flex; flex-direction:column; align-items:stretch; flex:none; gap:20px; padding:4px 0; }
+      .welcome { max-width:none; }
+      .welcome-icon { width:36px; height:36px; border-radius:10px; margin-bottom:14px; }
+      .welcome-icon svg { width:22px; height:22px; }
+      .hello { margin-bottom:8px; font-size:25px; line-height:31px; letter-spacing:-.025em; }
+      .welcome-copy { max-width:none; font-size:14px; line-height:21px; }
+      .examples { gap:8px; }
+      .example { padding:12px 32px 12px 14px; }
+      .example strong { margin:3px 0; font-size:14px; line-height:20px; }
+      .example p { display:none; }
+      .example::after { right:12px; }
+      .page .composer-dock { position:sticky; bottom:-16px; background:var(--surface); padding:10px 0 14px; }
+      .page .row .btn { padding:0 16px; }
+      .page .bubble.desk { padding:14px; }
+      .page.has-thread .thread { flex:1 0 200px; overflow:visible; }
+      .composer-note { font-size:11px; line-height:16px; }
+    }
   `],
 })
 export class AskDeskComponent {

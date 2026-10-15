@@ -25,6 +25,13 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
+  readonly demoAllowed = signal(false);
+  readonly surgeBusy = signal(false);
+  readonly surgeNotice = signal('');
+  readonly mergeNotice = signal('');
+  private mergeTimer?: ReturnType<typeof setTimeout>;
+  private stopSurge?: () => void;
+  private surgePoll?: ReturnType<typeof setInterval>;
   readonly demoOn = signal(false);
   readonly wideEnough = signal(true);
   readonly showPhone = computed(() => this.demoOn() && this.wideEnough());
@@ -72,6 +79,17 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.scenarioService.ensureLoaded();
     this.ui.loadAlerts();
     this.live.connectDesk();
+    this.api.getHealth().subscribe({ next: (health) => this.demoAllowed.set(!!health.demo_mode), error: () => this.demoAllowed.set(false) });
+    this.stopSurge = this.live.onEvent((event) => {
+      if (event.type === 'case.merged' && event.request_ids?.[0]) {
+        this.mergeNotice.set(this.lang.translate('demo.mergeNotice').replace('{id}', event.request_ids[0]));
+        clearTimeout(this.mergeTimer);
+        this.mergeTimer = setTimeout(() => this.mergeNotice.set(''), 7000);
+      }
+      if (event.type !== 'demo.surge') return;
+      this.surgeBusy.set(!!event.running);
+      this.surgeNotice.set(this.lang.translate(event.failed ? 'demo.surgeFailed' : event.running ? 'demo.surgeProgress' : 'demo.surgeDone').replace('{n}', String(event.submitted || 0)));
+    });
     this.syncCompactNav();
     this.guideOpen.set(!this.guideDismissed());
   }
@@ -112,6 +130,9 @@ export class CoordinatorLayoutComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.media?.removeEventListener('change', this.onMedia);
+    clearInterval(this.surgePoll);
+    clearTimeout(this.mergeTimer);
+    this.stopSurge?.();
     this.stopQuery?.();
     this.live.stop();
   }
@@ -130,7 +151,33 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   }
   openWeights(): void { this.menuOpen.set(false); this.ui.weightsOpen.set(true); }
   takeTour(): void { this.menuOpen.set(false); this.router.navigateByUrl('/coordinator/command').then(() => setTimeout(() => this.ui.startTour(), 150)); }
-  selectScenario(id: string): void { this.scenarioService.select(id); this.menuOpen.set(false); location.reload(); }
+  selectScenario(id: string): void {
+    const open = () => { this.scenarioService.select(id); this.menuOpen.set(false); location.reload(); };
+    if (this.demoAllowed()) this.api.loadScenarioDemo(id).subscribe({ next: open, error: () => this.surgeNotice.set(this.lang.translate('demo.scenarioFailed')) });
+    else open();
+  }
+
+  simulateSurge(): void {
+    if (this.surgeBusy()) return;
+    this.surgeBusy.set(true);
+    this.scenarioService.select('flood');
+    this.router.navigateByUrl('/coordinator/command');
+    this.api.simulateSurge().subscribe({
+      next: () => {
+        this.surgeNotice.set(this.lang.translate('demo.surgeProgress').replace('{n}', '0'));
+        clearInterval(this.surgePoll);
+        this.surgePoll = setInterval(() => this.api.getSurgeState().subscribe({
+          next: (state) => {
+            this.surgeBusy.set(state.running);
+            this.surgeNotice.set(this.lang.translate(state.failed ? 'demo.surgeFailed' : state.running ? 'demo.surgeProgress' : 'demo.surgeDone').replace('{n}', String(state.submitted)));
+            if (!state.running) clearInterval(this.surgePoll);
+          },
+          error: () => { clearInterval(this.surgePoll); this.surgeBusy.set(false); this.surgeNotice.set(this.lang.translate('demo.surgeUnavailable')); },
+        }), 2500);
+      },
+      error: () => { this.surgeBusy.set(false); this.surgeNotice.set(this.lang.translate('demo.surgeUnavailable')); },
+    });
+  }
 
   logout(): void {
     this.authService.logout();

@@ -8,9 +8,7 @@
 
       <nav class="tabs" [class.wrap]="compactNav()" [attr.aria-label]="'ui.coordNav' | rdTranslate">
         <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge" [class.on]="homeOn()">{{ 'coord.home' | rdTranslate }}</a>
-        <a class="wide-only" routerLink="/coordinator/overview" routerLinkActive="on">{{ 'coord.overview' | rdTranslate }}</a>
-        <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge">{{ 'coord.cases' | rdTranslate }}</a>
-        <a routerLink="/coordinator/command" [queryParams]="{ status: 'dispatched' }" queryParamsHandling="merge" [class.on]="dispatchedOn()">{{ 'coord.filterDispatched' | rdTranslate }}</a>
+        <a class="wide-only" routerLink="/coordinator/overview" routerLinkActive="on">{{ 'coord.overview' | rdTranslate }} @if (ui.alerts().length) { <span class="count">{{ ui.alerts().length }}</span> }</a>
         <a class="wide-only" routerLink="/coordinator/teams" routerLinkActive="on">{{ 'coord.teams' | rdTranslate }}</a>
         <a routerLink="/coordinator/agent" routerLinkActive="on">{{ 'coord.agent' | rdTranslate }}</a>
         <a class="wide-only" routerLink="/coordinator/benchmark" routerLinkActive="on">{{ 'coord.accuracy' | rdTranslate }}</a>
@@ -25,6 +23,9 @@
 
       <div class="right">
         <span class="live" data-testid="live-badge" [class.retry]="live.state() === 'reconnecting'" [class.off]="live.state() === 'offline'"><i></i>{{ liveLabel() | rdTranslate }}</span>
+        @if (demoAllowed()) {
+          <button type="button" class="surge-button" [disabled]="surgeBusy()" (click)="simulateSurge()">{{ (surgeBusy() ? 'demo.surgeRunning' : 'demo.surgeButton') | rdTranslate }}</button>
+        }
         <div class="menu-wrap">
           <button type="button" class="avatar" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate">{{ initial() }}</button>
           @if (menuOpen()) {
@@ -74,6 +75,9 @@
       </div>
     </header>
 
+    <p class="safety-note" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
+    @if (mergeNotice()) { <p class="surge-note" role="status">{{ mergeNotice() }}</p> }
+    @if (surgeNotice()) { <p class="surge-note" role="status">{{ surgeNotice() }}</p> }
     @if (guideOpen()) {
       <p class="guide" role="note">
         <span>{{ 'coord.guide' | rdTranslate }}</span>

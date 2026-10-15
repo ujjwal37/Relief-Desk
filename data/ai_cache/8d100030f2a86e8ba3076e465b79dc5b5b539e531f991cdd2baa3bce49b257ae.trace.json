@@ -1,0 +1,105 @@
+{
+  "fingerprint": "1d231fdde8947aeeb12426e4b9fa73276e5b1c1147d163ce93987da4ead8ce58",
+  "trace": [
+    {
+      "agent": "Intake",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "Flood water entering 1st floor near Nedumudi Boat Jetty. 8 people including 3 children and 2 elderly stranded on rooftop, urgent boat needed.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 1628,
+      "tokens": 1670,
+      "tool_calls": [],
+      "ts": "2026-10-14T18:28:23.046579+00:00",
+      "fallback_reason": null
+    },
+    {
+      "agent": "Dedupe",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "The deduplication tool marked this rescue report for 8 people facing rising water with an urgency score of 77.8 as a duplicate. No further facts or tool results were provided.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 1241,
+      "tokens": 266,
+      "tool_calls": [],
+      "ts": "2026-10-14T18:28:23.046592+00:00",
+      "fallback_reason": null,
+      "cached": false
+    },
+    {
+      "agent": "Triage",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "The triage breakdown produced an urgency_score of 77.8 based on 8 people, the hazard water_rising, and vulnerable flags for child and elderly. The final_score is 77.8, incorporating a hazard score of 100.0, a vulnerability score of 80.0, and a people score of 56.6.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 3251,
+      "tokens": 424,
+      "tool_calls": [
+        "score_urgency"
+      ],
+      "ts": "2026-10-14T18:28:23.046598+00:00",
+      "fallback_reason": null,
+      "cached": false
+    },
+    {
+      "agent": "Matching",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "{\"team\": \"Motorized Rescue Boat\", \"km\": 0.67, \"kind\": \"boat\", \"match_score\": 92.4, \"seats\": 12}",
+      "provider": "tool",
+      "provider_label": "Rules",
+      "vendor": null,
+      "model": null,
+      "latency_ms": 0,
+      "tokens": null,
+      "tool_calls": [
+        "check_capacity",
+        "match_score"
+      ],
+      "ts": "2026-10-14T18:28:23.046602+00:00"
+    },
+    {
+      "agent": "Explainer",
+      "status": "complete",
+      "input_summary": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+      "output": "A Motorized Rescue Boat is 0.67 km away with 12 seats to assist 8 people, yielding a match score of 92.4 and an urgency score of 77.8.",
+      "provider": "gemini",
+      "provider_label": "Gemini",
+      "vendor": null,
+      "model": "gemini-3.5-flash-lite",
+      "latency_ms": 1935,
+      "tokens": 362,
+      "tool_calls": [],
+      "ts": "2026-10-14T18:28:23.046606+00:00",
+      "fallback_reason": null,
+      "cached": false
+    }
+  ],
+  "analysis": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "intake": "नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे और 2 बुजुर्ग हैं। तुरंत नाव भेजो!",
+    "dedupe": "The deduplication tool marked this rescue report for 8 people facing rising water with an urgency score of 77.8 as a duplicate. No further facts or tool results were provided.",
+    "triage": {
+      "score": 77.8,
+      "reason": "Vulnerable flags: child, elderly + 8 persons + water rising rapidly (Urgency score: 77.8)"
+    },
+    "matching": {
+      "kind": "boat",
+      "available": 4,
+      "dispatched": false
+    },
+    "explainer": "A Motorized Rescue Boat is 0.67 km away with 12 seats to assist 8 people, yielding a match score of 92.4 and an urgency score of 77.8."
+  },
+  "recorded_at": "2026-10-14T18:28:23.046680+00:00",
+  "request_id": "INC-001"
+}

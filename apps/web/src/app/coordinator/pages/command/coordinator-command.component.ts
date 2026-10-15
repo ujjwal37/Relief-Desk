@@ -148,7 +148,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (!req || req.lat == null || req.lng == null) return [];
     const suggested = this.activeProposal()?.resource_id;
     const legs: MapLeg[] = [];
-    for (const prop of this.candidateMatches()) {
+    for (const prop of this.visibleMapMatches()) {
       const team = this.resources().find((row) => row.id === prop.resource_id);
       if (!team) continue;
       legs.push({
@@ -160,6 +160,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       });
     }
     return legs;
+  });
+  /** A secondary line appears only while its team is inspected. */
+  readonly visibleMapMatches = computed(() => {
+    const selected = this.highlightId() || this.activeProposal()?.resource_id;
+    return this.matches().filter((row) => row.resource_id === selected);
   });
   readonly filterType = signal<string>('all');
   readonly areaFilter = signal<string>('all');
@@ -428,7 +433,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const origin = this.project(req.lat, req.lng);
     const suggested = this.activeProposal()?.resource_id;
     const legs: { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; label: string; suggested: boolean }[] = [];
-    for (const prop of this.candidateMatches()) {
+    for (const prop of this.visibleMapMatches()) {
       const team = this.resources().find((row) => row.id === prop.resource_id);
       if (!team) continue;
       const at = this.project(team.lat, team.lng);
@@ -1310,7 +1315,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
           this.resources.set(this.resources().map((res) => {
             if (res.id !== req.assigned_resource_id) return res;
             const left = Math.min(res.capacity_total, res.capacity_remaining + people);
-            return { ...res, capacity_remaining: left, status: 'available' as const };
+            const other = this.requests().find((row) => row.id !== req.id && row.assigned_resource_id === res.id && ['dispatched', 'approved', 'in_progress'].includes(row.status));
+            return { ...res, capacity_remaining: left, status: other ? 'dispatched' as const : 'available' as const,
+              assigned_request_id: other?.id || null, simulated: !!other && !!res.simulated };
           }));
         }
         this.actionToast.set({ text: this.langService.translate('coord.completedNote'), type: 'success' });
