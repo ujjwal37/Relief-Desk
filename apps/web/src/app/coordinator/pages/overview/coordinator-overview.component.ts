@@ -33,7 +33,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     </section>
     <div class="stage">
       <section class="map-stage" [attr.aria-label]="'ui.map' | rdTranslate">
-        <rd-map-provider [pins]="mapPins()" [legs]="mapLegs()" [center]="mapCenter()" [fitAll]="mapLegs().length === 0"></rd-map-provider>
+        <rd-map-provider [pins]="mapPins()" [legs]="mapLegs()" [center]="mapCenter()" [cluster]="true" [fitAll]="mapLegs().length === 0"></rd-map-provider>
         <div class="chips" role="group" [attr.aria-label]="'coord.mapFilters' | rdTranslate">
           @for (band of urgencyChips; track band) {
             <button type="button" [class.on]="urgency() === band" [attr.aria-pressed]="urgency() === band" (click)="urgency.set(urgency() === band ? 'all' : band)">

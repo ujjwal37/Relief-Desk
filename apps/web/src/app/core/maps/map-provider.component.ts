@@ -20,6 +20,12 @@ import {
 } from '@angular/core';
 import { markerDataUrl, TONE_COLOR, vehiclePath, PinTone, VehicleKind } from './map-markers';
 import { MapProviderService } from './map-provider.service';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
+
+/** Road route for one team->case pair. Shared by every map so a leg is routed once. */
+interface RoadRoute { path: { lat: number; lng: number }[]; km: string; mins: string; meters: number; seconds: number }
+const ROUTES = new Map<string, Promise<RoadRoute | null>>();
+let routingBroken = false;
 
 export interface MapPin {
   id: string;
@@ -104,6 +110,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   @Input() fitAll = false;
   /** Team id whose line should draw thicker while its row is hovered. */
   @Input() highlightId: string | null = null;
+  /** Group case pins into urgency-coloured clusters (Overview). */
+  @Input() cluster = false;
   @Output() pinSelect = new EventEmitter<string>();
 
   @ViewChild('canvas') canvas?: ElementRef<HTMLDivElement>;
@@ -112,6 +120,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   private map: { panTo?: (pos: { lat: number; lng: number }) => void; fitBounds?: (bounds: unknown, padding?: number) => void } | null = null;
   private markers: { setMap?: (map: null) => void }[] = [];
   private lines: { setMap?: (map: null) => void }[] = [];
+  private clusterer: MarkerClusterer | null = null;
+  private drawSeq = 0;
   private lastToken = 0;
   private gaveUp = false;
   private lastPinKey = '';
@@ -148,6 +158,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     this.readyListener?.remove();
     this.markers.forEach((marker) => marker.setMap?.(null));
     this.lines.forEach((line) => line.setMap?.(null));
+    this.clusterer?.clearMarkers();
     window.removeEventListener('offline', this.onOffline);
   }
 
@@ -290,17 +301,21 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           fullscreenControl: false,
           styles: PINE_SAND_MAP_STYLE,
         });
-        this.readyListener = maps.event?.addListenerOnce(this.map, 'tilesloaded', () => {
+        const ready = () => {
           this.loading.set(false);
           clearTimeout(this.loadTimer);
           this.cdr.markForCheck();
-        });
+        };
+        this.readyListener = maps.event?.addListenerOnce(this.map, 'tilesloaded', ready);
+        maps.event?.addListenerOnce(this.map, 'idle', ready);
         this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
       }
       const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []) + '#' + (this.highlightId || '');
       this.lastPinKey = pinKey;
       this.markers.forEach((marker) => marker.setMap?.(null));
       this.lines.forEach((line) => line.setMap?.(null));
+      this.clusterer?.clearMarkers();
+      const seq = ++this.drawSeq;
       this.lines = this.legs.map((leg) => {
         const hot = !!this.highlightId && this.highlightId === leg.id;
         return new maps.Polyline({
@@ -311,7 +326,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           geodesic: true,
         });
       });
-      const labels = this.legs.filter((leg) => leg.title).map((leg) => new maps.Marker({
+      const labelFor = new Map<string, unknown>();
+      const labels = this.legs.filter((leg) => leg.title).map((leg) => { const m = new maps.Marker({
         map: this.map,
         position: { lat: (leg.from.lat + leg.to.lat) / 2, lng: (leg.from.lng + leg.to.lng) / 2 },
         label: {
@@ -323,7 +339,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         },
         icon: { path: maps.SymbolPath?.CIRCLE ?? 0, scale: 0, labelOrigin: maps.Point ? new maps.Point(0, -22) : undefined },
         clickable: false,
-      }));
+      }); labelFor.set(leg.id, m); return m; });
+      const clustered: unknown[] = [];
       this.markers = this.pins.map((pin) => {
         const url = markerDataUrl(pin);
         const icon = url
@@ -333,16 +350,20 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
               anchor: maps.Point ? new maps.Point(16, 16) : undefined,
             }
           : undefined;
+        const grouped = this.cluster && pin.marker === 'case';
         const marker = new maps.Marker({
-          map: this.map,
+          map: grouped ? null : this.map,
           position: { lat: pin.lat, lng: pin.lng },
           title: pin.title,
           ...(icon ? { icon } : {}),
         });
         marker.addListener?.('click', () => this.pinSelect.emit(pin.id));
+        if (grouped) clustered.push(marker);
         return marker;
       });
       this.markers.push(...labels);
+      if (this.cluster && clustered.length) this.clusterPins(clustered);
+      this.routeLegs(maps, seq, labelFor);
       this.fitView(maps);
     } catch {
       this.mode = 'svg';
@@ -350,6 +371,90 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
       this.map = null;
       this.cdr.markForCheck();
     }
+  }
+
+  /** Urgency-coloured clusters: the colour is the most urgent case inside. */
+  private clusterPins(markers: unknown[]): void {
+    const rank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+    const tones = new Map<unknown, string>();
+    this.pins.filter((p) => p.marker === 'case').forEach((p, i) => tones.set(markers[i], p.tone || 'low'));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const g = (window as any).google;
+    this.clusterer = new MarkerClusterer({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      map: this.map as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      markers: markers as any,
+      renderer: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        render: ({ count, position, markers: inside }: any) => {
+          let top = 'low';
+          for (const m of inside || []) {
+            const t = tones.get(m) || 'low';
+            if ((rank[t] || 0) > (rank[top] || 0)) top = t;
+          }
+          const color = TONE_COLOR[top as PinTone] || TONE_COLOR.low;
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44"><circle cx="22" cy="22" r="18" fill="${color}" fill-opacity="0.92" stroke="#fff" stroke-width="3"/></svg>`;
+          return new g.maps.Marker({
+            position,
+            icon: { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), scaledSize: new g.maps.Size(44, 44), anchor: new g.maps.Point(22, 22) },
+            label: { text: String(count), color: '#fff', fontSize: '13px', fontWeight: '700' },
+            zIndex: 1000 + count,
+          });
+        },
+      },
+    });
+  }
+
+  /** Swap each straight line for the road route and its drive time. Straight stays on failure. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private routeLegs(maps: any, seq: number, labelFor: Map<string, unknown>): void {
+    if (routingBroken || !maps.DirectionsService || !this.legs.length) return;
+    const service = new maps.DirectionsService();
+    this.legs.forEach((leg, i) => {
+      const key = `${leg.to.lat.toFixed(5)},${leg.to.lng.toFixed(5)}>${leg.from.lat.toFixed(5)},${leg.from.lng.toFixed(5)}`;
+      let job = ROUTES.get(key);
+      if (!job) {
+        job = new Promise<RoadRoute | null>((resolve) => {
+          try {
+            service.route(
+              { origin: leg.to, destination: leg.from, travelMode: maps.TravelMode?.DRIVING ?? 'DRIVING' },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (res: any, status: string) => {
+                const r = res?.routes?.[0];
+                const l = r?.legs?.[0];
+                if (status !== 'OK' || !r || !l) {
+                  if (status === 'REQUEST_DENIED') routingBroken = true;
+                  resolve(null);
+                  return;
+                }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const path = (r.overview_path || []).map((p: any) => ({ lat: p.lat(), lng: p.lng() }));
+                resolve({ path, km: l.distance?.text || '', mins: l.duration?.text || '', meters: l.distance?.value || 0, seconds: l.duration?.value || 0 });
+              },
+            );
+          } catch {
+            resolve(null);
+          }
+        });
+        ROUTES.set(key, job);
+        job.then((r) => { if (!r) ROUTES.delete(key); });
+      }
+      job.then((route) => {
+        if (!route || seq !== this.drawSeq || this.destroyed || !route.path.length) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const line = this.lines[i] as any;
+        line?.setOptions?.({ path: route.path, geodesic: false });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const label = labelFor.get(leg.id) as any;
+        if (label) {
+          const mid = route.path[Math.floor(route.path.length / 2)];
+          label.setPosition?.(mid);
+          const cur = label.getLabel?.() || {};
+          label.setLabel?.({ ...cur, text: `${route.km} · ${route.mins} drive` });
+        }
+      });
+    });
   }
 
   /** A full pin set wins when asked. Otherwise lines frame the open case. */
@@ -403,6 +508,8 @@ interface GoogleMapsNs {
     fitBounds?: (bounds: unknown, padding?: number) => void;
   };
   LatLngBounds?: new () => { extend: (pos: { lat: number; lng: number }) => void };
+  DirectionsService?: new () => unknown;
+  TravelMode?: { DRIVING: string };
   Marker: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void; addListener?: (event: string, fn: () => void) => void };
   Polyline: new (opts: Record<string, unknown>) => { setMap?: (map: null) => void };
   SymbolPath?: { CIRCLE: number };
