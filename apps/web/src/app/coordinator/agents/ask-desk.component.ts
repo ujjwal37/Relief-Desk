@@ -21,6 +21,8 @@ export interface DeskAnswer {
   question: string;
   reason: string;
   total: number;
+  count_only?: boolean;
+  answer?: string | null;
   cases: DeskCase[];
   ai: { provider: string; model: string | null; vendor?: string | null; fallback_reason?: string | null };
   trace: Array<Record<string, any>>;
@@ -72,6 +74,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
           <div class="bubble desk">
             <p class="reason">
               <strong>{{ turn.answer.reason }}</strong>
+              <span class="count" [attr.aria-label]="turn.answer.total + ' matches'">{{ turn.answer.total }}</span>
             </p>
             @if (!turn.answer.cases.length) {
               <p class="none">{{ 'ux.deskNone' | rdTranslate }}</p>
@@ -143,7 +146,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .row input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border, rgba(0,0,0,.2)); background: var(--surface, #fff); color: inherit; font: inherit; }
     .row .btn { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: var(--r2); border: 0; background: var(--brand); color: var(--on-brand); font: 600 14px inherit; cursor: pointer; }
     .row .btn:disabled { opacity: .55; cursor: default; }
-    .reason { margin: 0 0 6px; font-size: 14px; } .reason strong { font-weight: 600; }
+    .reason { margin: 0 0 6px; font-size: 14px; } .reason strong { font-weight: 600; } .reason .count { display: inline-block; margin-left: 8px; min-width: 22px; padding: 0 7px; border-radius: 999px; background: var(--accent, #047857); color: #fff; font-size: 12px; font-weight: 700; text-align: center; }
     .via { display: block; font-size: .75rem; opacity: .7; }
     .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
     .trace { max-height: 320px; overflow-y: auto; }

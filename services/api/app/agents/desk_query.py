@@ -16,6 +16,18 @@ from app.models.firestore_models import IncidentType, RequestStatus
 TYPES = [t.value for t in IncidentType]
 VULNERABLE = ["child", "elderly", "disabled", "pregnant", "medical_need"]
 OPEN = {RequestStatus.NEW.value, RequestStatus.NEEDS_RECHECK.value, RequestStatus.MATCHED.value}
+STATUSES = [s.value for s in RequestStatus]
+# Plain words a coordinator uses for a case's stage, mapped to the stored statuses.
+STATUS_GROUPS = {
+    "completed": [RequestStatus.COMPLETED.value, RequestStatus.RESOLVED.value, RequestStatus.CLOSED.value],
+    "dispatched": [RequestStatus.APPROVED.value, RequestStatus.DISPATCHED.value, RequestStatus.IN_PROGRESS.value],
+}
+STATUS_WORDS = {
+    "completed": ["completed", "complete", "done", "finished", "resolved", "closed", "rescued", "helped already",
+                  "पूरा", "पूरे", "हो गया", "ho gaya", "ho gaye", "khatam"],
+    "dispatched": ["dispatched", "assigned", "en route", "on the way", "in progress", "underway", "sent",
+                   "भेज", "bheja", "bheje", "raste mein"],
+}
 
 TYPE_WORDS = {
     "rescue": ["rescue", "trapped", "stranded", "boat", "roof", "बचाव", "फंसे", "bachao", "phanse", "രക്ഷ"],
@@ -42,7 +54,9 @@ FUNCTION = {
             "types": {"type": "array", "items": {"type": "string", "enum": TYPES}, "description": "Need types to include. Empty means any."},
             "ward_ids": {"type": "array", "items": {"type": "string"}, "description": "Ward ids such as ward_4. Empty means any ward."},
             "vulnerable": {"type": "array", "items": {"type": "string", "enum": VULNERABLE}, "description": "Only cases that include all of these groups."},
-            "waiting_only": {"type": "boolean", "description": "True when the question asks for cases not yet dispatched or resolved."},
+            "waiting_only": {"type": "boolean", "description": "True when the question asks for cases not yet dispatched or resolved (pending, open, waiting)."},
+            "statuses": {"type": "array", "items": {"type": "string", "enum": STATUSES},
+                         "description": "Case stages to include. completed/done/resolved/closed means [completed, resolved, closed]; dispatched/assigned/on the way means [approved, dispatched, in_progress]; pending/open/waiting means [new, needs_recheck, matched]. Empty means any stage."},
             "min_people": {"type": "integer", "description": "Only cases with at least this many people."},
             "reason": {"type": "string", "description": "One short English sentence saying what was searched for."},
         },
@@ -68,6 +82,9 @@ def system_prompt() -> str:
         "Map place names to ward ids, and a district name to all of its wards. Wards: "
         + ward_catalogue()
         + ". 'Waiting', 'still', 'pending' or 'not yet helped' means waiting_only=true. "
+        "'Completed', 'done', 'resolved' or 'closed' means statuses=[completed, resolved, closed]. "
+        "'Dispatched', 'assigned' or 'on the way' means statuses=[approved, dispatched, in_progress]. "
+        "A 'how many' question uses the same filters; the count is the number of matches. "
         "Only use filters the question asks for. Always call the function."
     )
 
@@ -93,12 +110,18 @@ def rule_filters(question: str) -> Dict[str, Any]:
         names = [w["name_en"].lower(), (w.get("name_hi") or "").lower(), (w.get("district") or "").lower()]
         if _has(q, names):
             ward_ids.append(wid)
+    statuses: List[str] = []
+    for group, words in STATUS_WORDS.items():
+        if _has(q, words):
+            statuses.extend(STATUS_GROUPS[group])
+    waiting = _has(q, WAITING_WORDS) and not statuses
     m = re.search(r"(\d+)\s*(?:\+|or more|people|persons|log|लोग)", q)
     out: Dict[str, Any] = {
         "types": types,
         "ward_ids": ward_ids,
         "vulnerable": vulnerable,
-        "waiting_only": _has(q, WAITING_WORDS),
+        "waiting_only": waiting,
+        "statuses": statuses,
         "min_people": int(m.group(1)) if m else None,
     }
     out["reason"] = describe(out)
@@ -109,6 +132,13 @@ def describe(f: Dict[str, Any]) -> str:
     parts = []
     if f.get("waiting_only"):
         parts.append("waiting")
+    st = set(f.get("statuses") or [])
+    if st and st <= set(STATUS_GROUPS["completed"]):
+        parts.append("completed")
+    elif st and st <= set(STATUS_GROUPS["dispatched"]):
+        parts.append("dispatched")
+    elif st:
+        parts.append("/".join(sorted(st)))
     parts.append((" or ".join(f["types"]) + " cases") if f.get("types") else "cases")
     if f.get("vulnerable"):
         parts.append("with " + " and ".join(v.replace("_", " ") for v in f["vulnerable"]))
@@ -127,6 +157,7 @@ def clean_filters(raw: Dict[str, Any]) -> Dict[str, Any]:
         "ward_ids": [w for w in (raw.get("ward_ids") or []) if w in wards],
         "vulnerable": [v for v in (raw.get("vulnerable") or []) if v in VULNERABLE],
         "waiting_only": bool(raw.get("waiting_only")),
+        "statuses": sorted({s for s in (raw.get("statuses") or []) if s in STATUSES}),
         "min_people": None,
     }
     try:
@@ -277,6 +308,8 @@ def run_filters(requests: Iterable[Any], f: Dict[str, Any], limit: int = 12) -> 
             continue
         if f["waiting_only"] and r.status.value not in OPEN:
             continue
+        if f.get("statuses") and r.status.value not in f["statuses"]:
+            continue
         if f["min_people"] and (r.people_count or 0) < f["min_people"]:
             continue
         hits.append(r)
@@ -308,6 +341,7 @@ def ask(question: str, requests: Iterable[Any], call=None) -> Dict[str, Any]:
     t_parse = int((time.monotonic() - started) * 1000)
     t1 = time.monotonic()
     hits, total = run_filters(list(requests), filters)
+    count_only = bool(re.search(r"\bhow many\b|\bcount\b|\bnumber of\b|\bkitne\b|\u0915\u093f\u0924\u0928\u0947", (question or "").lower()))
     t_search = int((time.monotonic() - t1) * 1000)
     shown = {k: v for k, v in filters.items() if k != "reason"}
     as_json = json.dumps(shown, ensure_ascii=False)
@@ -321,5 +355,7 @@ def ask(question: str, requests: Iterable[Any], call=None) -> Dict[str, Any]:
         {"agent": "Search cases (read-only)", "status": "complete", "provider": "tool", "model": None,
          "latency_ms": t_search, "tokens": None, "input": as_json, "output": f"{total} match(es)"},
     ]
+    answer = f"{total} case{'s' if total != 1 else ''} match." if count_only else None
     return {"question": question, "filters": shown, "reason": filters["reason"], "total": total,
+            "count_only": count_only, "answer": answer,
             "cases": [card(r) for r in hits], "ai": ai, "trace": trace}
