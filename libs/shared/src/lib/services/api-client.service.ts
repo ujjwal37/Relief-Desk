@@ -106,7 +106,7 @@ export class ApiClientService {
     return this.http.post<SitrepResponse>('/api/sitrep', {}, this.getAuthHeaders());
   }
 
-  submitSampleReport(kind: 'hindi' | 'voice' | 'photo'): Observable<ReportSubmitResponse> {
+  submitSampleReport(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): Observable<ReportSubmitResponse> {
     return this.http.post<ReportSubmitResponse>('/api/demo/sample-report', { kind });
   }
 

@@ -13,7 +13,13 @@ import { RdTranslatePipe, SitrepResponse } from '@rd/shared';
         <h2 id="sitrep-h">{{ 'xfactor.sitrepTitle' | rdTranslate }}</h2>
         <button type="button" class="x" (click)="closed.emit()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
       </header>
-      @if (busy()) { <p class="note">{{ 'xfactor.sitrepBusy' | rdTranslate }}</p> }
+      @if (busy() && !report()) {
+        <div class="skel" role="status" [attr.aria-label]="'xfactor.sitrepBusy' | rdTranslate">
+          <p class="note">{{ 'xfactor.sitrepBusy' | rdTranslate }}</p>
+          <i></i><i></i><i></i>
+        </div>
+      }
+      @else if (busy()) { <p class="note">{{ 'xfactor.sitrepBusy' | rdTranslate }}</p> }
       @if (error()) { <p class="err">{{ 'xfactor.sitrepError' | rdTranslate }}</p> }
       @if (report(); as r) {
         <p class="src">{{ r.ai.provider === 'gemini' ? ('xfactor.geminiLive' | rdTranslate) : ('xfactor.rulesFallback' | rdTranslate) }}
@@ -58,6 +64,14 @@ import { RdTranslatePipe, SitrepResponse } from '@rd/shared';
     .dhead button { border:0; background:transparent; color:var(--brand); cursor:pointer; font:inherit; }
     pre { white-space:pre-wrap; margin:4px 0 0; padding:8px; border-radius:8px; background:var(--surface-2); font:13px/1.4 var(--rd-font-family); }
     .err { color:var(--sos-text, #b42318); }
+    .skel i { display:block; height:12px; margin:10px 0; border-radius:6px;
+      background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%);
+      background-size: 200% 100%; animation: rd-skel 1.4s ease-in-out infinite; }
+    .skel i:nth-child(2) { width: 92%; }
+    .skel i:nth-child(3) { width: 70%; }
+    .skel i:nth-child(4) { width: 84%; }
+    @keyframes rd-skel { to { background-position: -200% 0; } }
+    @media (prefers-reduced-motion: reduce) { .skel i { animation: none; } }
   `],
 })
 export class SitrepPanelComponent {

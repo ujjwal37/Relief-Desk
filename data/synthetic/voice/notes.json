@@ -97,5 +97,16 @@
     "hazard": "water_rising",
     "people": 4,
     "vulnerable": {"child": true, "elderly": true, "disabled": false, "pregnant": false, "medical_need": false}
+  },
+  {
+    "id": "VN-ALUVA-TTS",
+    "name": "Hindi elderly medicine at Aluva (TTS, synthetic)",
+    "lang": "hi",
+    "duration_sec": 12,
+    "transcript": "नमस्ते, आलुवा बस स्टैंड के पास मेरी दादी बीमार हैं। उनकी दवा खत्म हो गई है। घर में दो लोग हैं। कृपया मेडिकल टीम भेजिए।",
+    "asr_confidence": 0.92,
+    "hazard": "stranded",
+    "people": 2,
+    "vulnerable": {"child": false, "elderly": true, "disabled": false, "pregnant": false, "medical_need": true}
   }
 ]

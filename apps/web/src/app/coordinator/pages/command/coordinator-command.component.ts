@@ -588,7 +588,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   pipelineSteps(req: StoredRequest): PipelineLiveStep[] {
     return this.pipelineById()[req.id] || [];
   }
-  sendSample(kind: 'hindi' | 'voice' | 'photo'): void {
+  sendSample(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): void {
     this.apiClient.submitSampleReport(kind).subscribe({
       next: (res) => {
         this.focusRequestId = res.request_id;

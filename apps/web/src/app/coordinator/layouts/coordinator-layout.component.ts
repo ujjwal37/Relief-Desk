@@ -89,6 +89,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.live.connectDesk();
     this.api.getHealth().subscribe({ next: (health) => this.demoAllowed.set(!!health.demo_mode), error: () => this.demoAllowed.set(false) });
     this.refreshAiHealth();
+    this.prewarmSitrep();
     // The pill reads "Rules fallback" until the first Gemini call succeeds; keep it current.
     this.aiHealthPoll = setInterval(() => this.refreshAiHealth(), 15000);
     this.maybeStartTour();
@@ -192,7 +193,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     });
   }
 
-  sendSample(kind: 'hindi' | 'voice' | 'photo'): void {
+  sendSample(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): void {
     if (this.surgeBusy()) return;
     this.surgeBusy.set(true);
     this.api.submitSampleReport(kind).subscribe({
@@ -208,12 +209,22 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     });
   }
 
+  private prewarmSitrep(): void {
+    this.api.generateSitrep().subscribe({
+      next: (report) => {
+        this.sitrep.set(report);
+        this.sitrepAt = Date.now();
+      },
+      error: () => undefined,
+    });
+  }
+
   openSitrep(): void {
     this.menuOpen.set(false);
     this.sitrepOpen.set(true);
     this.sitrepError.set(false);
     const now = Date.now();
-    if (this.sitrep() && now - this.sitrepAt < 2000) return;
+    if (this.sitrep() && now - this.sitrepAt < 120000) return;
     this.sitrepBusy.set(true);
     this.api.generateSitrep().subscribe({
       next: (report) => {

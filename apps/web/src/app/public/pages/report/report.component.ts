@@ -406,7 +406,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
-  sendSample(kind: 'hindi' | 'voice' | 'photo'): void {
+  sendSample(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): void {
     if (this.sampleBusy() || this.isLoading()) return;
     this.sampleBusy.set(true);
     this.apiClient.submitSampleReport(kind).subscribe({

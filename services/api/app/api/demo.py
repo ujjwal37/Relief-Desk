@@ -86,7 +86,7 @@ def load_scenario(pack_id: str, coordinator: CoordinatorUser = Depends(get_curre
 
 
 class SampleReportRequest(BaseModel):
-    kind: str = "hindi"  # hindi | voice | photo
+    kind: str = "hindi"  # hindi | voice | photo | duplicate
 
 
 @router.get("/demo/samples")
@@ -111,8 +111,13 @@ def submit_sample_report(payload: SampleReportRequest):
     """One-click synthetic sample through the normal intake pipeline."""
     from app.api.reports import ReportSubmitRequest, submit_report
     from app.tools.demo_samples import sample_payload
+    from app.tools.storage import storage_service
     try:
         data = sample_payload(payload.kind)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    if payload.kind.lower() == "duplicate":
+        has_hindi = any("चालाकुडी" in (row.raw_text or "") for row in storage_service.list_requests() if not row.merged_into)
+        if not has_hindi:
+            submit_report(ReportSubmitRequest(**sample_payload("hindi")))
     return submit_report(ReportSubmitRequest(**data))

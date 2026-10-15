@@ -39,6 +39,15 @@ async def lifespan(app: FastAPI):
             "on" if oc.enabled() else "off (no key, or AI_MODE replay/fallback)",
         )
     logger.info("Demo mode: %s", settings.DEMO_MODE)
+    try:
+        import sys
+        import threading
+        from app.agents.sitrep import prewarm_sitrep
+
+        if "pytest" not in sys.modules:
+            threading.Thread(target=prewarm_sitrep, daemon=True).start()
+    except Exception:
+        pass
     yield
     logger.info("Shutting down %s...", settings.PROJECT_NAME)
 

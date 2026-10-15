@@ -75,8 +75,15 @@ class ASRService:
         lang_hint: str = "hi",
     ) -> ASRResult:
         """Transcribes a synthetic voice note in English or Hindi."""
-        # 1. Direct Voice Note ID Match (Hero demo path)
-        if voice_note_id and voice_note_id in self._notes_cache:
+        # Live audio (including demo TTS) must go through Gemini. Catalog notes are the fallback.
+        if audio_base64:
+            try:
+                audio_bytes = base64.b64decode(audio_base64)
+            except Exception:
+                pass
+
+        # Catalog id without attached audio is the recorded-note path (VN-01 etc.).
+        if voice_note_id and voice_note_id in self._notes_cache and not audio_bytes:
             note = self._notes_cache[voice_note_id]
             logger.info("ASR matched pre-recorded synthetic note %s", voice_note_id)
             return ASRResult(
@@ -87,14 +94,7 @@ class ASRService:
                 duration_sec=float(note.get("duration_sec", 5)),
             )
 
-        # 2. If audio data provided as base64 string
-        if audio_base64:
-            try:
-                audio_bytes = base64.b64decode(audio_base64)
-            except Exception:
-                pass
-
-        # 3. If Gemini is enabled and credentials available, attempt live multimodal ASR
+        # Live multimodal ASR when Gemini is on and we have audio bytes.
         if settings.GEMINI_ENABLED and settings.GEMINI_API_KEY and audio_bytes:
             try:
                 from google import genai
@@ -124,7 +124,16 @@ Return ONLY the raw transcription without any commentary or quotation marks."""
             except Exception as e:
                 logger.warning("Gemini live audio transcription fallback: %s", e)
 
-        # 4. Deterministic fallback to first synthetic note (Hindi hero case: VN-01)
+        # Catalog fallback when live ASR is off, including the Aluva demo note.
+        if voice_note_id and voice_note_id in self._notes_cache:
+            note = self._notes_cache[voice_note_id]
+            return ASRResult(
+                transcript=note["transcript"],
+                asr_confidence=note["asr_confidence"],
+                detected_language=note["lang"],
+                voice_note_id=voice_note_id,
+                duration_sec=float(note.get("duration_sec", 5)),
+            )
         fallback_note = self._notes_cache.get("VN-01")
         if fallback_note:
             return ASRResult(

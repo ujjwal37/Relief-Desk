@@ -250,17 +250,35 @@ def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
     return row
 
 
-def mark_analysing(request_id: str) -> None:
+def _extract_working(channel: str) -> str:
+    if channel == "photo":
+        return "Gemini is reading the photo..."
+    if channel == "voice":
+        return "Gemini is transcribing the voice note..."
+    return ""
+
+
+def _extract_summary(req: StoredRequest) -> str:
+    bits = [getattr(req.type, "value", req.type) or "report"]
+    if req.people_count:
+        bits.append(f"{req.people_count} people")
+    if req.place_text:
+        bits.append(req.place_text)
+    return " · ".join(str(bit) for bit in bits)
+
+
+def mark_analysing(request_id: str, channel: str = "text") -> None:
     req = storage_service.get_request(request_id)
     if req is None:
         return
     req.analysis_status = "analysing"
     now = time.perf_counter()
+    working = _extract_working(channel) or _extract_summary(req)
     req.trace = [
         _trace_step(
             agent,
             "working" if agent == "Intake" else "pending",
-            req.raw_text or "",
+            working,
             "",
             [],
             now,
@@ -272,7 +290,7 @@ def mark_analysing(request_id: str) -> None:
         request_id,
         "extract",
         "working",
-        (req.raw_text or "")[:180],
+        working[:180],
         {"tier": None},
     )
 
@@ -308,7 +326,7 @@ def finish(request_id: str) -> None:
         request_id,
         "extract",
         "complete",
-        (req.raw_text or "")[:180],
+        _extract_summary(req),
         {"type": req.type.value, "people": req.people_count},
     )
     emit_pipeline_step(

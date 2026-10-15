@@ -256,6 +256,7 @@ class LLMClient:
         user_prompt: str,
         validator: Optional[Callable[[str], Any]] = None,
         max_retries: int = 1,
+        max_output_tokens: Optional[int] = None,
     ) -> str:
         """Call Gemini, a recorded cache entry, or the deterministic fallback.
 
@@ -264,6 +265,8 @@ class LLMClient:
         """
         max_retries = max(0, min(2, max_retries))
         started = time.perf_counter()
+        if max_output_tokens:
+            self._tls.max_output_tokens = int(max_output_tokens)
         user_prompt = scrub_pii(user_prompt)
         cache_key = self.cache_key(system_instruction, user_prompt)
         mode = (settings.AI_MODE or "auto").lower()
@@ -540,6 +543,9 @@ class LLMClient:
                 config: Dict[str, Any] = {"system_instruction": system_instruction, "temperature": 0.1}
                 if json_output:
                     config["response_mime_type"] = "application/json"
+                cap = getattr(self._tls, "max_output_tokens", None)
+                if cap:
+                    config["max_output_tokens"] = int(cap)
                 if model_name.startswith("gemini-2.5-flash"):
                     config["thinking_config"] = {"thinking_budget": 0}
                 contents: Any = user_prompt
@@ -585,6 +591,7 @@ class LLMClient:
         media: bytes,
         mime_type: str,
         validator,
+        max_output_tokens: Optional[int] = None,
     ) -> str:
         """One multimodal generateContent call (image or audio plus text)."""
         if (settings.LLM_PROVIDER or "").lower() not in ("", "gemini"):
@@ -592,11 +599,15 @@ class LLMClient:
         digest = hashlib.sha256(media).hexdigest()
         keyed = f"{prompt}\n\n<media_sha256>{digest}</media_sha256>"
         before = getattr(self._tls, "media_input", None)
+        prev_tokens = getattr(self._tls, "max_output_tokens", None)
         self._tls.media_input = (media, mime_type)
         try:
-            return self.generate_content(instruction, keyed, validator=validator, max_retries=1)
+            return self.generate_content(
+                instruction, keyed, validator=validator, max_retries=1, max_output_tokens=max_output_tokens
+            )
         finally:
             self._tls.media_input = before
+            self._tls.max_output_tokens = prev_tokens
 
     def generate(self, prompt: str, system_instruction: str = "") -> str:
         return self.generate_content(system_instruction=system_instruction, user_prompt=prompt)

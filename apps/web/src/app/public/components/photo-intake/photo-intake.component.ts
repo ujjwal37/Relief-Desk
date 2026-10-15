@@ -54,24 +54,33 @@ export class PhotoIntakeComponent implements OnDestroy {
     this.result.set(null);
     this.reviewed.set(false);
     const ticket = this.generation;
-    this.request = this.api.analysePhoto({
-      image_base64: this.preview().split(',')[1],
-      mime_type: this.mime() as 'image/jpeg' | 'image/png' | 'image/webp',
-      caption: this.caption().slice(0, 1000),
-      synthetic: true,
-    }).pipe(timeout(50000)).subscribe({
-      next: (result) => {
-        if (ticket !== this.generation) return;
-        this.busy.set(false);
-        this.result.set(result);
-        if (!result.reading) this.error.set('photo.unavailable');
-      },
-      error: () => {
-        if (ticket !== this.generation) return;
-        this.busy.set(false);
-        this.error.set('photo.unavailable');
-      },
-    });
+    const raw = this.preview().split(',')[1] || '';
+    const send = (image_base64: string, mime_type: 'image/jpeg' | 'image/png' | 'image/webp') => {
+      if (ticket !== this.generation) return;
+      this.request = this.api.analysePhoto({
+        image_base64,
+        mime_type,
+        caption: this.caption().slice(0, 1000),
+        synthetic: true,
+      }).pipe(timeout(50000)).subscribe({
+        next: (result) => {
+          if (ticket !== this.generation) return;
+          this.busy.set(false);
+          this.result.set(result);
+          if (!result.reading) this.error.set('photo.unavailable');
+        },
+        error: () => {
+          if (ticket !== this.generation) return;
+          this.busy.set(false);
+          this.error.set('photo.unavailable');
+        },
+      });
+    };
+    if (raw.length < 200) {
+      send(raw, this.mime() as 'image/jpeg' | 'image/png' | 'image/webp');
+      return;
+    }
+    void jpegMax(this.preview()).then((out) => send(out.b64, out.mime));
   }
 
   readingText(reading: PhotoReading): string {
@@ -99,4 +108,26 @@ export class PhotoIntakeComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void { this.clear(); }
+}
+
+function jpegMax(dataUrl: string, maxPx = 768): Promise<{ b64: string; mime: 'image/jpeg' }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width || 1, img.height || 1));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve({ b64: dataUrl.split(',')[1] || '', mime: 'image/jpeg' });
+        return;
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const out = canvas.toDataURL('image/jpeg', 0.7);
+      resolve({ b64: out.split(',')[1] || '', mime: 'image/jpeg' });
+    };
+    img.onerror = () => resolve({ b64: dataUrl.split(',')[1] || '', mime: 'image/jpeg' });
+    img.src = dataUrl;
+  });
 }

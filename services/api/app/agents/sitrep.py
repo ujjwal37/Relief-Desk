@@ -15,7 +15,6 @@ from app.llm.adk_runtime import ai_step
 from app.llm.client import llm_client
 from app.models.firestore_models import RequestStatus, ResourceKind, ResourceStatus, StoredRequest
 from app.models.schemas import AiCall, IncidentType
-from app.tools.scoring import scoring_engine
 from app.tools.storage import storage_service
 
 logger = logging.getLogger("relief_desk.sitrep")
@@ -99,8 +98,18 @@ def _open_cases() -> List[StoredRequest]:
 
 
 def _tier_of(req: StoredRequest) -> str:
-    scored = scoring_engine.compute_urgency(req)
-    return scored.tier or "standard"
+    reason = (req.urgency_reason or "").lower()
+    if reason.startswith("immediate"):
+        return "immediate"
+    if reason.startswith("urgent"):
+        return "urgent"
+    if reason.startswith("standard"):
+        return "standard"
+    if (req.urgency_score or 0) >= 80:
+        return "immediate"
+    if (req.urgency_score or 0) >= 60:
+        return "urgent"
+    return "standard"
 
 
 def _rooftop_like(req: StoredRequest) -> bool:
@@ -245,11 +254,14 @@ def generate_sitrep() -> SitrepResponse:
                 f"<counts>\n{json.dumps(counts.model_dump(), ensure_ascii=False)}\n</counts>",
                 validator=validate,
                 max_retries=1,
+                max_output_tokens=700,
             )
         drafted = validate(raw)
     except Exception as exc:
         logger.info("SITREP using template (%s)", exc)
         drafted = None
+    finally:
+        llm_client._tls.max_output_tokens = None
     ai = llm_client.last_ai.model_copy()
     if drafted is None or ai.provider == "fallback":
         drafted = _template_brief(counts)
@@ -274,3 +286,11 @@ def generate_sitrep() -> SitrepResponse:
         _cache[key] = result
         _last_at = now
     return result
+
+
+def prewarm_sitrep() -> None:
+    """Fill the 120s cache so the first SITREP click is not an 18s Gemini wait."""
+    try:
+        generate_sitrep()
+    except Exception:
+        logger.info("SITREP prewarm skipped")

@@ -28,6 +28,7 @@
           <button type="button" data-testid="sample-hindi" (click)="sendSample('hindi')">{{ 'xfactor.sampleHindi' | rdTranslate }}</button>
           <button type="button" data-testid="sample-voice" (click)="sendSample('voice')">{{ 'xfactor.sampleVoice' | rdTranslate }}</button>
           <button type="button" data-testid="sample-photo" (click)="sendSample('photo')">{{ 'xfactor.samplePhoto' | rdTranslate }}</button>
+          <button type="button" data-testid="sample-duplicate" (click)="sendSample('duplicate')">{{ 'xfactor.sampleDuplicate' | rdTranslate }}</button>
         </div>
       </div>
       <div class="filters" role="group">
@@ -190,6 +191,7 @@
           @if (!offline() && needsDupReview(req)) {
             <div class="dup-review" data-testid="dup-review">
               <p>{{ dupAiLine(req) }}</p>
+              @if (req.count_note) { <p class="count-note" data-testid="counts-differ">{{ req.count_note }}</p> }
               <button type="button" data-testid="merge-dup" (click)="confirmMerge(req)">{{ 'coord.mergeReports' | rdTranslate }}</button>
               <button type="button" data-testid="keep-dup" (click)="keepSeparate(req)">{{ 'coord.keepSeparate' | rdTranslate }}</button>
             </div>
