@@ -19,6 +19,37 @@ logger = logging.getLogger("relief_desk.dedupe_agent")
 # Same place, same type, and this score: merge. Under it, the coordinator reviews.
 AUTO_MERGE_CONFIDENCE = 0.80
 REVIEW_CONFIDENCE = 0.50
+RETRIEVE_COSINE = 0.70
+# An update phrase with no landmark match only attaches to a case this close.
+UPDATE_NEAR_KM = 0.3
+
+# Devanagari to rough Latin, so "नेदुमुडी" and "Nedumudi" share character trigrams without embeddings.
+_DEVA = {
+    "अ": "a", "आ": "a", "इ": "i", "ई": "i", "उ": "u", "ऊ": "u", "ए": "e", "ऐ": "ai", "ओ": "o", "औ": "au", "ऋ": "ri",
+    "क": "k", "ख": "kh", "ग": "g", "घ": "gh", "ङ": "n", "च": "ch", "छ": "chh", "ज": "j", "झ": "jh", "ञ": "n",
+    "ट": "t", "ठ": "th", "ड": "d", "ढ": "dh", "ण": "n", "त": "t", "थ": "th", "द": "d", "ध": "dh", "न": "n",
+    "प": "p", "फ": "ph", "ब": "b", "भ": "bh", "म": "m", "य": "y", "र": "r", "ल": "l", "ळ": "l", "व": "v",
+    "श": "sh", "ष": "sh", "स": "s", "ह": "h", "ा": "a", "ि": "i", "ी": "i", "ु": "u", "ू": "u", "े": "e",
+    "ै": "ai", "ो": "o", "ौ": "au", "ृ": "ri", "ं": "n", "ँ": "n", "ः": "h", "़": "", "्": "",
+    "०": "0", "१": "1", "२": "2", "३": "3", "४": "4", "५": "5", "६": "6", "७": "7", "८": "8", "९": "9",
+}
+
+
+def transliterate(text: str) -> str:
+    out = "".join(_DEVA.get(ch, ch) for ch in (text or ""))
+    out = out.lower().replace("w", "v").replace("ee", "i").replace("oo", "u").replace("aa", "a")
+    return re.sub(r"[^a-z0-9 ]+", " ", out)
+
+
+def trigram_similarity(left: str, right: str) -> float:
+    """Character-trigram Jaccard on transliterated text. Works for Hindi, Hinglish and English."""
+    def grams(text: str) -> set:
+        words = [w for w in transliterate(text).split() if len(w) >= 3]
+        return {w[i:i + 3] for w in words for i in range(len(w) - 2)}
+    a, b = grams(left), grams(right)
+    if not a or not b:
+        return 0.0
+    return len(a & b) / len(a | b)
 
 
 def confidence_phrase(similarity: Optional[float], distance_km: Optional[float], minutes: Optional[float]) -> str:
@@ -81,17 +112,13 @@ class DedupeAgent:
 
         for req in existing_requests:
             # 1. Type compatibility
-            if req.type != new_req.type and "rescue" not in (req.type, new_req.type):
+            kinds = (self._type_name(req.type), self._type_name(new_req.type))
+            if kinds[0] != kinds[1] and "rescue" not in kinds:
                 continue
 
-            # 2. Time window check
-            try:
-                created_dt = datetime.fromisoformat(req.created_at)
-                hours_ago = (now - created_dt).total_seconds() / 3600.0
-                if hours_ago > max_time_hours:
-                    continue
-            except Exception:
-                pass
+            # 2. Time window check (naive timestamps are UTC)
+            if not self._within_hours(req, max_time_hours):
+                continue
 
             # 3. Geo proximity check
             geo_match = False
@@ -174,7 +201,8 @@ class DedupeAgent:
             if raw is None:
                 return None
             score = cosine(query_vec, l2_normalize(list(raw)))
-            if score >= 0.80:
+            # Retrieval only. Hindi vs English of the same place often scores 0.7-0.8; the merge bar is separate.
+            if score >= RETRIEVE_COSINE:
                 ranked.append((score, req))
                 self._embed_scores[req.id] = round(score, 3)
         ranked.sort(key=lambda item: item[0], reverse=True)
@@ -223,8 +251,10 @@ class DedupeAgent:
         )
 
         # Case A: Update phrasing, attached to the landmark match when one exists.
-        if is_update_phrase or new_req.is_update_phrase:
-            target = best_candidate or candidates[0]
+        update_target = best_candidate or self._nearest_within(candidates, new_lat, new_lng, UPDATE_NEAR_KM)
+        if (is_update_phrase or new_req.is_update_phrase) and update_target is not None:
+            # "now" alone is common ("need food now"); it only updates a case with the same landmark or pin.
+            target = update_target
             changed = {}
             evidence = []
             if new_req.people.count is not None and target.people_count != new_req.people.count:
@@ -270,6 +300,18 @@ class DedupeAgent:
             return self._gate_model_duplicate(live, pair)
         return self._decision_from_score(pair)
 
+    def _nearest_within(self, candidates, lat, lng, km):
+        if lat is None or lng is None:
+            return None
+        best, best_d = None, None
+        for cand in candidates:
+            if cand.lat is None or cand.lng is None or cand.merged_into:
+                continue
+            d = haversine_distance(float(lat), float(lng), float(cand.lat), float(cand.lng))
+            if d <= km and (best_d is None or d < best_d):
+                best, best_d = cand, d
+        return best
+
     def _type_name(self, value) -> str:
         return str(getattr(value, "value", value))
 
@@ -294,7 +336,8 @@ class DedupeAgent:
 
     def _sim_tokens(self, text: str) -> set:
         stop = {"the", "and", "near", "from", "with", "this", "that", "please", "need", "help", "send", "for", "are", "was"}
-        return {tok for tok in re.findall(r"[a-z]{3,}", (text or "").lower()) if tok not in stop}
+        stop = {transliterate(w).strip() for w in stop}
+        return {tok for tok in re.findall(r"[a-z]{3,}", transliterate(text)) if tok not in stop}
 
     def _jaccard(self, left: set, right: set) -> float:
         if not left or not right:
@@ -311,7 +354,12 @@ class DedupeAgent:
     ) -> dict:
         heard = f"{cand.place_text or ''} {cand.raw_text or ''}"
         incoming = f"{raw_text} {new_req.place_text or ''}"
-        overlap = self._jaccard(self._sim_tokens(incoming), self._sim_tokens(heard))
+        overlap = max(
+            self._jaccard(self._sim_tokens(incoming), self._sim_tokens(heard)),
+            # Spelling and script vary (Hindi vs Latin), so character trigrams back up the word overlap.
+            round(trigram_similarity(incoming, heard) * 1.2, 3),
+        )
+        overlap = min(1.0, overlap)
         shared = self._specific_places(incoming) & self._specific_places(heard)
         landmark = self._landmark_score(raw_text, new_req.place_text or "", heard)
         phrase = self._same_place_phrase(incoming, cand.place_text or "")
@@ -475,7 +523,7 @@ class DedupeAgent:
     }
 
     def _place_tokens(self, text: str) -> set:
-        tokens = set(re.findall(r"[a-z]{3,}", (text or "").lower()))
+        tokens = set(re.findall(r"[a-z]{3,}", transliterate(text)))
         return {tok for tok in tokens if tok not in self._PLACE_STOP and not tok.isdigit()}
 
     def _landmark_score(self, raw_text: str, place_text: str, candidate_place: str) -> int:
@@ -524,7 +572,7 @@ class DedupeAgent:
         return len(shared) + (5 * len(specific))
 
     def _norm(self, text: str) -> str:
-        return re.sub(r"[^a-z0-9]+", " ", (text or "").lower()).strip()
+        return re.sub(r"[^a-z0-9]+", " ", transliterate(text)).strip()
 
     def _longest_landmark_phrase(self, raw_text: str) -> Optional[str]:
         if not hasattr(self, "_landmark_phrases"):
@@ -649,5 +697,9 @@ class DedupeAgent:
             confidence=float(payload.get("confidence") or 0.8),
         )
 
+
+# Token sets go through the same normalisation as the text they are compared with.
+DedupeAgent._PLACE_STOP = {transliterate(w).strip() for w in DedupeAgent._PLACE_STOP}
+DedupeAgent._GENERIC_PLACE = {transliterate(w).strip() for w in DedupeAgent._GENERIC_PLACE}
 
 dedupe_agent = DedupeAgent()

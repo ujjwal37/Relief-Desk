@@ -63,6 +63,8 @@ async def _stream(request: Request, case_id: Optional[str]) -> AsyncIterator[str
         # Ask the browser to wait 5s if it reconnects on its own. We also reconnect with backoff.
         yield "retry: 5000\n\n"
         yield ": connected\n\n"
+        loop = asyncio.get_running_loop()
+        last_sent = loop.time()
         while True:
             if await request.is_disconnected():
                 break
@@ -70,9 +72,15 @@ async def _stream(request: Request, case_id: Optional[str]) -> AsyncIterator[str
                 item = await box.get(HEARTBEAT_SECONDS)
             except asyncio.TimeoutError:
                 yield "event: heartbeat\ndata: {}\n\n"
+                last_sent = loop.time()
                 continue
             if _visible(item, case_id) or _visible(item, _live_case(case_id)):
                 yield _frame(item)
+                last_sent = loop.time()
+            elif loop.time() - last_sent >= HEARTBEAT_SECONDS:
+                # A busy desk sends other cases' events; this stream still needs bytes to stay open.
+                yield "event: heartbeat\ndata: {}\n\n"
+                last_sent = loop.time()
     finally:
         unsubscribe(box)
 

@@ -144,6 +144,8 @@ class ScoringEngine:
         current_time = now or datetime.now(timezone.utc)
         try:
             created_dt = datetime.fromisoformat(req.created_at)
+            if created_dt.tzinfo is None:
+                created_dt = created_dt.replace(tzinfo=timezone.utc)
             wait_minutes = max(0.0, (current_time - created_dt).total_seconds() / 60.0)
         except Exception:
             wait_minutes = 0.0
@@ -245,18 +247,15 @@ class ScoringEngine:
             IncidentType.SHELTER: [ResourceKind.SHELTER],
             IncidentType.ANIMAL_ATTACK: [ResourceKind.MEDICAL],
             IncidentType.INFO: [ResourceKind.SHELTER, ResourceKind.FOOD],
-            IncidentType.OTHER: [ResourceKind.SHELTER, ResourceKind.FOOD, ResourceKind.BOAT],
+            IncidentType.OTHER: [ResourceKind.SHELTER, ResourceKind.FOOD],
         }
-        fallback = {
-            IncidentType.RESCUE: [ResourceKind.SHELTER],
-            IncidentType.MEDICAL: [ResourceKind.SHELTER],
-            IncidentType.FOOD: [ResourceKind.SHELTER],
-            IncidentType.SHELTER: [ResourceKind.FOOD],
-        }
-        allowed = fallback.get(req.type, []) if fallback_ok else primary.get(req.type, [])
+        # No cross-type fallback: a shelter van is never offered for a rooftop rescue.
+        # fallback_ok is kept for callers but no longer widens the kinds or the status.
+        allowed = primary.get(req.type, [])
         if res.kind not in allowed:
             return None
-        if res.status not in (ResourceStatus.AVAILABLE,) and not fallback_ok:
+        # Free teams only: busy, en route, on scene, returning, depleted or held teams are never offered.
+        if res.status != ResourceStatus.AVAILABLE or res.hold_request_id:
             return None
 
         # 1. Distance score (max 30 pts)

@@ -28,6 +28,17 @@ def _quotes(req: StoredRequest) -> List[ReportQuote]:
     return [ReportQuote(report_id=report_id, text=text, people_span=req.people_span)]
 
 
+_HAZARD_RANK = {"none": 0, "unknown": 1, "stranded": 2, "injury": 3, "water_rising": 4}
+
+
+def _value(item) -> str:
+    return str(getattr(item, "value", item))
+
+
+def _status(req: StoredRequest) -> str:
+    return _value(req.status)
+
+
 def fold_case(
     primary_id: str,
     secondary_id: str,
@@ -55,6 +66,16 @@ def _fold_locked(
         raise ValueError("A case cannot be merged into itself")
     if secondary.merged_into == primary_id:
         return primary
+    if secondary.merged_into:
+        raise ValueError(f"Case '{secondary_id}' is already merged into '{secondary.merged_into}'")
+    if primary.merged_into:
+        raise ValueError(f"Case '{primary_id}' is already merged into '{primary.merged_into}'")
+    busy = {"approved", "dispatched", "in_progress"}
+    if _status(secondary) in busy and _status(primary) in busy:
+        raise ValueError("Both cases already have a team. Complete one before merging.")
+    if _status(secondary) in busy:
+        # Keep the case that has the team as the survivor, so its team is never left on a hidden case.
+        primary, secondary = secondary, primary
 
     quotes = _quotes(primary)
     seen = {quote.report_id for quote in quotes}
@@ -85,6 +106,19 @@ def _fold_locked(
     for report_id in secondary.report_ids:
         if report_id not in primary.report_ids:
             primary.report_ids.append(report_id)
+    # The merged case must keep every vulnerable person and the worst hazard any report described.
+    for name, value in secondary.vulnerable.model_dump().items():
+        if value:
+            setattr(primary.vulnerable, name, True)
+    if _HAZARD_RANK.get(_value(secondary.hazard), 0) > _HAZARD_RANK.get(_value(primary.hazard), 0):
+        primary.hazard = secondary.hazard
+    for flag in secondary.flags or []:
+        if flag not in primary.flags and flag not in ("hoax", "hoax_or_flood"):
+            primary.flags.append(flag)
+    # Older report sets the waiting clock.
+    if (secondary.created_at or "") and (secondary.created_at < (primary.created_at or secondary.created_at)):
+        primary.created_at = secondary.created_at
+
     primary.merged_count = (primary.merged_count or 1) + (secondary.merged_count or 1)
     secondary.merged_into = primary.id
     secondary.merged_count = primary.merged_count
@@ -97,6 +131,11 @@ def _fold_locked(
             report.case_id = primary.id
             report.joined_existing = True
 
+    from app.tools.scoring import scoring_engine
+
+    scored = scoring_engine.compute_urgency(primary)
+    primary.urgency_score = scored.score
+    primary.urgency_reason = scored.reason
     storage_service.save_request(secondary, actor=merged_by)
     storage_service.save_request(primary, actor=merged_by)
     storage_service.create_cluster(

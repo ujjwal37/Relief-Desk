@@ -47,6 +47,8 @@ def find_teams(kind: str) -> list:
             continue
         if res.hold_request_id or res.capacity_remaining <= 0:
             continue
+        if getattr(res.status, "value", res.status) != "available":
+            continue
         found.append({"id": res.id, "name": res.name, "free": res.capacity_remaining})
     return found
 
@@ -67,6 +69,12 @@ def propose_assignment(request_id: str, resource_id: str) -> dict:
     res = storage_service.get_resource(resource_id)
     if req is None or res is None:
         return {"ok": False, "explanation": "That case or team is not on the board."}
+    wanted = {"rescue": "boat", "medical": "medical", "food": "food", "shelter": "shelter", "animal_attack": "medical"}
+    need = getattr(req.type, "value", req.type)
+    if need in wanted and getattr(res.kind, "value", res.kind) != wanted[need]:
+        return {"ok": False, "dispatched": False, "explanation": f"A {res.kind.value} team does not fit a {need} case."}
+    if getattr(res.status, "value", res.status) != "available":
+        return {"ok": False, "dispatched": False, "explanation": f"{res.name} is busy."}
     from app.tools.inventory import missing_supplies
     if missing_supplies(req, res):
         return {"ok": False, "dispatched": False, "explanation": "Required referral supplies are not in stock."}
@@ -96,7 +104,6 @@ def propose_assignment(request_id: str, resource_id: str) -> dict:
         state=MatchState.PROPOSED,
     )
     storage_service.save_match(match, actor="dispatcher")
-    req.status = RequestStatus.NEW
     return {"ok": True, "match_id": match.id, "dispatched": False, "hold": hold}
 
 

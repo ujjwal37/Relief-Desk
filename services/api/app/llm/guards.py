@@ -34,14 +34,19 @@ class Guard:
         self.last_failure_at = 0.0
         self.last_failure_reason: str = ""
         self.last_success_at = 0.0
+        self.half_open = False
+        # Repeated trips back off: 30 s, 2 min, 8 min, capped at 15 min.
+        self.base_open = 30.0
+        self.max_open = 900.0
 
     def circuit_open(self) -> bool:
         if self.failures < self.fail_limit:
             return False
         if (self.now() - self.opened_at) < self.open_for:
             return True
-        self.failures = 0
-        self.open_for = 30.0
+        # Half-open: let one call through. If it fails, record_failure re-opens for longer.
+        self.failures = self.fail_limit - 1
+        self.half_open = True
         return False
 
     def trip(self, seconds: float) -> None:
@@ -62,6 +67,8 @@ class Guard:
 
     def record_success(self) -> None:
         self.failures = 0
+        self.half_open = False
+        self.open_for = self.base_open
         self.last_success_at = self.now()
 
     def note_reason(self, reason: str) -> None:
@@ -77,6 +84,9 @@ class Guard:
     def record_failure(self) -> None:
         self.failures += 1
         if self.failures >= self.fail_limit:
+            if self.half_open:
+                self.open_for = min(self.max_open, max(self.base_open, self.open_for) * 4)
+            self.half_open = False
             self.opened_at = self.now()
 
     def backoff(self, attempt: int) -> None:

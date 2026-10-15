@@ -94,21 +94,23 @@ class MatchingAgent:
                 continue
             scored_candidates.append((res, breakdown, False))
 
+        # No suitable free team: offer nothing rather than a busy team or the wrong kind of team.
+        # The case card then shows "No suitable free team right now".
         using_fallback = False
-        if not scored_candidates:
-            using_fallback = True
-            for res in resources:
-                breakdown = scoring_engine.compute_match_score(request, res, fallback_ok=True)
-                if breakdown is None:
-                    continue
-                scored_candidates.append((res, breakdown, True))
 
         # Distance score is 0 past 10 km, so a far team with more seats can outrank a nearer one.
         # Keep teams near the closest suitable team. If every team is far, keep the closest and show its real ETA.
         scored_candidates = _keep_nearer(scored_candidates)
 
-        # Sort by total_score descending. Primary matches never mix with a fallback list.
-        scored_candidates.sort(key=lambda item: item[1].total_score, reverse=True)
+        # Rank by arrival time first (boats by water, land teams by road estimate), then by seat fit.
+        def _rank(item):
+            res, breakdown, _ = item
+            speed = BOAT_KMH if travel_mode_for(res) == "water" else LAND_KMH
+            eta = breakdown.distance_km / speed
+            fits = 0 if res.capacity_remaining >= people_needed else 1
+            return (round(eta * 60), fits, -breakdown.total_score)
+
+        scored_candidates.sort(key=_rank)
         top_candidates = scored_candidates[:top_n]
         fallback_label = _fallback_label(request.type) if using_fallback else None
         wait_minutes, wait_team_name = (None, None)
@@ -171,7 +173,8 @@ class MatchingAgent:
                     is_fallback=is_fallback,
                     fallback_label=fallback_label if is_fallback else None,
                     simulated=bool(getattr(res, "simulated", False)),
-                    eta_minutes=eta_for_distance(breakdown.distance_km, travel_mode_for(res)),
+                    eta_minutes=(eta_for_distance(breakdown.distance_km, travel_mode_for(res))
+                                 if request.lat is not None and request.lng is not None else None),
                     travel_mode=travel_mode_for(res),
                     no_nearby=breakdown.distance_km > NEARBY_KM,
                     wait_minutes=wait_minutes if is_fallback else None,

@@ -27,7 +27,9 @@ def ai_health():
     if oc.enabled():
         provider, model, label = oc.PROVIDER, oc.model(), oc.label()
     elif llm_client.gemini_live() and not (llm_client.guard.circuit_open() or llm_client.guard.failing()):
-        provider, model, label = "gemini", settings.GEMINI_MODEL, "Gemini"
+        # "Gemini (untested)" until this instance has had one successful live call.
+        tested = bool(llm_client.guard.last_success_at)
+        provider, model, label = "gemini", settings.GEMINI_MODEL, ("Gemini" if tested else "Gemini (untested)")
     else:
         provider, model, label = "fallback", settings.GEMINI_MODEL, "Rules"
     return {
@@ -40,6 +42,7 @@ def ai_health():
             "daily_cap": llm_client.daily_cap,
             "calls": llm_client.call_count,
             "circuit": "open" if llm_client.guard.circuit_open() else "closed",
+            "last_success": bool(llm_client.guard.last_success_at),
             "last_failure": llm_client.guard.last_failure_reason or None if llm_client.guard.failing() else None,
         },
     }

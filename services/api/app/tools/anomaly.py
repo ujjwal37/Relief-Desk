@@ -150,75 +150,141 @@ def load_seed_signals() -> List[Dict[str, Any]]:
     return list(data.get("signals") or [])
 
 
-def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
-    requests = storage.list_requests()
-    counts: Dict[str, int] = {}
-    for req in requests:
-        if req.ward_id:
-            counts[req.ward_id] = counts.get(req.ward_id, 0) + 1
-    alerts: List[AnomalyAlert] = []
-    if counts:
-        baseline = max(1, sorted(counts.values())[len(counts) // 2])
-        alerts.extend(spike_alerts(counts, baseline=baseline))
+SPIKE_WINDOW_MIN = 20
+BASELINE_WINDOW_MIN = 180
+# A ward needs at least this many distinct cases in the window, and 3x its usual rate, to be a spike.
+SPIKE_MIN_CASES = 4
+SPIKE_FACTOR = 3.0
+STALE_MIN = 90
+OPEN_STATUSES = ("new", "needs_recheck", "matched")
 
-    # Count arrivals, including merged copies, rather than only surviving cases.
+
+def _parse(stamp: Optional[str]):
     from datetime import datetime, timezone
-    recent_counts: Dict[str, int] = {}
-    now = datetime.now(timezone.utc)
-    for report in storage.list_reports():
-        try:
-            recent = (now - datetime.fromisoformat(report.created_at)).total_seconds() <= 1200
-        except (ValueError, TypeError):
-            recent = False
-        if report.ward_id and recent:
-            recent_counts[report.ward_id] = recent_counts.get(report.ward_id, 0) + 1
-    for alert in spike_alerts(recent_counts, baseline=1):
-        alerts.append(alert.model_copy(update={"id": f"reports-{alert.id}", "age_label": "just now"}))
 
-    demand: Dict[str, int] = {}
+    if not stamp:
+        return None
+    try:
+        value = datetime.fromisoformat(stamp)
+    except (TypeError, ValueError):
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def age_label_for(detected_at: Optional[str], now=None) -> str:
+    from datetime import datetime, timezone
+
+    when = _parse(detected_at)
+    if when is None:
+        return "just now"
+    now = now or datetime.now(timezone.utc)
+    minutes = max(0, int((now - when).total_seconds() // 60))
+    if minutes < 1:
+        return "just now"
+    if minutes < 60:
+        return f"{minutes} min ago"
+    return f"{minutes // 60} h ago"
+
+
+def _status(item) -> str:
+    return str(getattr(item.status, "value", item.status))
+
+
+def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
+    """Alerts from the live case store. Ages come from real timestamps, never fixed labels."""
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc)
+    requests = [req for req in storage.list_requests() if not req.merged_into]
+    alerts: List[AnomalyAlert] = []
+
+    # Spike: distinct cases (merged copies excluded) in the last 20 min vs the ward's own rate
+    # over the 3 hours before that.
+    recent: Dict[str, List[str]] = {}
+    prior: Dict[str, int] = {}
     for req in requests:
-        if req.status.value in ("resolved", "closed"):
+        when = _parse(req.created_at)
+        if when is None or not req.ward_id:
             continue
-        demand[req.type.value] = demand.get(req.type.value, 0) + 1
-    free: Dict[str, int] = {}
-    for resource in storage.list_resources():
-        free[resource.kind.value] = free.get(resource.kind.value, 0) + int(resource.capacity_remaining)
-    # Map incident types onto resource kinds we actually stock.
-    kind_map = {"medical": "medical", "rescue": "boat", "food": "food", "shelter": "shelter"}
-    mapped_demand = {kind_map[k]: v for k, v in demand.items() if k in kind_map}
-    alerts.extend(resource_gap_alerts(mapped_demand, free))
-    available_teams: Dict[str, int] = {}
-    for resource in storage.list_resources():
-        status = resource.status.value if hasattr(resource.status, "value") else str(resource.status)
-        if status == "available" and resource.capacity_remaining > 0:
-            available_teams[resource.kind.value] = available_teams.get(resource.kind.value, 0) + 1
-    for kind, open_cases in mapped_demand.items():
-        if open_cases > 0 and available_teams.get(kind, 0) == 0:
+        minutes = (now - when).total_seconds() / 60.0
+        if minutes <= SPIKE_WINDOW_MIN:
+            recent.setdefault(req.ward_id, []).append(req.created_at)
+        elif minutes <= SPIKE_WINDOW_MIN + BASELINE_WINDOW_MIN:
+            prior[req.ward_id] = prior.get(req.ward_id, 0) + 1
+    slots = BASELINE_WINDOW_MIN / SPIKE_WINDOW_MIN
+    for ward, stamps in sorted(recent.items()):
+        usual = prior.get(ward, 0) / slots
+        needed = max(SPIKE_MIN_CASES, SPIKE_FACTOR * usual)
+        if len(stamps) >= needed:
+            first = min(stamps)
             alerts.append(AnomalyAlert(
-                id=f"gap-none-{kind}",
-                kind="resource_gap",
-                title="Resource gap",
-                reason=f"No {kind} team free. {open_cases} cases are still waiting.",
-                severity="high",
-                age_label="1 min ago",
+                id=f"spike-{ward}",
+                kind="spike",
+                title="Report spike",
+                reason=f"{ward}: {len(stamps)} new cases in {SPIKE_WINDOW_MIN} min (usual {usual:.1f} per {SPIKE_WINDOW_MIN} min)",
+                ward_id=ward,
+                severity="critical",
+                detected_at=first,
             ))
 
-    conflict_wards = [req for req in requests if "conflict" in (req.flags or [])]
-    if conflict_wards:
+    # Resource gap: open cases of a kind vs free teams of that kind (cases vs teams, same unit).
+    kind_map = {"medical": "medical", "rescue": "boat", "food": "food", "shelter": "shelter", "animal_attack": "medical"}
+    demand: Dict[str, List[str]] = {}
+    for req in requests:
+        kind = kind_map.get(str(getattr(req.type, "value", req.type)))
+        if kind and _status(req) in OPEN_STATUSES and "hoax" not in (req.flags or []):
+            demand.setdefault(kind, []).append(req.created_at)
+    free_teams: Dict[str, int] = {}
+    for resource in storage.list_resources():
+        if _status(resource) == "available" and resource.capacity_remaining > 0 and not resource.hold_request_id:
+            key = str(getattr(resource.kind, "value", resource.kind))
+            free_teams[key] = free_teams.get(key, 0) + 1
+    for kind, stamps in sorted(demand.items()):
+        free = free_teams.get(kind, 0)
+        if len(stamps) > free:
+            reason = (f"No {kind} team free. {len(stamps)} open cases are waiting."
+                      if free == 0 else f"{kind.capitalize()}: {len(stamps)} open cases, only {free} free teams")
+            alerts.append(AnomalyAlert(
+                id=f"gap-{kind}",
+                kind="resource_gap",
+                title="Resource gap",
+                reason=reason,
+                severity="high",
+                detected_at=min((s for s in stamps if s), default=None),
+            ))
+
+    conflicts = [req for req in requests if "conflict" in (req.flags or [])]
+    if conflicts:
         alerts.append(AnomalyAlert(
             id="conflict-live",
             kind="conflict",
             title="Conflicting reports",
-            reason=f"{len(conflict_wards)} requests disagree on the hazard. Flagged, not deleted.",
+            reason=f"{len(conflicts)} cases have reports that disagree on the hazard. Flagged, not deleted.",
             severity="medium",
-            age_label="26 min ago",
+            detected_at=max((req.updated_at or req.created_at) for req in conflicts),
         ))
 
-    stale_ages = []
+    stale = []
     for req in requests:
-        if "stale" in (req.flags or []) or req.status.value == "needs_recheck":
-            stale_ages.append(120)
-    alerts.extend(stale_alerts(stale_ages, threshold=90))
+        when = _parse(req.created_at)
+        if when is None or _status(req) not in OPEN_STATUSES:
+            continue
+        if (now - when).total_seconds() / 60.0 > STALE_MIN:
+            stale.append(req.created_at)
+    if stale:
+        alerts.append(AnomalyAlert(
+            id="stale-open",
+            kind="stale",
+            title="Stale requests",
+            reason=f"{len(stale)} open cases waiting over {STALE_MIN} min without a team",
+            severity="medium",
+            # The alert started when the oldest case crossed the threshold.
+            detected_at=(_parse(min(stale)) + __import__("datetime").timedelta(minutes=STALE_MIN)).isoformat(),
+        ))
+    for alert in alerts:
+        alert.age_label = age_label_for(alert.detected_at, now)
     return alerts
 
 
@@ -227,22 +293,27 @@ def _gap_kind(alert_id: str) -> str:
 
 
 def collect_alerts(storage=None) -> List[AnomalyAlert]:
+    """Live alerts first. Seeded scenario alerts are always labelled Sample and never replace a live one."""
     live = live_alerts_from_storage(storage) if storage is not None else []
-    live_gap_kinds = {
-        _gap_kind(alert.id) for alert in live if alert.kind == "resource_gap"
-    }
+    live_keys = {(alert.kind, alert.ward_id or alert.id) for alert in live}
+    live_gap_kinds = {_gap_kind(alert.id) for alert in live if alert.kind == "resource_gap"}
     merged: Dict[str, AnomalyAlert] = {}
-    for alert in alerts_from_signals(load_seed_signals()):
-        if alert.kind == "resource_gap":
-            if _gap_kind(alert.id) in live_gap_kinds:
-                continue
-            alert = alert.model_copy(update={
-                "title": "Sample resource gap",
-                "reason": f"Sample. {alert.reason}",
-            })
-        merged[alert.id] = alert
     for alert in live:
-        merged.setdefault(alert.id, alert)
+        merged[alert.id] = alert
+    for alert in alerts_from_signals(load_seed_signals()):
+        if alert.kind == "resource_gap" and _gap_kind(alert.id) in live_gap_kinds:
+            continue
+        if (alert.kind, alert.ward_id or alert.id) in live_keys:
+            continue
+        sample = alert.model_copy(update={
+            "id": f"sample-{alert.id}",
+            "title": f"Sample: {alert.title}",
+            "reason": f"Sample scenario. {alert.reason}",
+            "age_label": "sample",
+            "detected_at": None,
+            "severity": "medium" if alert.severity == "critical" else alert.severity,
+        })
+        merged.setdefault(sample.id, sample)
     result = []
     for alert in merged.values():
         alert.acknowledged = alert.id in ACKNOWLEDGED

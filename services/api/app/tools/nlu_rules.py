@@ -10,17 +10,17 @@ import re
 from typing import Dict, Optional
 
 _CHILD = (
-    "bachcha", "baccha", "bachha", "bachhe", "bacche", "bache", "bachcha",
-    "child", "children", "baby", "kid", "kids", "बच्चा", "बच्चे", "बच्ची", "बालक",
+    "bachcha", "baccha", "bachha", "bachhe", "bacche", "bache", "bachcha", "infant", "infants", "newborn",
+    "child", "children", "baby", "babies", "kid", "kids", "बच्चा", "बच्चे", "बच्ची", "बालक", "नवजात", "शिशु",
 )
 _ELDERLY = (
     "bujurg", "buzurg", "budha", "budhiya", "elderly", "senior", "dada", "dadi",
-    "बुजुर्ग", "बूढ़", "बुजुर्ग", "दादी", "दादा",
+    "बुजुर्ग", "बूढ़", "बुढ़", "दादी", "दादा", "नानी", "नाना", "old man", "old woman", "aged",
 )
-_PREGNANT = ("pregnant", "pregnancy", "garbhvati", "गर्भवती", "प्रेग्नेंट")
+_PREGNANT = ("pregnant", "pregnancy", "garbhvati", "pet se", "गर्भवती", "गर्भ", "प्रेग्नेंट", "पेट से")
 _DISABLED = ("disabled", "handicap", "wheelchair", "divyang", "दिव्यांग", "अपंग")
 _MEDICAL = (
-    "medical", "oxygen", "insulin", "doctor", "hospital", "ऑक्सीजन", "दवा", "बीमार",
+    "medical", "oxygen", "insulin", "dialysis", "doctor", "bedridden", "ऑक्सीजन", "दवा", "बीमार", "डायलिसिस",
 )
 _STOP = {
     "par", "pe", "per", "mein", "me", "mai", "hai", "hain", "ke", "ki", "aur",
@@ -55,6 +55,13 @@ _DEVA_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
 _HI_NUMBER_WORDS = {
     "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "पाँच": 5,
     "छह": 6, "छः": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
+    "ग्यारह": 11, "बारह": 12, "तेरह": 13, "चौदह": 14, "पंद्रह": 15, "सोलह": 16,
+    "सत्रह": 17, "अठारह": 18, "उन्नीस": 19, "बीस": 20,
+}
+# Hinglish number words before "log" ("teen log").
+_HINGLISH_NUMBER_WORDS = {
+    "ek": 1, "do": 2, "teen": 3, "char": 4, "chaar": 4, "paanch": 5, "panch": 5, "chhe": 6, "chhah": 6,
+    "saat": 7, "aath": 8, "nau": 9, "das": 10, "gyarah": 11, "barah": 12, "bees": 20,
 }
 
 
@@ -192,6 +199,10 @@ def _people_count_single(normalized: str) -> Optional[int]:
     )
     if hindi:
         return _HI_NUMBER_WORDS[hindi.group(1)]
+    latin = "|".join(sorted(_HINGLISH_NUMBER_WORDS, key=len, reverse=True))
+    hinglish = re.search(rf"(?<![a-z])({latin})\s+(?:log|logon|logo|insaan|bande)(?![a-z])", normalized, flags=re.IGNORECASE)
+    if hinglish:
+        return _HINGLISH_NUMBER_WORDS[hinglish.group(1).lower()]
     return None
 
 
@@ -210,16 +221,19 @@ def infer_incident_type(text: str) -> Optional[str]:
     def has_phrase(*phrases: str) -> bool:
         return any(phrase in text or phrase in lower for phrase in phrases)
 
-    if has_latin("dog", "kutta", "kutte", "rabies", "kaat") or has_phrase("काट", "कुत्ता"):
+    animal = has_latin("dog", "dogs", "kutta", "kutte", "snake", "saanp", "rabies") or has_phrase("कुत्ता", "कुत्ते", "साँप", "सांप")
+    if animal and (has_latin("bite", "bit", "bitten", "attack", "attacked", "kaat", "kata", "kaata", "rabies") or has_phrase("काट")):
         return "animal_attack"
+    # Medical before food: "needs oxygen, also no khana" is a medical case (life threat first).
+    if has_latin("bimar", "bimaar", "dawa", "dawai", "oxygen", "insulin", "dialysis", "doctor", "medicine", "medical",
+                 "bleeding", "unconscious", "ambulance") or has_phrase(
+        "बीमार", "दवा", "ऑक्सीजन", "इंसुलिन", "डॉक्टर", "दवाइ", "डायलिसिस", "can't breathe", "cannot breathe", "साँस"
+    ):
+        return "medical"
     if has_latin("ration", "bhook", "bhookh", "khana", "packets") or has_phrase(
         "राशन", "भूख", "खाना", "पीने का पानी", "drinking water", "पैकेट"
     ):
         return "food"
-    if has_latin("bimar", "bimaar", "dawa", "dawai", "oxygen", "insulin", "doctor", "medicine", "medical") or has_phrase(
-        "बीमार", "दवा", "ऑक्सीजन", "इंसुलिन", "डॉक्टर", "दवाइ"
-    ):
-        return "medical"
     if has_latin("bachao", "rescue", "stranded", "fanse", "rooftop") or has_phrase(
         "chat par", "chhat par", "छत", "फंसे", "फँसे", "फंस", "fas gaye",
         "boat bhejo", "boat needed", "rescue boat", "send a boat", "boat chahiye",
@@ -236,8 +250,13 @@ def infer_incident_type(text: str) -> Optional[str]:
     return None
 
 
+_RECEDED = ("drained", "receded", "water gone", "water has gone", "dry now", "utar gaya", "utar gaya hai", "उतर गया", "सूख")
+
+
 def hazard_name(text: str) -> Optional[str]:
     lower = text.lower()
+    if any(w in lower or w in text for w in _RECEDED):
+        return None
     if any(w in lower for w in ("paani", "pani", "पानी", "water rising", "water", "बाढ़", "flood")):
         if any(w in lower for w in ("bhar", "badh", "rising", "भर", "बढ़", "flood", "बाढ़", "फंस")):
             return "water_rising"

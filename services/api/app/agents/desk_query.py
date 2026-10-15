@@ -25,13 +25,13 @@ STATUS_GROUPS = {
 STATUS_WORDS = {
     "completed": ["completed", "complete", "done", "finished", "resolved", "closed", "rescued", "helped already",
                   "पूरा", "पूरे", "हो गया", "ho gaya", "ho gaye", "khatam"],
-    "dispatched": ["dispatched", "assigned", "en route", "on the way", "in progress", "underway", "sent",
-                   "भेज", "bheja", "bheje", "raste mein"],
+    "dispatched": ["dispatched", "assigned", "en route", "on the way", "in progress", "underway", "team sent",
+                   "भेजा", "भेजी", "भेजे", "bheja", "bheje", "raste mein"],
 }
 
 TYPE_WORDS = {
     "rescue": ["rescue", "trapped", "stranded", "boat", "roof", "बचाव", "फंसे", "bachao", "phanse", "രക്ഷ"],
-    "food": ["food", "water", "hungry", "खाना", "पानी", "khana", "paani", "ഭക്ഷണം"],
+    "food": ["food", "drinking water", "hungry", "ration", "खाना", "पीने का पानी", "khana", "ഭക്ഷണം"],
     "medical": ["medical", "medicine", "insulin", "doctor", "injured", "दवा", "dawai", "dawa", "मेडिकल", "മരുന്ന്"],
     "shelter": ["shelter", "camp", "आश्रय", "आसरा", "ക്യാമ്പ്"],
 }
@@ -42,6 +42,11 @@ VULN_WORDS = {
     "disabled": ["disabled", "wheelchair", "विकलांग", "divyang"],
     "medical_need": ["dialysis", "oxygen", "bedridden"],
 }
+# "not done yet", "abhi tak nahi", "पूरे नहीं": a negated stage means the opposite group (still waiting).
+NEGATION = re.compile(
+    r"\b(?:not|never|yet to|still not|haven'?t|hasn'?t|isn'?t|aren'?t|wasn'?t|nahi|nahin|nhi)\b|नहीं|नही|अभी तक",
+    re.I,
+)
 WAITING_WORDS = ["waiting", "still", "open", "pending", "unassigned", "not yet", "इंतज़ार", "इंतजार", "intezaar",
                  "intezar", "baaki", "बाकी", "കാത്തിരി"]
 
@@ -84,6 +89,7 @@ def system_prompt() -> str:
         + ". 'Waiting', 'still', 'pending' or 'not yet helped' means waiting_only=true. "
         "'Completed', 'done', 'resolved' or 'closed' means statuses=[completed, resolved, closed]. "
         "'Dispatched', 'assigned' or 'on the way' means statuses=[approved, dispatched, in_progress]. "
+        "A negated stage means the opposite: 'not done yet', 'not completed', 'abhi tak nahi hua' means waiting_only=true and no statuses. "
         "A 'how many' question uses the same filters; the count is the number of matches. "
         "Only use filters the question asks for. Always call the function."
     )
@@ -96,7 +102,8 @@ def _has(text: str, words: Iterable[str]) -> bool:
         if re.search(r"[a-z]", w):
             if re.search(rf"\b{re.escape(w)}", text):
                 return True
-        elif w in text:
+        elif re.search(rf"(?<![\u0900-\u097F\u0D00-\u0D7F]){re.escape(w)}", text):
+            # Devanagari or Malayalam: the word must start at a word boundary (not inside another word).
             return True
     return False
 
@@ -114,15 +121,19 @@ def rule_filters(question: str) -> Dict[str, Any]:
     for group, words in STATUS_WORDS.items():
         if _has(q, words):
             statuses.extend(STATUS_GROUPS[group])
-    waiting = _has(q, WAITING_WORDS) and not statuses
-    m = re.search(r"(\d+)\s*(?:\+|or more|people|persons|log|लोग)", q)
+    negated = bool(statuses) and bool(NEGATION.search(q))
+    if negated:
+        # "Which cases are not done yet?" asks for open cases, not completed ones.
+        statuses = []
+    waiting = (_has(q, WAITING_WORDS) or negated) and not statuses
+    m = re.search(r"(?:at least|atleast|more than|over|minimum|kam se kam|से ज़्यादा|से ज्यादा)\s*(\d+)|(\d+)\s*(?:\+|or more|ya zyada|से अधिक)", q)
     out: Dict[str, Any] = {
         "types": types,
         "ward_ids": ward_ids,
         "vulnerable": vulnerable,
         "waiting_only": waiting,
         "statuses": statuses,
-        "min_people": int(m.group(1)) if m else None,
+        "min_people": int(m.group(1) or m.group(2)) if m else None,
     }
     out["reason"] = describe(out)
     return out
@@ -166,6 +177,9 @@ def clean_filters(raw: Dict[str, Any]) -> Dict[str, Any]:
     except (TypeError, ValueError, KeyError):
         pass
     reason = str(raw.get("reason") or "").strip()
+    # A stage list and "waiting" together would always be empty. The stage list wins.
+    if out["statuses"] and out["waiting_only"]:
+        out["waiting_only"] = False
     out["reason"] = reason[:200] if reason else describe(out)
     return out
 

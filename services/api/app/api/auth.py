@@ -40,7 +40,7 @@ def create_coordinator_token(email: str = DEMO_COORDINATOR_EMAIL) -> str:
         "sub": email,
         "email": email,
         "role": "coordinator",
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7),
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=12),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     return jwt.encode(payload, settings.JWT_SECRET, algorithm="HS256")
@@ -86,7 +86,8 @@ def verify_coordinator_token(token: str) -> CoordinatorUser:
             decoded = fb_auth.verify_id_token(token)
             role = decoded.get("role") or decoded.get("claims", {}).get("role")
             email = decoded.get("email", "")
-            if role == "coordinator" or email.lower() == DEMO_COORDINATOR_EMAIL.lower():
+            # Only the custom role claim grants coordinator access, never a matching email.
+            if role == "coordinator":
                 return CoordinatorUser(
                     uid=decoded.get("uid", "fb-coord"),
                     email=email,

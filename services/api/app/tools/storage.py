@@ -51,7 +51,8 @@ class StorageService:
         self._audit_log: List[AuditEntry] = []  # Strictly append-only
         self._idempotent: Dict[str, Dict[str, Any]] = {}
         self._submit_lock = threading.Lock()
-        self._hold_lock = threading.Lock()
+        # Re-entrant: approve releases sibling holds while it already holds this lock.
+        self._hold_lock = threading.RLock()
         self._firestore_client = None
         self._init_firestore()
 
@@ -516,6 +517,14 @@ class StorageService:
         res.status = ResourceStatus.ON_SCENE if frac >= 1 else ResourceStatus.EN_ROUTE
         self._append_trail(res)
         self._resources[resource_id] = res
+        if frac >= 1 and res.assigned_request_id:
+            # The simulated team reached the pin: the case is in progress, same as a field "at scene".
+            target = self._requests.get(res.assigned_request_id)
+            if target is not None and target.status in (RequestStatus.DISPATCHED, RequestStatus.APPROVED):
+                try:
+                    self.mark_arrived(target.id, actor="simulation")
+                except ValueError:
+                    pass
         return res
 
     def _append_trail(self, res: StoredResource) -> None:
@@ -554,15 +563,14 @@ class StorageService:
             res.updated_at = datetime.now(timezone.utc).isoformat()
             self._resources[resource_id] = res
         elif action == "available":
+            # "Back in pool" never completes a case. An unfinished case goes back to the queue
+            # (status new, team unassigned, seats returned) so a coordinator can send someone else.
             if res.assigned_request_id:
                 current = self._requests.get(res.assigned_request_id)
                 if current and current.status in (
                     RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS
                 ):
-                    try:
-                        self.complete_request(res.assigned_request_id, actor=actor)
-                    except ValueError:
-                        pass
+                    self._requeue_request(current, res, actor=actor)
             res = self._resources[resource_id]
             res.assigned_request_id = None
             res.simulated = False
@@ -573,6 +581,24 @@ class StorageService:
             raise ValueError(f"Unknown team action {action}")
         self.record_audit(actor=actor, action="team_confirm", target=resource_id, after={"action": action, "status": res.status.value})
         return res
+
+    def _requeue_request(self, req: StoredRequest, res: StoredResource, actor: str = "team") -> None:
+        before = req.model_dump()
+        amount = req.reserved_people or req.people_count or 1
+        req.status = RequestStatus.NEW
+        req.assigned_resource_id = None
+        req.reserved_people = None
+        if "requeued" not in req.flags:
+            req.flags.append("requeued")
+        req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._requests[req.id] = req
+        for match in self._matches.values():
+            if match.request_id == req.id and match.resource_id == res.id and match.state == MatchState.APPROVED:
+                match.state = MatchState.REJECTED
+                match.rejected_reason = "Team returned to the pool before finishing"
+        res.capacity_remaining = min(res.capacity_total, res.capacity_remaining + amount)
+        self.record_audit(actor=actor, action="status_change", target=req.id, before=before,
+                          after={**req.model_dump(), "reason": "team back in pool, case re-queued"})
 
     def load_seed_resources(self, yaml_path: Optional[str] = None, only_ids: Optional[Iterable[str]] = None) -> int:
         """Loads seed resources from YAML file into storage."""
@@ -669,6 +695,8 @@ class StorageService:
             raise ValueError("Required referral supplies are no longer in stock; choose another team")
         if req and req.assigned_resource_id and req.status in (RequestStatus.DISPATCHED, RequestStatus.IN_PROGRESS):
             raise ValueError("This case already has an assigned team")
+        if req and req.merged_into:
+            raise ValueError("This case was merged into another case; dispatch that case instead")
         people_needed = req.people_count if (req and req.people_count) else 1
 
         # A hold already took the seats. Approving dispatches; it does not take them twice.
@@ -708,6 +736,17 @@ class StorageService:
             self._resources[assigned.id] = assigned
             if req.lat is not None and req.lng is not None:
                 self.begin_simulation(assigned.id, req.lat, req.lng)
+
+        # Other proposals for this case are no longer needed: drop them and free their holds.
+        for other in list(self._matches.values()):
+            if other.id == match.id or other.request_id != match.request_id or other.state != MatchState.PROPOSED:
+                continue
+            other_res = self._resources.get(other.resource_id)
+            if other_res is not None and other_res.hold_request_id == match.request_id:
+                self.release_hold(other.resource_id, actor=approved_by)
+            other.state = MatchState.REJECTED
+            other.rejected_reason = "Another team was dispatched"
+            other.updated_at = datetime.now(timezone.utc).isoformat()
 
         before = match.model_dump()
         match.state = MatchState.APPROVED
@@ -813,7 +852,10 @@ class StorageService:
         if not match:
             raise ValueError(f"Match {match_id} not found")
 
-        self.release_hold(match.resource_id, actor=actor)
+        # Release only this case's hold. Another case may hold the same team.
+        held = self._resources.get(match.resource_id)
+        if held is not None and held.hold_request_id == match.request_id:
+            self.release_hold(match.resource_id, actor=actor)
         before = match.model_dump()
         match.state = MatchState.REJECTED
         match.rejected_reason = reason
@@ -982,6 +1024,9 @@ class StorageService:
             incidents = self.load_seed_incidents(only_ids=SMALL_CASE_IDS)
             packs = 0
             demo = None
+            if settings.DEMO_MODE:
+                from app.tools.demo_cases import load_demo_cases
+                incidents += load_demo_cases(self)
         _attach_recorded(self)
         self.record_audit(
             actor="reset_demo",
@@ -1050,6 +1095,10 @@ try:
         storage_service.load_seed_resources(only_ids=SMALL_TEAM_IDS)
         storage_service.load_seed_incidents(only_ids=SMALL_CASE_IDS)
         _attach_recorded(storage_service)
+        if settings.DEMO_MODE:
+            # Cases live in memory: every cold start gets the same believable synthetic board.
+            from app.tools.demo_cases import load_demo_cases
+            load_demo_cases(storage_service)
 except Exception:
     pass
 

@@ -27,7 +27,7 @@ class AlertResponse(BaseModel):
 def _with_clock(alert):
     """Turn a static 'N min ago' label into a real timestamp the client can format."""
     data = alert.model_dump() if hasattr(alert, "model_dump") else dict(alert)
-    if not data.get("detected_at"):
+    if not data.get("detected_at") and data.get("age_label") != "sample":
         match = re.search(r"(\d+)\s*min", data.get("age_label") or "")
         minutes = int(match.group(1)) if match else 0
         data["detected_at"] = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()

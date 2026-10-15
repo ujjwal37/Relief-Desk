@@ -467,7 +467,7 @@
     "whyVuln": "Fits who is vulnerable",
     "dupOf": "Possible duplicate of {id}",
     "findingTeam": "Finding the best team…",
-    "noTeamNow": "No team available right now",
+    "noTeamNow": "No suitable free team right now",
     "approveOffline": "Approve when back online",
     "decideDupFirst": "Decide on the duplicate first.",
     "sendThisTeam": "Send this team",
