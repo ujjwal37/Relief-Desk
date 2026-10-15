@@ -53,7 +53,7 @@ export class ApiClientService {
   }
 
   getHealth(): Observable<HealthResponse> {
-    return this.http.get<HealthResponse>('/healthz');
+    return this.http.get<HealthResponse>('/api/health');
   }
 
   getScenarios(): Observable<ScenarioConfig[]> {

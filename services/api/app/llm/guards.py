@@ -31,6 +31,9 @@ class Guard:
         self.open_for = 30.0
         self.sleep: Callable[[float], None] = time.sleep
         self.now: Callable[[], float] = time.monotonic
+        self.last_failure_at = 0.0
+        self.last_failure_reason: str = ""
+        self.last_success_at = 0.0
 
     def circuit_open(self) -> bool:
         if self.failures < self.fail_limit:
@@ -59,6 +62,17 @@ class Guard:
 
     def record_success(self) -> None:
         self.failures = 0
+        self.last_success_at = self.now()
+
+    def note_reason(self, reason: str) -> None:
+        self.last_failure_at = self.now()
+        self.last_failure_reason = reason
+
+    def failing(self, window: float = 600.0) -> bool:
+        """True when the newest live result in the window was a failure."""
+        if not self.last_failure_at or self.last_failure_at < self.last_success_at:
+            return False
+        return (self.now() - self.last_failure_at) < window
 
     def record_failure(self) -> None:
         self.failures += 1

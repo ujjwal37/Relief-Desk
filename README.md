@@ -150,7 +150,7 @@ Each report makes one model call: the same JSON reply carries the facts, the typ
 
 ## Deploy
 
-There is no live Cloud Run URL in this repo. `deploy/cloudrun.md` is the recipe: a root `Dockerfile`, Firebase Hosting for `dist/web/browser` with `/api/**` and `/healthz` rewritten to Cloud Run service `relief-desk-api` in `asia-south1`, and `GEMINI_API_KEY`, `JWT_SECRET`, and `GOOGLE_MAPS_API_KEY` mounted from Secret Manager. Case rows stay in process memory. Firestore is not the store this process writes.
+Live demo: https://relief-desk.web.app (health: https://relief-desk.web.app/api/health and `/api/health/ai`). `deploy/cloudrun.md` is the recipe: a root `Dockerfile`, Firebase Hosting for `dist/web/browser` with `/api/**` rewritten to Cloud Run service `relief-desk-api` in `asia-south1`, and `GEMINI_API_KEY`, `JWT_SECRET`, `GOOGLE_MAPS_API_KEY`, and `SALT_PHONE_HASH` mounted from Secret Manager. Cloud Run reserves `/healthz`, so the public health check is `/api/health`. The live event stream connects to the Cloud Run URL directly because Hosting buffers streamed responses. Case rows stay in process memory. Firestore is not the store this process writes.
 
 ## Built with
 

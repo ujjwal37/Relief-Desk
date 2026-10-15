@@ -356,7 +356,16 @@ class LLMClient:
             return self._fallback(user_prompt, reason, started)
 
     def note_failure(self, exc: BaseException) -> str:
-        """Count a live failure. A per-day 429 opens the circuit until the reset and is not retried."""
+        """Count a live failure and remember why, for /api/health/ai."""
+        reason = self._note_failure(exc)
+        try:
+            self.guard.note_reason(reason)
+        except Exception:
+            pass
+        return reason
+
+    def _note_failure(self, exc: BaseException) -> str:
+        """A per-day 429 opens the circuit until the reset and is not retried."""
         if isinstance(exc, _DailyCallCap):
             return "daily_cap"
         if isinstance(exc, _RetryLimit):

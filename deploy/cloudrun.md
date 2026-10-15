@@ -185,7 +185,7 @@ Direct health check (this URL is not the submission URL):
 
 ```bash
 CLOUD_RUN_URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
-curl -sS "${CLOUD_RUN_URL}/healthz"
+curl -sS "${CLOUD_RUN_URL}/api/health"
 ```
 
 ## 3. Firebase Hosting
@@ -242,7 +242,7 @@ Coordinator login on the hosted site is the synthetic account already in the REA
 Smoke from a network that is not your laptop:
 
 ```bash
-curl -sS "https://${PROJECT_ID}.web.app/healthz"
+curl -sS "https://${PROJECT_ID}.web.app/api/health"
 curl -sS "https://${PROJECT_ID}.web.app/api/scenarios"
 ```
 
