@@ -10,7 +10,7 @@
   </div>
 
   <div class="team-map">
-    <rd-map-provider [pins]="teamPins()" [legs]="teamLegs()" [center]="mapCenter()" [fitAll]="teamLegs().length === 0" [highlightId]="highlightId()"></rd-map-provider>
+    <rd-map-provider [pins]="teamPins()" [legs]="teamLegs()" [center]="mapCenter()" [fitAll]="teamLegs().length === 0 && !openId()" [highlightId]="highlightId() || openId()" [selectedId]="openId()" (pinSelect)="pickTeamPin($event)"></rd-map-provider>
     @if (legendKinds().length) {
       <div class="legend" [attr.aria-label]="'ui.mapKey' | rdTranslate">
         @for (kind of legendKinds(); track kind) {

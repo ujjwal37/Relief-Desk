@@ -105,6 +105,11 @@ export class CoordinatorTeamsComponent implements OnInit {
     this.openId.set(this.openId() === id ? null : id);
   }
 
+  /** A team pin on the map opens that row, the same as clicking it in the list. */
+  pickTeamPin(id: string): void {
+    if (this.resources().some((row) => row.id === id)) this.toggle(id);
+  }
+
   bucket(team: StoredResource): Bucket {
     return teamBucket(team, this.now());
   }
@@ -157,6 +162,17 @@ export class CoordinatorTeamsComponent implements OnInit {
     return { km, teamAvailable: team.status === 'available' };
   }
 
+  /** The selected team's case: its assignment, else the nearest open case. */
+  readonly teamTarget = computed<StoredRequest | null>(() => {
+    const team = this.resources().find((row) => row.id === this.openId());
+    if (!team || team.lat == null || team.lng == null) return null;
+    const placed = this.requests().filter((row) => row.lat != null && row.lng != null && !row.merged_into);
+    const assigned = team.assigned_request_id ? placed.find((row) => row.id === team.assigned_request_id) : undefined;
+    if (assigned) return assigned;
+    const open = placed.filter((row) => !CLOSED.has(row.status));
+    return [...open].sort((a, b) => haversineKm(a.lat as number, a.lng as number, team.lat, team.lng) - haversineKm(b.lat as number, b.lng as number, team.lat, team.lng))[0] ?? null;
+  });
+
   /** Every team, plus the open case when one is selected. */
   readonly teamPins = computed<MapPin[]>(() => {
     const pins: MapPin[] = this.resources().map((team) => ({
@@ -168,7 +184,7 @@ export class CoordinatorTeamsComponent implements OnInit {
       vehicle: team.kind,
       tone: teamTone(team, this.now()),
     }));
-    const req = this.requests().find((row) => row.id === this.ui.selectedCaseId());
+    const req = this.openId() ? this.teamTarget() : this.requests().find((row) => row.id === this.ui.selectedCaseId());
     if (req?.lat != null && req.lng != null) {
       pins.unshift({
         id: req.id,
@@ -185,6 +201,18 @@ export class CoordinatorTeamsComponent implements OnInit {
   /** Top three candidates for the open case. Empty until a case is selected. */
   readonly teamLegs = computed<MapLeg[]>(() => {
     this.lang.currentLang();
+    const picked = this.resources().find((row) => row.id === this.openId());
+    if (picked) {
+      const target = this.teamTarget();
+      if (!target || target.lat == null || target.lng == null) return [];
+      return [{
+        id: picked.id,
+        from: { lat: target.lat, lng: target.lng },
+        to: { lat: picked.lat, lng: picked.lng },
+        title: legTitle({ km: haversineKm(target.lat, target.lng, picked.lat, picked.lng), teamAvailable: picked.status === 'available' }, (key) => this.lang.translate(key)),
+        suggested: true,
+      }];
+    }
     const req = this.requests().find((row) => row.id === this.ui.selectedCaseId());
     if (!req || req.lat == null || req.lng == null) return [];
     const suggested = this.matches()[0]?.resource_id;

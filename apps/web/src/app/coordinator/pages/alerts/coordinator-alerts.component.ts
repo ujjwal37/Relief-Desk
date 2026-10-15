@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, input, signal, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnomalyAlert, ApiClientService, LanguageService, RdTranslatePipe } from '@rd/shared';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
@@ -115,6 +115,8 @@ export class CoordinatorAlertsComponent implements OnInit {
   }
   /** Overview shows the list beside its own map. The alerts route keeps this map. */
   readonly listOnly = input(false);
+  /** Overview frames its own map on the picked alert's ward. */
+  readonly focus = output<{ id: string; ward_id: string | null; lat: number; lng: number } | null>();
 
   readonly W = W;
   readonly H = H;
@@ -231,7 +233,15 @@ export class CoordinatorAlertsComponent implements OnInit {
   }
 
   select(alert: AnomalyAlert): void {
-    this.selectedId.set(alert.id);
+    const again = this.listOnly() && this.selectedId() === alert.id;
+    this.selectedId.set(again ? null : alert.id);
+    const item = this.items().find((i) => i.alert.id === alert.id);
+    if (again || !item || (!item.ward && !item.at)) {
+      this.focus.emit(null);
+      return;
+    }
+    const at = this.latlng(item);
+    this.focus.emit({ id: alert.id, ward_id: item.ward?.id ?? alert.ward_id ?? null, lat: at.lat, lng: at.lng });
   }
 
   /** Focus the map on this alert, including when the row was already selected. */

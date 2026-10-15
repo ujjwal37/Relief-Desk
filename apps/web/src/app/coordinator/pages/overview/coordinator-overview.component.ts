@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, s
 import { Router } from '@angular/router';
 import { ApiClientService, LanguageService, MatchProposal, RdTranslatePipe, StoredRequest, StoredResource, urgencyBand } from '@rd/shared';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
-import { legTitle, quoteFromProposal, teamTone } from '../../../core/maps/map-markers';
+import { haversineKm, legTitle, quoteFromProposal, teamTone } from '../../../core/maps/map-markers';
 import { CoordUiService } from '../../../core/services/coord-ui.service';
 import { DeskStore } from '../../../core/desk-store';
 import { CoordinatorAlertsComponent } from '../alerts/coordinator-alerts.component';
@@ -33,7 +33,10 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
     </section>
     <div class="stage">
       <section class="map-stage" [attr.aria-label]="'ui.map' | rdTranslate">
-        <rd-map-provider [pins]="mapPins()" [legs]="mapLegs()" [center]="mapCenter()" [cluster]="true" [fitAll]="mapLegs().length === 0"></rd-map-provider>
+        <rd-map-provider [pins]="mapPins()" [legs]="mapLegs()" [center]="mapCenter()" [cluster]="true" [fitAll]="mapLegs().length === 0 && !focusId()" [selectedId]="focusId()" (pinSelect)="pickPin($event)"></rd-map-provider>
+        @if (focusId()) {
+          <button type="button" class="clear-focus" (click)="clearFocus()">{{ 'coord.mapClear' | rdTranslate }}</button>
+        }
         <div class="chips" role="group" [attr.aria-label]="'coord.mapFilters' | rdTranslate">
           @for (band of urgencyChips; track band) {
             <button type="button" [class.on]="urgency() === band" [attr.aria-pressed]="urgency() === band" (click)="urgency.set(urgency() === band ? 'all' : band)">
@@ -57,7 +60,7 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
           }
         </div>
       </section>
-      <app-coordinator-alerts [listOnly]="true" />
+      <app-coordinator-alerts [listOnly]="true" (focus)="focusAlert($event)" />
     </div>
   `,
   styles: [`
@@ -88,6 +91,11 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
       font: 600 12px var(--rd-font-family); cursor: pointer;
     }
     .chips button.on { background: var(--brand-tint); border-color:transparent; color: var(--brand); }
+    .clear-focus {
+      position: absolute; z-index: 3; top: 66px; right: 10px; min-height: 32px; padding: 0 12px;
+      border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      font: 600 12px var(--rd-font-family); cursor: pointer; box-shadow: var(--e1);
+    }
     .legend {
       position: absolute; z-index: 2; bottom: 10px; left: 10px; display: flex; flex-wrap: wrap;
       max-width: 280px; gap: 6px 10px; background: var(--surface); border: 1px solid var(--border);
@@ -123,7 +131,7 @@ export class CoordinatorOverviewComponent implements OnInit {
 
   constructor() {
     effect((onCleanup) => {
-      const id = this.ui.selectedCaseId();
+      const id = this.focusId();
       if (!id) {
         this.matches.set([]);
         return;
@@ -156,6 +164,8 @@ export class CoordinatorOverviewComponent implements OnInit {
   readonly urgency = signal<UrgencyFilter>('all');
   readonly teamKind = signal<KindFilter>('all');
   readonly freeOnly = signal(false);
+  /** Case framed on this map. Set from a card, an alert, or a pin. */
+  readonly focusId = signal<string | null>(null);
   readonly urgencyChips: Exclude<UrgencyFilter, 'all'>[] = ['critical', 'high', 'medium', 'low'];
   readonly kindChips: Exclude<KindFilter, 'all'>[] = ['boat', 'medical', 'food', 'shelter'];
 
@@ -164,7 +174,9 @@ export class CoordinatorOverviewComponent implements OnInit {
     const kind = this.teamKind();
     const freeOnly = this.freeOnly();
     const cases: PlacedCase[] = this.requests().filter((row) => {
-      if (row.lat == null || row.lng == null || DONE.has(row.status)) return false;
+      if (row.lat == null || row.lng == null) return false;
+      if (row.id === this.focusId()) return true;
+      if (DONE.has(row.status)) return false;
       return urgency === 'all' || urgencyBand(row.urgency_score) === urgency;
     }).map((row) => ({
       id: row.id,
@@ -204,26 +216,60 @@ export class CoordinatorOverviewComponent implements OnInit {
     ];
   });
 
-  /** Lines to the top three teams once a case is open on the desk. */
+  /** One road route to the focused case: its assigned team, else the best match, else the nearest free team. */
   readonly mapLegs = computed<MapLeg[]>(() => {
     this.lang.currentLang();
-    const req = this.requests().find((row) => row.id === this.ui.selectedCaseId());
+    const id = this.focusId();
+    const req = id ? this.requests().find((row) => row.id === id) : null;
     if (!req || req.lat == null || req.lng == null) return [];
-    const suggested = this.matches()[0]?.resource_id;
-    const legs: MapLeg[] = [];
-    for (const prop of this.matches().slice(0, 3)) {
-      const team = this.resources().find((row) => row.id === prop.resource_id);
-      if (!team) continue;
-      legs.push({
-        id: team.id,
-        from: { lat: req.lat, lng: req.lng },
-        to: { lat: team.lat, lng: team.lng },
-        title: legTitle(quoteFromProposal(prop, team.status === 'available'), (key) => this.lang.translate(key)),
-        suggested: team.id === suggested,
-      });
-    }
-    return legs;
+    const teams = this.resources().filter((row) => row.lat != null && row.lng != null);
+    const assigned = teams.find((row) => row.assigned_request_id === req.id);
+    const best = this.matches()[0];
+    const matched = best ? teams.find((row) => row.id === best.resource_id) : undefined;
+    const free = teams.filter((row) => row.status === 'available' && (row.capacity_remaining ?? 1) > 0);
+    const nearest = [...(free.length ? free : teams)].sort((a, b) =>
+      haversineKm(req.lat as number, req.lng as number, a.lat, a.lng) - haversineKm(req.lat as number, req.lng as number, b.lat, b.lng))[0];
+    const team = assigned || matched || nearest;
+    if (!team) return [];
+    const quote = !assigned && matched && best
+      ? quoteFromProposal(best, team.status === 'available')
+      : { km: haversineKm(req.lat, req.lng, team.lat, team.lng), teamAvailable: team.status === 'available' };
+    return [{
+      id: team.id,
+      from: { lat: req.lat, lng: req.lng },
+      to: { lat: team.lat, lng: team.lng },
+      title: legTitle(quote, (key) => this.lang.translate(key)),
+      suggested: true,
+    }];
   });
+
+  /** A card, an alert or a pin frames that case. The same one again, or Clear, resets. */
+  focusCase(caseId: string | null): void {
+    const next = caseId && this.focusId() !== caseId ? caseId : null;
+    this.focusId.set(next);
+    this.ui.selectedCaseId.set(next ?? '');
+  }
+
+  clearFocus(): void {
+    this.focusCase(null);
+  }
+
+  pickPin(id: string): void {
+    if (this.requests().some((row) => row.id === id)) this.focusCase(id);
+  }
+
+  /** An alert frames the most urgent open case in its ward, or the nearest one to it. */
+  focusAlert(at: { id: string; ward_id: string | null; lat: number; lng: number } | null): void {
+    if (!at) { this.focusCase(null); return; }
+    const open = this.requests().filter((row) => row.lat != null && row.lng != null && !DONE.has(row.status) && !row.merged_into);
+    const inWard = at.ward_id ? open.filter((row) => row.ward_id === at.ward_id) : [];
+    const pool = inWard.length ? inWard : open;
+    const pick = [...pool].sort((a, b) => inWard.length
+      ? (b.urgency_score || 0) - (a.urgency_score || 0)
+      : haversineKm(at.lat, at.lng, a.lat as number, a.lng as number) - haversineKm(at.lat, at.lng, b.lat as number, b.lng as number))[0];
+    this.focusId.set(null);
+    this.focusCase(pick?.id ?? null);
+  }
 
   readonly mapCenter = computed(() => {
     const pins = this.mapPins();
@@ -243,10 +289,9 @@ export class CoordinatorOverviewComponent implements OnInit {
     return (['boat', 'medical', 'food', 'shelter'] as const).filter((kind) => present.has(kind));
   });
 
-  /** Open the case in the queue and pan the Cases map onto it. */
+  /** A Just reported card frames that case on this map. Clicking it again resets. */
   openReported(caseId: string): void {
-    this.ui.selectedCaseId.set(caseId);
-    void this.router.navigate(['/coordinator/command'], { queryParams: { case: caseId } });
+    this.focusCase(caseId);
   }
 
   ngOnInit(): void {
