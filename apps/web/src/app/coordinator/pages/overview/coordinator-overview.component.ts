@@ -240,6 +240,7 @@ export class CoordinatorOverviewComponent implements OnInit {
       to: { lat: team.lat, lng: team.lng },
       title: legTitle(quote, (key) => this.lang.translate(key)),
       suggested: true,
+      mode: team.kind === 'boat' ? 'water' : 'road',
     }];
   });
 

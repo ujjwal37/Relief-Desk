@@ -47,10 +47,14 @@ def reporter_leg(req: Optional[StoredRequest]) -> tuple[Optional[int], str]:
     if chosen is None:
         return None, ""
     km = chosen.breakdown.distance_km
-    minutes = eta_for_distance(km)
+    from app.agents.matching import travel_mode_for
+
+    team = storage_service.get_resource(chosen.resource_id) if hasattr(storage_service, "get_resource") else None
+    mode = travel_mode_for(team) if team is not None else "road"
+    minutes = eta_for_distance(km, mode)
     if km > NEARBY_KM or minutes is None or minutes > 90:
         return None, ""
-    return minutes, f"{_format_km(km)} km · about {minutes} min"
+    return minutes, f"{_format_km(km)} km · about {minutes} min" + (" by boat" if mode == "water" else "")
 
 
 # Canned status only for these ids. A token that merely contains "demo" is not enough.

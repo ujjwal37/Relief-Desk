@@ -211,6 +211,7 @@ export class CoordinatorTeamsComponent implements OnInit {
         to: { lat: picked.lat, lng: picked.lng },
         title: legTitle({ km: haversineKm(target.lat, target.lng, picked.lat, picked.lng), teamAvailable: picked.status === 'available' }, (key) => this.lang.translate(key)),
         suggested: true,
+        mode: picked.kind === 'boat' ? 'water' : 'road',
       }];
     }
     const req = this.requests().find((row) => row.id === this.ui.selectedCaseId());
@@ -226,6 +227,7 @@ export class CoordinatorTeamsComponent implements OnInit {
         to: { lat: team.lat, lng: team.lng },
         title: legTitle(quoteFromProposal(prop, team.status === 'available'), (key) => this.lang.translate(key)),
         suggested: team.id === suggested,
+        mode: team.kind === 'boat' ? 'water' : 'road',
       });
     }
     return legs;

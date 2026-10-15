@@ -18,7 +18,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { markerDataUrl, TONE_COLOR, vehiclePath, PinTone, VehicleKind } from './map-markers';
+import { boatMinutes, haversineKm, markerDataUrl, TONE_COLOR, vehiclePath, PinTone, VehicleKind } from './map-markers';
 import { MapProviderService } from './map-provider.service';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
@@ -44,6 +44,8 @@ export interface MapLeg {
   to: { lat: number; lng: number };
   title: string;
   suggested?: boolean;
+  /** water: a boat leg. Dashed straight line, never a driving route. */
+  mode?: 'road' | 'water';
 }
 
 @Component({
@@ -65,7 +67,7 @@ export interface MapLeg {
         <svg class="rd-schematic" viewBox="0 0 600 480" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Relief map">
           <rect width="600" height="480" fill="var(--map-bg, #efeae0)"/>
           @for (leg of schematicLegs(); track leg.id) {
-            <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.stroke" [attr.stroke-width]="leg.width" stroke-linecap="round"/>
+            <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.stroke" [attr.stroke-width]="leg.width" [attr.stroke-dasharray]="leg.dash" stroke-linecap="round"/>
             @if (leg.title) {
               <text class="rd-leg" [attr.x]="leg.lx" [attr.y]="leg.ly" text-anchor="middle">{{ leg.title }}</text>
             }
@@ -244,7 +246,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     });
   }
 
-  schematicLegs(): { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; title: string; stroke: string; width: number }[] {
+  schematicLegs(): { id: string; x1: number; y1: number; x2: number; y2: number; lx: number; ly: number; title: string; stroke: string; width: number; dash: string | null }[] {
     const frame = this.schematicFrame();
     return this.legs.map((leg) => {
       const from = this.toSvg(leg.from.lat, leg.from.lng, frame);
@@ -258,7 +260,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         y2: to.y,
         lx: (from.x + to.x) / 2,
         ly: (from.y + to.y) / 2 - 8,
-        title: leg.title,
+        title: this.legLabel(leg),
+        dash: leg.mode === 'water' ? '8 6' : null,
         stroke: leg.suggested ? '#047857' : '#6b7280',
         width: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
       };
@@ -336,7 +339,11 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           strokeColor: leg.suggested ? '#047857' : '#6b7280',
           strokeWeight: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
           geodesic: true,
-          visible: !waitForRoad,
+          visible: !waitForRoad || leg.mode === 'water',
+          ...(leg.mode === 'water' ? {
+            strokeOpacity: 0,
+            icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, strokeColor: leg.suggested ? '#0e7490' : '#6b7280', scale: leg.suggested ? 4 : 3 }, offset: '0', repeat: '14px' }],
+          } : {}),
         });
       });
       const labelFor = new Map<string, unknown>();
@@ -344,7 +351,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         map: this.map,
         position: { lat: (leg.from.lat + leg.to.lat) / 2, lng: (leg.from.lng + leg.to.lng) / 2 },
         label: {
-          text: leg.title,
+          text: this.legLabel(leg),
           color: '#fff',
           className: 'rd-distance-pill',
           fontSize: '12px',
@@ -352,7 +359,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         },
         icon: { path: maps.SymbolPath?.CIRCLE ?? 0, scale: 0, labelOrigin: maps.Point ? new maps.Point(0, -22) : undefined },
         clickable: false,
-        visible: !waitForRoad,
+        visible: !waitForRoad || leg.mode === 'water',
       }); labelFor.set(leg.id, m); return m; });
       const clustered: unknown[] = [];
       this.markers = this.pins.map((pin) => {
@@ -426,10 +433,12 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private routeLegs(maps: any, seq: number, labelFor: Map<string, unknown>): void {
     if (!this.legs.length) { this.routing.set(0); return; }
-    if (routingBroken || !maps.DirectionsService) { this.routing.set(0); return; }
-    this.routing.set(this.legs.length);
+    const roadCount = this.legs.filter((leg) => leg.mode !== 'water').length;
+    if (routingBroken || !maps.DirectionsService || !roadCount) { this.routing.set(0); return; }
+    this.routing.set(roadCount);
     const service = new maps.DirectionsService();
     this.legs.forEach((leg, i) => {
+      if (leg.mode === 'water') return;
       const key = `${leg.to.lat.toFixed(5)},${leg.to.lng.toFixed(5)}>${leg.from.lat.toFixed(5)},${leg.from.lng.toFixed(5)}`;
       let job = ROUTES.get(key);
       if (!job) {
@@ -483,6 +492,14 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         }
       });
     });
+  }
+
+  /** Boats go by water: straight distance, never a drive time. */
+  private legLabel(leg: MapLeg): string {
+    if (leg.mode !== 'water') return leg.title;
+    const km = haversineKm(leg.from.lat, leg.from.lng, leg.to.lat, leg.to.lng);
+    const d = km < 10 ? km.toFixed(1) : String(Math.round(km));
+    return km <= 30 ? `${d} km · by boat · ~${boatMinutes(km)} min` : `${d} km · by boat`;
   }
 
   private fitPath(path: { lat: number; lng: number }[]): void {

@@ -157,6 +157,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         to: { lat: team.lat, lng: team.lng },
         title: this.legLabel(prop),
         suggested: prop.resource_id === suggested,
+        mode: team.kind === 'boat' ? 'water' : 'road',
       });
     }
     return legs;

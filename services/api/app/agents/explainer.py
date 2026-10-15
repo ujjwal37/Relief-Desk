@@ -24,7 +24,8 @@ class ExplainerAgent:
     ) -> Explanation:
         people = request.people_count if request.people_count else 1
         text_en = (
-            f"{resource.name} is {breakdown.distance_km} km away with {resource.capacity_remaining} capacity "
+            f"{resource.name} is {breakdown.distance_km} km away"
+            f"{' by water (boat, straight line)' if getattr(resource.kind, 'value', resource.kind) == 'boat' else ''} with {resource.capacity_remaining} capacity "
             f"to assist {people} people. Total match score is {breakdown.total_score} based on proximity and urgency."
         )
 

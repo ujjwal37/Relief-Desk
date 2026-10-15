@@ -40,6 +40,8 @@ class MatchProposal(BaseModel):
     fallback_label: Optional[str] = None
     simulated: bool = False
     eta_minutes: Optional[int] = None
+    # water: a boat crosses flood water in a straight line; road: a land team drives.
+    travel_mode: str = "road"
     no_nearby: bool = False
     wait_minutes: Optional[int] = None
     wait_team_name: Optional[str] = None
@@ -169,7 +171,8 @@ class MatchingAgent:
                     is_fallback=is_fallback,
                     fallback_label=fallback_label if is_fallback else None,
                     simulated=bool(getattr(res, "simulated", False)),
-                    eta_minutes=eta_for_distance(breakdown.distance_km),
+                    eta_minutes=eta_for_distance(breakdown.distance_km, travel_mode_for(res)),
+                    travel_mode=travel_mode_for(res),
                     no_nearby=breakdown.distance_km > NEARBY_KM,
                     wait_minutes=wait_minutes if is_fallback else None,
                     wait_team_name=wait_team_name if is_fallback else None,
@@ -190,11 +193,24 @@ NEARBY_KM = 30.0
 PRACTICAL_KM = 40.0
 
 
-def eta_for_distance(distance_km: float) -> Optional[int]:
-    """Straight-line minutes at 20 km/h. None when the team is too far to quote."""
+# Land teams: straight-line km at 20 km/h (a road estimate; the map shows the real drive time).
+LAND_KMH = 20.0
+# Boats: straight line over flood water. Rescue boats move slowly through debris and current.
+BOAT_KMH = 10.0
+
+
+def travel_mode_for(res) -> str:
+    kind = getattr(res, "kind", None)
+    return "water" if getattr(kind, "value", kind) == ResourceKind.BOAT.value else "road"
+
+
+def eta_for_distance(distance_km: float, mode: str = "road") -> Optional[int]:
+    """Minutes for a straight-line leg: boats at BOAT_KMH by water, land teams at LAND_KMH.
+    None when the team is too far to quote."""
     if distance_km > NEARBY_KM:
         return None
-    return max(1, round((distance_km / 20.0) * 60))
+    speed = BOAT_KMH if mode == "water" else LAND_KMH
+    return max(1, round((distance_km / speed) * 60))
 
 
 # How much farther than the nearest team we still offer as an alternative.
@@ -232,7 +248,8 @@ def _finish_minutes(res: StoredResource) -> int:
     travel = 15
     if res.sim_target_lat is not None and res.sim_target_lng is not None:
         dist = haversine_distance(res.lat, res.lng, res.sim_target_lat, res.sim_target_lng)
-        travel = max(1, round((dist / 20.0) * 60))
+        speed = BOAT_KMH if travel_mode_for(res) == "water" else LAND_KMH
+        travel = max(1, round((dist / speed) * 60))
     if res.status in (ResourceStatus.EN_ROUTE, ResourceStatus.DISPATCHED):
         return travel + 20
     return travel + 20

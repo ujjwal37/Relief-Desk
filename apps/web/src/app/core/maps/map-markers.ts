@@ -43,7 +43,15 @@ export function etaMinutes(km: number): number {
   return Math.max(1, Math.round((km / 20) * 60));
 }
 
+/** Same as the API BOAT_KMH: a boat crosses flood water in a straight line. */
+export const BOAT_KMH = 10;
+
+export function boatMinutes(km: number): number {
+  return Math.max(1, Math.round((km / BOAT_KMH) * 60));
+}
+
 export interface TravelQuote {
+  water?: boolean;
   km: number;
   minutes?: number | null;
   noNearby?: boolean;
@@ -53,7 +61,7 @@ export interface TravelQuote {
 /** "about N min", or "No nearby team" past 30 km / 90 min. A free team within 15 km still gets a time. */
 export function etaPhrase(quote: TravelQuote, translate: (key: string) => string): string {
   const km = quote.km ?? 0;
-  const minutes = quote.minutes ?? etaMinutes(km);
+  const minutes = quote.minutes ?? (quote.water ? boatMinutes(km) : etaMinutes(km));
   if (quote.teamAvailable && km <= 15 && minutes <= 90) {
     return translate('coord.etaMin').replace('{n}', String(minutes));
   }
@@ -67,12 +75,13 @@ export function legTitle(quote: TravelQuote, translate: (key: string) => string)
 }
 
 export function quoteFromProposal(
-  prop: { breakdown?: { distance_km?: number }; eta_minutes?: number | null; no_nearby?: boolean },
+  prop: { breakdown?: { distance_km?: number }; eta_minutes?: number | null; no_nearby?: boolean; travel_mode?: string },
   teamAvailable: boolean,
 ): TravelQuote {
   return {
     km: prop.breakdown?.distance_km ?? 0,
     minutes: prop.eta_minutes,
+    water: prop.travel_mode === 'water',
     noNearby: !!prop.no_nearby,
     teamAvailable,
   };
