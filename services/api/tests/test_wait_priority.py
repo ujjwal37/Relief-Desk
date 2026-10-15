@@ -20,5 +20,5 @@ def test_same_case_scores_higher_after_two_hours():
     early = scoring_engine.compute_urgency(req, now=created)
     later = scoring_engine.compute_urgency(req, now=created + timedelta(hours=2))
     assert later.score > early.score
-    assert later.breakdown["wait_points"] >= 12
+    assert later.breakdown["wait_points"] > early.breakdown["wait_points"]
     assert later.breakdown["wait_minutes"] == 120

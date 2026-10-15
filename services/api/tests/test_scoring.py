@@ -35,7 +35,7 @@ def test_child_plus_elderly_outranks_same_size_adult_case():
     # Acceptance criteria: child+elderly outranks same-size adult case
     assert res_vuln.score > res_adult.score
     # Reason string is produced
-    assert "Vulnerable flags: child, elderly" in res_vuln.reason
+    assert "vulnerable: child, elderly" in res_vuln.reason
     assert "water rising" in res_vuln.reason
 
 
@@ -111,3 +111,24 @@ def test_weights_api_endpoint_and_audit():
     # Later tests score the seed pack with the desk defaults.
     from app.tools.scoring import UrgencyWeights, scoring_engine
     scoring_engine.update_weights(UrgencyWeights())
+
+
+def test_adults_on_roof_with_window_water_or_boat_are_urgent():
+    scoring = ScoringEngine()
+    cases = [
+        "two people on the roof, water at window level, need a boat",
+        "छत पर दो लोग फंसे हैं, खिड़की तक पानी है, नाव भेजिए",
+        "do log chhat par hain, paani khidki tak aa gaya, naav bhejo",
+    ]
+    for text in cases:
+        req = StoredRequest(
+            id="req_roof_boat",
+            type=IncidentType.RESCUE,
+            hazard=HazardType.UNKNOWN,
+            people_count=2,
+            vulnerable=VulnerableFlags(),
+            raw_text=text,
+        )
+        result = scoring.compute_urgency(req)
+        assert result.tier == "urgent", text
+        assert result.score >= 60.0, (text, result.score, result.reason)

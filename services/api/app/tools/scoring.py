@@ -51,7 +51,24 @@ _TRAPPED = re.compile(r"trapped|stuck|can'?t get out|cannot get out|unable to (?
 _SEVERE_INJURY = re.compile(r"bleeding|unconscious|not breathing|can'?t breathe|breathing (?:difficulty|problem)|unresponsive|fainted", re.I)
 _LIFE_SUPPORT = re.compile(r"oxygen|dialysis|insulin|ventilator|\u0911\u0915\u094d\u0938\u0940\u091c\u0928", re.I)
 _LABOUR = re.compile(r"labou?r pain|in labou?r|contractions|water broke|delivery pain|\u092a\u094d\u0930\u0938\u0935", re.I)
-_ROOF = re.compile(r"roof|terrace|upper floor|first floor|second floor|top floor|chhat|\u091b\u0924", re.I)
+_ROOF = re.compile(
+    r"roof|terrace|upper floor|first floor|second floor|top floor|chhat|chat par|"
+    r"\u091b\u0924|\u092e\u0941\u0915\u0933\u093f\u0932\u094d",
+    re.I,
+)
+_WINDOW_WATER = re.compile(
+    r"window[- ]level|water (?:at|up to) (?:the )?windows?|windows? level|"
+    r"rising (?:water|flood)|water (?:is )?rising|"
+    r"khidki|khirk[ie]|paani badh|pani badh|"
+    r"\u0916\u093f\u0921\u093c\u0915\u0940|\u0916\u093f\u0921\u0915\u0940|\u092a\u093e\u0928\u0940 \u092c\u0922\u093c",
+    re.I,
+)
+_BOAT_RESCUE = re.compile(
+    r"need(?:s|ed)? a (?:rescue )?boat|send (?:a |the )?(?:rescue )?boat|boat rescue|"
+    r"rescue boat|naav bhej|nauka|boat (?:bhej|chahiye)|"
+    r"\u0928\u093e\u0935|\u092c\u094b\u091f \u092d\u0947\u091c",
+    re.I,
+)
 _NO_SUPPLY = re.compile(r"no (?:food|drinking water|water to drink|clean water)|without (?:food|water)|nothing to eat|khana nahi|paani nahi", re.I)
 _LONG = re.compile(r"since yesterday|since last night|(?:1[2-9]|[2-9]\d) hours|\d+ days?|two days|whole day|kal se", re.I)
 _ISOLATED = re.compile(r"cut off|isolated|no road|road (?:washed|blocked|gone)|bridge (?:collapsed|gone|washed)|unreachable|no access|no way out", re.I)
@@ -95,6 +112,16 @@ class ScoringEngine:
             who = ", ".join(n for n, on in (("a child", v.child), ("an elderly person", v.elderly), ("a disabled person", v.disabled)) if on)
             where = "in rising water" if req.hazard == HazardType.WATER_RISING else "stranded"
             return "urgent", f"{who} {where}"
+        roofed = bool(_ROOF.search(text))
+        window_or_rising = bool(_WINDOW_WATER.search(text)) or req.hazard == HazardType.WATER_RISING
+        if roofed and window_or_rising:
+            return "urgent", "adults stranded on a roof or upper floor with water at window level or rising"
+        if _BOAT_RESCUE.search(text) and (
+            roofed
+            or req.type == IncidentType.RESCUE
+            or req.hazard in (HazardType.STRANDED, HazardType.WATER_RISING)
+        ):
+            return "urgent", "boat rescue requested"
         if _NO_SUPPLY.search(text) and (wait_minutes >= 720 or _LONG.search(text)):
             return "urgent", "no water or food for over 12 hours"
         return "standard", ""
