@@ -1,14 +1,15 @@
 /** Single source of truth for urgency bands. Queue cards, filter chips, KPI tiles and the briefing all use these. */
 export type UrgencyBandKey = 'critical' | 'high' | 'medium' | 'low';
 
-/** Needs help now starts at 75 so oxygen, labour, and children in rising water are not filed as "soon". */
-export const BAND_NOW = 75;
-export const BAND_SOON = 70;
+/** Triage bands: Immediate cases are floored at 80, Urgent at 60. */
+export const BAND_NOW = 80;
+export const BAND_SOON = 60;
+export const BAND_MEDIUM = 40;
 
 export function urgencyBand(score: number): UrgencyBandKey {
   if (score >= BAND_NOW) return 'critical';
   if (score >= BAND_SOON) return 'high';
-  if (score >= 50) return 'medium';
+  if (score >= BAND_MEDIUM) return 'medium';
   return 'low';
 }
 

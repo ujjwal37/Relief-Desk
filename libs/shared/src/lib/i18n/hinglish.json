@@ -483,7 +483,9 @@
     "stepOnWay": "Raaste mein",
     "stepOnScene": "Scene par",
     "referralStock": "Human-entered referral stock requirement",
-    "mapClear": "Selection hatayein"
+    "mapClear": "Selection hatayein",
+    "verify": "Verify karein",
+    "verifyHint": "Report saaf nahi hai. Priority kam nahi ki gayi. Details confirm karein."
   },
   "tour": {
     "next": "Aage",

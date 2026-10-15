@@ -54,6 +54,7 @@
                 <span class="queue-status">
                   <app-sev-chip [band]="bandOf(req.urgency_score)" />
                   <span class="prio" [attr.title]="fullStamp(req.created_at)">{{ 'uiRef.priority' | rdTranslate }} {{ Math.round(req.urgency_score) }}</span>
+                  @if (req.flags?.includes('verify')) { <span class="verify-badge" style="display:inline-block;padding:0 7px;border-radius:999px;background:var(--sev-high-tint, #fef3c7);color:var(--sev-high, #b45309);font:600 11px/18px var(--rd-font-family);margin-left:6px" [attr.title]="'coord.verifyHint' | rdTranslate">{{ 'coord.verify' | rdTranslate }}</span> }
                 </span>
                 <span class="q-top">
                   <span class="q-main">
@@ -172,6 +173,7 @@
         <div class="detail-scroll">
           <div class="d-head">
             <app-sev-chip [band]="bandOf(req.urgency_score)" />
+            @if (req.flags?.includes('verify')) { <span class="verify-badge" style="display:inline-block;padding:0 7px;border-radius:999px;background:var(--sev-high-tint, #fef3c7);color:var(--sev-high, #b45309);font:600 11px/18px var(--rd-font-family);margin-left:6px" [attr.title]="'coord.verifyHint' | rdTranslate">{{ 'coord.verify' | rdTranslate }}</span> }
             <span class="id" [attr.title]="fullStamp(req.updated_at) || fullStamp(req.created_at)">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}</span>
           </div>
           <h2>{{ getTranslationText(req) }}</h2>

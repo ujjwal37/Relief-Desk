@@ -1447,23 +1447,23 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
 
   getUrgencyColor(score: number): string {
-    if (score >= 85) return 'var(--sev-crit)';
-    if (score >= 70) return 'var(--sev-high)';
-    if (score >= 50) return 'var(--sev-med)';
+    if (score >= 80) return 'var(--sev-crit)';
+    if (score >= 60) return 'var(--sev-high)';
+    if (score >= 40) return 'var(--sev-med)';
     return 'var(--sev-low)';
   }
 
   getUrgencyChipClass(score: number): string {
-    if (score >= 85) return 'cr';
-    if (score >= 70) return 'cam';
-    if (score >= 50) return 'cbl';
+    if (score >= 80) return 'cr';
+    if (score >= 60) return 'cam';
+    if (score >= 40) return 'cbl';
     return 'csl';
   }
 
   getUrgencyBand(score: number): string {
-    if (score >= 85) return 'CRITICAL';
-    if (score >= 70) return 'HIGH';
-    if (score >= 50) return 'MEDIUM';
+    if (score >= 80) return 'CRITICAL';
+    if (score >= 60) return 'HIGH';
+    if (score >= 40) return 'MEDIUM';
     return 'LOW';
   }
 

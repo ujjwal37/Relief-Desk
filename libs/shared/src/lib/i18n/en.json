@@ -483,7 +483,9 @@
     "stepOnWay": "On the way",
     "stepOnScene": "On scene",
     "referralStock": "Human-entered referral stock requirement",
-    "mapClear": "Clear selection"
+    "mapClear": "Clear selection",
+    "verify": "Verify",
+    "verifyHint": "The report is unclear. Priority was kept, not lowered. Please confirm the details."
   },
   "tour": {
     "next": "Next",
