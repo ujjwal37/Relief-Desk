@@ -1410,6 +1410,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** 'about chest-deep · Gemini estimate from text', only when the model gave a quoted depth. */
+  depthChip(req: StoredRequest): string | null {
+    const d = req.water_depth;
+    if (!d?.band || d.band === 'unknown' || !d.quote) return null;
+    const src = d.source === 'gemini' ? 'depth.srcGemini' : d.source === 'recorded' ? 'depth.srcRecorded' : 'depth.srcOther';
+    return this.langService.translate('depth.chip', { depth: this.langService.translate('depth.band.' + d.band), src: this.langService.translate(src) });
+  }
+
   /** Plain line on why a boat or ground team fits the water depth the report states. */
   depthLine(prop: MatchProposal): string | null {
     const req = this.requests().find((row) => row.id === prop.request_id);
@@ -2050,11 +2058,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   propEtaSubline(prop: MatchProposal): string {
     const km = this.distanceKm(prop);
-    const mins = prop.eta_minutes ?? Math.round(km ? (prop.resource_kind === 'boat' ? km / 12 * 60 : km / 30 * 60) : 10);
-    const mode = prop.travel_mode || (prop.resource_kind === 'boat' ? 'water' : 'road');
-    const kmText = km != null ? `${km.toFixed(1)} km` : '';
-    const seats = `${prop.capacity_remaining ?? prop.capacity_total} seats`;
-    return [`~${mins} min by ${mode}`, kmText, seats].filter(Boolean).join(' · ');
+    const mins = prop.eta_minutes ?? (km != null ? Math.max(1, Math.round(prop.resource_kind === 'boat' ? km / 12 * 60 : km / 30 * 60)) : null);
+    const seats = prop.capacity_remaining ?? prop.capacity_total;
+    const parts = [
+      mins != null ? this.langService.translate('queue.away', { m: mins }) : '',
+      km != null ? `${km.toFixed(1)} km` : '',
+      this.langService.translate('queue.seats', { n: seats }),
+    ];
+    return parts.filter(Boolean).join(' · ');
   }
 
   toggleShowOriginal(): void {

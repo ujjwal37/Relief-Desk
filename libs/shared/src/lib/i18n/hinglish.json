@@ -161,7 +161,10 @@
     "allCaughtUp": "Sab nipat gaya — 0 waiting.",
     "showMap": "Map dikhayein",
     "hideMap": "Map chhupayein",
-    "tip": "Tip: suggested team bhejne ke liye A, agle case ke liye N dabayein."
+    "tip": "Tip: suggested team bhejne ke liye A, agle case ke liye N dabayein.",
+    "away": "~{m} min door",
+    "seats": "{n} seats",
+    "offline": "Aap offline hain. Connection wapas aane tak approvals rukenge."
   },
   "alerts": {
     "title": "Alerts",
@@ -1160,7 +1163,11 @@
       "waist": "kamar tak",
       "chest": "chhati tak",
       "roof": "chhat tak"
-    }
+    },
+    "chip": "lagbhag {depth} · {src}",
+    "srcGemini": "✨ Report se Gemini ka andaaza",
+    "srcRecorded": "Recorded Gemini andaaza",
+    "srcOther": "report se andaaza"
   },
   "batch": {
     "new": "naye (10 min)",
@@ -1201,6 +1208,8 @@
     "recorded": "Recorded (Gemini) · 5 steps",
     "rules": "Rules ne 5 steps check kiye",
     "see": "Kaise, dekhein",
-    "hide": "Steps chhupayein"
+    "hide": "Steps chhupayein",
+    "badgeRules": "Rules",
+    "badgeRecorded": "Recorded (Gemini)"
   }
 }

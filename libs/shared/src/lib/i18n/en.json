@@ -161,7 +161,10 @@
     "allCaughtUp": "All caught up — 0 waiting.",
     "showMap": "Show map",
     "hideMap": "Hide map",
-    "tip": "Tip: press A to send the suggested team, N to skip to the next case."
+    "tip": "Tip: press A to send the suggested team, N to skip to the next case.",
+    "away": "~{m} min away",
+    "seats": "{n} seats",
+    "offline": "You are offline. Approvals wait until the connection is back."
   },
   "alerts": {
     "title": "Alerts",
@@ -1160,7 +1163,11 @@
       "waist": "waist-deep",
       "chest": "chest-deep",
       "roof": "up to the roof"
-    }
+    },
+    "chip": "about {depth} · {src}",
+    "srcGemini": "✨ Gemini estimate from the report",
+    "srcRecorded": "Recorded Gemini estimate",
+    "srcOther": "estimate from the report"
   },
   "batch": {
     "new": "new (10 min)",
@@ -1201,6 +1208,8 @@
     "recorded": "Recorded (Gemini) · 5 steps",
     "rules": "Rules checked 5 steps",
     "see": "See how",
-    "hide": "Hide steps"
+    "hide": "Hide steps",
+    "badgeRules": "Rules",
+    "badgeRecorded": "Recorded (Gemini)"
   }
 }

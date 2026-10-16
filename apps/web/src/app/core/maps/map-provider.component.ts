@@ -91,7 +91,7 @@ export interface MapLeg {
     .rd-map-loading span { background: var(--surface); color: var(--text); padding: 8px 14px; border-radius: 999px; font-size: 13px; }
     @keyframes rd-map-pulse { to { background-position: -200% 0; } }
     @media (prefers-reduced-motion: reduce) { .rd-map-loading { animation: none; } }
-    .rd-leg { font-size: 13px; font-weight: 700; fill: #0f1720; }
+    .rd-leg { font-size: 13px; font-weight: 700; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
     .rd-route-loading { position: absolute; z-index: 6; top: 10px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--e1); font-size: 12px; font-weight: 600; pointer-events: none; }
     .rd-route-loading i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand, #047857); animation: rd-spin .8s linear infinite; }
     @keyframes rd-spin { to { transform: rotate(360deg); } }

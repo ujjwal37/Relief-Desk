@@ -47,6 +47,7 @@ export interface StepStatusInfo {
           </div>
           <span class="node-title">{{ 'flow.intake' | rdTranslate }}</span>
           <span class="node-result">{{ intakeResult() }}</span>
+          <span class="node-badge" [class.gem]="stepBadge(0).gemini">{{ stepBadge(0).text }}</span>
         </button>
 
         <!-- Connector line 0-1 -->
@@ -78,6 +79,7 @@ export interface StepStatusInfo {
             <span class="tag-parallel">{{ 'step.parallel' | rdTranslate }}</span>
           </div>
           <span class="node-result">{{ dedupeResult() }}</span>
+          <span class="node-badge" [class.gem]="stepBadge(1).gemini">{{ stepBadge(1).text }}</span>
         </button>
 
         <!-- Connector line 1-2 -->
@@ -109,6 +111,7 @@ export interface StepStatusInfo {
             <span class="tag-parallel">{{ 'step.parallel' | rdTranslate }}</span>
           </div>
           <span class="node-result">{{ urgencyResult() }}</span>
+          <span class="node-badge" [class.gem]="stepBadge(2).gemini">{{ stepBadge(2).text }}</span>
         </button>
 
         <!-- Connector line 2-3 -->
@@ -137,6 +140,7 @@ export interface StepStatusInfo {
           </div>
           <span class="node-title">{{ 'flow.badgeTool' | rdTranslate }}</span>
           <span class="node-result">{{ matchingResult() }}</span>
+          <span class="node-badge" [class.gem]="stepBadge(3).gemini">{{ stepBadge(3).text }}</span>
         </button>
 
         <!-- Connector line 3-4 -->
@@ -165,6 +169,7 @@ export interface StepStatusInfo {
           </div>
           <span class="node-title">{{ 'flow.explain' | rdTranslate }}</span>
           <span class="node-result">{{ explainResult() }}</span>
+          <span class="node-badge" [class.gem]="stepBadge(4).gemini">{{ stepBadge(4).text }}</span>
         </button>
 
         <div class="line" [class.done]="nodeStatus(4) === 'done'"></div>
@@ -346,6 +351,8 @@ export interface StepStatusInfo {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .node-badge { margin-top: 4px; font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font-variant-numeric: tabular-nums; }
+    .node-badge.gem { color: var(--gemini, #7c3aed); background: color-mix(in srgb, var(--gemini, #a78bfa) 14%, transparent); }
     .same-time-note {
       text-align: center;
       font-size: 11px;
@@ -356,6 +363,20 @@ export interface StepStatusInfo {
 })
 export class AiStepperComponent {
   private readonly lang = inject(LanguageService);
+
+  /** Per-step badge from the real trace: Gemini with its measured time, Recorded, or Rules. Never invented. */
+  stepBadge(i: number): { text: string; gemini: boolean } {
+    this.lang.currentLang();
+    const agent = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'][i];
+    const step = (this.request()?.trace || []).find((row) => row.agent === agent) as { provider?: string | null; cached?: boolean; latency_ms?: number } | undefined;
+    if (!step) return { text: this.lang.translate('steps.badgeRules'), gemini: false };
+    if (step.cached || step.provider === 'cache') return { text: this.lang.translate('steps.badgeRecorded'), gemini: false };
+    if (step.provider === 'gemini') {
+      const t = typeof step.latency_ms === 'number' && step.latency_ms > 0 ? ` ${(step.latency_ms / 1000).toFixed(1)}s` : '';
+      return { text: '✨ Gemini' + t, gemini: true };
+    }
+    return { text: this.lang.translate('steps.badgeRules'), gemini: false };
+  }
 
   readonly request = input<StoredRequest | null | undefined>(null);
   readonly activeProposal = input<MatchProposal | null | undefined>(null);

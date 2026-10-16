@@ -252,3 +252,7 @@ app-public-layout ion-item, app-public-layout ion-label {
 .cmd footer.decision-pinned-footer .footer-buttons-row{grid-template-columns:auto auto 1fr auto}
 @media (max-width:1280px){.cmd .coordinator-grid:has(.map-stepper-col:not(.map-open)){grid-template-columns:300px 240px minmax(0,1fr)}}
 
+
+.cmd .offline-banner{margin:0;padding:8px 16px;background:var(--sev-high-t);color:var(--text);font-weight:600;font-size:13px}
+.cmd .dec-depth{margin:6px 0 0;font-size:13px;color:var(--gemini,#7c3aed)}
+.cmd .card-score{margin-left:6px;font-size:11px;font-weight:600;opacity:.8;font-variant-numeric:tabular-nums}

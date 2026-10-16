@@ -1,4 +1,7 @@
 <div class="cmd">
+  @if (offline()) {
+    <p class="offline-banner" role="alert" data-testid="offline-banner">{{ 'queue.offline' | rdTranslate }}</p>
+  }
   @if (actionToast()) {
     <div class="toast" role="status" data-testid="dispatch-banner" [class.ok]="actionToast()?.type === 'success'" [class.warn]="actionToast()?.type === 'warning'">
       <span>{{ actionToast()?.text }}</span>
@@ -225,8 +228,9 @@
                     } @else if (bandOf(req.urgency_score) === 'high') {
                       ◆ {{ 'filter.urgent' | rdTranslate }}
                     } @else {
-                      {{ 'band.other' | rdTranslate }}
+                      {{ (bandOf(req.urgency_score) === 'medium' ? 'coord.band.medium' : 'band.other') | rdTranslate }}
                     }
+                    <small class="card-score">{{ Math.round(req.urgency_score) }}</small>
                   </span>
                   <span class="card-need-text">{{ getNeedText(req) }}</span>
                 </div>
@@ -391,6 +395,9 @@
                 {{ Math.round(req.urgency_score) }}
               </span>
             </div>
+            @if (depthChip(req); as dc) {
+              <p class="dec-depth" data-testid="depth-chip">{{ dc }}</p>
+            }
             <p class="dec-case-sub">
               {{ req.id }} · {{ getWardText(req) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
             </p>
