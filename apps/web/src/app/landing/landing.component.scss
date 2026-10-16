@@ -30,6 +30,8 @@ h1 { margin:8px 0 8px; font-size:28px; line-height:1.1; font-weight: 600; letter
   border:1px solid var(--border); font-size:16px; font-weight:600; box-shadow:var(--e1); }
 .foot { padding:16px 0 8px; text-align:center; }
 .coord-link { margin:0; font-size:16px; color:var(--text-2); a { color:var(--brand); font-weight: 600; padding:14px 4px; display:inline-block; min-height:44px; } }
+.cold-note { display:block; margin-top:6px; font-size:14px; line-height:1.4; font-weight:500; color:var(--text-2); }
+.cold-note.desk { display:none; }
 .cup { display:none; margin:0; font-size:14px; color:var(--muted); }
 
 @media (min-width: 900px) {
@@ -46,6 +48,7 @@ h1 { margin:8px 0 8px; font-size:28px; line-height:1.1; font-weight: 600; letter
   .coord:hover { border-color:var(--brand); }
   .rows { display:none; }
   .judge-desk { display:inline-block; margin-top:16px; padding:12px 0; color:var(--brand); font-weight: 600; font-size:16px; text-decoration:underline; }
+  .cold-note.desk { display:block; margin:4px 0 0; max-width:560px; }
   .trust { display:flex; flex-wrap:wrap; gap:8px 24px; list-style:none; margin:8px 0 0; padding:0; font-size:16px; color:var(--text-2); li::before { content:'\2713 '; color:var(--brand); font-weight: 600; } }
   .right { display:flex; justify-content:center; }
   .phone { width:300px; height:560px; border:10px solid var(--text); border-radius:40px; background:var(--surface); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--e3); }

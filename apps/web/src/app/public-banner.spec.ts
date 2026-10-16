@@ -18,6 +18,7 @@ describe('112 banner on public screens', () => {
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('112');
+    expect(text).toContain('Free-tier demo: first load may take a few seconds.');
     expect(fixture.nativeElement.querySelector('a[href="tel:112"]')).toBeTruthy();
   });
 

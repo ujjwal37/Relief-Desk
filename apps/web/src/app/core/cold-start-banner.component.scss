@@ -1,0 +1,45 @@
+:host { display: block; }
+:host:empty { display: none; }
+.cold-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(560px, calc(100% - 24px));
+  margin: 8px auto 0;
+  padding: 10px 12px;
+  border-radius: var(--r3);
+  background: var(--brand-tint);
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--border));
+  box-shadow: var(--e1);
+}
+.cold-banner.is-failed {
+  background: var(--amber-tint);
+  border-color: var(--amber);
+}
+p { margin: 0; flex: 1 1 200px; font: 600 14px/1.4 var(--rd-font-family); }
+.pulse {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 45%, transparent);
+  animation: cold-pulse 1.6s ease-out infinite;
+}
+button {
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--r2);
+  background: var(--brand);
+  color: var(--on-brand);
+  font: 600 14px/1 var(--rd-font-family);
+  cursor: pointer;
+}
+button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+@keyframes cold-pulse {
+  70% { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}

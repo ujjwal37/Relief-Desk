@@ -5,6 +5,12 @@
     "offlineNotice": "You are offline. Reports will sync automatically when reconnected.",
     "quiet": "In immediate danger, call 112. Prototype, not an emergency service."
   },
+  "coldStart": {
+    "waking": "Waking up the demo server, this can take a few seconds on first load.",
+    "failed": "The demo server did not respond. Check your connection and try again.",
+    "retry": "Try again",
+    "freeTier": "Free-tier demo: first load may take a few seconds."
+  },
   "nav": {
     "home": "Home",
     "report": "Report Need",

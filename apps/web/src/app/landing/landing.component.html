@@ -41,6 +41,7 @@
       </div>
 
       <a href="#" class="judge-desk" (click)="openDemo($event)">{{ 'landing.judgeLink' | rdTranslate }}</a>
+      <p class="cold-note desk">{{ 'coldStart.freeTier' | rdTranslate }}</p>
 
       <ul class="trust">
         <li>{{ 'landing.trustOffline' | rdTranslate }}</li>
@@ -69,7 +70,8 @@
   <footer class="foot">
     <p class="coord-link">{{ 'landing.coordFooter' | rdTranslate }}
       <a routerLink="/coordinator/login">{{ 'landing.signIn' | rdTranslate }}</a> ·
-      <a href="#" (click)="openDemo($event)">{{ 'landing.judgeDemo' | rdTranslate }}</a></p>
+      <a href="#" (click)="openDemo($event)">{{ 'landing.judgeDemo' | rdTranslate }}</a>
+      <span class="cold-note">{{ 'coldStart.freeTier' | rdTranslate }}</span></p>
     <rd-quiet-footer />
     <p class="cup">{{ 'landing.cup' | rdTranslate }}</p>
   </footer>
