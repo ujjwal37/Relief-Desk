@@ -7,6 +7,8 @@ and an autouse fixture puts the placeholder key back for every test, so gemini_l
 import os
 
 os.environ["GEMINI_API_KEY"] = "replace-me"
+# Tests sign coordinator JWTs. Production has no source default; this value is test-only.
+os.environ["JWT_SECRET"] = "test-only-jwt-secret-not-for-production"
 
 import pytest  # noqa: E402
 

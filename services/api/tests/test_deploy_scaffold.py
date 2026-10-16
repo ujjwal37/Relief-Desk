@@ -71,6 +71,7 @@ def test_env_example_lists_every_setting_and_loads(monkeypatch):
     assert loaded.GEMINI_ENABLED is True
     assert loaded.GCP_REGION == "asia-south1"
     assert loaded.JWT_SECRET == "replace-me"
+    assert Settings.model_fields["JWT_SECRET"].default == ""
     assert loaded.API_CORS_ORIGINS == ["http://localhost:4200", "http://localhost:8000"]
     assert loaded.SUPPORTED_LANGS == ["en", "hi", "hinglish", "ml"]
     assert loaded.FIREBASE_AUTH_EMULATOR_HOST in ("", None)
@@ -102,6 +103,9 @@ def test_cloudrun_recipe_names_region_secrets_and_does_not_embed_keys():
     assert "--set-secrets" in doc
     assert "GEMINI_API_KEY=gemini-api-key:latest" in doc
     assert "JWT_SECRET=jwt-secret:latest" in doc
+    assert "There is no source default" in doc
+    assert "coordinator-password" in doc
+    assert "/api/auth/demo-login" in doc
     assert "GOOGLE_MAPS_API_KEY=google-maps-api-key:latest" in doc
     assert "DEMO_MODE=true" in doc
     assert "GEMINI_ENABLED=true" in doc

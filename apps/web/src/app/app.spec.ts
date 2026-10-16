@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { App } from './app';
 import { coordinatorAuthGuard } from './core/guards/coordinator-auth.guard';
-import { AuthService, DEMO_COORDINATOR_EMAIL, DEMO_COORDINATOR_PASSWORD } from '@rd/shared';
+import { AuthService, DEMO_COORDINATOR_EMAIL } from '@rd/shared';
 
 describe('App & Routing Shell', () => {
   beforeEach(async () => {
@@ -34,7 +34,16 @@ describe('App & Routing Shell', () => {
 
   it('coordinatorAuthGuard should allow access when coordinator is signed in', async () => {
     const authService = TestBed.inject(AuthService);
-    await authService.login(DEMO_COORDINATOR_EMAIL, DEMO_COORDINATOR_PASSWORD);
+    spyOn(window, 'fetch').and.resolveTo({
+      ok: true,
+      json: async () => ({
+        token: 'signed-test-token',
+        email: DEMO_COORDINATOR_EMAIL,
+        role: 'coordinator',
+        display_name: 'Kerala Emergency Coordinator',
+      }),
+    } as Response);
+    expect(await authService.loginDemo()).toBeTrue();
 
     const result = TestBed.runInInjectionContext(() =>
       coordinatorAuthGuard({} as any, { url: '/coordinator/command' } as any)
