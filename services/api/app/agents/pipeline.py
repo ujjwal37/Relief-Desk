@@ -382,6 +382,19 @@ def finish(request_id: str) -> None:
         return
     req = req.model_copy(deep=True)
     started = time.perf_counter()
+    # Second Gemini pass on the extraction; corrections need a quote from the report.
+    from app.agents.self_check import should_check, self_check
+    if should_check(req):
+        emit_pipeline_step(request_id, "selfcheck", "working", "Gemini is double-checking the extracted facts...")
+    try:
+        checked = self_check(req)
+    except Exception:
+        logger.exception("self-check crashed")
+        checked = None
+    if checked is not None:
+        req.self_check = checked
+        emit_pipeline_step(request_id, "selfcheck", "complete", checked.get("reason") or checked.get("verdict", ""),
+                           {"verdict": checked.get("verdict"), "changes": checked.get("changes")})
     scored = scoring_engine.compute_urgency(req)
     triage_at = time.perf_counter()
     req.urgency_score = scored.score
@@ -426,6 +439,8 @@ def finish(request_id: str) -> None:
             return language_review(agent, context, fallback)
 
     # Independent language checks share the same guarded model queue.
+    emit_pipeline_step(request_id, "dedupe", "working", "Gemini is checking for duplicates...")
+    emit_pipeline_step(request_id, "triage", "working", "Gemini is rating urgency...")
     with ThreadPoolExecutor(max_workers=2, thread_name_prefix="case-review") as pool:
         dup_future = pool.submit(review, "Dedupe", dedupe_context, _dedupe_output(req))
         urg_future = pool.submit(review, "Triage", triage_context, scored.reason)
@@ -448,6 +463,7 @@ def finish(request_id: str) -> None:
         },
     )
     explain_context = {"facts": facts, "matching": json.loads(matching_output), "free_teams": capacity["available"], "inventory_explanation": best.explanation if best else None}
+    emit_pipeline_step(request_id, "explainer", "working", "Gemini is explaining the choice...")
     explained = review("Explainer", explain_context, explanation)
     measured = _km_between(req, best)
     explained["text"] = _with_measured_km(explained.get("text") or "", measured)
@@ -487,6 +503,13 @@ def finish(request_id: str) -> None:
         latest.trace = req.trace
         latest.analysis = req.analysis
         latest.analysis_status = "complete"
+        if req.self_check is not None:
+            latest.self_check = req.self_check
+            if req.self_check.get("verdict") == "fixed":
+                latest.people_count = req.people_count
+                latest.place_text = req.place_text
+                latest.urgency_score = req.urgency_score
+                latest.urgency_reason = req.urgency_reason
         storage_service.save_request(latest, actor="pipeline")
     emit_pipeline_step(
         request_id,

@@ -40,7 +40,8 @@
         <a routerLink="/nearby" class="row"><span>{{ 'landing.alertsNear' | rdTranslate }}</span><span aria-hidden="true">›</span></a>
       </div>
 
-      <a href="#" class="judge-desk" (click)="openDemo($event)">{{ 'landing.judgeLink' | rdTranslate }}</a>
+      <a href="#" class="judge-desk" (click)="openDemo($event, true)">{{ 'landing.judgeLink' | rdTranslate }}</a>
+      <p class="judge does">{{ 'landing.aiProof' | rdTranslate }}</p>
 
       <ul class="trust">
         <li>{{ 'landing.trustOffline' | rdTranslate }}</li>

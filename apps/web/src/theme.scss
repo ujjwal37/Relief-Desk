@@ -1,13 +1,14 @@
 /* Shared surfaces and pine accents from the supplied relief-desk-ui-redesign. */
 :root, :root[data-theme='light'] {
-  --bg: oklch(0.975 0.006 90);
+  --gemini: #6d28d9;
+  --bg: #fafaf9;
   --surface: oklch(0.998 0.002 90);
   --surface-2: oklch(0.955 0.008 100);
   --border: oklch(0.89 0.012 95);
-  --text: oklch(0.22 0.025 188);
+  --text: #1c1917;
   --text-2: oklch(0.52 0.02 190);
   --muted: oklch(0.52 0.02 190);
-  --brand: oklch(0.39 0.082 178);
+  --brand: #047857;
   --on-brand: #ffffff;
   --brand-tint: oklch(0.944 0.018 170);
   --sev-crit: oklch(0.56 0.19 28);
@@ -25,16 +26,16 @@
   --scrim: rgb(15 23 32 / 48%);
 }
 :root[data-theme='dark'] {
-  --bg: #0b1210;
-  --surface: #121a17;
-  --surface-2: #1a2420;
-  --border: #24302b;
-  --text: #ecf3ee;
-  --text-2: #a7b4ad;
-  --muted: #8b9a93;
-  --brand: #82cbb5;
-  --on-brand: #102c24;
-  --brand-tint: #0f2a20;
+  --bg: #0b201b;
+  --surface: #0f2a24;
+  --surface-2: #143630;
+  --border: #25473e;
+  --text: #eef3ef;
+  --text-2: #b7c7bf;
+  --muted: #9fb3aa;
+  --brand: #e3d3b0;
+  --on-brand: #1a1408;
+  --brand-tint: rgb(227 211 176 / 15%);
   --sev-crit: #f87171;
   --sev-crit-t: #3b1515;
   --sev-high: #fbbf24;
@@ -42,12 +43,14 @@
   --sev-med: #60a5fa;
   --sev-med-t: #132338;
   --sev-low: #94a3b8;
-  --ok: #34d399;
-  --ok-t: #0f2a20;
+  --ok: #4ade80;
+  --ok-t: #123a2a;
   --e1: 0 1px 2px rgb(0 0 0 / 40%);
   --e2: 0 4px 12px rgb(0 0 0 / 45%);
   --e3: 0 12px 28px rgb(0 0 0 / 50%);
   --scrim: rgb(0 0 0 / 62%);
+  --gemini: #a78bfa;
+  --focus: #e3d3b0;
 }
 :root {
   --border-2: color-mix(in srgb, var(--text) 16%, var(--border));
@@ -84,7 +87,9 @@
   --banner-ok-fg: #ffffff;
 }
 :root[data-theme='dark'] {
-  --map-bg: #15201c;
+  --map-bg: #173a32;
+  --map-flood: rgb(96 165 250 / 22%);
+  --map-flood-line: rgb(147 197 253 / 60%);
   --banner-ok: #059669;
   --banner-ok-fg: #ffffff;
 }

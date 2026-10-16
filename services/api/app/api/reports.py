@@ -558,6 +558,10 @@ def _refine_with_model(
     else:
         req_obj.vulnerable = analysis.vulnerable
     req_obj.hazard = analysis.hazard
+    from app.agents.depth import validate_depth
+    depth = validate_depth(getattr(analysis, "water_depth", None), getattr(analysis, "water_depth_quote", None), citizen_text or report_text, ai_source)
+    if depth is not None or not joined:
+        req_obj.water_depth = depth
     req_obj.flags = sorted(set(req_obj.flags) | set(flags))
     if model_reason and not req_obj.hoax_reason:
         req_obj.hoax_reason = model_reason[:300]

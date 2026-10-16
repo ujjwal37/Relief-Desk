@@ -113,6 +113,8 @@ class StoredRequest(BaseModel):
     analysis_status: str = "complete"
     analysis: Dict[str, Any] = Field(default_factory=dict)
     trace: List[Dict[str, Any]] = Field(default_factory=list)
+    self_check: Optional[Dict[str, Any]] = None
+    water_depth: Optional[Dict[str, Any]] = None
     update_count: int = 0
     assigned_resource_id: Optional[str] = None
     reserved_people: Optional[int] = None

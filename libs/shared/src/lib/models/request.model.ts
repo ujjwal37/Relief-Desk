@@ -200,6 +200,8 @@ export interface StoredRequest {
   reserved_people?: number | null;
   merged_count?: number;
   analysis_status?: 'analysing' | 'complete';
+  water_depth?: { band?: string; quote?: string | null; source?: string } | null;
+  self_check?: { verdict?: string; provider?: string; model?: string | null; latency_ms?: number; changes?: Array<{ field: string; from: unknown; to: unknown }>; evidence?: string; reason?: string } | null;
   trace?: Array<{
     agent: string;
     status: string;

@@ -88,7 +88,10 @@ export class LiveEventsService implements OnDestroy {
   private deskSub?: Subscription;
 
   constructor() {
-    this.deskSub = this.kinds.subscribe((kind) => this.desk.apply(kind));
+    // A reporter's status stream must not pull coordinator-only lists (they answer 401).
+    this.deskSub = this.kinds.subscribe((kind) => {
+      if (this.mode !== 'report') this.desk.apply(kind);
+    });
   }
 
   /** Coordinator shell. Falls back to a 5s refresh when the stream is down. */

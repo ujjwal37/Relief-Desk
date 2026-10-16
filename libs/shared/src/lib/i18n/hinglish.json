@@ -17,7 +17,8 @@
     "nearby2": "Aas-paas",
     "status2": "Status",
     "reportFab": "Report",
-    "ask": "Desk se poochho"
+    "ask": "Desk se poochho",
+    "command": "Command"
   },
   "landing": {
     "title": "Relief Desk",
@@ -43,7 +44,7 @@
     "deskSub": "Relief Desk bikhre crisis messages ko ranked, de-duplicated cases mein badalta hai, jin par coordinators seconds mein action le sakte hain.",
     "coordCard": "Main coordinator hoon",
     "coordCardSub": "Live dashboard kholein",
-    "judgeLink": "Judge ya reviewer? Ek click mein demo coordinator kholein",
+    "judgeLink": "Judge? Ek click mein dekhiye Gemini 8 live flood reports kaise sort karta hai",
     "trustOffline": "Offline bhi chalta hai",
     "trustLang": "4 bhashayein",
     "trustArea": "Area-level public data",
@@ -58,7 +59,8 @@
     "composer": "Likhein ya mic dabayein",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
     "problem": "Kerala floods mein help requests bikhre aur duplicate aate hain, aur coordinator ko nahi pata pehle kisko bhejein.",
-    "does": "Relief Desk unhe ek queue mein rakhta hai, duplicates jodta hai, aur batata hai kisko pehle bhejein. Ek insaan har dispatch approve karta hai."
+    "does": "Relief Desk unhe ek queue mein rakhta hai, duplicates jodta hai, aur batata hai kisko pehle bhejein. Ek insaan har dispatch approve karta hai.",
+    "aiProof": "Har step asli Gemini prompt, jawab aur timing dikhata hai. Har dispatch ko ek insaan approve karta hai."
   },
   "report": {
     "title": "Emergency Crisis Report",
@@ -154,7 +156,12 @@
     "medium": "Medium Urgency",
     "low": "Low Urgency",
     "approve": "Dispatch Approve Karein",
-    "reject": "Reject"
+    "reject": "Reject",
+    "newPill": "{n} naye ↑",
+    "allCaughtUp": "Sab nipat gaya — 0 waiting.",
+    "showMap": "Map dikhayein",
+    "hideMap": "Map chhupayein",
+    "tip": "Tip: suggested team bhejne ke liye A, agle case ke liye N dabayein."
   },
   "alerts": {
     "title": "Alerts",
@@ -258,7 +265,16 @@
     "brief": "Live counts se chhota brief",
     "geminiCalls": "Gemini calls {n}",
     "exampleMl": "Malayalam mein example",
-    "sendOwn": "Bhejo"
+    "sendOwn": "Bhejo",
+    "now": "Abhi: {step}",
+    "stepIntake": "report padh raha hai",
+    "stepDedupe": "duplicate check kar raha hai",
+    "stepTriage": "urgency rate kar raha hai",
+    "stepMatching": "sabse paas ki team dhoondh raha hai",
+    "stepExplainer": "choice samjha raha hai",
+    "momentMerged": "Duplicate pakda gaya: nayi report purane case mein jodi gayi.",
+    "momentHoax": "Possible hoax flag hua, review ke liye roka gaya.",
+    "stepSelfCheck": "facts dobara check kar raha hai"
   },
   "settings": {
     "title": "Settings",
@@ -506,7 +522,8 @@
     "mapClear": "Selection hatayein",
     "verify": "Verify karein",
     "verifyHint": "Report saaf nahi hai. Priority kam nahi ki gayi. Details confirm karein.",
-    "reviewHoax": "Maine yeh flag dekh liya"
+    "reviewHoax": "Maine yeh flag dekh liya",
+    "capacityShort": "Team mein {need} logon ke liye sirf {left} seats hain — approve karne par confirm karna hoga."
   },
   "tour": {
     "next": "Aage",
@@ -634,7 +651,7 @@
     "date": "Run ki tarikh",
     "count": "Is split mein reports",
     "geminiNotMeasured": "Is run mein Gemini call nahi hua. API key set nahi thi.",
-    "geminiUnreachable": "Gemini ko call kiya par jawab nahi mila (daily quota ya outage), isliye is run mein Gemini score nahi hai.",
+    "geminiUnreachable": "Is saved run mein Gemini score nahi hai: us waqt Gemini ne jawab nahi diya (daily limit ya outage), isliye yahan sirf keyword baseline dikh rahi hai. Live demo Gemini use karta hai.",
     "geminiType": "Gemini, madad ka type",
     "geminiWard": "Gemini, sahi ilaqa",
     "keywordType": "Keyword baseline, madad ka type",
@@ -1017,7 +1034,8 @@
     "routeNote": "Rasta",
     "geminiChip": "✨Gemini chip",
     "tierImmediate": "Abhi Immediate",
-    "tierUrgent": "Jaldi Urgent"
+    "tierUrgent": "Jaldi Urgent",
+    "localTestAi": "Local test AI"
   },
   "band": {
     "critical": "Critical",
@@ -1122,5 +1140,67 @@
   },
   "card": {
     "movedUp": "Upar laya gaya"
+  },
+  "selfCheck": {
+    "ok": "Doosra Gemini check: facts report se match karte hain",
+    "fixed": "Doosre Gemini check ne report quote karke {changes} theek kiya:",
+    "people": "log",
+    "place": "jagah",
+    "recorded": "Recorded (Gemini)"
+  },
+  "depth": {
+    "boatChosen": "Boat chuni gayi: report ke hisaab se paani {depth} hai.",
+    "groundChosen": "Ground team chuni gayi: report ke hisaab se paani sirf {depth} hai.",
+    "boatShallow": "Report ke hisaab se paani {depth} hai; paas mein sirf boat free hai.",
+    "groundDeep": "Report ke hisaab se paani {depth} hai; paas mein koi boat free nahi, bhejne se pehle check karein.",
+    "band": {
+      "none": "bhara nahi",
+      "ankle": "takhne tak",
+      "knee": "ghutne tak",
+      "waist": "kamar tak",
+      "chest": "chhati tak",
+      "roof": "chhat tak"
+    }
+  },
+  "batch": {
+    "new": "naye (10 min)",
+    "merged": "merged",
+    "waiting": "waiting",
+    "dispatched": "bheje gaye",
+    "next": "Agla case",
+    "shortcuts": "Keys: A approve · N agla · U undo"
+  },
+  "sit": {
+    "title": "Situation",
+    "ratio": "{r} reports → duplicates jodne ke baad {c} cases",
+    "openCommand": "Command kholein",
+    "perMin": "reports/min (pichhle 10 min)",
+    "completed": "poore",
+    "merged": "duplicates jode",
+    "hoax": "hoax flag kiye",
+    "topAreas": "High-alert areas",
+    "allClear": "Sab nipat gaya: koi critical ya urgent case waiting nahi.",
+    "areaMeta": "{w} waiting · area mein {t} free teams",
+    "teams": "Type ke hisaab se teams",
+    "free": "free",
+    "busy": "busy",
+    "brief": "Situation brief",
+    "refresh": "Refresh",
+    "briefLoading": "Brief likha ja raha hai…",
+    "briefError": "Brief abhi available nahi.",
+    "forJudges": "Judges ke liye:",
+    "src": {
+      "gemini": "✨ Gemini live",
+      "recorded": "Recorded (Gemini)",
+      "local": "Local test AI",
+      "rules": "Rules"
+    }
+  },
+  "steps": {
+    "gemini": "✨ Gemini ne 5 steps check kiye",
+    "recorded": "Recorded (Gemini) · 5 steps",
+    "rules": "Rules ne 5 steps check kiye",
+    "see": "Kaise, dekhein",
+    "hide": "Steps chhupayein"
   }
 }

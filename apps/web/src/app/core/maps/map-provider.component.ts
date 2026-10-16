@@ -480,7 +480,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     if (leg.mode !== 'water') return leg.title;
     const km = haversineKm(leg.from.lat, leg.from.lng, leg.to.lat, leg.to.lng);
     const d = km < 10 ? km.toFixed(1) : String(Math.round(km));
-    return km <= 30 ? `${d} km · by boat · ~${boatMinutes(km)} min` : `${d} km · by boat`;
+    return km <= 30 ? `Boat · ~${d} km straight line · ~${boatMinutes(km)} min` : `Boat · ~${d} km straight line`;
   }
 
   private fitPath(path: { lat: number; lng: number }[]): void {

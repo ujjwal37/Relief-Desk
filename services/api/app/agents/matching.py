@@ -110,7 +110,9 @@ class MatchingAgent:
             speed = BOAT_KMH if travel_mode_for(res) == "water" else LAND_KMH
             eta = breakdown.distance_km / speed
             fits = 0 if res.capacity_remaining >= people_needed else 1
-            return (round(eta * 60), fits, -breakdown.total_score)
+            # Water depth from the report: deep water puts boats first, shallow water ground teams.
+            from app.agents.depth import depth_rank
+            return (depth_rank(request, res), round(eta * 60), fits, -breakdown.total_score)
 
         scored_candidates.sort(key=_rank)
         top_candidates = scored_candidates[:top_n]

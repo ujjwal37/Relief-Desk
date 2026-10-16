@@ -44,6 +44,7 @@ test('live demo runs eight reports and opens a human step popup', async ({ page,
   await expect(page.getByTestId('hoax-chip').first()).toBeVisible();
   await page.screenshot({ path: path.join(SHOTS, 'live-demo.png'), fullPage: false });
 
+  if (await page.getByTestId('steps-toggle').first().isVisible()) await page.getByTestId('steps-toggle').first().click();
   await page.getByTestId('stepper-node-intake').click();
   const step = page.getByTestId('step-details');
   await expect(step).toBeVisible();
@@ -55,6 +56,7 @@ test('live demo runs eight reports and opens a human step popup', async ({ page,
   await page.keyboard.press('Escape');
   await expect(step).toBeHidden();
 
+  await page.locator('details.live-own > summary').click();
   await page.getByTestId('own-report').fill('Judge typed this flood report just now.');
   await page.getByTestId('send-own').click();
   await expect(page.getByTestId('own-error')).toContainText('free limit');

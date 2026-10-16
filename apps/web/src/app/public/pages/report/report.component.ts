@@ -45,7 +45,8 @@ const EMPTY_VULNERABLE: Record<string, boolean> = {
 };
 
 /** A chat turn that takes longer than this falls back to the form. */
-const CHAT_TURN_TIMEOUT_MS = 15000;
+// A full Gemini read of a long non-English message can take ~20 s; the 6 s 'taking longer' note covers the wait.
+const CHAT_TURN_TIMEOUT_MS = 45000;
 
 interface SpeechRec {
   lang: string;

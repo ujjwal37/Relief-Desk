@@ -77,7 +77,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     effect(() => {
       if (!this.menuOpen()) this.langMore.set(false);
     });
-    this.theme.ensureDefault('light');
+    this.theme.ensureDefault('dark');
     this.media = window.matchMedia('(min-width: 600px)');
     this.wideEnough.set(this.media.matches);
     this.media.addEventListener('change', this.onMedia);
@@ -197,10 +197,13 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   aiPillText(): string {
     this.lang.currentLang();
     if (this.aiHealth()?.provider === 'gemini') return this.lang.translate('xfactor.geminiLive');
+    if (this.aiHealth()?.provider === 'antigravity-local') return this.lang.translate('xfactor.localTestAi');
     return this.lang.translate('coord.aiOffline');
   }
 
   geminiCalls(): number | null {
+    // Only Gemini calls are counted as Gemini calls.
+    if (this.aiHealth()?.provider !== 'gemini') return null;
     const calls = this.aiHealth()?.quota?.calls;
     return typeof calls === 'number' ? calls : null;
   }

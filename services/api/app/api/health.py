@@ -24,7 +24,12 @@ def ai_health():
 
     looked = llm_client.cache_hits + llm_client.cache_misses
     rate = (llm_client.cache_hits / looked) if looked else 0.0
-    if oc.enabled():
+    from app.llm import antigravity as ag
+
+    if ag.antigravity_enabled():
+        # Local test mode (off by default, never production): calls go to the local CLI, not Gemini.
+        provider, model, label = "antigravity-local", "local", "Local test AI"
+    elif oc.enabled():
         provider, model, label = oc.PROVIDER, oc.model(), oc.label()
     elif (
         llm_client.gemini_live()

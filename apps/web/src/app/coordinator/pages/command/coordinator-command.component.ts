@@ -334,6 +334,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly criticalCount = computed<number>(() => this.counts().critical);
   readonly teamsFree = computed(() => teamsFreeCounts(this.resources(), Date.now()));
   geminiCalls(): number | null {
+    if (this.ui.aiHealth()?.provider !== 'gemini') return null;
     const calls = this.ui.aiHealth()?.quota?.calls;
     return typeof calls === 'number' ? calls : null;
   }
@@ -745,8 +746,73 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const i = list.findIndex((r) => r.id === this.selectedRequestId());
     if (e.key === 'j' && i < list.length - 1) this.selectRequest(list[i + 1].id);
     if (e.key === 'k' && i > 0) this.selectRequest(list[i - 1].id);
-    if (e.key === 'a') (document.querySelector('.btn-approve') as HTMLElement | null)?.focus();
+    // Triage shortcuts: A approve the suggested team, N next waiting case, U undo the last send.
+    const key = e.key.toLowerCase();
+    if (key === 'a') {
+      const btn = document.querySelector('.btn-approve') as HTMLButtonElement | null;
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    }
+    if (key === 'n') { e.preventDefault(); this.nextCase(); }
+    if (key === 'u' && this.actionToast()?.undo) { e.preventDefault(); this.undoLastSend(); }
   }
+
+  /** AI steps start collapsed into one truthful line. */
+  readonly stepsOpen = signal(false);
+  /** Map is a toggle on narrow desktops (<=1280px). */
+  readonly mapOpen = signal(false);
+  /** First-visit keyboard tip, dismissed for good in localStorage. */
+  readonly tipOpen = signal((() => { try { return localStorage.getItem('rd.tip.keys') !== '1'; } catch { return false; } })());
+  dismissTip(): void { this.tipOpen.set(false); try { localStorage.setItem('rd.tip.keys', '1'); } catch { /* ignore */ } }
+
+  /** Queue order frozen while a case is open, so rows do not jump under the cursor. */
+  private readonly frozenOrder = signal<string[] | null>(null);
+  readonly queueRows = computed<StoredRequest[]>(() => {
+    const live = this.filteredRequests();
+    const order = this.frozenOrder();
+    if (!order || this.liveDemo()?.running) return live;
+    const byId = new Map(live.map((r) => [r.id, r] as const));
+    return order.map((id) => byId.get(id)).filter((r): r is StoredRequest => !!r);
+  });
+  readonly newSinceFreeze = computed(() => {
+    const order = this.frozenOrder();
+    if (!order) return 0;
+    const seen = new Set(order);
+    return this.filteredRequests().filter((r) => !seen.has(r.id)).length;
+  });
+  freezeQueue(): void { if (!this.frozenOrder()) this.frozenOrder.set(this.filteredRequests().map((r) => r.id)); }
+  unfreezeQueue(): void { this.frozenOrder.set(null); }
+
+  /** One line for the collapsed AI steps. Gemini only when Gemini really ran; total time only from the real trace. */
+  stepsSummary(req: StoredRequest): { text: string; gemini: boolean } {
+    this.langService.currentLang();
+    const kind = this.aiKind(req);
+    const secs = this.parallelSeconds(req);
+    const key = kind === 'gemini' ? 'steps.gemini' : kind === 'recorded' ? 'steps.recorded' : 'steps.rules';
+    let text = this.langService.translate(key);
+    if (kind !== 'fallback' && kind !== 'test' && secs) text += ` · ${secs}s`;
+    return { text, gemini: kind === 'gemini' };
+  }
+
+  /** Select the next case that still needs a decision, wrapping to the top. */
+  nextCase(): void {
+    const list = this.filteredRequests().filter((r) => !this.isDispatched(r) && !this.isCompleted(r));
+    if (!list.length) return;
+    const i = list.findIndex((r) => r.id === this.selectedRequestId());
+    this.selectRequest(list[(i + 1) % list.length].id);
+  }
+
+  /** Batch counters from real case data: new in the last 10 minutes, reports merged, waiting, sent. */
+  readonly batch = computed(() => {
+    const rows = this.scopedRequests();
+    const cutoff = Date.now() - 10 * 60 * 1000;
+    const open = rows.filter((r) => !this.isDispatched(r) && !this.isCompleted(r));
+    return {
+      fresh: rows.filter((r) => r.created_at && Date.parse(r.created_at) >= cutoff).length,
+      merged: rows.reduce((sum, r) => sum + Math.max(0, (r.merged_count || 1) - 1), 0),
+      waiting: open.length,
+      dispatched: rows.filter((r) => this.isDispatched(r)).length,
+    };
+  });
 
   private readonly live = inject(LiveEventsService);
   private readonly dialog = inject(Dialog);
@@ -835,6 +901,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       this.pipelineById.set(next);
     });
     this.refreshLive();
+    // Landing "watch the AI" link: start the shared live run once, then drop the flag from the URL.
+    if (new URLSearchParams(location.search).get('live') === '1' && !this.startFromLink) {
+      this.startFromLink = true;
+      history.replaceState(history.state, '', location.pathname);
+      setTimeout(() => { if (!this.liveDemo()?.running) this.startLiveDemo(); }, 800);
+    }
     window.addEventListener('message', this.handleDemoMessage);
     document.addEventListener('visibilitychange', this.onQueueVisibility);
     try {
@@ -1338,8 +1410,41 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Plain line on why a boat or ground team fits the water depth the report states. */
+  depthLine(prop: MatchProposal): string | null {
+    const req = this.requests().find((row) => row.id === prop.request_id);
+    const band = req?.water_depth?.band;
+    if (!band || band === 'unknown' || !req?.water_depth?.quote) return null;
+    const depth = this.langService.translate('depth.band.' + band);
+    const isBoat = String(prop.resource_kind) === 'boat';
+    const deep = ['waist', 'chest', 'roof'].includes(band);
+    const key = isBoat ? (deep ? 'depth.boatChosen' : 'depth.boatShallow') : (deep ? 'depth.groundDeep' : 'depth.groundChosen');
+    return this.langService.translate(key, { depth });
+  }
+
+  /** Seats missing on the proposed team, or 0 when it fits. Shown before Approve. */
+  capacityShort(prop: MatchProposal): { left: number; need: number } | null {
+    const team = this.resources().find((res) => res.id === prop.resource_id);
+    const need = this.requests().find((row) => row.id === prop.request_id)?.people_count || 0;
+    if (!team || need <= (team.capacity_remaining ?? need)) return null;
+    return { left: team.capacity_remaining ?? 0, need };
+  }
+
   approveMatch(prop: MatchProposal, allowOvercommit = false): void {
     if (this.approving()) return;
+    // Ask about capacity before calling the API, instead of provoking a 400.
+    if (!allowOvercommit) {
+      const team = this.resources().find((res) => res.id === prop.resource_id);
+      const need = this.requests().find((row) => row.id === prop.request_id)?.people_count || 0;
+      if (team && need > (team.capacity_remaining ?? need)) {
+        this.pendingMatch = prop;
+        this.isOvercommitModalOpen.set(true);
+        return;
+      }
+    }
+    // Nothing goes out while Gemini is still reading the case.
+    const sel = this.selectedRequest();
+    if (sel && this.waitingForReading(sel)) return;
     this.approving.set(true);
     this.apiClient.approveMatch(prop.match_id, allowOvercommit).subscribe({
       next: (approved) => {
@@ -1786,10 +1891,58 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** i18n key for the step the active demo report is on, from live pipeline events. */
+  liveStepKey(): string | null {
+    const id = this.liveDemo()?.active_id;
+    if (!id) return null;
+    const steps = this.pipelineById()[id] || [];
+    // Server step names (extract, selfcheck, dedupe, triage, matching, explainer, approval) in run order.
+    const order = ['extract', 'selfcheck', 'dedupe', 'triage', 'matching', 'explainer'];
+    const label: Record<string, string> = { extract: 'Intake', intake: 'Intake', selfcheck: 'SelfCheck', dedupe: 'Dedupe', triage: 'Triage', matching: 'Matching', explainer: 'Explainer' };
+    const last = steps[steps.length - 1];
+    if (!last) return 'demo.stepIntake';
+    const name = (last.agent || '').toLowerCase();
+    if (name === 'approval') return null;
+    const working = steps.filter((s) => s.status === 'working').map((s) => (s.agent || '').toLowerCase());
+    // The furthest step that is still working is where the report is now.
+    const current = [...order].reverse().find((a) => working.includes(a));
+    const pick = current || order[Math.min(order.indexOf(name) + 1, order.length - 1)] || name;
+    return label[pick] ? `demo.step${label[pick]}` : null;
+  }
+
+  /** Second-pass line for the decision panel. Only real check results are shown. */
+  selfCheckLine(sc: { verdict?: string; provider?: string; changes?: Array<{ field: string; from: unknown; to: unknown }>; evidence?: string }): string {
+    const t = (k: string) => this.langService.translate(k);
+    let text = '';
+    if (sc.verdict === 'fixed' && sc.changes?.length) {
+      const parts = sc.changes.map((c) => `${t(c.field === 'people' ? 'selfCheck.people' : 'selfCheck.place')} ${c.from ?? '-'} → ${c.to}`);
+      text = t('selfCheck.fixed').replace('{changes}', parts.join(', ')) + (sc.evidence ? ` "${sc.evidence}"` : '');
+    } else if (sc.verdict === 'pass') {
+      text = t('selfCheck.ok');
+    } else {
+      return '';
+    }
+    return sc.provider === 'cache' ? `${text} · ${t('selfCheck.recorded')}` : text;
+  }
+
+  private startFromLink = false;
+
   private applyLive(state: LiveDemoState): void {
-    const prev = this.liveDemo()?.status;
+    const before = this.liveDemo();
+    const prev = before?.status;
     this.liveDemo.set(state);
+    // Make the AI moments obvious when they happen.
+    if (before && (state.joined || 0) > (before.joined || 0)) {
+      this.actionToast.set({ text: this.langService.translate('demo.momentMerged'), type: 'success' });
+    } else if (before && (state.flagged || 0) > (before.flagged || 0)) {
+      this.actionToast.set({ text: this.langService.translate('demo.momentHoax'), type: 'warning' });
+    }
     if (state.running) {
+      if (state.active_id && state.active_id !== before?.active_id) {
+        // Select quietly: no scrolling while the demo runs.
+        this.selectedRequestId.set(state.active_id);
+        this.ui.selectedCaseId.set(state.active_id);
+      }
       this.ensureLivePoll();
       return;
     }

@@ -48,3 +48,6 @@
 @media (prefers-reduced-motion: reduce) { .orb, .wave i, .typing i { animation:none; } }
 
 .report-safety { flex: none; margin: 0; padding: 4px 12px; color: var(--text-2); background: var(--surface-2); font-size: 12px; line-height: 18px; }
+
+.review-btn{position:sticky;bottom:8px;z-index:2;font-weight:700;box-shadow:var(--e2)}
+.review-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}

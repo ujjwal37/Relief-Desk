@@ -115,7 +115,7 @@ def _apply_case(request_id: str, sample_id: str) -> None:
             "critical_id": critical_id,
             "hoax_id": hoax_id,
             "primary_id": primary_id,
-            "active_id": target.id,
+            "active_id": target.id if target.id in ids or not req.merged_into else _state.get("active_id"),
         })
     _publish()
 
@@ -129,8 +129,10 @@ def _run(submit: Callable[[Dict[str, Any]], Any]) -> None:
             waiting = gemini_pacer.waiting
             _set(received=index - 1, status="waiting" if waiting else "running", queue_position=waiting)
             result = submit(sample)
-            wait_for_idle(timeout=180)
             request_id = getattr(result, "request_id", None) or (result.get("request_id") if isinstance(result, dict) else None)
+            # Count the report as soon as it is in, and point the desk at it so its steps show live.
+            _set(received=index, status="running", queue_position=0, active_id=str(request_id) if request_id else _state.get("active_id"))
+            wait_for_idle(timeout=180)
             if request_id:
                 _apply_case(str(request_id), str(sample.get("id") or ""))
             _set(received=index, status="running", queue_position=0)

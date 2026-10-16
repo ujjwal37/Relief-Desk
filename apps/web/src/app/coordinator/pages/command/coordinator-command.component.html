@@ -11,6 +11,10 @@
 
   <!-- Slim Stats Line -->
   <div class="slim-stats-bar" data-testid="stats-line">
+    <div class="batch-counters" data-testid="batch-counters" role="status">
+      <span><b>{{ batch().waiting }}</b> {{ 'batch.waiting' | rdTranslate }}</span>
+      <span><b>{{ batch().dispatched }}</b> {{ 'batch.dispatched' | rdTranslate }}</span>
+    </div>
     <div class="stats-left">
       <span class="stat-pill stat-free">
         {{ 'stat.teamsFree' | rdTranslate:{ a: teamsFree().free, b: teamsFree().total } }}
@@ -40,7 +44,7 @@
   @if (!narrow()) {
     <section class="live-demo" data-testid="live-demo" [attr.aria-label]="'demo.run' | rdTranslate">
       <div class="live-demo-top">
-        <p class="live-demo-problem">{{ 'demo.problem' | rdTranslate }}</p>
+        <p class="live-demo-problem">{{ 'home.hero' | rdTranslate }}</p>
         <button type="button" class="live-demo-go" data-testid="run-live-demo" (click)="startLiveDemo()" [disabled]="liveDemo()?.running">
           {{ (liveDemo()?.running ? 'demo.running' : 'demo.run') | rdTranslate }}
         </button>
@@ -55,6 +59,7 @@
             @if (live.status === 'waiting' || (live.queue_position || 0) > 0) {
               · {{ 'demo.waitingGemini' | rdTranslate:{ n: live.queue_position || 0 } }}
             }
+            @if (live.running && liveStepKey(); as stepKey) { · <span data-testid="demo-now">{{ 'demo.now' | rdTranslate:{ step: (stepKey | rdTranslate) } }}</span> }
             @if (live.status === 'done') { · {{ 'demo.done' | rdTranslate }} }
             @if (geminiCalls() != null) { · <span data-testid="demo-gemini-calls">{{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }
           </p>
@@ -63,23 +68,25 @@
       @if (demoRecorded()) {
         <p class="live-demo-note">{{ 'demo.recordedNotice' | rdTranslate }}</p>
       }
-      <div class="live-own">
-        <label for="own-report">{{ 'demo.tryOwn' | rdTranslate }}</label>
+      <details class="live-own">
+        <summary>{{ 'demo.tryOwn' | rdTranslate }}</summary>
         <textarea id="own-report" data-testid="own-report" rows="2" maxlength="500" [value]="ownText()" (input)="ownText.set($any($event.target).value)" [placeholder]="'demo.tryOwnPlaceholder' | rdTranslate"></textarea>
         <div class="live-own-row">
           <button type="button" class="sample-btn" (click)="fillExample()">{{ 'demo.exampleMl' | rdTranslate }}</button>
           <button type="button" class="live-demo-go" data-testid="send-own" (click)="submitOwn()" [disabled]="ownBusy() || !ownText().trim()">{{ 'demo.sendOwn' | rdTranslate }}</button>
         </div>
         @if (ownError()) { <p class="live-demo-note" data-testid="own-error" role="alert">{{ ownError() }}</p> }
-      </div>
+      </details>
     </section>
   }
 
   <!-- AI Hero Banner (One line) -->
-  <div class="hero-line" data-testid="hero-line">
+@if (narrow()) {
+    <div class="hero-line" data-testid="hero-line">
     <span class="hero-sparkle" aria-hidden="true">✨</span>
     <span class="hero-text">{{ 'home.hero' | rdTranslate }}</span>
   </div>
+  }
 
   <div class="grid coordinator-grid">
     <!-- LEFT COLUMN: QUEUE -->
@@ -183,7 +190,10 @@
 
       <!-- Case List -->
       <div class="list case-list-wrap" role="listbox" [attr.aria-label]="'coord.cases' | rdTranslate">
-        @for (req of filteredRequests(); track req.id) {
+        @if (newSinceFreeze() > 0) {
+          <button type="button" class="new-pill" data-testid="new-pill" (click)="unfreezeQueue()">{{ 'queue.newPill' | rdTranslate:{ n: newSinceFreeze() } }}</button>
+        }
+        @for (req of queueRows(); track req.id) {
           @if (isAnalysisFailed(req)) {
             <article class="case-wrap failed">
               <p class="title">{{ getTranslationText(req) || ('ux.notRecorded' | rdTranslate) }}</p>
@@ -205,7 +215,7 @@
                 [class.sel]="selectedRequestId() === req.id"
                 [attr.data-band]="bandOf(req.urgency_score)"
                 [attr.aria-selected]="selectedRequestId() === req.id"
-                (click)="selectRequest(req.id, true)"
+                (click)="freezeQueue(); selectRequest(req.id, true)"
               >
                 <!-- Line 1: Band badge & Need text -->
                 <div class="card-line-top">
@@ -270,7 +280,7 @@
           }
         } @empty {
           <p class="empty" data-testid="filter-empty">
-            {{ 'coord.noFilterMatch' | rdTranslate }}
+            {{ (counts().dispatched + counts().completed > 0 && !filteredRequests().length && bandFilter() === 'all' ? 'queue.allCaughtUp' : 'coord.noFilterMatch') | rdTranslate }}
             <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button>
           </p>
         }
@@ -278,7 +288,8 @@
     </section>
 
     <!-- CENTRE COLUMN: TALLER MAP + COMPACT AI STEPPER -->
-    <section class="centre map-stepper-col">
+    <section class="centre map-stepper-col" [class.map-open]="mapOpen()">
+      <button type="button" class="map-toggle" data-testid="map-toggle" [attr.aria-pressed]="mapOpen()" (click)="mapOpen.set(!mapOpen())">{{ (mapOpen() ? 'queue.hideMap' : 'queue.showMap') | rdTranslate }}</button>
       <div class="map-card-wrapper map-card">
         <rd-map-provider
           [pins]="mapPins()"
@@ -286,6 +297,7 @@
           [center]="mapCenter()"
           [focusToken]="mapFocus()"
           [highlightId]="highlightId()"
+          [selectedId]="selectedRequestId()"
           (pinSelect)="selectRequest($event, true)"
         >
           <svg [attr.viewBox]="mapViewBox()" class="svgmap" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
@@ -339,6 +351,14 @@
       </div>
 
       <!-- Compact 5-Step Horizontal AI Stepper Under Map -->
+      @if (selectedRequest(); as sreq) {
+        <div class="steps-line" data-testid="steps-line">
+          <span class="steps-badge" [class.gemini]="stepsSummary(sreq).gemini">{{ stepsSummary(sreq).text }}</span>
+          <button type="button" class="steps-toggle" data-testid="steps-toggle" [attr.aria-expanded]="stepsOpen()" (click)="stepsOpen.set(!stepsOpen())">{{ (stepsOpen() ? 'steps.hide' : 'steps.see') | rdTranslate }}</button>
+          @if (!stepsOpen()) { <button type="button" class="steps-toggle" (click)="openTraceDrawer()">{{ 'ux.viewTrace' | rdTranslate }}</button> }
+        </div>
+      }
+      @if (stepsOpen() || !selectedRequest()) {
       <app-ai-stepper
         [request]="selectedRequest()"
         [activeProposal]="activeProposal()"
@@ -347,6 +367,7 @@
         (openStepDetail)="openStepDetailDialog($event)"
         (howDecided)="openTraceDrawer()"
       />
+      }
     </section>
 
     <!-- RIGHT COLUMN: DECISION PANEL -->
@@ -397,6 +418,9 @@
                   <app-gemini-chip [confidence]="req.translation_confidence ?? fieldConf(req, 'type')" />
                 }
               </div>
+              @if (req.self_check && selfCheckLine($any(req.self_check)); as scLine) {
+                <p class="rep-text self-check" data-testid="self-check">✓ {{ scLine }}</p>
+              }
               <p class="rep-text ai-english" data-testid="ai-english-full">“{{ getTranslationText(req) }}”</p>
             </div>
           </div>
@@ -443,6 +467,9 @@
                 }
                 @if (prop.wait_minutes) {
                   <p class="warnline">{{ waitLabel(prop) }}</p>
+                }
+                @if (depthLine(prop); as dl) {
+                  <p class="team-why-reason depth-line" data-testid="depth-why">{{ dl }}</p>
                 }
                 <p class="team-why-reason" data-testid="team-why">{{ teamWhy(prop) }}</p>
                 <p class="straight-line-note">{{ 'coord.straightLine' | rdTranslate }}</p>
@@ -508,6 +535,9 @@
 
         <!-- 6. Pinned Footer Actions -->
         <footer class="decision-pinned-footer" data-tour="actions">
+          @if (tipOpen()) {
+            <p class="key-tip" role="note" data-testid="key-tip">{{ 'queue.tip' | rdTranslate }} <button type="button" (click)="dismissTip()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
+          }
           <p class="you-decide-msg">{{ 'coord.youDecide' | rdTranslate }}</p>
 
           @if (changeOpen()) {
@@ -595,14 +625,19 @@
               >
                 ✎ {{ 'confirm.change' | rdTranslate }}
               </button>
+              @if (capacityShort(prop); as cap) {
+                <p class="cap-warn" role="note" data-testid="capacity-warning">⚠ {{ 'coord.capacityShort' | rdTranslate:{ left: cap.left, need: cap.need } }}</p>
+              }
               <button
                 type="button"
                 class="btn-approve"
-                [disabled]="needsDupReview(req) || offline() || approving() || hoaxBlocked(req)"
+                [disabled]="needsDupReview(req) || offline() || approving() || hoaxBlocked(req) || waitingForReading(req)"
+                [attr.title]="waitingForReading(req) ? ('flow.readingReport' | rdTranslate) : null"
                 (click)="approveMatch(prop)"
               >
-                ✓ {{ 'coord.approve' | rdTranslate }}
+                ✓ {{ 'coord.approve' | rdTranslate }} <kbd>A</kbd>
               </button>
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" [attr.title]="'batch.shortcuts' | rdTranslate" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
             </div>
           } @else {
             <div class="footer-buttons-row">

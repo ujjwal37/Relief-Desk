@@ -23,96 +23,6 @@ button {
   overflow: hidden;
 }
 
-/* Toast */
-.toast {
-  flex: none;
-  z-index: 20;
-  width: 100%;
-  background: var(--banner-ok, #065f46);
-  color: #fff;
-  padding: 8px 16px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  font-size: 13px;
-  font-weight: 600;
-
-  &.ok { background: var(--banner-ok, #065f46); }
-  &.warn { background: var(--amber, #d97706); color: #fff; }
-
-  button {
-    border: 0;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  .toast-undo {
-    text-decoration: underline;
-    font-weight: 700;
-  }
-}
-
-/* Slim Stats Line */
-.slim-stats-bar {
-  flex: none;
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  background: var(--surface-2, #101c16);
-  border-bottom: 1px solid var(--border, #1a2f24);
-  font-size: 12.5px;
-  color: var(--muted, #94a3b8);
-
-  .stats-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .stat-pill {
-    font-weight: 700;
-    color: var(--text, #f1f5f9);
-  }
-
-  .stat-sep {
-    color: var(--border, #22382c);
-  }
-
-  .stat-divider {
-    color: var(--border, #22382c);
-    margin: 0 4px;
-  }
-
-  .stat-chip-btn {
-    border: 0;
-    background: transparent;
-    color: var(--muted, #94a3b8);
-    font-size: 12px;
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: color 120ms ease;
-
-    strong {
-      color: var(--text, #f1f5f9);
-    }
-
-    &:hover, &.active {
-      color: var(--brand, #34d399);
-      strong { color: var(--brand, #34d399); }
-    }
-  }
-
-  .reset-note {
-    font-size: 11.5px;
-    color: var(--brand, #34d399);
-  }
-}
 
 /* AI Hero Banner */
 .hero-line {
@@ -172,7 +82,7 @@ button {
   gap: 8px;
 }
 
-.sample-row {
+.sample-row, .live-own-row {
   display: flex;
   gap: 6px;
 
@@ -193,9 +103,9 @@ button {
     transition: all 120ms ease;
 
     &:hover {
-      background: color-mix(in srgb, var(--brand, #10b981) 15%, var(--surface-2, #14241d));
-      border-color: var(--brand, #10b981);
-      color: #fff;
+      background: var(--brand-tint);
+      border-color: var(--brand);
+      color: var(--text);
     }
   }
 }
@@ -223,7 +133,7 @@ button {
   }
 }
 
-.filter-row {
+.filter-row, .secondary-filter-row {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -337,8 +247,8 @@ button {
   }
 
   &:not(.sel):hover {
-    background: var(--surface-hover, #162a20);
-    border-color: var(--border-2, #294435);
+    background: var(--brand-tint);
+    border-color: var(--border-2);
   }
 
   &.done {
@@ -466,8 +376,8 @@ button {
 }
 
 .map-card-wrapper {
-  flex: 1;
-  min-height: 380px;
+  flex: 1 1 auto;
+  min-height: max(380px, 52vh);
   position: relative;
   overflow: hidden;
   border-radius: 12px;
@@ -1399,3 +1309,21 @@ app-ai-stepper {
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+
+/* Polish: buttons outside the queue header reuse the same chip/sample styles, sized to content. */
+.live-own-row .sample-btn {
+  flex: 0 0 auto;
+  padding: 0 10px;
+}
+
+
+.self-check {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.cap-warn{flex:1 1 100%;margin:0 0 var(--s2);padding:6px 10px;border-radius:var(--r2);background:var(--sev-high-t);color:var(--text);font-size:12px}
+.live-own>summary{cursor:pointer;font-size:12px;color:var(--text-2);padding:4px 0}
+.live-own>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r1)}

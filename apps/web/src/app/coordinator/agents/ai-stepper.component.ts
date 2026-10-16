@@ -323,8 +323,10 @@ export interface StepStatusInfo {
       font-size: 12px;
       font-weight: 600;
       color: var(--text, #e8f0ec);
-      line-height: 1.3;
-      white-space: nowrap;
+      line-height: 1.25;
+      white-space: normal;
+      overflow-wrap: break-word;
+      hyphens: auto;
     }
     .tag-parallel {
       font-size: 9px;
@@ -339,7 +341,7 @@ export interface StepStatusInfo {
       color: var(--muted, #9bb0a5);
       margin-top: 3px;
       line-height: 1.25;
-      max-width: 120px;
+      max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
