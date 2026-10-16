@@ -189,7 +189,7 @@ describe('CoordinatorCommandComponent', () => {
     component.applyQueue([dispatched, mockRequests[0], mockRequests[1]], false);
     expect(component.selectedRequestId()).toBe('INC-001');
     fixture.detectChanges();
-    const opener = fixture.nativeElement.querySelector('.how-link') as HTMLButtonElement | null;
+    const opener = fixture.nativeElement.querySelector('.how-decided-btn') as HTMLButtonElement | null;
     expect(opener?.textContent).toContain('How it decided');
   });
 
@@ -350,9 +350,9 @@ describe('CoordinatorCommandComponent', () => {
       summary: '5 people needing rescue | at Gandhi School | Vulnerable: child | Hazard: water_rising',
       analysis_status: 'analysing',
     };
-    expect(component.getTranslationText(analysing)).toBe('5 people needing rescue at Gandhi School');
-    expect(component.getTranslationText({ ...analysing, summary: null })).toBe(analysing.raw_text as string);
-    expect(component.getTranslationText({ ...analysing, summary: null, raw_text: 'Vulnerable flags: child (Urgency score: 44.7)' }))
+    expect(component.getTranslationText(analysing)).toBe('Gemini is reading this report…');
+    expect(component.getTranslationText({ ...analysing, summary: null })).toBe('Gemini is reading this report…');
+    expect(component.getTranslationText({ ...analysing, analysis_status: 'complete', summary: null, raw_text: 'Vulnerable flags: child (Urgency score: 44.7)' }))
       .toBe(analysing.place_text as string);
   });
 
@@ -427,13 +427,12 @@ describe('CoordinatorCommandComponent', () => {
     component.selectRequest('INC-001');
     fixture.detectChanges();
     const gemini = fixture.nativeElement.textContent as string;
-    expect(gemini).toContain('AI reading');
     expect(gemini).toContain('Gemini');
     component.selectRequest('INC-002');
     fixture.detectChanges();
     const offline = fixture.nativeElement.textContent as string;
-    expect(offline).toContain('Offline fallback');
-    expect(offline).not.toContain('Gemini');
+    expect(offline).toContain('Gemini unavailable, built-in rules used');
+    expect(offline).not.toContain('Offline fallback');
     rows[0] = {
       ...rows[0],
       ai_source: 'recorded',
@@ -622,13 +621,51 @@ describe('CoordinatorCommandComponent', () => {
     component.searchQuery.set('Gandhi');
     fixture.detectChanges();
     expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-001']);
+    expect(component.counts().total).toBe(1);
     component.searchQuery.set('Canal Road');
     fixture.detectChanges();
     expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-002']);
+    expect(component.counts().total).toBe(1);
+  });
+
+  it('dispatched and completed chips count the same rows the list shows', () => {
+    const dispatched = { ...mockRequests[0], id: 'INC-D', status: 'dispatched' as const, place_text: 'Boat yard', raw_text: 'Boat yard', ai_translation: 'Boat yard' };
+    const completed = { ...mockRequests[1], id: 'INC-C', status: 'completed' as const, place_text: 'School hall', raw_text: 'School hall', ai_translation: 'School hall' };
+    const open = { ...mockRequests[0], id: 'INC-O', status: 'new' as const, place_text: 'Temple road', raw_text: 'Temple road', ai_translation: 'Temple road' };
+    component.applyQueue([dispatched, completed, open], false);
+
+    expect(component.counts().dispatched).toBe(1);
+    expect(component.counts().completed).toBe(1);
+    component.setBandFilter('dispatched');
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-D']);
+    expect(component.filteredRequests().length).toBe(component.counts().dispatched);
+
+    component.searchQuery.set('zzzz-no-such-case');
+    expect(component.counts().dispatched).toBe(0);
+    expect(component.filteredRequests().length).toBe(0);
+
+    component.searchQuery.set('Boat');
+    expect(component.counts().dispatched).toBe(1);
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-D']);
+
+    component.setBandFilter('completed');
+    expect(component.filteredRequests().length).toBe(0);
+    expect(component.counts().completed).toBe(0);
+    component.searchQuery.set('');
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-C']);
+    expect(component.filteredRequests().length).toBe(component.counts().completed);
+
+    component.searchQuery.set('zzzz-no-such-case');
+    component.setBandFilter('dispatched');
+    component.clearFilters();
+    expect(component.searchQuery()).toBe('');
+    expect(component.bandFilter()).toBe('all');
+    expect(component.counts().dispatched).toBe(1);
+    expect(component.filteredRequests().map((row) => row.id)).toEqual(['INC-O']);
   });
 
   it('opens five agents from the selected case and keeps assist behind a review tap', () => {
-    const opener = fixture.nativeElement.querySelector('.how-link') as HTMLButtonElement;
+    const opener = fixture.nativeElement.querySelector('.how-decided-btn') as HTMLButtonElement;
     opener.click();
     fixture.detectChanges();
     const trace = fixture.nativeElement.textContent as string;
@@ -637,7 +674,7 @@ describe('CoordinatorCommandComponent', () => {
     expect(trace).toContain('Rated urgency');
     expect(trace).toContain('Found the closest team');
     expect(trace).toContain('Explained the choice');
-    expect(trace).toContain('Python tool');
+    expect(trace).toContain('Google Maps');
     component.closeTrace();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent as string).not.toContain('Nothing is dispatched until you approve');

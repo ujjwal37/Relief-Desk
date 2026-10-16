@@ -101,6 +101,7 @@ class StoredRequest(BaseModel):
     cluster_id: Optional[str] = None
     merged_into: Optional[str] = None
     flags: List[str] = Field(default_factory=list)
+    hoax_reason: Optional[str] = None
     raw_text: Optional[str] = None
     summary: Optional[str] = None
     ai_translation: Optional[str] = None

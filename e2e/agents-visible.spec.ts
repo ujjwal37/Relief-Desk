@@ -83,8 +83,16 @@ test.describe('agents visible', () => {
       await expect(dialog.getByText('Explainer', { exact: true }).first()).toBeVisible();
       await expect(dialog.locator('.run-badge')).toHaveText(/Rules|Gemini|Recorded/);
       await expect(dialog.getByText('Offline fallback')).toHaveCount(0);
-      await dialog.getByRole('button', { name: /Details|Show details/ }).nth(3).click();
-      await expect(dialog.getByText('check_capacity').or(dialog.getByText('No tools')).first()).toBeVisible();
+      await expect(dialog.getByText('ux.none')).toHaveCount(0);
+      await expect(dialog.getByText('No model ran for this step')).toHaveCount(0);
+      await dialog.getByTestId('step-details-btn').nth(3).click();
+      const step = page.getByTestId('step-details');
+      await expect(step).toBeVisible();
+      await step.getByRole('button', { name: /Show prompt and response/ }).click();
+      await expect(step.getByText('check_capacity').or(step.getByText('Gemini unavailable, built-in rules used')).first()).toBeVisible();
+      await expect(step.getByText('ux.none')).toHaveCount(0);
+      await shot(page, `${viewport.name}-step-popup`);
+      await page.keyboard.press('Escape');
       await shot(page, `${viewport.name}-agent-trace`);
       await noHorizontalOverflow(page);
       await page.keyboard.press('Escape');

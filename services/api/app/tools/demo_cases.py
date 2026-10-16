@@ -78,9 +78,6 @@ def load_demo_cases(storage) -> int:
     from app.models.schemas import FieldConfidences, HazardType, IncidentType, VulnerableFlags
     from app.tools.scoring import scoring_engine
 
-    from app.config import settings
-    from app.llm.client import llm_client
-    from app.models.schemas import AiCall
     from app.agents.pipeline import ensure_trace
 
     try:
@@ -89,9 +86,6 @@ def load_demo_cases(storage) -> int:
         pass
     now = datetime.now(timezone.utc)
     added = 0
-    is_live = llm_client.gemini_live()
-    ai_provider = "gemini" if is_live else "cache"
-    ai_source = "gemini" if is_live else "recorded"
 
     for row in DEMO_CASES:
         if storage.get_request(row["id"]) is not None:
@@ -120,13 +114,17 @@ def load_demo_cases(storage) -> int:
             synthetic=True,
             created_at=stamp,
             updated_at=stamp,
-            ai_source=ai_source,
-            ai=AiCall(provider=ai_provider, model=settings.GEMINI_MODEL, tokens=420, cached=not is_live),
+            ai_source="offline_fallback",
         )
         scored = scoring_engine.compute_urgency(req)
         req.urgency_score = scored.score
         req.urgency_reason = scored.reason
         storage._requests[req.id] = req
-        ensure_trace(req)
         added += 1
+    from app.llm.replay_seed import attach_recorded_ai
+    attach_recorded_ai(storage)
+    for row in DEMO_CASES:
+        req = storage.get_request(row["id"])
+        if req is not None and not req.trace:
+            ensure_trace(req)
     return added

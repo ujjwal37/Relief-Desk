@@ -44,6 +44,23 @@ export interface AiHealthResponse {
   };
 }
 
+export interface LiveDemoState {
+  running: boolean;
+  status: string;
+  received: number;
+  total: number;
+  joined: number;
+  flagged: number;
+  critical: number;
+  queue_position: number;
+  active_id?: string | null;
+  critical_id?: string | null;
+  hoax_id?: string | null;
+  primary_id?: string | null;
+  case_ids?: string[];
+  error?: string | null;
+}
+
 export interface SitrepResponse {
   brief: string;
   counts: {
@@ -108,6 +125,18 @@ export class ApiClientService {
 
   submitSampleReport(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): Observable<ReportSubmitResponse> {
     return this.http.post<ReportSubmitResponse>('/api/demo/sample-report', { kind });
+  }
+
+  startLiveDemo(): Observable<LiveDemoState> {
+    return this.http.post<LiveDemoState>('/api/demo/live-run', {}, this.getAuthHeaders());
+  }
+
+  getLiveDemo(): Observable<LiveDemoState> {
+    return this.http.get<LiveDemoState>('/api/demo/live-run', this.getAuthHeaders());
+  }
+
+  submitOwnReport(text: string): Observable<ReportSubmitResponse> {
+    return this.http.post<ReportSubmitResponse>('/api/demo/own-report', { text }, this.getAuthHeaders());
   }
 
   getScenarios(): Observable<ScenarioConfig[]> {

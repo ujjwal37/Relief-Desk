@@ -37,6 +37,43 @@
     }
   </div>
 
+  @if (!narrow()) {
+    <section class="live-demo" data-testid="live-demo" [attr.aria-label]="'demo.run' | rdTranslate">
+      <div class="live-demo-top">
+        <p class="live-demo-problem">{{ 'demo.problem' | rdTranslate }}</p>
+        <button type="button" class="live-demo-go" data-testid="run-live-demo" (click)="startLiveDemo()" [disabled]="liveDemo()?.running">
+          {{ (liveDemo()?.running ? 'demo.running' : 'demo.run') | rdTranslate }}
+        </button>
+      </div>
+      @if (liveDemo(); as live) {
+        @if (live.status !== 'idle') {
+          <p class="live-demo-progress" data-testid="demo-progress" role="status">
+            {{ 'demo.received' | rdTranslate:{ n: live.received } }}
+            · {{ 'demo.joined' | rdTranslate:{ n: live.joined } }}
+            · {{ 'demo.flagged' | rdTranslate:{ n: live.flagged } }}
+            · {{ 'demo.critical' | rdTranslate:{ n: live.critical } }}
+            @if (live.status === 'waiting' || (live.queue_position || 0) > 0) {
+              · {{ 'demo.waitingGemini' | rdTranslate:{ n: live.queue_position || 0 } }}
+            }
+            @if (live.status === 'done') { · {{ 'demo.done' | rdTranslate }} }
+          </p>
+        }
+      }
+      @if (demoRecorded()) {
+        <p class="live-demo-note">{{ 'demo.recordedNotice' | rdTranslate }}</p>
+      }
+      <div class="live-own">
+        <label for="own-report">{{ 'demo.tryOwn' | rdTranslate }}</label>
+        <textarea id="own-report" data-testid="own-report" rows="2" maxlength="500" [value]="ownText()" (input)="ownText.set($any($event.target).value)" [placeholder]="'demo.tryOwnPlaceholder' | rdTranslate"></textarea>
+        <div class="live-own-row">
+          <button type="button" class="sample-btn" (click)="fillExample()">{{ 'demo.exampleMl' | rdTranslate }}</button>
+          <button type="button" class="live-demo-go" data-testid="send-own" (click)="submitOwn()" [disabled]="ownBusy() || !ownText().trim()">{{ 'demo.sendOwn' | rdTranslate }}</button>
+        </div>
+        @if (ownError()) { <p class="live-demo-note" data-testid="own-error" role="alert">{{ ownError() }}</p> }
+      </div>
+    </section>
+  }
+
   <!-- AI Hero Banner (One line) -->
   <div class="hero-line" data-testid="hero-line">
     <span class="hero-sparkle" aria-hidden="true">✨</span>
@@ -119,6 +156,8 @@
           <button
             type="button"
             class="filter-chip sec-chip"
+            data-testid="filter-dispatched"
+            [attr.data-count]="counts().dispatched"
             [class.on]="bandFilter() === 'dispatched'"
             (click)="setBandFilter('dispatched')"
             [attr.aria-pressed]="bandFilter() === 'dispatched'"
@@ -129,6 +168,8 @@
           <button
             type="button"
             class="filter-chip sec-chip"
+            data-testid="filter-completed"
+            [attr.data-count]="counts().completed"
             [class.on]="bandFilter() === 'completed'"
             (click)="setBandFilter('completed')"
             [attr.aria-pressed]="bandFilter() === 'completed'"
@@ -142,21 +183,7 @@
       <!-- Case List -->
       <div class="list case-list-wrap" role="listbox" [attr.aria-label]="'coord.cases' | rdTranslate">
         @for (req of filteredRequests(); track req.id) {
-          @if (isCompleted(req) && bandFilter() === 'dispatched') {
-            <article class="case-wrap done">
-              <button
-                type="button"
-                role="option"
-                class="case collapsed"
-                [class.sel]="selectedRequestId() === req.id"
-                [attr.aria-selected]="selectedRequestId() === req.id"
-                (click)="selectRequest(req.id, true)"
-              >
-                <span class="title">{{ getTranslationText(req) }}</span>
-                <span class="id">{{ req.id }} · {{ 'coord.filterCompleted' | rdTranslate }}</span>
-              </button>
-            </article>
-          } @else if (isAnalysisFailed(req)) {
+          @if (isAnalysisFailed(req)) {
             <article class="case-wrap failed">
               <p class="title">{{ getTranslationText(req) || ('ux.notRecorded' | rdTranslate) }}</p>
               <app-agent-badge source="fallback" />
@@ -167,6 +194,7 @@
               class="case-wrap"
               [class.sel]="selectedRequestId() === req.id"
               [class.row-flash]="flashIds().has(req.id)"
+              [class.moved-up]="isMovedUp(req)"
               [attr.data-case-id]="req.id"
             >
               <button
@@ -195,6 +223,15 @@
                 <!-- Line 2: Title & Location -->
                 <div class="card-line-mid">
                   <strong class="card-place-title">{{ isAnalysing(req) ? ('flow.readingReport' | rdTranslate) : (req.place_text || getTranslationText(req)) }}</strong>
+                  @if (selectedRequestId() === req.id && !isAnalysing(req)) {
+                    <span class="ai-line">{{ 'xfactor.aiEnglish' | rdTranslate }}: {{ getTranslationText(req) }}</span>
+                  }
+                  @if (isMovedUp(req)) {
+                    <span class="moved-tag">{{ 'card.movedUp' | rdTranslate }}</span>
+                  }
+                  @if (isHoax(req)) {
+                    <span class="hoax-chip" data-testid="hoax-chip">{{ hoaxLine(req) }}</span>
+                  }
                   <span class="sr-only">{{ getTranslationText(req) }}</span>
                 </div>
 
@@ -205,7 +242,7 @@
                   </span>
                   <div class="card-meta-chips">
                     @if ((req.merged_count || 1) > 1) {
-                      <span class="merged-count-tag">+{{ (req.merged_count || 1) - 1 }}</span>
+                      <span class="merged-count-tag">+{{ (req.merged_count || 1) - 1 }} {{ 'alerts.reports' | rdTranslate }}</span>
                     }
                     @if (isReview(req)) {
                       <span class="ai-review-tag" [attr.title]="'filter.aiReview' | rdTranslate">✨</span>
@@ -231,7 +268,7 @@
             </div>
           }
         } @empty {
-          <p class="empty">
+          <p class="empty" data-testid="filter-empty">
             {{ 'coord.noFilterMatch' | rdTranslate }}
             <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button>
           </p>
@@ -304,7 +341,7 @@
       <app-ai-stepper
         [request]="selectedRequest()"
         [activeProposal]="activeProposal()"
-        [runBadge]="(selectedRequest() ? aiSourceText(selectedRequest()!) : '') || ('badge.rules' | rdTranslate)"
+        [runBadge]="selectedRequest() ? aiSourceText(selectedRequest()!) : ('coord.aiOffline' | rdTranslate)"
         [isAnalysing]="selectedRequest() ? isAnalysing(selectedRequest()!) : false"
         (openStepDetail)="openStepDetailDialog($event)"
         (howDecided)="openTraceDrawer()"
@@ -516,6 +553,12 @@
             </div>
           }
 
+          @if (isHoax(req) && !isCompleted(req) && !isDispatched(req)) {
+            <label class="hoax-override">
+              <input type="checkbox" [checked]="hoaxOverride()" (change)="hoaxOverride.set($any($event.target).checked)" />
+              {{ 'coord.reviewHoax' | rdTranslate }}
+            </label>
+          }
           @if (isCompleted(req)) {
             <p class="completed-banner-note">{{ 'coord.completedNote' | rdTranslate }}</p>
           } @else if (isDispatched(req)) {
@@ -554,7 +597,7 @@
               <button
                 type="button"
                 class="btn-approve"
-                [disabled]="needsDupReview(req) || offline() || approving()"
+                [disabled]="needsDupReview(req) || offline() || approving() || hoaxBlocked(req)"
                 (click)="approveMatch(prop)"
               >
                 ✓ {{ 'coord.approve' | rdTranslate }}

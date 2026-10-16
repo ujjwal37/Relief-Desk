@@ -179,6 +179,7 @@ export interface StoredRequest {
   cluster_id?: string | null;
   merged_into?: string | null;
   flags?: string[];
+  hoax_reason?: string | null;
   raw_text?: string | null;
   /** The confirmed card summary. A case title falls back to it while the model works. */
   summary?: string | null;
@@ -215,6 +216,9 @@ export interface StoredRequest {
     latency_ms?: number;
     tokens?: number | null;
     tool_calls?: string[];
+    prompt?: string;
+    raw_output?: string;
+    recorded_at?: string;
     ts?: string;
   }>;
   update_count?: number;

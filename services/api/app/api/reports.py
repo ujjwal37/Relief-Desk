@@ -3,7 +3,7 @@ import threading
 import time
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from app.agents.chat_intake import chat_intake_agent, ChatTurnResponse, ConfirmationCardData
 from app.agents.intake import extract_with_rules, intake_agent
@@ -19,7 +19,7 @@ from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.tools.request_contract import canonical_request_dict
 from app.tools.nlu_rules import extract_place, people_bounds, vulnerable_flags
 from app.agents.dedupe import confidence_phrase
-from app.tools.trust import detect_hoax_or_flood
+from app.tools.trust import detect_hoax_or_flood, hoax_reason_for
 from app.tools.gazetteer import gazetteer
 from app.llm.client import llm_client
 
@@ -179,6 +179,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         if citizen_text:
             report_text = citizen_text
 
+    hoax_reason = None if demo_sample else hoax_reason_for(citizen_text or report_text)
     if not demo_sample:
         for flag in detect_hoax_or_flood(
             storage_service.list_reports(),
@@ -187,6 +188,10 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         ):
             if flag not in flags:
                 flags.append(flag)
+        if hoax_reason:
+            for flag in ("hoax", "likely_hoax"):
+                if flag not in flags:
+                    flags.append(flag)
 
     # Rule-based type, place, and people. The status page can show tips before any model call.
     extracted = extract_with_rules(report_text)
@@ -212,6 +217,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         hazard=extracted.hazard,
         status=RequestStatus.NEW,
         flags=list(flags),
+        hoax_reason=hoax_reason,
         raw_text=citizen_text or report_text,
         summary=machine_summary,
         analysis_status="analysing",
@@ -231,6 +237,13 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     finished: Dict[str, ReportSubmitResponse] = {}
 
     def job() -> None:
+        from app.llm.pacer import forbid_replay, set_pace
+        source = payload.source_id or ""
+        pace = source == "judge_input" or source.startswith("live_demo_")
+        if pace:
+            set_pace(True)
+        if source == "judge_input":
+            forbid_replay(True)
         try:
             finished["response"] = _enrich_report(
                 payload, req_id, raw_report.id, report_text, citizen_text, flags, transcript, asr_confidence,
@@ -240,6 +253,11 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
             logger.exception("Background intake failed for %s", req_id)
             _mark_failed(req_id)
             finished["response"] = provisional
+        finally:
+            if pace:
+                set_pace(False)
+            if source == "judge_input":
+                forbid_replay(False)
 
     # Tests run this inline, so the body they read is the finished case.
     # Production returns the provisional ids and lets the thread emit case.updated.
@@ -250,9 +268,18 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
 
 
 @router.post("/reports", response_model=ReportSubmitResponse)
-def submit_report(payload: ReportSubmitRequest):
+def submit_report(payload: ReportSubmitRequest, request: Request = None):
+    if (payload.source_id or "") == "judge_input":
+        from app.llm.pacer import LIMIT_MESSAGE, judge_limit
+        ip = "local"
+        if request is not None and request.client is not None:
+            ip = request.client.host or "local"
+        if not judge_limit.allow(ip) or not llm_client.gemini_live():
+            raise HTTPException(status_code=429, detail=LIMIT_MESSAGE)
     try:
         return _submit_report_impl(payload)
+    except HTTPException:
+        raise
     except Exception:
         storage_service.release_idempotent(payload.idempotency_key)
         raise
@@ -334,15 +361,12 @@ def _response_for(
     transcript: Optional[str],
     asr_confidence: Optional[float],
 ) -> ReportSubmitResponse:
+    reading = req_obj.analysis_status == "analysing" and not (req_obj.ai_translation or "").strip()
     return ReportSubmitResponse(
         report_id=raw_report.id,
         request_id=req_obj.id,
         status_token=raw_report.status_token or "",
-        summary=(
-            req_obj.summary
-            or f"{req_obj.people_count} person(s) needing {req_obj.type.value}"
-            + (f" at {req_obj.place_text}" if req_obj.place_text else "")
-        ),
+        summary="" if reading else (req_obj.ai_translation or req_obj.summary or ""),
         urgency_score=req_obj.urgency_score,
         dedupe_decision=decision,
         flags=list(flags),
@@ -370,6 +394,14 @@ def _enrich_report(
     and refines the case. Each save emits case.updated or case.merged.
     """
     from app.agents.pipeline import finish
+    from app.llm.pacer import forbid_replay, set_pace
+
+    source = payload.source_id or ""
+    pace = source == "judge_input" or source.startswith("live_demo_")
+    if pace:
+        set_pace(True)
+    if source == "judge_input":
+        forbid_replay(True)
 
     req_obj = storage_service.get_request(req_id)
     raw_report = storage_service.get_report(report_id)
@@ -479,10 +511,19 @@ def _refine_with_model(
             analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
         ai_usage = llm_client.last_ai.model_copy()
     trans_res = _translation_for(report_text, analysis, ai_usage)
+    if (payload.source_id or "") == "judge_input" and ai_usage.provider == "cache":
+        ai_usage.provider = "fallback"
+        ai_usage.cached = False
+        ai_usage.fallback_reason = "judge_no_replay"
     ai_source = {"gemini": "gemini", "cache": "recorded", "antigravity-local": "antigravity-local",
                  "openai_compat": "openai_compat"}.get(
         ai_usage.provider, "offline_fallback"
     )
+    model_reason = (getattr(analysis, "hoax_reason", None) or "").strip()
+    if getattr(analysis, "likely_hoax", False) or model_reason:
+        for flag in ("hoax", "likely_hoax"):
+            if flag not in flags:
+                flags.append(flag)
     machine_summary = _apply_card(analysis, payload, report_text)
     if trans_res.is_low_confidence and "low_translation_confidence" not in flags:
         flags.append("low_translation_confidence")
@@ -515,6 +556,8 @@ def _refine_with_model(
         req_obj.vulnerable = analysis.vulnerable
     req_obj.hazard = analysis.hazard
     req_obj.flags = sorted(set(req_obj.flags) | set(flags))
+    if model_reason and not req_obj.hoax_reason:
+        req_obj.hoax_reason = model_reason[:300]
     req_obj.summary = machine_summary or req_obj.summary
     if not (req_obj.raw_text or "").strip():
         req_obj.raw_text = (getattr(analysis, "original_text", None) or analysis.notes or getattr(analysis, "text_en", None) or "").strip() or req_obj.raw_text

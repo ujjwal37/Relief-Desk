@@ -51,7 +51,7 @@ describe('TraceStepComponent', () => {
     fixture.componentRef.setInput('step', { ...STEP, tools: [], provider: 'tool', badge: 'tool', model: null, latencyMs: null, output: null, input: null, asked: null, raw: null });
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Python tool');
+    expect(text).toContain('Google Maps');
     expect(text).not.toContain('No tools');
     expect(text).not.toContain('Not recorded');
   });

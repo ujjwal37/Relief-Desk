@@ -30,7 +30,9 @@
       <div class="sent" role="status">✓ {{ 'status.new' | rdTranslate }} <small>{{ 'status.saved' | rdTranslate }}</small></div>
     }
     @if (data.analysis_status === 'analysing') {
-      <p class="ai" data-testid="ai-analysing" role="status">{{ 'ux.aiAnalysing' | rdTranslate }}</p>
+      <p class="ai" data-testid="ai-analysing" role="status">{{ 'flow.readingReport' | rdTranslate }}</p>
+    } @else {
+      <p class="ai" data-testid="queued-confirm" role="status">{{ 'status.inQueue' | rdTranslate }}</p>
     }
 
     <section class="idcard" aria-label="{{ 'status.requestId' | rdTranslate }}">

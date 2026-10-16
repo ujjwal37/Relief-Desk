@@ -22,7 +22,7 @@
       </div>
 
       <div class="right">
-        <span class="ai-pill" data-testid="ai-health" [class.live]="aiHealth()?.label === 'Gemini live'" [class.off]="aiHealth()?.label !== 'Gemini live'" [attr.title]="aiHealth()?.model || ''">{{ aiHealth()?.label || ('xfactor.rulesFallback' | rdTranslate) }}</span>
+        <span class="ai-pill" data-testid="ai-health" [class.live]="aiHealth()?.provider === 'gemini'" [class.off]="aiHealth()?.provider !== 'gemini'" [attr.title]="aiHealth()?.model || ''">{{ aiPillText() }}@if (geminiCalls() != null) { <span class="ai-calls" data-testid="gemini-calls">{{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }</span>
         <div class="menu-wrap">
           <button type="button" class="avatar more-btn" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate">{{ 'coord.more' | rdTranslate }} ▾</button>
           @if (menuOpen()) {

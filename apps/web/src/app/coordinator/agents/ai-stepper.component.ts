@@ -391,7 +391,8 @@ export class AiStepperComponent {
     const prop = this.activeProposal();
     if (!prop) return '—';
     const kind = prop.resource_kind === 'boat' ? 'Boat' : 'Team';
-    const km = prop.breakdown?.distance_km ?? 0;
+    const km = prop.breakdown?.distance_km;
+    if (km == null || Number.isNaN(Number(km))) return kind;
     return `${kind} · ${km} km`;
   });
 

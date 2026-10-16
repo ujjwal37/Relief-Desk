@@ -19,7 +19,7 @@ def test_health_ai_is_rules_fallback_without_a_successful_call(monkeypatch):
     llm_client.guard.last_success_at = 0.0
     llm_client.guard.last_success_iso = None
     body = client.get("/api/health/ai").json()
-    assert body["label"] == "Rules fallback"
+    assert body["label"] == "Gemini unavailable, built-in rules used"
     assert body["last_success_at"] is None
     assert "key" not in body
 

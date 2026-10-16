@@ -47,7 +47,7 @@
           <span class="chev" aria-hidden="true">{{ openId() === team.id ? '▾' : '▸' }}</span>
         </button>
         @if (openId() === team.id) {
-          <div class="detail">
+          <div class="detail" data-testid="team-detail">
             <h3>{{ 'coord.teamSize' | rdTranslate }}</h3>
             <p>{{ seats(team) }}</p>
             <p>{{ canDo(team) }}</p>

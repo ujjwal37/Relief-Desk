@@ -33,7 +33,7 @@ def ai_health():
     ):
         provider, model, label = "gemini", settings.GEMINI_MODEL, "Gemini live"
     else:
-        provider, model, label = "fallback", settings.GEMINI_MODEL, "Rules fallback"
+        provider, model, label = "fallback", settings.GEMINI_MODEL, "Gemini unavailable, built-in rules used"
     return {
         "provider": provider,
         "model": model,

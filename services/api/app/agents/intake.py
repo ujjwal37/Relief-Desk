@@ -43,6 +43,8 @@ EXAMPLES (input -> "type", "secondary_needs"):
 - "ഞങ്ങൾ വീടിന്റെ മുകളിൽ കുടുങ്ങി, വെള്ളം ഉയരുന്നു, ബോട്ട് വേണം" -> "rescue", []
 - "ക്യാമ്പ് നിറഞ്ഞു, ഇനി ആളുകളെ എടുക്കില്ല" -> "info", []
 
+Set "likely_hoax" true only for spam, a chain message, or a claim of free rescue that asks people to forward it. Then put one sentence in "hoax_reason". Otherwise likely_hoax is false and hoax_reason is null.
+
 Output ONLY a single valid JSON object strictly matching this schema:
 {
   "type": "rescue" | "food" | "medical" | "shelter" | "info" | "animal_attack" | "other",
@@ -77,7 +79,9 @@ Output ONLY a single valid JSON object strictly matching this schema:
   "notes": "string",
   "text_en": "the whole report in plain English; copy it when it is already English",
   "text_hi": "the whole report in Hindi, Devanagari script",
-  "translation_confidence": float between 0.0 and 1.0
+  "translation_confidence": float between 0.0 and 1.0,
+  "likely_hoax": false,
+  "hoax_reason": "one short sentence if the report is spam or a chain message, otherwise null"
 }
 
 Do not include any Markdown fences (like ```json) or explanation outside the JSON.
@@ -96,6 +100,8 @@ class ReportAnalysis(ExtractedRequest):
     text_en: Optional[str] = Field(default=None, max_length=4000)
     text_hi: Optional[str] = Field(default=None, max_length=4000)
     translation_confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    likely_hoax: bool = False
+    hoax_reason: Optional[str] = Field(default=None, max_length=300)
 
 
 def intake_user_prompt(raw_text: str, language_hint: Optional[str] = None) -> str:

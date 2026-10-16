@@ -32,14 +32,17 @@
         <h2 id="judge-h">{{ 'auth.judgeTitle' | rdTranslate }}</h2>
         <p>{{ 'auth.judgeSub' | rdTranslate }}</p>
         <button type="button" class="demo-btn" (click)="enterDemo()" [disabled]="isSubmitting()" autofocus>{{ 'auth.enterDemo' | rdTranslate }}</button>
+        @if (demoFailed()) {
+          <div class="error-banner" role="alert" data-testid="demo-login-error">{{ 'auth.demoDisabled' | rdTranslate }}</div>
+        }
         <p class="note">{{ 'auth.syntheticNote' | rdTranslate }}</p>
       </section>
 
       <p class="or"><span>{{ 'auth.orAccount' | rdTranslate }}</span></p>
       }
 
-      @if (failed()) {
-        <div class="error-banner" role="alert">{{ (demoFailed() ? 'auth.demoDisabled' : 'auth.wrong') | rdTranslate }}</div>
+      @if (failed() && !demoFailed()) {
+        <div class="error-banner" role="alert">{{ 'auth.wrong' | rdTranslate }}</div>
       }
 
       <form (submit)="$event.preventDefault(); onLogin()" novalidate>

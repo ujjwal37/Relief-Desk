@@ -324,6 +324,16 @@ button {
     border-color: var(--brand, #10b981);
     background: color-mix(in srgb, var(--brand, #10b981) 10%, var(--surface-2, #122119));
     box-shadow: 0 0 0 1px var(--brand, #10b981);
+
+    .card-place-title {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+    }
+  }
+
+  &.moved-up {
+    box-shadow: 0 0 0 1px var(--sev-crit, #f87171);
   }
 
   &:not(.sel):hover {
@@ -394,6 +404,15 @@ button {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    .ai-line, .hoax-chip, .moved-tag {
+      display: block;
+      margin-top: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: normal;
+      overflow: visible;
+      line-height: 1.35;
     }
   }
 
@@ -589,9 +608,8 @@ app-ai-stepper {
     font-weight: 700;
     color: var(--text, #fff);
     flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    overflow: visible;
   }
 
   .dec-band-tag {
@@ -1249,7 +1267,80 @@ app-ai-stepper {
 }
 
 /* Responsive */
+.live-demo {
+  flex: none;
+  margin: 6px 16px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #1a2f24);
+  background: var(--surface, #12211a);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.live-demo-top, .live-own-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.live-demo-problem, .live-demo-progress, .live-demo-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text, #e8f0ec);
+}
+
+.live-demo-go {
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--brand, #10b981);
+  color: var(--on-brand, #062b1a);
+}
+
+.live-demo-go:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.live-own {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.live-own label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.live-own textarea {
+  width: 100%;
+  resize: vertical;
+  border-radius: 6px;
+  border: 1px solid var(--border, #22382c);
+  background: var(--surface-2, #14241d);
+  color: var(--text, #e8f0ec);
+  padding: 8px;
+  font: inherit;
+}
+
+.hoax-override {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
 @media (max-width: 900px) {
+  .live-demo { display: none; }
+
   :host {
     height: auto;
     overflow: visible;

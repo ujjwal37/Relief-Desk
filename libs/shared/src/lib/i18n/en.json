@@ -240,7 +240,25 @@
     "surgeFailed": "Surge finished with errors; {n} reports submitted.",
     "surgeUnavailable": "Surge unavailable or already running. Try again shortly.",
     "scenarioFailed": "Scenario could not be loaded.",
-    "mergeNotice": "Reports joined into {id}. Review the updated count and evidence."
+    "mergeNotice": "Reports joined into {id}. Review the updated count and evidence.",
+    "run": "Run live demo (8 reports)",
+    "problem": "Flood reports in. AI ranks. You decide.",
+    "running": "Running the live demo…",
+    "received": "Received {n}/8",
+    "joined": "Joined {n}",
+    "flagged": "Flagged {n}",
+    "critical": "Critical {n}",
+    "waitingGemini": "Waiting for Gemini · queue {n}",
+    "done": "Live demo finished",
+    "recordedNotice": "Recorded (Gemini) replay of an earlier run.",
+    "samplesLabel": "Eight sample reports",
+    "tryOwn": "Try your own report",
+    "tryOwnPlaceholder": "Type a flood report in any language",
+    "tryOwnLimit": "Gemini is at its free limit right now; try again in a minute.",
+    "brief": "Short brief from the live counts",
+    "geminiCalls": "Gemini calls {n}",
+    "exampleMl": "Example in Malayalam",
+    "sendOwn": "Send"
   },
   "settings": {
     "title": "Settings",
@@ -487,7 +505,8 @@
     "referralStock": "Human-entered referral stock requirement",
     "mapClear": "Clear selection",
     "verify": "Verify",
-    "verifyHint": "The report is unclear. Priority was kept, not lowered. Please confirm the details."
+    "verifyHint": "The report is unclear. Priority was kept, not lowered. Please confirm the details.",
+    "reviewHoax": "I reviewed this flag"
   },
   "tour": {
     "next": "Next",
@@ -558,7 +577,8 @@
     "saved": "Saved on this phone so you can come back to it.",
     "share": "Share link",
     "copied": "Copied",
-    "copyLink": "Copy link"
+    "copyLink": "Copy link",
+    "inQueue": "Your report is in the coordinator queue."
   },
   "nearby": {
     "title2": "Nearby alerts",
@@ -777,7 +797,7 @@
     "tools": "Tools",
     "badgeGemini": "Gemini",
     "badgeRules": "Rules",
-    "badgeOffline": "Offline fallback",
+    "badgeOffline": "Gemini unavailable, built-in rules used",
     "badgeLocal": "Local test model (Antigravity)",
     "badgeTest": "Test model ({name})",
     "resetDemo": "Reset demo",
@@ -891,7 +911,7 @@
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} free seat(s).",
     "sentExplain": "Wrote the one-line reason you see on the panel.",
-    "fallbackBanner": "{n} AI steps used the offline fallback. Open Details for the recorded reason. Python scoring and matching remain available.",
+    "fallbackBanner": "{n} steps used built-in rules. Open Details for the reason. Distance and team matching stay available.",
     "loading": "Working… step {k} of {n} · {t} s",
     "failed": "Couldn't finish the AI steps. The team match is missing, so there is no suggestion. You can retry or choose a team yourself.",
     "noTrace": "No AI record for this case",
@@ -967,7 +987,7 @@
     "photoReading": "Gemini is reading the photo...",
     "askPending": "How many pending cases?",
     "geminiLive": "Gemini live",
-    "rulesFallback": "Rules fallback",
+    "rulesFallback": "Gemini unavailable, built-in rules used",
     "cached": "Cached",
     "sitrepTitle": "Situation report",
     "sitrepBusy": "Writing from live counts…",
@@ -1075,7 +1095,17 @@
     "next": "Next",
     "result": {
       "noDup": "No duplicate"
-    }
+    },
+    "headlineIntake": "{type} for {people} people at {place}.",
+    "headlineJoined": "{n} more reports joined this case.",
+    "headlineUrgency": "Urgency {score}. {reason}",
+    "headlineMatch": "{team} is {km} km away.",
+    "matchNoKm": "{team} is the closest free team.",
+    "noTeam": "No free team is close enough.",
+    "whyMatch": "{team} is the nearest free team that can take them, {km} km away.",
+    "why": "Why",
+    "showPrompt": "Show prompt and response",
+    "hidePrompt": "Hide prompt and response"
   },
   "panel": {
     "moreDetails": "More details"
@@ -1083,7 +1113,14 @@
   "badge": {
     "rules": "Rules",
     "gemini": "Gemini",
-    "testModel": "Test model"
+    "testModel": "Test model",
+    "recorded": "Recorded (Gemini)"
   },
-  "ward": "Ward {n}"
+  "ward": "Ward {n}",
+  "chip": {
+    "likelyHoax": "Likely hoax: {reason}"
+  },
+  "card": {
+    "movedUp": "Moved up"
+  }
 }

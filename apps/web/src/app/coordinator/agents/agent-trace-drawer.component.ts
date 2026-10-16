@@ -87,7 +87,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   readonly headerWord = computed(() => {
     this.lang.currentLang();
     const req = this.request();
-    if (this.simulateOutage()) return this.lang.translate('flow.badgeRules');
+    if (this.simulateOutage()) return this.lang.translate('coord.aiOffline');
     if (req.ai?.provider === 'cache') return this.lang.translate('flow.badgeCache');
     const intake = (req.trace || []).find((row) => row.agent === 'Intake');
     if (testProviderWord(req.ai?.provider || req.ai_source, intake?.vendor, (key) => this.lang.translate(key))) {
@@ -108,7 +108,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     if (src === 'gemini' || src === 'llm') {
       return this.lang.translate('flow.badgeGemini');
     }
-    return this.lang.translate('flow.badgeRules');
+    return this.lang.translate('coord.aiOffline');
   });
 
   readonly headline = computed(() => {
@@ -169,13 +169,14 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
       return `${this.lang.translate('badge.gemini')}${sec}`;
     }
     if (step.badge === 'cache') {
-      return `${this.lang.translate('flow.badgeCache')} · 16 Oct`;
+      const date = step.recordedAt ? ` · ${step.recordedAt}` : '';
+      return `${this.lang.translate('badge.recorded')}${date}`;
     }
     if (step.badge === 'test') return this.lang.translate('badge.testModel');
-    if (step.status === 'fallback' || step.provider === 'fallback') {
+    if (step.status === 'fallback' || step.provider === 'fallback' || step.badge === 'rules') {
       return this.lang.translate('coord.aiOffline');
     }
-    return this.lang.translate('badge.rules');
+    return this.lang.translate('coord.aiOffline');
   }
 
   openStepDetail(index: number): void {
@@ -189,13 +190,13 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
         stepNameKey: this.nameKey(step.agent),
         badge: (index === 3 || step.agent === 'Matching') ? 'tool' : (step.status === 'fallback' || step.provider === 'fallback' ? 'fallback' : step.badge),
         providerLabel: (index === 3 || step.agent === 'Matching') ? 'Google Maps' : undefined,
-        recordedAt: '16 Oct',
+        recordedAt: step.recordedAt || undefined,
         inputSummary: step.input || undefined,
         prompt: step.asked || undefined,
         tools: step.tools,
         rawOutput: step.raw || undefined,
-        model: step.model || (step.badge === 'gemini' || step.badge === 'cache' ? 'gemini-2.5-flash' : undefined),
-        latencyMs: step.latencyMs || (step.badge === 'gemini' ? 1200 : undefined),
+        model: step.model || undefined,
+        latencyMs: step.latencyMs || undefined,
         fallbackReason: step.note || undefined,
         onNavigate: (newIdx: number) => {
           this.dialog.closeAll();
@@ -222,6 +223,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEsc(): void {
+    if (this.dialog.openDialogs.length) return;
     this.closed.emit();
   }
 
@@ -295,6 +297,9 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
       asked: prompt,
       raw: output,
       note,
+      recordedAt: String(raw?.provider || '').toLowerCase() === 'cache'
+        ? (String((raw as { recorded_at?: string } | undefined)?.recorded_at || '').slice(0, 10) || null)
+        : null,
       sentence: this.sentence(agent, raw),
       linkId: agent === 'Dedupe' ? this.dupId(raw) : null,
       badge,
@@ -337,14 +342,18 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
       return reason || band;
     }
     if (agent === 'Matching') {
-      let team = String(parsed['team'] || parsed['resource_name'] || req.assigned_resource_id || '');
-      if (!team || team.includes('boat free')) {
-        team = 'Boat Alpha';
-      }
-      const km = String(parsed['km'] || parsed['distance_km'] || req.possible_duplicate?.distance_km || '2.1');
+      const team = String(parsed['team'] || parsed['resource_name'] || '');
+      const km = parsed['km'] ?? parsed['distance_km'];
       const capab = String(parsed['capability'] || parsed['kind'] || req.type || t('coord.queueNeedBoat'));
-      const seats = String(parsed['seats'] || parsed['capacity'] || '6');
-      return cap(t('flow.sentMatch').replace('{team}', team).replace('{km}', km).replace('{capability}', capab).replace('{seats}', seats));
+      const seats = parsed['seats'] ?? parsed['capacity'];
+      if (team && km != null && km !== '' && !team.includes('boat free')) {
+        const seatText = seats == null || seats === '' ? '' : String(seats);
+        return cap(t('flow.sentMatch').replace('{team}', team).replace('{km}', String(km)).replace('{capability}', capab).replace('{seats}', seatText));
+      }
+      if (team && !team.includes('boat free')) return cap(t('step.matchNoKm').replace('{team}', team));
+      const plain = outputText(raw?.output);
+      if (plain && !plain.includes('—') && !plain.trim().startsWith('{')) return cap(plain);
+      return cap(t('step.noTeam'));
     }
     return outputText(raw?.output) || cap(t('flow.sentExplain'));
   }

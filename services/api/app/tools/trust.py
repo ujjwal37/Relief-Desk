@@ -54,10 +54,22 @@ VIRAL_HOAX_PHRASES = (
 )
 
 
+def hoax_phrases(text: str) -> List[str]:
+    clean = " ".join((text or "").lower().split())
+    return [phrase for phrase in VIRAL_HOAX_PHRASES if phrase in clean]
+
+
+def hoax_reason_for(text: str) -> Optional[str]:
+    """One plain sentence a coordinator can read. Empty when nothing matched."""
+    hits = hoax_phrases(text)
+    if not hits:
+        return None
+    return f"Known spam phrase: {hits[0]}"
+
+
 def hoax_score_for(text: str) -> float:
     """0 when the text has no known spam phrase, else at least 0.9."""
-    clean = " ".join((text or "").lower().split())
-    hits = sum(1 for phrase in VIRAL_HOAX_PHRASES if phrase in clean)
+    hits = len(hoax_phrases(text))
     if hits <= 0:
         return 0.0
     return min(1.0, 0.7 + 0.1 * hits)

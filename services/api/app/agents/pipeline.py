@@ -241,15 +241,48 @@ def _trace_step(
     }
 
 
+def _km_between(req: StoredRequest, best) -> Optional[float]:
+    """Distance already measured on the proposal, or a fresh haversine from the stored pins."""
+    measured = None
+    if best is not None and getattr(best, "breakdown", None) is not None:
+        measured = best.breakdown.distance_km
+    if measured is not None:
+        return round(float(measured), 2)
+    if best is None or req.lat is None or req.lng is None:
+        return None
+    resource = storage_service.get_resource(best.resource_id)
+    if resource is None or resource.lat is None or resource.lng is None:
+        return None
+    from app.tools.geo import haversine_distance
+    return round(haversine_distance(float(req.lat), float(req.lng), float(resource.lat), float(resource.lng)), 2)
+
+
+def _matching_payload(req: StoredRequest, best, kind: str) -> str:
+    km = _km_between(req, best)
+    return json.dumps({
+        "team": best.resource_name if best else "No suitable team available",
+        "km": km,
+        "kind": best.resource_kind.value if best else kind,
+        "match_score": best.score if best else None,
+        "seats": best.capacity_remaining if best else 0,
+    })
+
+
 def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
     """The Intake row reports the model call that actually happened, in English for the coordinator."""
     ai = req.ai
     provider = (ai.provider if ai else None) or ("gemini" if req.ai_source == "gemini" else "fallback")
-    ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local", "openai_compat") else (settings.GEMINI_MODEL if provider in ("gemini", "cache") else None)
+    if provider not in ("gemini", "cache", "antigravity-local", "openai_compat"):
+        provider = "fallback"
+    ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local", "openai_compat") else None
     english = (req.translations or {}).get("en") or req.ai_translation or req.summary or summary or req.type.value
     from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_user_prompt
-    intake_prompt = f"{SYSTEM_INTAKE_PROMPT}\n\n{intake_user_prompt(req.raw_text or summary)}"
+    from app.llm.client import llm_client
+    user_prompt = intake_user_prompt(req.raw_text or summary)
+    remembered = llm_client.sent_prompt(llm_client.cache_key(SYSTEM_INTAKE_PROMPT, user_prompt))
+    intake_prompt = remembered or f"{SYSTEM_INTAKE_PROMPT}\n\n{user_prompt}"
     raw_out = req.ai_translation or req.summary or english
+    latency = ai.latency_ms if (ai and ai.latency_ms) else None
     row = _trace_step(
         "Intake",
         "complete",
@@ -259,12 +292,14 @@ def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
         started,
         provider=provider,
         model=ran_model,
-        latency_ms=ai.latency_ms if (ai and ai.latency_ms) else (1420 if provider in ("gemini", "cache") else 0),
+        latency_ms=latency,
         tokens=ai.tokens if ai else None,
         prompt=intake_prompt,
         raw_output=raw_out,
     )
     row["fallback_reason"] = ai.fallback_reason if ai else None
+    if provider == "cache" and req.created_at:
+        row["recorded_at"] = req.created_at[:10]
     return row
 
 
@@ -300,6 +335,7 @@ def mark_analysing(request_id: str, channel: str = "text") -> None:
             "",
             [],
             now,
+            provider="tool" if agent == "Matching" else "fallback",
         )
         for agent in _TRACE_AGENTS
     ]
@@ -388,13 +424,7 @@ def finish(request_id: str) -> None:
     matching_started = time.perf_counter()
     proposals = matching_agent.find_matches(req, top_n=1, save_to_storage=False)
     best = proposals[0] if proposals else None
-    matching_output = json.dumps({
-        "team": best.resource_name if best else "No suitable team available",
-        "km": best.breakdown.distance_km if best else None,
-        "kind": best.resource_kind.value if best else kind,
-        "match_score": best.score if best else None,
-        "seats": best.capacity_remaining if best else 0,
-    })
+    matching_output = _matching_payload(req, best, kind)
     matching_ms = int((time.perf_counter() - matching_started) * 1000)
     emit_pipeline_step(
         request_id,
@@ -470,8 +500,38 @@ def _dedupe_output(req: StoredRequest) -> str:
     return base
 
 
+def _fill_known_trace_fields(req: StoredRequest) -> None:
+    """Put the real prompt and tool names on a trace that stored a model reply without them."""
+    if not req.trace:
+        return
+    from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_user_prompt
+    from app.llm.client import llm_client
+
+    user_prompt = intake_user_prompt(req.raw_text or req.summary or "")
+    intake_prompt = llm_client.sent_prompt(llm_client.cache_key(SYSTEM_INTAKE_PROMPT, user_prompt)) or f"{SYSTEM_INTAKE_PROMPT}\n\n{user_prompt}"
+    for row in req.trace:
+        if not isinstance(row, dict):
+            continue
+        agent = row.get("agent")
+        provider = str(row.get("provider") or "")
+        ran_model = bool(row.get("model")) or provider in ("gemini", "cache", "openai_compat", "antigravity-local")
+        if agent == "Matching":
+            if not row.get("tool_calls"):
+                row["tool_calls"] = ["check_capacity", "match_score"]
+            if not row.get("prompt"):
+                row["prompt"] = "Deterministic Haversine distance and capacity match via Google Maps coordinates"
+            if not row.get("provider_label"):
+                row["provider_label"] = "Google Maps"
+        elif agent == "Triage" and not row.get("tool_calls"):
+            row["tool_calls"] = ["score_urgency"]
+        if row.get("prompt") or agent != "Intake" or not ran_model:
+            continue
+        row["prompt"] = intake_prompt
+
+
 def ensure_trace(req: StoredRequest) -> None:
     """Fill a missing trace from the scoring and capacity tools. Does not change the score."""
+    _fill_known_trace_fields(req)
     if req.trace or req.analysis_status == "analysing":
         return
     summary = (req.raw_text or req.place_text or "")[:180]
@@ -487,17 +547,13 @@ def ensure_trace(req: StoredRequest) -> None:
     from app.agents.matching import matching_agent
     proposals = matching_agent.find_matches(req, top_n=1, save_to_storage=False)
     best = proposals[0] if proposals else None
-    dist_km = best.breakdown.distance_km if (best and best.breakdown.distance_km is not None) else 2.5
-    matching_output = json.dumps({
-        "team": best.resource_name if best else "No suitable team available",
-        "km": dist_km,
-        "kind": best.resource_kind.value if best else kind,
-        "match_score": best.score if best else None,
-        "seats": best.capacity_remaining if best else 0,
-    })
+    dist_km = _km_between(req, best)
+    matching_output = _matching_payload(req, best, kind)
 
-    if best:
+    if best and dist_km is not None:
         explanation = f"{best.resource_name} is {dist_km} km away with {best.capacity_remaining} free seats. Total match score is {best.score} based on proximity and urgency."
+    elif best:
+        explanation = f"{best.resource_name} has {best.capacity_remaining} free seats. Total match score is {best.score}."
     else:
         explanation = strip_advice(
             f"The urgency score is {scored.score}. "
@@ -519,25 +575,23 @@ def ensure_trace(req: StoredRequest) -> None:
     matching_prompt = "Deterministic Haversine distance and capacity match via Google Maps coordinates"
     explain_prompt = f"{REVIEW_PROMPT}\n\n{review_prompt('Explainer', explain_context)}"
 
-    is_live = llm_client.gemini_live()
-    ai_prov = req.ai.provider if (req.ai and req.ai.provider in ("gemini", "cache")) else ("gemini" if is_live else "cache")
-    ai_model = (req.ai.model if req.ai else None) or settings.GEMINI_MODEL
-    rec_date = (req.created_at[:10] if req.created_at else "2026-10-15")
+    recorded = req.ai is not None and req.ai.provider in ("gemini", "cache")
+    ai_prov = req.ai.provider if recorded else "fallback"
+    ai_model = req.ai.model if recorded else None
+    ai_latency = req.ai.latency_ms if recorded and req.ai and req.ai.latency_ms else None
 
     intake_step = _intake_row(req, summary, marks[0])
-    intake_step["latency_ms"] = req.ai.latency_ms if (req.ai and req.ai.latency_ms) else 1420
-    intake_step["model"] = ai_model
 
     built = [
         intake_step,
-        _trace_step("Dedupe", "complete", summary, dedupe_out, [], marks[1], provider=ai_prov, model=ai_model, latency_ms=1180, prompt=dedupe_prompt, raw_output=dedupe_out),
-        _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], marks[2], provider=ai_prov, model=ai_model, latency_ms=1250, prompt=triage_prompt, raw_output=scored.reason),
-        _trace_step("Matching", "complete", summary, matching_output, ["check_capacity", "match_score"], marks[3], provider="tool", latency_ms=35, prompt=matching_prompt, raw_output=matching_output),
-        _trace_step("Explainer", "complete", summary, explanation, [], marks[4], provider=ai_prov, model=ai_model, latency_ms=1540, prompt=explain_prompt, raw_output=explanation),
+        _trace_step("Dedupe", "complete", summary, dedupe_out, [], marks[1], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=dedupe_prompt, raw_output=dedupe_out),
+        _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], marks[2], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=triage_prompt, raw_output=scored.reason),
+        _trace_step("Matching", "complete", summary, matching_output, ["check_capacity", "match_score"], marks[3], provider="tool", latency_ms=None, prompt=matching_prompt, raw_output=matching_output),
+        _trace_step("Explainer", "complete", summary, explanation, [], marks[4], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=explain_prompt, raw_output=explanation),
     ]
     for step in built:
-        if step.get("provider") == "cache":
-            step["recorded_at"] = rec_date
+        if step.get("provider") == "cache" and req.created_at:
+            step["recorded_at"] = req.created_at[:10]
     before = req.urgency_score
     req.trace = built
     req.urgency_score = before

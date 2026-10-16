@@ -37,6 +37,7 @@ import { StepDetailDialogComponent } from '../../agents/step-detail-dialog.compo
 import { WhyThisTeamDialogComponent, DroppedTeamRow } from './why-this-team-dialog.component';
 import {
   ApiClientService,
+  LiveDemoState,
   RdTranslatePipe,
   LanguageService,
   bandCounts,
@@ -189,6 +190,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   readonly narrow = signal(false);
   readonly resetNote = signal<string | null>(null);
+  readonly liveDemo = signal<LiveDemoState | null>(null);
+  readonly ownText = signal('');
+  readonly ownError = signal('');
+  readonly ownBusy = signal(false);
+  readonly hoaxOverride = signal(false);
+  private liveTimer: ReturnType<typeof setInterval> | null = null;
 
   /** Undo this session's merges and dispatches by reloading the two-case demo. */
   resetDemo(): void {
@@ -286,18 +293,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return this.matches()[this.matchIdx()] || this.matches()[0];
   });
 
-  readonly filteredRequests = computed<StoredRequest[]>(() => {
-    let list = this.requests();
-    const type = this.filterType();
-    const query = this.searchQuery().toLowerCase().trim();
+  /** Type, area, time and search. Chips and the queue both start from this list. */
+  private readonly scopedRequests = computed(() => this.requests().filter((r) => this.inScope(r)));
 
-    if (type !== 'all') {
-      list = list.filter((r) => r.type === type);
-    }
+  readonly filteredRequests = computed<StoredRequest[]>(() => {
     const bf = this.bandFilter();
+    let list = this.scopedRequests();
     if (bf === 'dispatched') {
-      list = list.filter((r) => this.isDispatched(r) || this.isCompleted(r))
-        .sort((a, b) => Number(this.isCompleted(a)) - Number(this.isCompleted(b)));
+      list = list.filter((r) => this.isDispatched(r));
     } else if (bf === 'completed') {
       list = list.filter((r) => this.isCompleted(r));
     } else {
@@ -306,24 +309,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (bf === 'soon') list = list.filter((r) => urgencyBand(r.urgency_score) === 'high');
       if (bf === 'review') list = list.filter((r) => needsReview(r));
     }
-    const area = this.areaFilter();
-    if (area !== 'all') list = list.filter((r) => r.ward_id === area);
-    const time = this.timeFilter();
-    if (time !== 'all') {
-      const start = time === 'hour' ? Date.now() - 60 * 60 * 1000 : new Date(new Date().setHours(0, 0, 0, 0)).getTime();
-      list = list.filter((r) => !!r.created_at && new Date(r.created_at).getTime() >= start);
-    }
 
-    if (query) {
-      list = list.filter((r) => caseMatches(r as any, query, WARD_NAMES));
+    const pin = this.liveDemo()?.status === 'done' ? this.liveDemo()?.critical_id : null;
+    if (pin) {
+      const idx = list.findIndex((row) => row.id === pin);
+      if (idx > 0) {
+        const next = list.slice();
+        const [row] = next.splice(idx, 1);
+        return [row, ...next];
+      }
     }
-
     return list;
   });
 
   readonly activeRequests = computed(() => this.requests().filter((r) => !this.isDispatched(r) && !this.isCompleted(r)));
   readonly counts = computed(() => {
-    const scoped = this.requests().filter((r) => this.inScope(r));
+    const scoped = this.scopedRequests();
     return {
       ...bandCounts(scoped.filter((r) => !this.isDispatched(r) && !this.isCompleted(r))),
       dispatched: scoped.filter((r) => this.isDispatched(r)).length,
@@ -497,7 +498,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (this.testWord(req)) return 'test';
     if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'recorded';
     if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') return 'gemini';
-    if (this.ui.aiHealth()?.provider === 'gemini' || this.ui.aiHealth()?.label?.includes('Gemini')) return 'gemini';
     return 'fallback';
   }
   /** Who read this report, e.g. "Test model (NVIDIA)". Never Gemini for a test provider. */
@@ -705,10 +705,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const area = this.areaFilter();
     if (area !== 'all' && r.ward_id !== area) return false;
     const time = this.timeFilter();
-    if (time === 'all') return true;
-    if (!r.created_at) return false;
-    const start = time === 'hour' ? Date.now() - 60 * 60 * 1000 : new Date(new Date().setHours(0, 0, 0, 0)).getTime();
-    return new Date(r.created_at).getTime() >= start;
+    if (time !== 'all') {
+      if (!r.created_at) return false;
+      const start = time === 'hour' ? Date.now() - 60 * 60 * 1000 : new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+      if (new Date(r.created_at).getTime() < start) return false;
+    }
+    const query = this.searchQuery().toLowerCase().trim();
+    return !query || caseMatches(r as any, query, WARD_NAMES);
   }
   tr(key: string, n: number): string { this.langService.currentLang(); return this.langService.translate(key).replace('{n}', String(n)); }
   waitLabel(prop: MatchProposal): string {
@@ -783,17 +786,33 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.readFilters();
     this.watchViewport();
     this.stopPipeline = this.live.onEvent((event) => {
-      if (event.type === 'case.created' || event.type === 'case.updated' || event.type === 'case.merged') {
+      if (event.type === 'case.created' && event.request_id) {
+        this.focusRequestId = event.request_id;
         this.loadRequests(false);
-        if (event.request_id) {
-          this.selectedRequestId.set(event.request_id);
-        }
+      } else if (event.type === 'case.updated' || event.type === 'case.merged') {
+        this.loadRequests(true);
       }
       if (event.type === 'dispatch.created' || event.type === 'team.updated') {
         this.loadResources();
       }
       if (event.type === 'alert.created') {
         this.ui.loadAlerts();
+      }
+      if (event.type === 'demo.progress') {
+        const prev = this.liveDemo();
+        this.applyLive({
+          running: event.running ?? prev?.running ?? false,
+          status: event.status || prev?.status || (event.running ? 'running' : 'idle'),
+          received: event.received ?? prev?.received ?? 0,
+          total: event.total ?? prev?.total ?? 8,
+          joined: event.joined ?? prev?.joined ?? 0,
+          flagged: event.flagged ?? prev?.flagged ?? 0,
+          critical: event.critical ?? prev?.critical ?? 0,
+          queue_position: event.queue_position ?? prev?.queue_position ?? 0,
+          critical_id: event.critical_id ?? prev?.critical_id,
+          active_id: event.active_id ?? prev?.active_id,
+          case_ids: prev?.case_ids,
+        });
       }
       if (event.type !== 'pipeline.step' || !event.request_id || !event.agent) return;
       const row: PipelineLiveStep = {
@@ -811,6 +830,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       next[event.request_id] = list;
       this.pipelineById.set(next);
     });
+    this.refreshLive();
     window.addEventListener('message', this.handleDemoMessage);
     document.addEventListener('visibilitychange', this.onQueueVisibility);
     try {
@@ -829,6 +849,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     window.removeEventListener('message', this.handleDemoMessage);
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
     this.liveChannel?.close();
+    this.stopLivePoll();
     this.stopPipeline?.();
     if (this.analysedTimer) clearTimeout(this.analysedTimer);
     for (const timer of this.flashTimers.values()) clearTimeout(timer);
@@ -1204,6 +1225,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.rejectOpen.set(false);
     this.choseTeam.set(false);
     this.approving.set(false);
+    this.hoaxOverride.set(false);
     this.loadMatches(id);
     if (openSheet && this.narrow()) this.sheetOpen.set(true);
   }
@@ -1228,6 +1250,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.filterType.set('all');
     this.areaFilter.set('all');
     this.timeFilter.set('all');
+    this.searchQuery.set('');
     this.writeFilters();
   }
 
@@ -1641,25 +1664,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const agents = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'];
     const agentName = agents[index] || 'Intake';
     const traceStep = (req.trace || []).find((s) => s.agent === agentName);
-    const isGeminiLive = this.ui.aiHealth()?.provider === 'gemini' || this.ui.aiHealth()?.label?.includes('Gemini');
-    let badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' | 'fallback' | 'you' = 'rules';
-    if (index === 3 || agentName === 'Matching') {
-      badge = 'tool';
-    } else if (traceStep?.status === 'fallback' || traceStep?.provider === 'fallback') {
-      badge = 'fallback';
-    } else if (traceStep?.provider === 'cache' || traceStep?.provider === 'recorded' || req.ai?.provider === 'cache') {
-      badge = 'cache';
-    } else if (traceStep?.provider === 'gemini' || (isGeminiLive && traceStep?.provider !== 'cache')) {
-      badge = 'gemini';
-    } else if (traceStep?.provider === 'tool') {
-      badge = 'tool';
-    } else if (isGeminiLive) {
-      badge = 'gemini';
-    } else {
-      badge = 'cache';
-    }
-
-    const recordedAt = traceStep?.ts ? new Date(traceStep.ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '16 Oct';
+    const provider = String(traceStep?.provider || '').toLowerCase();
+    let badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' | 'fallback' | 'you' = 'fallback';
+    if (index === 3 || agentName === 'Matching' || provider === 'tool') badge = 'tool';
+    else if (provider === 'cache') badge = 'cache';
+    else if (provider === 'gemini') badge = 'gemini';
+    else if (provider === 'openai_compat' || provider === 'antigravity-local') badge = 'test';
+    const recordedAt = provider === 'cache' ? (traceStep?.recorded_at || traceStep?.ts?.slice(0, 10) || undefined) : undefined;
+    const model = badge === 'gemini' || badge === 'cache' || badge === 'test' ? traceStep?.model : undefined;
+    const latencyMs = typeof traceStep?.latency_ms === 'number' && traceStep.latency_ms > 0 ? traceStep.latency_ms : undefined;
 
     this.dialog.open(StepDetailDialogComponent, {
       data: {
@@ -1668,14 +1681,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         totalSteps: 5,
         stepNameKey: stepKeys[index] || 'flow.intake',
         badge,
-        providerLabel: (index === 3 || agentName === 'Matching') ? 'Google Maps' : traceStep?.provider_label || undefined,
+        providerLabel: badge === 'tool' ? 'Google Maps' : traceStep?.provider_label || undefined,
         recordedAt,
-        inputSummary: traceStep?.input_summary || req.raw_text,
-        prompt: (traceStep as { prompt?: string })?.prompt || undefined,
+        inputSummary: traceStep?.input_summary || undefined,
+        prompt: traceStep?.prompt || undefined,
         tools: (traceStep?.tool_calls || []).map((t) => typeof t === 'string' ? t : (t as { name?: string }).name || ''),
-        rawOutput: traceStep?.output ? (typeof traceStep.output === 'string' ? traceStep.output : JSON.stringify(traceStep.output)) : undefined,
-        model: traceStep?.model || (badge === 'gemini' || badge === 'cache' ? 'gemini-2.5-flash' : undefined),
-        latencyMs: traceStep?.latency_ms || (badge === 'gemini' ? 1200 : undefined),
+        rawOutput: traceStep?.raw_output || (traceStep?.output ? (typeof traceStep.output === 'string' ? traceStep.output : JSON.stringify(traceStep.output)) : undefined),
+        model: model || undefined,
+        latencyMs,
         fallbackReason: traceStep?.fallback_reason || undefined,
         onNavigate: (newIdx: number) => {
           this.dialog.closeAll();
@@ -1683,6 +1696,100 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         },
       },
     });
+  }
+
+  isHoax(req: StoredRequest): boolean {
+    const flags = req.flags || [];
+    return !!req.hoax_reason || flags.includes('likely_hoax') || flags.includes('hoax');
+  }
+
+  hoaxBlocked(req: StoredRequest): boolean {
+    return this.isHoax(req) && !this.hoaxOverride();
+  }
+
+  hoaxLine(req: StoredRequest): string {
+    this.langService.currentLang();
+    return this.langService.translate('chip.likelyHoax').replace('{reason}', req.hoax_reason || '');
+  }
+
+  isMovedUp(req: StoredRequest): boolean {
+    const demo = this.liveDemo();
+    return !!demo && demo.status === 'done' && !!demo.critical_id && req.id === demo.critical_id;
+  }
+
+  demoRecorded(): boolean {
+    const ids = new Set(this.liveDemo()?.case_ids || []);
+    if (!ids.size) return false;
+    return this.requests().some((row) => ids.has(row.id) && (row.ai?.provider === 'cache' || row.ai_source === 'recorded'));
+  }
+
+  startLiveDemo(): void {
+    this.ownError.set('');
+    this.apiClient.startLiveDemo().subscribe({
+      next: (state) => {
+        this.applyLive(state);
+        this.ensureLivePoll();
+      },
+      error: () => this.ownError.set(this.langService.translate('coord.aiOffline')),
+    });
+  }
+
+  fillExample(): void {
+    this.ownText.set('കൈനക്കരിയിൽ വെള്ളം കയറി. 4 പേർ മുകളിലുണ്ട്. ബോട്ട് വേണം.');
+  }
+
+  submitOwn(): void {
+    const text = this.ownText().trim();
+    if (!text || this.ownBusy()) return;
+    this.ownBusy.set(true);
+    this.ownError.set('');
+    this.apiClient.submitOwnReport(text).subscribe({
+      next: (res) => {
+        this.ownBusy.set(false);
+        this.ownText.set('');
+        this.focusRequestId = res.request_id;
+        this.selectedRequestId.set(res.request_id);
+        this.loadRequests(false);
+      },
+      error: (err: { status?: number }) => {
+        this.ownBusy.set(false);
+        this.ownError.set(this.langService.translate(err?.status === 429 ? 'demo.tryOwnLimit' : 'coord.aiOffline'));
+      },
+    });
+  }
+
+  private refreshLive(): void {
+    this.apiClient.getLiveDemo?.().subscribe({
+      next: (state) => this.applyLive(state),
+      error: () => undefined,
+    });
+  }
+
+  private applyLive(state: LiveDemoState): void {
+    const prev = this.liveDemo()?.status;
+    this.liveDemo.set(state);
+    if (state.running) {
+      this.ensureLivePoll();
+      return;
+    }
+    this.stopLivePoll();
+    if (state.status === 'done' && state.critical_id && prev !== 'done') {
+      this.focusRequestId = state.critical_id;
+      this.selectedRequestId.set(state.critical_id);
+      this.loadRequests(false);
+    }
+  }
+
+  private ensureLivePoll(): void {
+    if (this.liveTimer) return;
+    this.liveTimer = setInterval(() => this.refreshLive(), 1000);
+  }
+
+  private stopLivePoll(): void {
+    if (this.liveTimer) {
+      clearInterval(this.liveTimer);
+      this.liveTimer = null;
+    }
   }
 
   openTraceDrawer(): void {

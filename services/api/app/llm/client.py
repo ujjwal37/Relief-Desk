@@ -84,6 +84,7 @@ class LLMClient:
         self._memory_cache: Dict[str, str] = {}
         self._memory_source: Dict[str, str] = {}
         self._memory_meta: Dict[str, Dict[str, Any]] = {}
+        self._sent_prompts: Dict[str, str] = {}
         self.guard = Guard(max_in_flight=settings.AI_CONCURRENCY)
         self._local_cache: Dict[str, str] = {}
         self.cache_hits = 0
@@ -96,6 +97,15 @@ class LLMClient:
         cleaned = scrub_pii(user_prompt)
         full_prompt = f"SYSTEM:\n{system_instruction}\n\nUSER:\n{cleaned}"
         return self._hash_key(full_prompt)
+
+    def _note_sent(self, key: str, system_instruction: str, user_prompt: str) -> None:
+        """Remember the exact system and user text for this call, including a repair suffix."""
+        self._sent_prompts[key] = f"{system_instruction}\n\n{user_prompt}"
+        if len(self._sent_prompts) > 300:
+            self._sent_prompts.pop(next(iter(self._sent_prompts)))
+
+    def sent_prompt(self, key: str) -> Optional[str]:
+        return self._sent_prompts.get(key)
 
     def gemini_live(self) -> bool:
         """True when a real key is set. DEMO_MODE does not block that call."""
@@ -269,6 +279,7 @@ class LLMClient:
             self._tls.max_output_tokens = int(max_output_tokens)
         user_prompt = scrub_pii(user_prompt)
         cache_key = self.cache_key(system_instruction, user_prompt)
+        self._note_sent(cache_key, system_instruction, user_prompt)
         mode = (settings.AI_MODE or "auto").lower()
 
         from app.llm import openai_compat as oc
@@ -276,7 +287,9 @@ class LLMClient:
         if oc.enabled():
             return self._via_openai_compat(system_instruction, user_prompt, validator, max_retries, started)
 
-        cached = self.get_cached(cache_key)
+        from app.llm.pacer import replay_forbidden
+
+        cached = None if replay_forbidden() else self.get_cached(cache_key)
         cache_ok = False
         if cached:
             if validator:
@@ -325,6 +338,7 @@ class LLMClient:
         self._tls.network_attempts = 0
         try:
             while True:
+                self._note_sent(cache_key, system_instruction, current_prompt)
                 text = self._call_with_retry(system_instruction, current_prompt)
                 if validator:
                     try:
@@ -478,6 +492,17 @@ class LLMClient:
         def once() -> str:
             if getattr(self._tls, "network_attempts", 0) >= 3:
                 raise _RetryLimit("At most two retries per language call")
+            from app.llm.pacer import gemini_pacer, should_pace
+            from app.tools.events import publish
+
+            if should_pace():
+                position = gemini_pacer.acquire()
+                if position > 1 or gemini_pacer.waiting:
+                    publish({
+                        "type": "demo.progress",
+                        "status": "waiting",
+                        "queue_position": max(position, gemini_pacer.waiting),
+                    })
             with self._budget_lock:
                 if self.call_count >= self.daily_cap:
                     raise _DailyCallCap("Gemini daily call cap reached")

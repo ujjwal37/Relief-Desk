@@ -194,6 +194,17 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     void this.router.navigate(['/coordinator/agent'], { queryParams: { ask: 'pending' } });
   }
 
+  aiPillText(): string {
+    this.lang.currentLang();
+    if (this.aiHealth()?.provider === 'gemini') return this.lang.translate('xfactor.geminiLive');
+    return this.lang.translate('coord.aiOffline');
+  }
+
+  geminiCalls(): number | null {
+    const calls = this.aiHealth()?.quota?.calls;
+    return typeof calls === 'number' ? calls : null;
+  }
+
   refreshAiHealth(): void {
     this.api.getAiHealth?.().subscribe({
       next: (health) => {
@@ -201,7 +212,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
         this.ui.aiHealth.set(health);
       },
       error: () => {
-        const fallback = { provider: 'fallback', model: '', label: 'Rules fallback' };
+        const fallback = { provider: 'fallback', model: '', label: '' };
         this.aiHealth.set(fallback);
         this.ui.aiHealth.set(fallback);
       },

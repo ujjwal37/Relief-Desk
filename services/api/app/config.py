@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     # Model calls that may run at once (Gemini or a local model). Extra calls wait in a
     # priority queue, critical cases first. Set 1 for a local model that serves one call at a time.
     AI_CONCURRENCY: int = 2
+    # Live demo and a judge's own report share this cap. 8 matches the free-tier pace.
+    GEMINI_RPM: int = 8
     # Duplicate retrieval must answer inside the 5 s merge budget, or the lexical rules decide.
     EMBED_TIMEOUT_S: float = 3.0
     # auto: call Gemini when a real key is set. replay: serve data/ai_cache.

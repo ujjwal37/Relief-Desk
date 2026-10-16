@@ -240,7 +240,25 @@
     "surgeFailed": "ഡെമോയിൽ പിശകുകൾ; {n} റിപ്പോർട്ടുകൾ അയച്ചു.",
     "surgeUnavailable": "ഡെമോ ലഭ്യമല്ല അല്ലെങ്കിൽ നടക്കുന്നു. പിന്നീട് ശ്രമിക്കുക.",
     "scenarioFailed": "സാഹചര്യം ലോഡ് ആയില്ല.",
-    "mergeNotice": "റിപ്പോർട്ടുകൾ {id} ലേക്ക് ചേർത്തു. പുതുക്കിയ എണ്ണവും തെളിവും പരിശോധിക്കുക."
+    "mergeNotice": "റിപ്പോർട്ടുകൾ {id} ലേക്ക് ചേർത്തു. പുതുക്കിയ എണ്ണവും തെളിവും പരിശോധിക്കുക.",
+    "run": "തത്സമയ ഡെമോ പ്രവർത്തിപ്പിക്കുക (8 റിപ്പോർട്ടുകൾ)",
+    "problem": "വെള്ളപ്പൊക്ക റിപ്പോർട്ടുകൾ വരുന്നു. എഐ ക്രമീകരിക്കുന്നു. തീരുമാനം നിങ്ങളുടേത്.",
+    "running": "തത്സമയ ഡെമോ നടക്കുന്നു…",
+    "received": "{n}/8 ലഭിച്ചു",
+    "joined": "{n} ചേർന്നു",
+    "flagged": "{n} അടയാളപ്പെടുത്തി",
+    "critical": "{n} ഗുരുതരം",
+    "waitingGemini": "ജെമിനിക്കായി കാത്തിരിക്കുന്നു · ക്യൂ {n}",
+    "done": "തത്സമയ ഡെമോ പൂർത്തിയായി",
+    "recordedNotice": "മുമ്പ് ഓടിയ ജെമിനി റെക്കോർഡിങ് വീണ്ടും കാണിക്കുന്നു.",
+    "samplesLabel": "എട്ട് മാതൃകാ റിപ്പോർട്ടുകൾ",
+    "tryOwn": "സ്വന്തം റിപ്പോർട്ട് പരീക്ഷിക്കുക",
+    "tryOwnPlaceholder": "ഏത് ഭാഷയിലും വെള്ളപ്പൊക്ക റിപ്പോർട്ട് ടൈപ്പ് ചെയ്യുക",
+    "tryOwnLimit": "ജെമിനിയുടെ സൗജന്യ പരിധി ഇപ്പോൾ തീർന്നു; ഒരു മിനിറ്റിന് ശേഷം വീണ്ടും ശ്രമിക്കുക.",
+    "brief": "തത്സമയ എണ്ണത്തിൽ നിന്നുള്ള ചെറിയ സംഗ്രഹം",
+    "geminiCalls": "ജെമിനി കോളുകൾ {n}",
+    "exampleMl": "മലയാളത്തിൽ ഉദാഹരണം",
+    "sendOwn": "അയയ്ക്കുക"
   },
   "settings": {
     "title": "ക്രമീകരണം",
@@ -487,7 +505,8 @@
     "referralStock": "മനുഷ്യൻ രേഖപ്പെടുത്തിയ റഫറൽ സ്റ്റോക്ക് ആവശ്യം",
     "mapClear": "തിരഞ്ഞെടുപ്പ് മാറ്റുക",
     "verify": "പരിശോധിക്കുക",
-    "verifyHint": "റിപ്പോർട്ട് വ്യക്തമല്ല. മുൻഗണന കുറച്ചിട്ടില്ല. വിവരങ്ങൾ ഉറപ്പാക്കുക."
+    "verifyHint": "റിപ്പോർട്ട് വ്യക്തമല്ല. മുൻഗണന കുറച്ചിട്ടില്ല. വിവരങ്ങൾ ഉറപ്പാക്കുക.",
+    "reviewHoax": "ഈ അടയാളം ഞാൻ പരിശോധിച്ചു"
   },
   "tour": {
     "next": "അടുത്തത്",
@@ -558,7 +577,8 @@
     "saved": "തിരികെ വരാൻ ഈ ഫോണിൽ സേവ് ചെയ്തു.",
     "share": "ലിങ്ക് പങ്കിടുക",
     "copied": "പകർത്തി",
-    "copyLink": "ലിങ്ക് പകർത്തുക"
+    "copyLink": "ലിങ്ക് പകർത്തുക",
+    "inQueue": "നിങ്ങളുടെ റിപ്പോർട്ട് കോർഡിനേറ്ററുടെ ക്യൂവിലുണ്ട്."
   },
   "nearby": {
     "title2": "അടുത്തുള്ള മുന്നറിയിപ്പുകൾ",
@@ -777,7 +797,7 @@
     "tools": "ഉപകരണങ്ങൾ",
     "badgeGemini": "Gemini",
     "badgeRules": "നിയമങ്ങൾ",
-    "badgeOffline": "ഓഫ്‌ലൈൻ ഫാൾബാക്ക്",
+    "badgeOffline": "ജെമിനി ലഭ്യമല്ല, ഉൾപ്പെടുത്തിയ നിയമങ്ങൾ ഉപയോഗിച്ചു",
     "badgeLocal": "പ്രാദേശിക ടെസ്റ്റ് മോഡൽ (Antigravity)",
     "badgeTest": "ടെസ്റ്റ് മോഡൽ ({name})",
     "resetDemo": "ഡെമോ പുനഃസജ്ജമാക്കുക",
@@ -891,7 +911,7 @@
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} free seat(s).",
     "sentExplain": "Wrote the one-line reason you see on the panel.",
-    "fallbackBanner": "{n} AI ഘട്ടങ്ങൾ ഓഫ്‌ലൈൻ മാർഗം ഉപയോഗിച്ചു. കാരണം വിശദാംശങ്ങളിൽ കാണാം. പൈത്തൺ സ്കോറിംഗും പൊരുത്തപ്പെടുത്തലും ലഭ്യമാണ്.",
+    "fallbackBanner": "{n} ഘട്ടങ്ങളിൽ ഉൾപ്പെടുത്തിയ നിയമങ്ങൾ ഉപയോഗിച്ചു. കാരണം വിശദാംശങ്ങളിൽ കാണുക. ദൂരവും ടീം പൊരുത്തവും ലഭ്യമാണ്.",
     "loading": "Working… step {k} of {n} · {t} s",
     "failed": "Couldn't finish the AI steps. The team match is missing, so there is no suggestion. You can retry or choose a team yourself.",
     "noTrace": "No AI record for this case",
@@ -967,7 +987,7 @@
     "photoReading": "Gemini is reading the photo...",
     "askPending": "How many pending cases?",
     "geminiLive": "Gemini live",
-    "rulesFallback": "Rules fallback",
+    "rulesFallback": "ജെമിനി ലഭ്യമല്ല, ഉൾപ്പെടുത്തിയ നിയമങ്ങൾ ഉപയോഗിച്ചു",
     "cached": "Cached",
     "sitrepTitle": "Situation report",
     "sitrepBusy": "Writing from live counts…",
@@ -1075,7 +1095,17 @@
     "next": "അടുത്തത്",
     "result": {
       "noDup": "No duplicate"
-    }
+    },
+    "headlineIntake": "{place} ൽ {people} പേർക്ക് {type}.",
+    "headlineJoined": "ഈ കേസിൽ {n} റിപ്പോർട്ടുകൾ കൂടി ചേർന്നു.",
+    "headlineUrgency": "അടിയന്തരത {score}. {reason}",
+    "headlineMatch": "{team} {km} കി.മീ അകലെയാണ്.",
+    "matchNoKm": "{team} ഏറ്റവും അടുത്തുള്ള ഒഴിവുള്ള ടീമാണ്.",
+    "noTeam": "മതിയായ അടുത്ത് ഒഴിവുള്ള ടീം ഇല്ല.",
+    "whyMatch": "{team} അവരെ കൊണ്ടുപോകാൻ കഴിയുന്ന ഏറ്റവും അടുത്ത ടീമാണ്, {km} കി.മീ അകലെ.",
+    "why": "എന്തുകൊണ്ട്",
+    "showPrompt": "പ്രോംപ്റ്റും മറുപടിയും കാണിക്കുക",
+    "hidePrompt": "പ്രോംപ്റ്റും മറുപടിയും മറയ്ക്കുക"
   },
   "panel": {
     "moreDetails": "More details"
@@ -1083,7 +1113,14 @@
   "badge": {
     "rules": "Rules",
     "gemini": "Gemini",
-    "testModel": "Test model"
+    "testModel": "Test model",
+    "recorded": "രേഖപ്പെടുത്തിയത് (ജെമിനി)"
   },
-  "ward": "Ward {n}"
+  "ward": "Ward {n}",
+  "chip": {
+    "likelyHoax": "സാധ്യമായ വ്യാജം: {reason}"
+  },
+  "card": {
+    "movedUp": "മുകളിലേക്ക് നീക്കി"
+  }
 }

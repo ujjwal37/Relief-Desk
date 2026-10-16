@@ -240,7 +240,25 @@
     "surgeFailed": "Surge mein errors; {n} reports bheji gayi.",
     "surgeUnavailable": "Surge available nahi ya chal raha hai. Thodi der baad try karein.",
     "scenarioFailed": "Scenario load nahi hua.",
-    "mergeNotice": "Reports {id} mein jodi gayi. Updated count aur evidence review karein."
+    "mergeNotice": "Reports {id} mein jodi gayi. Updated count aur evidence review karein.",
+    "run": "Live demo chalao (8 reports)",
+    "problem": "Flood reports aati hain. AI rank karta hai. Faisla aapka.",
+    "running": "Live demo chal raha hai…",
+    "received": "{n}/8 mili",
+    "joined": "{n} judi",
+    "flagged": "{n} flagged",
+    "critical": "{n} critical",
+    "waitingGemini": "Gemini ka intezaar · queue {n}",
+    "done": "Live demo khatam",
+    "recordedNotice": "Pehle chale Gemini ka recording dubara dikha rahe hain.",
+    "samplesLabel": "Aath sample reports",
+    "tryOwn": "Apni report try karo",
+    "tryOwnPlaceholder": "Kisi bhi bhasha mein flood report likho",
+    "tryOwnLimit": "Gemini ki free limit abhi poori hai; ek minute baad try karo.",
+    "brief": "Live counts se chhota brief",
+    "geminiCalls": "Gemini calls {n}",
+    "exampleMl": "Malayalam mein example",
+    "sendOwn": "Bhejo"
   },
   "settings": {
     "title": "Settings",
@@ -487,7 +505,8 @@
     "referralStock": "Human-entered referral stock requirement",
     "mapClear": "Selection hatayein",
     "verify": "Verify karein",
-    "verifyHint": "Report saaf nahi hai. Priority kam nahi ki gayi. Details confirm karein."
+    "verifyHint": "Report saaf nahi hai. Priority kam nahi ki gayi. Details confirm karein.",
+    "reviewHoax": "Maine yeh flag dekh liya"
   },
   "tour": {
     "next": "Aage",
@@ -558,7 +577,8 @@
     "saved": "Is phone mein save hua taaki aap wapas aa sakein.",
     "share": "Link share karein",
     "copied": "Copy ho gaya",
-    "copyLink": "Link copy karein"
+    "copyLink": "Link copy karein",
+    "inQueue": "Aapki report coordinator ki queue mein hai."
   },
   "nearby": {
     "title2": "Aas-paas ke alerts",
@@ -777,7 +797,7 @@
     "tools": "Tools",
     "badgeGemini": "Gemini",
     "badgeRules": "Rules",
-    "badgeOffline": "Offline fallback",
+    "badgeOffline": "Gemini available nahi, built-in rules use hue",
     "badgeLocal": "Local test model (Antigravity)",
     "badgeTest": "Test model ({name})",
     "resetDemo": "Demo reset karo",
@@ -891,7 +911,7 @@
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} khali seat.",
     "sentExplain": "Panel par dikhne wala one-line reason likha.",
-    "fallbackBanner": "{n} AI steps ne offline fallback use kiya. Wajah Details mein dekhein. Python scoring aur matching available hain.",
+    "fallbackBanner": "{n} steps mein built-in rules chale. Wajah Details mein dekho. Distance aur team matching available hain.",
     "loading": "Kaam chal raha hai… step {k} / {n} · {t} s",
     "failed": "AI steps poore nahi hue. Team match nahi hai, isliye suggestion nahi. Retry karein ya khud team chunein.",
     "noTrace": "Is case ka AI record nahi",
@@ -967,7 +987,7 @@
     "photoReading": "Gemini photo padh raha hai...",
     "askPending": "Kitne pending cases hain?",
     "geminiLive": "Gemini live hai",
-    "rulesFallback": "Rules se fallback",
+    "rulesFallback": "Gemini available nahi, built-in rules use hue",
     "cached": "Cache se",
     "sitrepTitle": "Haalat report",
     "sitrepBusy": "Live counts se likh raha hai…",
@@ -1075,7 +1095,17 @@
     "next": "Aage",
     "result": {
       "noDup": "Koi duplicate nahi"
-    }
+    },
+    "headlineIntake": "{place} par {people} logon ke liye {type}.",
+    "headlineJoined": "Is case mein {n} aur reports judi.",
+    "headlineUrgency": "Urgency {score}. {reason}",
+    "headlineMatch": "{team} {km} km door hai.",
+    "matchNoKm": "{team} sabse nazdeek ki free team hai.",
+    "noTeam": "Kaafi nazdeek koi free team nahi hai.",
+    "whyMatch": "{team} unhe le ja sakti hai, {km} km door.",
+    "why": "Kyun",
+    "showPrompt": "Prompt aur jawab dikhao",
+    "hidePrompt": "Prompt aur jawab chhupao"
   },
   "panel": {
     "moreDetails": "Aur details"
@@ -1083,7 +1113,14 @@
   "badge": {
     "rules": "Rules",
     "gemini": "Gemini",
-    "testModel": "Test model"
+    "testModel": "Test model",
+    "recorded": "Recorded (Gemini)"
   },
-  "ward": "Ward {n}"
+  "ward": "Ward {n}",
+  "chip": {
+    "likelyHoax": "Lagta hai hoax: {reason}"
+  },
+  "card": {
+    "movedUp": "Upar laya gaya"
+  }
 }

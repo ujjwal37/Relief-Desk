@@ -1425,3 +1425,30 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
   - `apps/web/src/app/core/maps/` was completely untouched.
   - All Playwright accessible queries validated.
 - Next (suggested task id): none
+
+### 2026-10-16 22:40 IST — live Gemini demo + filter counts — Cursor
+- What changed:
+  - Command Dispatched and Completed chips and the case list now share one scope (type, area, time, and search). Dispatched lists only dispatched cases. Completed lists only completed cases. Clear filters also clears the search box.
+  - Live demo of 8 paced reports, hoax flag, judge own-report limit, and honest Gemini step labels. A Gemini step stores the system and user prompt that was sent (including a validation repair) and the tools that ran. "No model ran for this step" is shown only when no model ran. Older traces that stored a model without a prompt or tool names are filled on read.
+- Files:
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `e2e/filter-counts.spec.ts`
+  - `e2e/live-demo.spec.ts`
+  - `services/api/app/agents/pipeline.py`
+  - `services/api/app/agents/review.py`
+  - `services/api/app/llm/client.py`
+  - `services/api/app/llm/pacer.py`
+  - `services/api/app/tools/live_demo.py`
+  - `services/api/tests/test_live_demo.py`
+  - `data/synthetic/live_samples.json`
+- How verified (commands / screenshots):
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include='**/coordinator-command.component.spec.ts'` — 31 passed. 3 older DOM specs still expect the pre-rebuild card markup.
+  - `npx playwright test e2e/filter-counts.spec.ts` — 1 passed. Approves a case, then checks the Dispatched chip count equals the visible rows; after complete, the Completed chip matches; a search that matches nothing zeros both chips and shows the empty state; Clear filters clears the search.
+  - `pytest tests/test_live_demo.py tests/test_xfactor_ai.py` — 12 passed.
+- Notes / risks / not done:
+  - `make record-traces` was not run here. No fabricated Gemini transcripts were committed.
+  - One intake call at about 17 s is the measured wall clock on gemini-3.5-flash-lite. Thinking is disabled only for model names starting with gemini-2.5-flash. The timeout is GEMINI_TIMEOUT_S (20s). One validation repair and one transient retry can be included in that number. The pacer does not wait on an ordinary report.
+- Next (suggested task id): none

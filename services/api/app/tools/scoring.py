@@ -210,7 +210,7 @@ class ScoringEngine:
             req.flags = list(req.flags or []) + ["verify"]
 
         # A hoax or spam copy is kept, but it must not sit in Needs help now.
-        hoax = any(flag in (req.flags or []) for flag in ("hoax", "hoax_or_flood"))
+        hoax = any(flag in (req.flags or []) for flag in ("hoax", "hoax_or_flood", "likely_hoax"))
         if hoax:
             final_score = min(final_score, 40.0)
 
