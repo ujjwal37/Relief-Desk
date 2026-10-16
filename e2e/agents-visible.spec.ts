@@ -74,7 +74,7 @@ test.describe('agents visible', () => {
       await page.getByRole('button', { name: 'How it decided' }).first().click();
       const dialog = page.getByRole('dialog', { name: 'How it decided' });
       await expect(dialog).toBeVisible();
-      await expect(dialog.getByText('Read the report', { exact: true })).toBeVisible();
+      await expect(dialog.getByText('Understood the report', { exact: true })).toBeVisible();
       await openTechnical(dialog);
       await expect(dialog.getByText('Intake', { exact: true }).first()).toBeVisible();
       await expect(dialog.getByText('Duplicate check', { exact: true }).first()).toBeVisible();

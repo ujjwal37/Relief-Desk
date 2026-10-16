@@ -7,11 +7,12 @@ import { CoordUiService } from '../../core/services/coord-ui.service';
 import { LiveEventsService } from '../../core/live-events.service';
 import { TourComponent } from '../../core/components/tour.component';
 import { SitrepPanelComponent } from '../agents/sitrep-panel.component';
+import { AskDeskComponent } from '../agents/ask-desk.component';
 
 @Component({
   selector: 'app-coordinator-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, RdTranslatePipe, TourComponent, SitrepPanelComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, RdTranslatePipe, TourComponent, SitrepPanelComponent, AskDeskComponent],
   templateUrl: './coordinator-layout.component.html',
   styleUrl: './coordinator-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,6 +45,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   readonly wideEnough = signal(true);
   readonly showPhone = computed(() => this.demoOn() && this.wideEnough());
   readonly menuOpen = signal(false);
+  readonly askDeskOpen = signal(false);
   readonly guideOpen = signal(false);
   private api = inject(ApiClientService);
   readonly compactNav = signal(false);
@@ -165,11 +167,17 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   }
   openWeights(): void { this.menuOpen.set(false); this.ui.weightsOpen.set(true); }
   takeTour(): void { this.menuOpen.set(false); this.router.navigateByUrl('/coordinator/command').then(() => setTimeout(() => this.ui.startTour(), 150)); }
+  toggleAskDesk(): void { this.askDeskOpen.update((v) => !v); }
+  onDeskCasePicked(caseId: string): void {
+    this.askDeskOpen.set(false);
+    this.router.navigate(['/coordinator/command'], { queryParams: { id: caseId }, queryParamsHandling: 'merge' });
+  }
 
   private maybeStartTour(): void {
     try {
       if (sessionStorage.getItem('rd_start_tour') !== '1') return;
       sessionStorage.removeItem('rd_start_tour');
+      if (this.ui.tourDone()) return;
     } catch {
       return;
     }

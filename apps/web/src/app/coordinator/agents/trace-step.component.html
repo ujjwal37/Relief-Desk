@@ -33,7 +33,7 @@
   }
   @if (showDetails()) {
     <button type="button" class="details" [attr.aria-expanded]="open()" (click)="toggled.emit()">
-      {{ (open() ? 'flow.hideDetails' : 'flow.details') | rdTranslate }} ▾
+      {{ (open() ? 'ux.hideDetails' : 'ux.showDetails') | rdTranslate }} ▾
     </button>
   }
   @if (open() && showDetails()) {

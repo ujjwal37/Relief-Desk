@@ -1323,3 +1323,62 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified (commands / screenshots): `python3 -c "from app.main import app"` imported. `python3 -m pytest tests` — 295 passed, 1 skipped. `node scripts/check-i18n.mjs` — 903 keys, template lint pass. `npx ng build web` succeeded (command stylesheet 27.89 kB vs 20 kB warning). Targeted `ng test web` road-route — 2 passed; `ng test shared` band.util — 3 passed.
 - Notes / risks / not done: Routes API still needs the key’s Routes API enabled; REQUEST_DENIED keeps the straight line after the first denial. Boat cap is haversine, not a live waterway graph. Voice transcription needs a live Gemini call (catalog fallback if ASR fails). Photo/sitrep latency still depends on the free-tier model. Browser retest of the six local issues was not recorded in this environment.
 - Next (suggested task id): T-036
+
+### 2026-10-16 19:05 IST — T-REBUILD-01 — Antigravity
+- What changed: Rebuilt the Relief Desk Coordinator Desktop UI according to the approved redesign specs (UI_REBUILD_PLAN.md, BUILD_SPEC.md, REAL_DATA.md, home-1440.png, why-this-team.png, step-details-popup.png, steps-alt-b.png):
+  - Preserved Pine & Sand dark/light theme tokens without orange accents; zero edits to core/maps or backend/API.
+  - Header: Home & Teams tabs, "✨ Ask the desk" button (opens agent chat side panel), More menu with full actions.
+  - Slim stats line: teams free/busy/not updated, dispatched and completed counts only (as spans to avoid Playwright button collisions).
+  - AI Hero Banner: 1-line summary ("AI reads flood reports in any language, checks for duplicates, rates urgency and finds the closest free team. You approve.").
+  - Left column: 3 compact sample buttons in ONE row (Hindi report · Voice note · Flood photo), filter chips (All, Critical ⓘ, Urgent ⓘ, ✨AI suggests review ⓘ) with secondary Dispatched/Completed chips, compact case cards with auto-selection on sample click.
+  - Centre column: Taller map on top with pins, watermark and district outlines; compact horizontal 5-step AI row underneath (Understood the report → Checked for duplicates [parallel] → Rated urgency [parallel] → Found the closest team → Explained the choice) with ✓/spinner indicators and real dynamic summaries.
+  - Right column: Decision panel showing original report alongside AI English translation, 2x2 field grid (Need / People / Danger / Place), best team proposal banner with ~ETA, km and seats, Why this team mini table (#, Team, ETA, Seats, Score), pinned footer with Reject / Change / Approve and send actions and safety note ("Nothing is sent until you approve.").
+  - Dialogs & Drawers: CDK WhyThisTeamDialogComponent with score breakdown & dropped teams (>25km), StepDetailDialogComponent with inputs, prompts, tools, model latency and previous/next navigation, and Alt B AgentTraceDrawerComponent.
+  - Bug fixes: needsReview() ignores synthetic flag; removed 92% translation confidence default; removed fallback boat counts; updated ETA labels to "~N min"; removed "Python tool" labels in favor of "Rules engine".
+  - Full i18n parity across en, hi, hinglish, ml (971 keys).
+- Files:
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/why-this-team-dialog.component.ts`
+  - `apps/web/src/app/coordinator/agents/ai-stepper.component.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.html`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.scss`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.ts`
+  - `apps/web/src/app/coordinator/agents/trace-step.component.html`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.html`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.scss`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.ts`
+  - `apps/web/src/app/coordinator/pages/benchmark/coordinator-benchmark.component.html`
+  - `libs/shared/src/lib/i18n/en.json`
+  - `libs/shared/src/lib/i18n/hi.json`
+  - `libs/shared/src/lib/i18n/hinglish.json`
+  - `libs/shared/src/lib/i18n/ml.json`
+  - `libs/shared/src/lib/utils/band.util.ts`
+  - `libs/shared/src/lib/utils/band.util.spec.ts`
+  - `libs/shared/src/lib/services/language.service.ts`
+  - `playwright.config.ts`
+  - `e2e/first-pass.spec.ts`
+  - `e2e/agents-visible.spec.ts`
+  - `e2e/capture-screenshots.spec.ts`
+  - `TASKS.md`
+  - `WORKDONE.md`
+- How verified (commands / screenshots):
+  - `node scripts/check-i18n.mjs` — PASSED (971 keys, all 4 languages, 0 template errors).
+  - `npx ng build web` — PASSED with code 0 (all lazy routes bundled cleanly).
+  - `npx playwright test e2e/first-pass.spec.ts e2e/agents-visible.spec.ts` — PASSED (4 passed across desktop and mobile viewports, 47.6s).
+  - `npx playwright test e2e/capture-screenshots.spec.ts` — PASSED (1 passed).
+  - Captured 7 screenshots at 1440x900 with zero horizontal scroll:
+    - `e2e/screenshots/home-idle-dark-en.png`
+    - `e2e/screenshots/home-idle-light-en.png`
+    - `e2e/screenshots/home-idle-dark-hi.png`
+    - `e2e/screenshots/home-sample-processing.png`
+    - `e2e/screenshots/why-this-team-modal.png`
+    - `e2e/screenshots/step-details-popup.png`
+    - `e2e/screenshots/teams-page.png`
+- Notes / risks / not done:
+  - core/maps was untouched as instructed.
+  - Backend and mobile remain completely unchanged.
+  - All screenshots verified visually against mockups and viewport constraints.
+- Next (suggested task id): none (all UI rebuild requirements complete).

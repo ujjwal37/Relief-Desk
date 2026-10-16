@@ -1,7 +1,9 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Dialog } from '@angular/cdk/dialog';
 import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
 import { testProviderWord } from './provider-label';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
+import { StepDetailDialogComponent } from './step-detail-dialog.component';
 
 const outputText = (value: unknown) => typeof value === 'string' ? value : '';
 
@@ -12,6 +14,14 @@ const NAMES: Record<string, string> = {
   Triage: 'flow.urgency',
   Matching: 'flow.matching',
   Explainer: 'flow.explain',
+};
+
+const TECH_NAMES: Record<string, string> = {
+  Intake: 'ux.agentIntake',
+  Dedupe: 'ux.agentDedupe',
+  Triage: 'ux.agentTriage',
+  Matching: 'ux.agentMatching',
+  Explainer: 'ux.agentExplainer',
 };
 
 @Component({
@@ -25,12 +35,15 @@ const NAMES: Record<string, string> = {
 export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   private readonly lang = inject(LanguageService);
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly dialog = inject(Dialog);
+
   readonly request = input.required<StoredRequest>();
   readonly mobile = input(false);
   readonly closed = output<void>();
   readonly retry = output<void>();
   readonly expanded = signal<string | null>(null);
   readonly simulateOutage = signal(false);
+  readonly techOpen = signal(false);
   private poll: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
@@ -136,13 +149,49 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     this.lang.currentLang();
     const steps = this.steps();
     const done = steps.filter((step) => step.status === 'done' || step.status === 'fallback').length;
-    const k = Math.min(5, done + 1);
+    const k = Math.min(steps.length || 5, done + 1);
     const time = this.totalText() || this.lang.translate('ux.seconds').replace('{n}', '0');
-    return this.lang.translate('flow.loading').replace('{k}', String(k)).replace('{n}', '5').replace('{t}', time.replace(/[^\d.]/g, '') || '0');
+    return this.lang.translate('flow.loading').replace('{k}', String(k)).replace('{n}', String(steps.length || 5)).replace('{t}', time.replace(/[^\d.]/g, '') || '0');
   }
 
   nameKey(agent: string): string {
     return NAMES[agent] || 'flow.intake';
+  }
+
+  techNameKey(agent: string): string {
+    return TECH_NAMES[agent] || 'flow.agentIntake';
+  }
+
+  badgeWord(step: TraceStepView): string {
+    if (step.badge === 'gemini') return this.lang.translate('badge.gemini');
+    if (step.badge === 'cache') return this.lang.translate('flow.badgeCache');
+    if (step.badge === 'test') return this.lang.translate('badge.testModel');
+    return this.lang.translate('badge.rules');
+  }
+
+  openStepDetail(index: number): void {
+    const step = this.steps()[index];
+    if (!step) return;
+    this.dialog.open(StepDetailDialogComponent, {
+      data: {
+        request: this.request(),
+        stepIndex: index,
+        totalSteps: this.steps().length,
+        stepNameKey: this.nameKey(step.agent),
+        badge: step.badge,
+        inputSummary: step.input || undefined,
+        prompt: step.asked || undefined,
+        tools: step.tools,
+        rawOutput: step.raw || undefined,
+        model: step.model || undefined,
+        latencyMs: step.latencyMs || undefined,
+        fallbackReason: step.note || undefined,
+        onNavigate: (newIdx: number) => {
+          this.dialog.closeAll();
+          this.openStepDetail(newIdx);
+        },
+      },
+    });
   }
 
   toggle(agent: string): void {
@@ -196,7 +245,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     if (agent === 'Intake') return JSON.stringify({ type: req.type, people: req.people_count, place: req.place_text });
     if (agent === 'Dedupe') return req.dedupe_trace || 'Review duplicate evidence with the coordinator.';
     if (agent === 'Triage') return req.urgency_reason;
-    return `Python urgency score: ${req.urgency_score}. A coordinator reviews the team proposal.`;
+    return `Urgency score: ${req.urgency_score}. A coordinator reviews the team proposal.`;
   }
 
   private fallbackCount(): number {

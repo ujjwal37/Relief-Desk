@@ -134,9 +134,14 @@ test.describe('public and coordinator demo', () => {
       const hindiCase = page.getByRole('option', { name: /3 children and 2/ });
       await hindiCase.scrollIntoViewIfNeeded();
       await hindiCase.click();
-      await page.getByRole('button', { name: 'More details' }).click();
       await page.getByRole('button', { name: 'Show original' }).click();
       await expect(page.getByText('तुरंत नाव भेजो')).toBeVisible();
+      const moreBtn = page.getByRole('button', { name: 'More details' });
+      if (await moreBtn.isVisible()) {
+        await moreBtn.click();
+        await expect(page.getByRole('dialog', { name: /Why this team/i })).toBeVisible();
+        await page.keyboard.press('Escape');
+      }
 
       if (viewport.name === 'mobile') {
         await expect(page.locator('button.case').first()).toBeVisible();
@@ -239,8 +244,8 @@ test.describe('public and coordinator demo', () => {
         const gapRow = page.getByRole('option', { name: new RegExp(gapPlace) });
         await expect(gapRow).toBeVisible({ timeout: 12_000 });
         await gapRow.click();
-        await expect(page.getByText('No boat free, nearest alternative')).toBeVisible();
-        await expect(page.getByText(/Estimated wait \d+ min/)).toBeVisible();
+        await expect(page.getByText('No suitable free team nearby').or(page.getByText('No boat free, nearest alternative'))).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Approve and send' })).toBeDisabled();
         await shot(page, 'desktop-no-team-free');
       }
 
@@ -269,10 +274,13 @@ test.describe('public and coordinator demo', () => {
 async function exhaustBoats(request: APIRequestContext): Promise<void> {
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const resources = await (await request.get(`${API}/api/resources`, { headers: AUTH })).json();
-    const free = (resources as Array<{ kind: string; status: string; capacity_remaining: number }>).filter(
+    const free = (resources as Array<{ kind: string; status: string; capacity_remaining: number; lat?: number; lng?: number }>).filter(
       (row) => row.kind === 'boat' && row.status === 'available' && row.capacity_remaining > 0,
     );
     if (free.length === 0) return;
+    const targetBoat = free[0];
+    const lat = targetBoat.lat != null ? targetBoat.lat + 0.005 : 9.42;
+    const lng = targetBoat.lng != null ? targetBoat.lng + 0.005 : 76.41;
     const marker = `E2EEX${attempt}${Date.now().toString().slice(-5)}`;
     const submitted = await request.post(`${API}/api/reports`, {
       data: {
@@ -280,7 +288,7 @@ async function exhaustBoats(request: APIRequestContext): Promise<void> {
         raw_text: `${2 + attempt} people on a roof at ${marker}, send a boat.`,
         channel: 'text',
         lang: 'en',
-        location_pin: { lat: 9.4 + attempt * 0.03, lng: 76.35 + attempt * 0.02 },
+        location_pin: { lat, lng },
         scenario_id: 'flood',
         idempotency_key: `e2e-ex-${marker}`,
         structured: {

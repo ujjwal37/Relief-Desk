@@ -16,7 +16,8 @@
     "home2": "Home",
     "nearby2": "Aas-paas",
     "status2": "Status",
-    "reportFab": "Report"
+    "reportFab": "Report",
+    "ask": "Desk se poochho"
   },
   "landing": {
     "title": "Relief Desk",
@@ -678,7 +679,8 @@
     "removeShort": "Hatao",
     "remove": "Is phone se hatayein",
     "coordinatorBtn": "Main coordinator hoon",
-    "judge": "Judge ya reviewer? Demo coordinator kholein"
+    "judge": "Judge ya reviewer? Demo coordinator kholein",
+    "hero": "AI kisi bhi bhasha mein flood report padhta hai, duplicate check karta hai, urgency rate karta hai aur sabse paas ki free team dhoondhta hai. Approve aap karte ho."
   },
   "find": {
     "title": "Mera request dhundhein",
@@ -740,7 +742,10 @@
     "trail": "Raste ka nishan",
     "saved": "Update ho gaya",
     "missing": "Yeh team link nahi khula.",
-    "noGps": "Is phone ne location nahi bheji. Demo ki simulated movement chal sakti hai."
+    "noGps": "Is phone ne location nahi bheji. Demo ki simulated movement chal sakti hai.",
+    "etaWater": "Paani se ~{n} min",
+    "etaRoad": "Road se ~{n} min",
+    "straightLine": "Seedhi line ka andaaza, road band hone ka live data nahi"
   },
   "ux": {
     "viewTrace": "Ye kaise decide hua",
@@ -877,7 +882,7 @@
     "urgency": "Zaroorat aanki",
     "matching": "Sabse paas ki team dhoondhi",
     "explain": "Reason likha",
-    "sentIntake": "{people} logon ke liye {need}, road cut off.",
+    "sentIntake": "{people} logon ke liye {need}.",
     "sentDedupeClear": "Pichhle ghante is jagah koi aur case nahi.",
     "sentDedupeHit": "{id} jaisa lagta hai (wahi jagah, {n} min apart).",
     "sentUrgency": "{band}: {reason}.",
@@ -898,7 +903,7 @@
     "fellBack": "Isliye wapas gaye",
     "modelLatency": "Model · latency",
     "waiting": "Wait",
-    "badgeTool": "Python tool",
+    "badgeTool": "Rules engine",
     "badgeCache": "Recorded (Gemini)",
     "simulateOutage": "Rules fallback preview dekhein",
     "simulatedOnly": "Sirf preview. Saved traces aur dispatch decisions nahi badalte."
@@ -987,5 +992,92 @@
     "geminiChip": "✨Gemini chip",
     "tierImmediate": "Abhi Immediate",
     "tierUrgent": "Jaldi Urgent"
-  }
+  },
+  "band": {
+    "critical": "Critical",
+    "critical.tip": "Urgency 80+",
+    "urgent": "Urgent",
+    "urgent.tip": "Urgency 60–79",
+    "other": "Baaki"
+  },
+  "filter": {
+    "aiReview": "✨AI review suggest karta hai",
+    "aiReview.tip": "AI unsure ya flagged",
+    "critical": "Critical",
+    "critical.tip": "Abhi jaan ka khatra. 15 min mein bhejo.",
+    "urgent": "Urgent",
+    "urgent.tip": "Ek ghante mein madad chahiye."
+  },
+  "field": {
+    "need": "Zaroorat",
+    "people": "Log",
+    "danger": "Khatra",
+    "place": "Jagah"
+  },
+  "hazard": {
+    "water_rising": "Paani badh raha hai"
+  },
+  "why": {
+    "title": "Yeh team kyon",
+    "team": "Team",
+    "eta": "ETA",
+    "seats": "Seats",
+    "dist": "Doori",
+    "dist30": "Distance /30",
+    "cap25": "Capacity /25",
+    "urg25": "Urgency /25",
+    "vuln20": "Vulnerable /20",
+    "total": "Score",
+    "order": "Pehle ETA, phir seats, phir score",
+    "chosen": "Chuni gayi",
+    "dropped": "Hataayi: boat 25 km se door",
+    "rule1": "Sirf matching kind ki free teams",
+    "rule2": "25 km se door ki boats hata di jaati hain",
+    "rule3": "Score = doori 30 + capacity 25 + urgency 25 + vulnerable 20"
+  },
+  "stat": {
+    "busy": "{n} busy",
+    "notUpdated": "{n} update nahi",
+    "teamsFree": "{a}/{b} teams free",
+    "silent": "{n} area {h} ghante se chup · {place} · Check karo"
+  },
+  "sample": {
+    "hindi": "Hindi report",
+    "voice": "Voice note",
+    "photo": "Flood photo"
+  },
+  "stepper": {
+    "title": "AI ne kaise decide kiya",
+    "tapHint": "Evidence ke liye step dabao",
+    "read": "Padha",
+    "dedupe": "Dedupe",
+    "urgency": "Urgency",
+    "team": "Team",
+    "you": "Aap"
+  },
+  "step": {
+    "noModel": "Is step mein koi model nahi chala",
+    "evidence": "Evidence",
+    "modelOutput": "Model output",
+    "confidence": "Confidence",
+    "confHigh": "High",
+    "confMed": "Medium",
+    "confLow": "Low",
+    "parallel": "parallel",
+    "sameTime": "Ek hi time par: Duplicate check + Urgency rate",
+    "prev": "Pichhla",
+    "next": "Aage",
+    "result": {
+      "noDup": "Koi duplicate nahi"
+    }
+  },
+  "panel": {
+    "moreDetails": "Aur details"
+  },
+  "badge": {
+    "rules": "Rules",
+    "gemini": "Gemini",
+    "testModel": "Test model"
+  },
+  "ward": "Ward {n}"
 }

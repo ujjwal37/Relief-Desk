@@ -16,7 +16,8 @@
     "home2": "Home",
     "nearby2": "Nearby",
     "status2": "Status",
-    "reportFab": "Report"
+    "reportFab": "Report",
+    "ask": "Ask the desk"
   },
   "landing": {
     "title": "Relief Desk",
@@ -678,7 +679,8 @@
     "removeShort": "Remove",
     "remove": "Remove from this phone",
     "coordinatorBtn": "I'm a coordinator",
-    "judge": "Judge or reviewer? Open the demo coordinator"
+    "judge": "Judge or reviewer? Open the demo coordinator",
+    "hero": "AI reads flood reports in any language, checks for duplicates, rates urgency and finds the closest free team. You approve."
   },
   "find": {
     "title": "Find my request",
@@ -740,7 +742,10 @@
     "trail": "Movement trail",
     "saved": "Updated",
     "missing": "This team link could not be opened.",
-    "noGps": "This phone did not share a location. The demo can keep the simulated move."
+    "noGps": "This phone did not share a location. The demo can keep the simulated move.",
+    "etaWater": "~{n} min by water",
+    "etaRoad": "~{n} min by road",
+    "straightLine": "Straight-line estimate, no live road-closure feed"
   },
   "ux": {
     "viewTrace": "How it decided",
@@ -877,7 +882,7 @@
     "urgency": "Rated urgency",
     "matching": "Found the closest team",
     "explain": "Explained the choice",
-    "sentIntake": "{need} for {people} people, road cut off.",
+    "sentIntake": "{need} for {people} people.",
     "sentDedupeClear": "No other case at this place in the last hour.",
     "sentDedupeHit": "Looks like {id} (same place, {n} min apart).",
     "sentUrgency": "{band}: {reason}.",
@@ -898,7 +903,7 @@
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
     "waiting": "Waiting",
-    "badgeTool": "Python tool",
+    "badgeTool": "Rules engine",
     "badgeCache": "Recorded (Gemini)",
     "simulateOutage": "Preview rules fallback",
     "simulatedOnly": "Preview only. Stored traces and dispatch decisions are unchanged."
@@ -987,5 +992,92 @@
     "geminiChip": "✨Gemini",
     "tierImmediate": "Immediate",
     "tierUrgent": "Urgent"
-  }
+  },
+  "band": {
+    "critical": "Critical",
+    "critical.tip": "Urgency 80+",
+    "urgent": "Urgent",
+    "urgent.tip": "Urgency 60–79",
+    "other": "Other"
+  },
+  "filter": {
+    "aiReview": "✨AI suggests review",
+    "aiReview.tip": "AI unsure or flagged",
+    "critical": "Critical",
+    "critical.tip": "Life at risk now. Aim to dispatch within 15 min.",
+    "urgent": "Urgent",
+    "urgent.tip": "Needs help within the hour."
+  },
+  "field": {
+    "need": "Need",
+    "people": "People",
+    "danger": "Danger",
+    "place": "Place"
+  },
+  "hazard": {
+    "water_rising": "Water rising"
+  },
+  "why": {
+    "title": "Why this team",
+    "team": "Team",
+    "eta": "ETA",
+    "seats": "Seats",
+    "dist": "Distance",
+    "dist30": "Distance /30",
+    "cap25": "Capacity /25",
+    "urg25": "Urgency /25",
+    "vuln20": "Vulnerable /20",
+    "total": "Score",
+    "order": "Ranked by ETA, then seats fit, then score",
+    "chosen": "Chosen",
+    "dropped": "Dropped: boat over 25 km",
+    "rule1": "Only free teams of the matching kind",
+    "rule2": "Boats over 25 km away are dropped",
+    "rule3": "Score = distance 30 + capacity 25 + urgency 25 + vulnerable 20"
+  },
+  "stat": {
+    "busy": "{n} busy",
+    "notUpdated": "{n} not updated",
+    "teamsFree": "{a}/{b} teams free",
+    "silent": "{n} area silent {h}h · {place} · Check"
+  },
+  "sample": {
+    "hindi": "Hindi report",
+    "voice": "Voice note",
+    "photo": "Flood photo"
+  },
+  "stepper": {
+    "title": "How the AI decided",
+    "tapHint": "Tap a step for evidence",
+    "read": "Read",
+    "dedupe": "Dedupe",
+    "urgency": "Urgency",
+    "team": "Team",
+    "you": "You"
+  },
+  "step": {
+    "noModel": "No model ran for this step",
+    "evidence": "Evidence",
+    "modelOutput": "Model output",
+    "confidence": "Confidence",
+    "confHigh": "High",
+    "confMed": "Medium",
+    "confLow": "Low",
+    "parallel": "parallel",
+    "sameTime": "At the same time: Checked for duplicates + Rated urgency",
+    "prev": "Previous",
+    "next": "Next",
+    "result": {
+      "noDup": "No duplicate"
+    }
+  },
+  "panel": {
+    "moreDetails": "More details"
+  },
+  "badge": {
+    "rules": "Rules",
+    "gemini": "Gemini",
+    "testModel": "Test model"
+  },
+  "ward": "Ward {n}"
 }

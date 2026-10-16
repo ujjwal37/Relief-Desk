@@ -16,7 +16,8 @@
     "home2": "ഹോം",
     "nearby2": "അടുത്ത്",
     "status2": "സ്ഥിതി",
-    "reportFab": "റിപ്പോർട്ട്"
+    "reportFab": "റിപ്പോർട്ട്",
+    "ask": "Ask the desk"
   },
   "landing": {
     "title": "Relief Desk",
@@ -678,7 +679,8 @@
     "removeShort": "നീക്കം ചെയ്യുക",
     "remove": "ഈ ഫോണിൽ നിന്ന് നീക്കം ചെയ്യുക",
     "coordinatorBtn": "ഞാൻ കോർഡിനേറ്ററാണ്",
-    "judge": "ജഡ്ജോ അവലോകകനോ? ഡെമോ കോർഡിനേറ്ററെ തുറക്കുക"
+    "judge": "ജഡ്ജോ അവലോകകനോ? ഡെമോ കോർഡിനേറ്ററെ തുറക്കുക",
+    "hero": "AI reads flood reports in any language, checks for duplicates, rates urgency and finds the closest free team. You approve."
   },
   "find": {
     "title": "എന്റെ അഭ്യർത്ഥന കണ്ടെത്തുക",
@@ -740,7 +742,10 @@
     "trail": "നീക്ക പാത",
     "saved": "പുതുക്കി",
     "missing": "ഈ ടീം ലിങ്ക് തുറക്കാനായില്ല.",
-    "noGps": "ഈ ഫോൺ സ്ഥാനം പങ്കിട്ടില്ല. ഡെമോയ്ക്ക് അനുകരണ നീക്കം തുടരാം."
+    "noGps": "ഈ ഫോൺ സ്ഥാനം പങ്കിട്ടില്ല. ഡെമോയ്ക്ക് അനുകരണ നീക്കം തുടരാം.",
+    "etaWater": "~{n} min by water",
+    "etaRoad": "~{n} min by road",
+    "straightLine": "Straight-line estimate, no live road-closure feed"
   },
   "ux": {
     "viewTrace": "ഇത് എങ്ങനെ തീരുമാനിച്ചു",
@@ -877,7 +882,7 @@
     "urgency": "Rated urgency",
     "matching": "Found the closest team",
     "explain": "Explained the choice",
-    "sentIntake": "{need} for {people} people, road cut off.",
+    "sentIntake": "{need} for {people} people.",
     "sentDedupeClear": "No other case at this place in the last hour.",
     "sentDedupeHit": "Looks like {id} (same place, {n} min apart).",
     "sentUrgency": "{band}: {reason}.",
@@ -898,7 +903,7 @@
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
     "waiting": "Waiting",
-    "badgeTool": "പൈത്തൺ ടൂൾ",
+    "badgeTool": "Rules engine",
     "badgeCache": "റെക്കോർഡ് ചെയ്തത് (Gemini)",
     "simulateOutage": "നിയമങ്ങൾ അടിസ്ഥാനമാക്കിയ മാർഗം കാണുക",
     "simulatedOnly": "പ്രിവ്യൂ മാത്രം. സൂക്ഷിച്ച ട്രേസുകളും വിന്യാസ തീരുമാനങ്ങളും മാറില്ല."
@@ -987,5 +992,92 @@
     "geminiChip": "✨Gemini",
     "tierImmediate": "Immediate",
     "tierUrgent": "Urgent"
-  }
+  },
+  "band": {
+    "critical": "Critical",
+    "critical.tip": "Urgency 80+",
+    "urgent": "Urgent",
+    "urgent.tip": "Urgency 60–79",
+    "other": "Other"
+  },
+  "filter": {
+    "aiReview": "✨AI suggests review",
+    "aiReview.tip": "AI unsure or flagged",
+    "critical": "Critical",
+    "critical.tip": "Life at risk now. Aim to dispatch within 15 min.",
+    "urgent": "Urgent",
+    "urgent.tip": "Needs help within the hour."
+  },
+  "field": {
+    "need": "Need",
+    "people": "People",
+    "danger": "Danger",
+    "place": "Place"
+  },
+  "hazard": {
+    "water_rising": "Water rising"
+  },
+  "why": {
+    "title": "Why this team",
+    "team": "Team",
+    "eta": "ETA",
+    "seats": "Seats",
+    "dist": "Distance",
+    "dist30": "Distance /30",
+    "cap25": "Capacity /25",
+    "urg25": "Urgency /25",
+    "vuln20": "Vulnerable /20",
+    "total": "Score",
+    "order": "Ranked by ETA, then seats fit, then score",
+    "chosen": "Chosen",
+    "dropped": "Dropped: boat over 25 km",
+    "rule1": "Only free teams of the matching kind",
+    "rule2": "Boats over 25 km away are dropped",
+    "rule3": "Score = distance 30 + capacity 25 + urgency 25 + vulnerable 20"
+  },
+  "stat": {
+    "busy": "{n} busy",
+    "notUpdated": "{n} not updated",
+    "teamsFree": "{a}/{b} teams free",
+    "silent": "{n} area silent {h}h · {place} · Check"
+  },
+  "sample": {
+    "hindi": "Hindi report",
+    "voice": "Voice note",
+    "photo": "Flood photo"
+  },
+  "stepper": {
+    "title": "How the AI decided",
+    "tapHint": "Tap a step for evidence",
+    "read": "Read",
+    "dedupe": "Dedupe",
+    "urgency": "Urgency",
+    "team": "Team",
+    "you": "You"
+  },
+  "step": {
+    "noModel": "No model ran for this step",
+    "evidence": "Evidence",
+    "modelOutput": "Model output",
+    "confidence": "Confidence",
+    "confHigh": "High",
+    "confMed": "Medium",
+    "confLow": "Low",
+    "parallel": "parallel",
+    "sameTime": "At the same time: Checked for duplicates + Rated urgency",
+    "prev": "മുമ്പത്തേത്",
+    "next": "അടുത്തത്",
+    "result": {
+      "noDup": "No duplicate"
+    }
+  },
+  "panel": {
+    "moreDetails": "More details"
+  },
+  "badge": {
+    "rules": "Rules",
+    "gemini": "Gemini",
+    "testModel": "Test model"
+  },
+  "ward": "Ward {n}"
 }

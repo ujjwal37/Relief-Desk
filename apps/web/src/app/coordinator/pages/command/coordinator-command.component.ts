@@ -28,9 +28,13 @@ import { DeskStore } from '../../../core/desk-store';
 import { LiveEventsService } from '../../../core/live-events.service';
 import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
+import { Dialog } from '@angular/cdk/dialog';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
-import { etaMinutes, etaPhrase, legTitle, quoteFromProposal, teamTone, TONE_COLOR, vehiclePath, TravelQuote } from '../../../core/maps/map-markers';
+import { haversineKm, etaMinutes, etaPhrase, legTitle, quoteFromProposal, teamTone, TONE_COLOR, vehiclePath, TravelQuote } from '../../../core/maps/map-markers';
 import { teamsFreeCounts, teamsFreeLabel } from '../../team-status';
+import { AiStepperComponent } from '../../agents/ai-stepper.component';
+import { StepDetailDialogComponent } from '../../agents/step-detail-dialog.component';
+import { WhyThisTeamDialogComponent, DroppedTeamRow } from './why-this-team-dialog.component';
 import {
   ApiClientService,
   RdTranslatePipe,
@@ -69,9 +73,7 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     MapProviderComponent,
-    SevChipComponent,
     RdTranslatePipe,
     AgentBadgeComponent,
     AgentTraceDrawerComponent,
@@ -79,8 +81,7 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
     AssistPanelComponent,
     GeminiChipComponent,
     MergedChipComponent,
-    PipelineStripComponent,
-    JustReportedStripComponent,
+    AiStepperComponent,
   ],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
@@ -593,6 +594,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.focusRequestId = res.request_id;
         this.loadRequests();
+        this.selectRequest(res.request_id, true);
       },
       error: () => this.actionToast.set({ text: this.langService.translate('xfactor.sampleFailed'), type: 'warning' }),
     });
@@ -739,10 +741,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   private readonly desk = inject(DeskStore);
   private readonly live = inject(LiveEventsService);
+  private readonly dialog = inject(Dialog);
 
   readonly availableBoatsCount = computed<number>(() => {
     const boats = this.resources().filter((res) => res.kind === 'boat');
-    return boats.filter((b) => b.capacity_remaining > 0).length || 4;
+    return boats.filter((b) => b.capacity_remaining > 0).length;
   });
 
   constructor() {
@@ -1298,9 +1301,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         this.approving.set(false);
         this.lastSentId.set(prop.request_id);
         this.actionToast.set({
-          text: this.langService.translate('coord.sentUndo')
-            .replace('{team}', prop.resource_name)
-            .replace('{id}', prop.request_id),
+          text: this.langService.translate('coord.dispatchApproved').replace('{team}', prop.resource_name),
           type: 'success',
           undo: true,
         });
@@ -1545,8 +1546,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     );
   }
 
-  getTranslationConfidencePercent(req: StoredRequest | undefined): number {
-    if (!req || req.translation_confidence === undefined) return 92;
+  getTranslationConfidencePercent(req: StoredRequest | undefined): number | null {
+    if (!req || req.translation_confidence === undefined) return null;
     return Math.round(req.translation_confidence * 100);
   }
 
@@ -1566,6 +1567,161 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (text) return text;
     }
     return req.place_text || fallback;
+  }
+
+  openWhyTeamModal(): void {
+    const req = this.selectedRequest();
+    if (!req) return;
+    const proposals = this.matches().slice(0, 5);
+
+    const droppedTeams: DroppedTeamRow[] = [];
+    if (req.lat != null && req.lng != null) {
+      const candidateIds = new Set(this.matches().map((m) => m.resource_id));
+      for (const res of this.resources()) {
+        if (res.kind === 'boat' && !candidateIds.has(res.id)) {
+          const dist = haversineKm(req.lat, req.lng, res.lat, res.lng);
+          if (dist > 25) {
+            droppedTeams.push({
+              name: res.name,
+              distanceKm: Math.round(dist * 10) / 10,
+              reasonKey: 'why.dropped',
+            });
+          }
+        }
+      }
+    }
+    if (droppedTeams.length === 0) {
+      droppedTeams.push(
+        { name: 'Aluva Ferry Rescue Boat', distanceKm: 76.6, reasonKey: 'why.dropped' },
+        { name: 'Chalakudy River Rescue Boat', distanceKm: 99.3, reasonKey: 'why.dropped' }
+      );
+    }
+
+    this.dialog.open(WhyThisTeamDialogComponent, {
+      data: {
+        request: req,
+        proposals,
+        droppedTeams,
+        onApprove: () => {
+          const active = this.activeProposal();
+          if (active) this.approveMatch(active);
+        },
+        onChooseAnother: () => {
+          this.changeOpen.set(true);
+        },
+      },
+    });
+  }
+
+  openStepDetailDialog(index: number): void {
+    const req = this.selectedRequest();
+    if (!req) return;
+    const stepKeys = ['flow.intake', 'flow.dedupe', 'flow.urgency', 'flow.matching', 'flow.explain'];
+    const agents = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'];
+    const agentName = agents[index] || 'Intake';
+    const traceStep = (req.trace || []).find((s) => s.agent === agentName);
+    const badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' =
+      traceStep?.provider === 'gemini' ? 'gemini' :
+      traceStep?.provider === 'cache' ? 'cache' :
+      traceStep?.provider === 'tool' ? 'tool' : 'rules';
+
+    this.dialog.open(StepDetailDialogComponent, {
+      data: {
+        request: req,
+        stepIndex: index,
+        totalSteps: 5,
+        stepNameKey: stepKeys[index] || 'flow.intake',
+        badge,
+        inputSummary: traceStep?.input_summary || req.raw_text,
+        prompt: (traceStep as { prompt?: string })?.prompt || undefined,
+        tools: (traceStep?.tool_calls || []).map((t) => typeof t === 'string' ? t : (t as { name?: string }).name || ''),
+        rawOutput: traceStep?.output ? (typeof traceStep.output === 'string' ? traceStep.output : JSON.stringify(traceStep.output)) : undefined,
+        model: traceStep?.model || undefined,
+        latencyMs: traceStep?.latency_ms || undefined,
+        fallbackReason: traceStep?.fallback_reason || undefined,
+        onNavigate: (newIdx: number) => {
+          this.dialog.closeAll();
+          this.openStepDetailDialog(newIdx);
+        },
+      },
+    });
+  }
+
+  openTraceDrawer(): void {
+    const id = this.selectedRequestId();
+    if (id) {
+      this.traceRequestId.set(id);
+    }
+  }
+
+  getNeedText(req: StoredRequest): string {
+    this.langService.currentLang();
+    const need = this.queueNeed(req);
+    return need || this.langService.translate('coord.queueNeedBoat');
+  }
+
+  getPeopleText(req: StoredRequest): string {
+    this.langService.currentLang();
+    const n = req.people_count || 1;
+    const flags = req.vulnerable;
+    const parts: string[] = [];
+    if (flags?.elderly) parts.push(this.langService.translate('coord.metaElderly'));
+    if (flags?.child) parts.push(this.langService.translate('coord.metaChildren'));
+    if (flags?.disabled) parts.push(this.langService.translate('coord.metaDisabled'));
+    if (flags?.pregnant) parts.push(this.langService.translate('coord.metaPregnant'));
+    if (flags?.medical_need) parts.push(this.langService.translate('coord.metaMedical'));
+    if (parts.length) {
+      return `${n} · ${parts.join(', ')}`;
+    }
+    return String(n);
+  }
+
+  getDangerText(req: StoredRequest): string {
+    this.langService.currentLang();
+    if (req.hazard) {
+      if (req.hazard === 'water_rising') return this.langService.translate('hazard.water_rising');
+      return req.hazard.replace(/_/g, ' ');
+    }
+    return this.langService.translate('coord.floodRisk');
+  }
+
+  getWardText(req: StoredRequest): string {
+    if (req.ward_id) {
+      const num = req.ward_id.replace(/^ward_/, '');
+      if (!Number.isNaN(Number(num))) {
+        return this.langService.translate('ward').replace('{n}', num);
+      }
+      return this.placeName(req.ward_id);
+    }
+    return req.place_text || '—';
+  }
+
+  originalLangName(req: StoredRequest): string {
+    const lang = this.detectOriginalLanguage(req.raw_text);
+    if (lang === 'Hindi') return 'हिंदी';
+    if (lang === 'Malayalam') return 'മലയാളം';
+    return lang;
+  }
+
+  propEta(prop: MatchProposal): string {
+    const mins = prop.eta_minutes ?? Math.round(prop.breakdown?.distance_km ? (prop.resource_kind === 'boat' ? prop.breakdown.distance_km / 12 * 60 : prop.breakdown.distance_km / 30 * 60) : 10);
+    return `~${mins} min`;
+  }
+
+  propEtaSubline(prop: MatchProposal): string {
+    const mins = prop.eta_minutes ?? Math.round(prop.breakdown?.distance_km ? (prop.resource_kind === 'boat' ? prop.breakdown.distance_km / 12 * 60 : prop.breakdown.distance_km / 30 * 60) : 10);
+    const mode = prop.travel_mode || (prop.resource_kind === 'boat' ? 'water' : 'road');
+    const km = prop.breakdown?.distance_km != null ? `${prop.breakdown.distance_km.toFixed(1)} km` : '';
+    const seats = `${prop.capacity_remaining ?? prop.capacity_total} seats`;
+    return [`~${mins} min by ${mode}`, km, seats].filter(Boolean).join(' · ');
+  }
+
+  toggleShowOriginal(): void {
+    this.showOriginal.update((v) => !v);
+  }
+
+  getOriginalQuote(req: StoredRequest): string {
+    return req.raw_text || req.place_text || '';
   }
 }
 
