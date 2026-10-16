@@ -1727,6 +1727,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return isMachineSummary(req.summary) || isMachineSummary(req.ai_translation);
   }
 
+  /** Short header title: the first words of the model's place/summary; the full text stays below. */
+  shortTitle(req: StoredRequest): string {
+    const full = this.caseTitle(req);
+    const words = full.split(/\s+/);
+    if (full.length <= 48 || words.length <= 7) return full;
+    return words.slice(0, 7).join(' ').replace(/[,.;:]$/, '') + '…';
+  }
+
   caseTitle(req: StoredRequest): string {
     if (this.waitingForReading(req)) return this.langService.translate('flow.readingReport');
     return req.place_text || this.getTranslationText(req);

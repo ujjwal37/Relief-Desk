@@ -396,7 +396,7 @@
           <!-- 1. Case Header -->
           <div class="decision-case-header">
             <div class="dec-title-row">
-              <h2 class="dec-place-title">{{ caseTitle(req) }}</h2>
+              <h2 class="dec-place-title" [attr.title]="caseTitle(req)">{{ shortTitle(req) }}</h2>
               <span class="dec-band-tag" [class]="'band-' + bandOf(req.urgency_score)">
                 @if (bandOf(req.urgency_score) === 'critical') {
                   ▲ {{ 'filter.critical' | rdTranslate }}
