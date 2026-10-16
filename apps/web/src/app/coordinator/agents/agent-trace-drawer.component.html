@@ -48,7 +48,7 @@
           </div>
           <span class="alt-b-sentence">{{ step.sentence }}</span>
           <span class="badge" [class.model]="step.badge === 'gemini' || step.badge === 'cache'">{{ badgeWord(step) }}</span>
-          <button type="button" class="alt-b-details-btn" (click)="openStepDetail(idx)">
+          <button type="button" class="alt-b-details-btn" (click)="openStepDetail(idx)" [attr.aria-label]="'flow.stepDetails' | rdTranslate" data-testid="step-details-btn">
             {{ 'flow.details' | rdTranslate }} ›
           </button>
         </div>

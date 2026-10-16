@@ -62,6 +62,8 @@ export class CoordinatorLoginComponent {
     if (ok) {
       try { sessionStorage.setItem('rd_start_tour', '1'); } catch { /* private mode */ }
       await this.goToDashboard();
+    } else {
+      this.failed.set(true);
     }
   }
 

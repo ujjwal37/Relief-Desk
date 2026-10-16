@@ -202,11 +202,11 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         pack_id=payload.scenario_id,
         type=extracted.type,
         picked_type=(payload.structured.incident_type if payload.structured else None),
-        place_text=extracted.place_text or "Alappuzha",
+        place_text=extracted.place_text or (payload.location_pin.get("ward") if payload.location_pin else "") or "",
         ward_id=ward_id,
         lat=pin_lat,
         lng=pin_lng,
-        people_count=extracted.people.count or 1,
+        people_count=extracted.people.count or (people_bounds(citizen_text or report_text)[1] if people_bounds(citizen_text or report_text) else None) or 1,
         people_span=(people_bounds(citizen_text or report_text) or (None, None, None))[2],
         vulnerable=extracted.vulnerable,
         hazard=extracted.hazard,
@@ -338,7 +338,11 @@ def _response_for(
         report_id=raw_report.id,
         request_id=req_obj.id,
         status_token=raw_report.status_token or "",
-        summary=f"{req_obj.people_count} person(s) needing {req_obj.type.value} at {req_obj.place_text}",
+        summary=(
+            req_obj.summary
+            or f"{req_obj.people_count} person(s) needing {req_obj.type.value}"
+            + (f" at {req_obj.place_text}" if req_obj.place_text else "")
+        ),
         urgency_score=req_obj.urgency_score,
         dedupe_decision=decision,
         flags=list(flags),

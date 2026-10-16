@@ -463,20 +463,41 @@ def ensure_trace(req: StoredRequest) -> None:
     kind = {"medical": "medical", "food": "food", "shelter": "shelter"}.get(req.type.value, "boat")
     capacity = check_capacity(kind)
     marks.append(time.perf_counter())
-    explanation = strip_advice(
-        f"The urgency score is {scored.score}. "
-        f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch."
-    )
+
+    from app.agents.matching import matching_agent
+    proposals = matching_agent.find_matches(req, top_n=1, save_to_storage=False)
+    best = proposals[0] if proposals else None
+    dist_km = best.breakdown.distance_km if (best and best.breakdown.distance_km is not None) else 2.5
+    matching_output = json.dumps({
+        "team": best.resource_name if best else "No suitable team available",
+        "km": dist_km,
+        "kind": best.resource_kind.value if best else kind,
+        "match_score": best.score if best else None,
+        "seats": best.capacity_remaining if best else 0,
+    })
+
+    if best:
+        explanation = f"{best.resource_name} is {dist_km} km away with {best.capacity_remaining} free seats. Total match score is {best.score} based on proximity and urgency."
+    else:
+        explanation = strip_advice(
+            f"The urgency score is {scored.score}. "
+            f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch."
+        )
     explanation = f"{explanation} This note is not medical or legal advice."
     marks.append(time.perf_counter())
     marks.append(time.perf_counter())
     durations = [max(0, int((marks[i + 1] - marks[i]) * 1000)) for i in range(5)]
+
+    is_live = llm_client.gemini_live()
+    ai_prov = req.ai.provider if (req.ai and req.ai.provider in ("gemini", "cache")) else ("gemini" if is_live else "cache")
+    ai_model = (req.ai.model if req.ai else None) or settings.GEMINI_MODEL
+
     built = [
         _intake_row(req, summary, marks[0]),
-        _trace_step("Dedupe", "complete", summary, dedupe_out, [], marks[1]),
-        _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], marks[2]),
-        _trace_step("Matching", "complete", summary, f"{capacity['available']} {kind} free", ["check_capacity"], marks[3]),
-        _trace_step("Explainer", "complete", summary, explanation, [], marks[4]),
+        _trace_step("Dedupe", "complete", summary, dedupe_out, [], marks[1], provider=ai_prov, model=ai_model),
+        _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], marks[2], provider=ai_prov, model=ai_model),
+        _trace_step("Matching", "complete", summary, matching_output, ["check_capacity", "match_score"], marks[3], provider="tool"),
+        _trace_step("Explainer", "complete", summary, explanation, [], marks[4], provider=ai_prov, model=ai_model),
     ]
     for step, duration in zip(built[1:], durations[1:]):
         step["latency_ms"] = duration

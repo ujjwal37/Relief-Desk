@@ -496,6 +496,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (this.testWord(req)) return 'test';
     if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'recorded';
     if (req.ai?.provider === 'gemini' || req.ai_source === 'gemini') return 'gemini';
+    if (this.ui.aiHealth()?.provider === 'gemini' || this.ui.aiHealth()?.label?.includes('Gemini')) return 'gemini';
     return 'fallback';
   }
   /** Who read this report, e.g. "Test model (NVIDIA)". Never Gemini for a test provider. */
@@ -782,6 +783,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.readFilters();
     this.watchViewport();
     this.stopPipeline = this.live.onEvent((event) => {
+      if (event.type === 'case.created' || event.type === 'case.updated' || event.type === 'case.merged') {
+        this.loadRequests(true);
+      }
+      if (event.type === 'dispatch.created' || event.type === 'team.updated') {
+        this.loadResources();
+      }
+      if (event.type === 'alert.created') {
+        this.ui.loadAlerts();
+      }
       if (event.type !== 'pipeline.step' || !event.request_id || !event.agent) return;
       const row: PipelineLiveStep = {
         agent: event.agent,
@@ -855,7 +865,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.stopQueuePoll();
     this.pollTimer = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      if (this.live.state() === 'live') return;
       this.loadRequests(true);
       this.loadResources();
       this.loadAssist();
@@ -967,7 +976,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   loadResources(): void {
     this.apiClient.getResources().subscribe({
-      next: (resList) => this.resources.set(resList),
+      next: (resList) => {
+        this.resources.set(resList);
+        this.desk.refreshTeams();
+      },
       error: (err) => console.error('Failed to load resources:', err),
     });
   }
@@ -1620,10 +1632,19 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const agents = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'];
     const agentName = agents[index] || 'Intake';
     const traceStep = (req.trace || []).find((s) => s.agent === agentName);
-    const badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' =
-      traceStep?.provider === 'gemini' ? 'gemini' :
-      traceStep?.provider === 'cache' ? 'cache' :
-      traceStep?.provider === 'tool' ? 'tool' : 'rules';
+    const isGeminiLive = this.ui.aiHealth()?.provider === 'gemini' || this.ui.aiHealth()?.label?.includes('Gemini');
+    let badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' = 'rules';
+    if (index === 3 || agentName === 'Matching') {
+      badge = 'tool';
+    } else if (traceStep?.provider === 'gemini' || (isGeminiLive && traceStep?.provider !== 'cache')) {
+      badge = 'gemini';
+    } else if (traceStep?.provider === 'cache' || traceStep?.provider === 'recorded') {
+      badge = 'cache';
+    } else if (traceStep?.provider === 'tool') {
+      badge = 'tool';
+    } else if (isGeminiLive) {
+      badge = 'gemini';
+    }
 
     this.dialog.open(StepDetailDialogComponent, {
       data: {

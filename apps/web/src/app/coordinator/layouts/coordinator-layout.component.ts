@@ -196,8 +196,15 @@ export class CoordinatorLayoutComponent implements OnDestroy {
 
   refreshAiHealth(): void {
     this.api.getAiHealth?.().subscribe({
-      next: (health) => this.aiHealth.set(health),
-      error: () => this.aiHealth.set({ provider: 'fallback', model: '', label: 'Rules fallback' }),
+      next: (health) => {
+        this.aiHealth.set(health);
+        this.ui.aiHealth.set(health);
+      },
+      error: () => {
+        const fallback = { provider: 'fallback', model: '', label: 'Rules fallback' };
+        this.aiHealth.set(fallback);
+        this.ui.aiHealth.set(fallback);
+      },
     });
   }
 

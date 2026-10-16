@@ -1382,3 +1382,46 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
   - Backend and mobile remain completely unchanged.
   - All screenshots verified visually against mockups and viewport constraints.
 - Next (suggested task id): none (all UI rebuild requirements complete).
+
+### 2026-10-16 20:12 IST — T-REBUILD-02 — Antigravity
+- What changed:
+  1. AI Labels Clash: Wired live Gemini detection into `aiKind()` and `openStepDetailDialog()` via shared `ui.aiHealth` signal so cases show Gemini / Recorded when Gemini live is active rather than Offline fallback, while Matching step is accurately identified as "Rules engine".
+  2. First Summary Accuracy: Removed hardcoded "Alappuzha" and default 1-person fallbacks in `services/api/app/api/reports.py`. Added comprehensive Malayalam digits (൦-൯), number words, location cues, and people indicators to `nlu_rules.py` for immediate rule-based extraction on arrival before AI enrichment.
+  3. Reporter Queue Arrival: Connected SSE events (`case.created`, `case.updated`, `case.merged`, `team.updated`, `dispatch.created`, `alert.created`) in `coordinator-command` to immediately reload requests, resources, and alerts. Preserved 5-second polling fallback regardless of SSE state.
+  4. Step Details Button Accessibility: Added `[attr.aria-label]="'flow.stepDetails' | rdTranslate"` with full i18n parity (`stepDetails` across en, hi, hinglish, ml) and `data-testid="step-details-btn"` to Alt B details button in `agent-trace-drawer`.
+  5. Missing km in Explanation: Fixed Explainer and pipeline fallback templates to consistently include computed distance km and ensure matching breakdown populates `distance_km`.
+  6. Alert Titles: Updated `titleOf()` in `coordinator-alerts.component.ts` to translate the alert's actual `kind` (`alerts.k.*`), eliminating the blanket "Resource gap" label across sample alerts.
+  7. Team Counts & Row Click: Synchronized `loadResources()` with `DeskStore.refreshTeams()`, made entire team card clickable with `(click)="toggle(team.id)"`, added `data-testid="team-card"`, and set exact accessible name `[attr.aria-label]="team.name"`.
+  8. Demo Login Failure: Handled `!ok` in `CoordinatorLoginComponent.enterDemo()` by setting `this.failed.set(true)` to surface failed authentication visibly.
+- Files:
+  - `services/api/app/api/reports.py`
+  - `services/api/app/agents/pipeline.py`
+  - `services/api/app/llm/replay_seed.py`
+  - `services/api/app/tools/demo_cases.py`
+  - `services/api/app/tools/nlu_rules.py`
+  - `apps/web/src/app/core/services/coord-ui.service.ts`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/teams/coordinator-teams.component.html`
+  - `apps/web/src/app/coordinator/pages/alerts/coordinator-alerts.component.ts`
+  - `apps/web/src/app/coordinator/pages/login/coordinator-login.component.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.html`
+  - `libs/shared/src/lib/i18n/en.json`
+  - `libs/shared/src/lib/i18n/hi.json`
+  - `libs/shared/src/lib/i18n/hinglish.json`
+  - `libs/shared/src/lib/i18n/ml.json`
+  - `TASKS.md`
+  - `WORKDONE.md`
+- How verified (commands / screenshots):
+  - `node scripts/check-i18n.mjs` — PASSED (972 keys across en, hi, hinglish, ml with 0 template errors).
+  - `npx ng build web` — PASSED with code 0.
+  - `pytest services/api/tests/test_intake_nlu.py services/api/tests/test_confirmation.py services/api/tests/test_dedupe.py services/api/tests/test_events.py services/api/tests/test_gemini_live.py` — PASSED (28 passed).
+  - `npx playwright test e2e/agents-visible.spec.ts` — PASSED (2 passed in 25.4s).
+  - `npx playwright test e2e/first-pass.spec.ts` — PASSED (2 passed in 38.8s).
+  - `npx playwright test e2e/capture-screenshots.spec.ts` — PASSED (1 passed).
+  - 7 updated screenshots in `e2e/screenshots/` and copied to artifact directory.
+- Notes / risks / not done:
+  - `apps/web/src/app/core/maps/` was completely untouched.
+  - All Playwright accessible queries validated.
+- Next (suggested task id): none

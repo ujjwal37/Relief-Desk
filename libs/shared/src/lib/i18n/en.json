@@ -875,6 +875,7 @@
     "forCase": "For {id} · {title}",
     "parallel": "At the same time",
     "details": "Details",
+    "stepDetails": "Step details",
     "hideDetails": "Hide details",
     "humanNote": "Nothing is sent until you approve.",
     "intake": "Understood the report",

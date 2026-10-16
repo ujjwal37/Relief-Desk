@@ -230,7 +230,7 @@ export class StepDetailDialogComponent {
     if (this.data.badge === 'gemini') return 'Gemini';
     if (this.data.badge === 'cache') return 'Recorded (Gemini)';
     if (this.data.badge === 'test') return 'Test model';
-    return 'Rules';
+    return 'Rules engine';
   }
 
   prevStep(): void {

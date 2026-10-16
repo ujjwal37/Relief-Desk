@@ -160,13 +160,9 @@ export class CoordinatorAlertsComponent implements OnInit {
 
   titleOf(alert: AnomalyAlert): string {
     this.lang.currentLang();
-    if ((alert.reason || '').startsWith('Sample.') || (alert.title || '').startsWith('Sample')) {
-      const sample = this.lang.translate('alerts.sampleGap');
-      return sample === 'alerts.sampleGap' ? alert.title : sample;
-    }
     const key = `alerts.k.${alert.kind}`;
     const text = this.lang.translate(key);
-    return text === key ? alert.title : text;
+    return text === key ? (alert.title || alert.kind) : text;
   }
 
   /** Localise a known English reason. Unknown wording stays as stored. */

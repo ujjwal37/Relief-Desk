@@ -12,26 +12,30 @@ from typing import Dict, Optional
 _CHILD = (
     "bachcha", "baccha", "bachha", "bachhe", "bacche", "bache", "bachcha", "infant", "infants", "newborn",
     "child", "children", "baby", "babies", "kid", "kids", "बच्चा", "बच्चे", "बच्ची", "बालक", "नवजात", "शिशु",
+    "കുട്ടി", "കുട്ടികൾ", "കുഞ്ഞ്", "കുഞ്ഞുങ്ങൾ", "മക്കൾ",
 )
 _ELDERLY = (
     "bujurg", "buzurg", "budha", "budhiya", "elderly", "senior", "dada", "dadi",
     "बुजुर्ग", "बूढ़", "बुढ़", "दादी", "दादा", "नानी", "नाना", "old man", "old woman", "aged",
+    "വൃദ്ധൻ", "വൃദ്ധർ", "പ്രായമായവർ", "മുത്തശ്ശി", "മുത്തശ്ശൻ", "അമ്മൂമ്മ", "അപ്പൂപ്പൻ",
 )
-_PREGNANT = ("pregnant", "pregnancy", "garbhvati", "pet se", "गर्भवती", "गर्भ", "प्रेग्नेंट", "पेट से")
-_DISABLED = ("disabled", "handicap", "wheelchair", "divyang", "दिव्यांग", "अपंग")
+_PREGNANT = ("pregnant", "pregnancy", "garbhvati", "pet se", "गर्भवती", "गर्भ", "प्रेग्नेंट", "पेट से", "ഗർഭിണി", "ഗർഭം")
+_DISABLED = ("disabled", "handicap", "wheelchair", "divyang", "दिव्यांग", "अपंग", "വികലാംഗർ", "ഭിന്നശേഷി", "കിടപ്പിലായ")
 _MEDICAL = (
     "medical", "oxygen", "insulin", "dialysis", "doctor", "bedridden", "ऑक्सीजन", "दवा", "बीमार", "डायलिसिस",
+    "രോഗി", "ഓക്സിജൻ", "മരുന്ന്", "ഡയാലിസിസ്", "ആശുപത്രി", "ശ്വാസം",
 )
 _STOP = {
     "par", "pe", "per", "mein", "me", "mai", "hai", "hain", "ke", "ki", "aur",
     "bhi", "se", "ko", "ka", "par",
+    "ൽ", "യിൽ", "ആണ്", "ഉണ്ട്", "ഉം", "കൂടെ",
 }
 
 
 def _has_any(text: str, words: tuple) -> bool:
     lower = text.lower()
     for word in words:
-        if re.search(r"[\u0900-\u097F]", word):
+        if re.search(r"[\u0900-\u097F\u0D00-\u0D7F]", word):
             if word in text:
                 return True
             continue
@@ -50,13 +54,18 @@ def vulnerable_flags(text: str) -> Dict[str, bool]:
     }
 
 
-_DEVA_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
+_DEVA_DIGITS = str.maketrans("०१२३४५६७८९൦൧൨൩൪൫൬൭൮൯", "01234567890123456789")
 
 _HI_NUMBER_WORDS = {
     "एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पांच": 5, "पाँच": 5,
     "छह": 6, "छः": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10,
     "ग्यारह": 11, "बारह": 12, "तेरह": 13, "चौदह": 14, "पंद्रह": 15, "सोलह": 16,
     "सत्रह": 17, "अठारह": 18, "उन्नीस": 19, "बीस": 20,
+}
+_ML_NUMBER_WORDS = {
+    "ഒന്ന്": 1, "രണ്ട്": 2, "മൂന്ന്": 3, "നാല്": 4, "അഞ്ച്": 5,
+    "ആറ്": 6, "ഏഴ്": 7, "എട്ട്": 8, "ഒൻപത്": 9, "പത്ത്": 10,
+    "പതിനൊന്ന്": 11, "പന്ത്രണ്ട്": 12, "ഇരുപത്": 20,
 }
 # Hinglish number words before "log" ("teen log").
 _HINGLISH_NUMBER_WORDS = {
@@ -75,7 +84,7 @@ def extract_place(text: str) -> Optional[str]:
         return None
     text = _ascii_digits(text)
     ward = re.search(
-        r"((?:ward|वार्ड)\s*\d+\b(?:\s+[\w\u0900-\u097F.]{2,}){0,4})",
+        r"((?:ward|वार्ड|വാർഡ്)\s*\d+\b(?:\s+[\w\u0900-\u097F\u0D00-\u0D7F.]{2,}){0,4})",
         text,
         flags=re.IGNORECASE,
     )
@@ -91,7 +100,7 @@ def extract_place(text: str) -> Optional[str]:
             return place
 
     street = re.search(
-        r"([A-Za-z0-9][\w]{2,}(?:\s+[A-Za-z][\w]{2,}){0,3}\s+(?:road|rd|lane|street|nagar|church))",
+        r"([A-Za-z0-9\u0D00-\u0D7F][\w\u0D00-\u0D7F]{2,}(?:\s+[A-Za-z0-9\u0D00-\u0D7F][\w\u0D00-\u0D7F]{2,}){0,3}\s+(?:road|rd|lane|street|nagar|church|റോഡ്|പാലം|ജെട്ടി|ബോട്ട് ജെട്ടി))",
         text,
         flags=re.IGNORECASE,
     )
@@ -99,7 +108,7 @@ def extract_place(text: str) -> Optional[str]:
         return street.group(1).strip(" ,.")
 
     landmark = re.search(
-        r"(?:(?:^|(?<=\s))(?:near|at|paas)|के पास|पास)\s+([A-Za-z0-9\u0900-\u097F][^,.]{2,48})",
+        r"(?:(?:^|(?<=\s))(?:near|at|paas)|के पास|पास|അടുത്ത്|സമീപം)\s+([A-Za-z0-9\u0900-\u097F\u0D00-\u0D7F][^,.]{2,48})",
         text,
         flags=re.IGNORECASE,
     )
@@ -136,7 +145,7 @@ def people_bounds(text: str) -> Optional[tuple]:
         return None
     normalized = _ascii_digits(text)
     ranged = re.search(
-        r"(\d+)\s*(?:-|–|—|\bto\b)\s*(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति)(?:ों|ें)?(?!\w)",
+        r"(\d+)\s*(?:-|–|—|\bto\b)\s*(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति|ആളുകൾ|പേർ|പേര്)(?:ों|ें)?(?!\w)",
         normalized,
         flags=re.IGNORECASE,
     )
@@ -175,7 +184,7 @@ def _people_count_single(normalized: str) -> Optional[int]:
     if not normalized:
         return None
     match = re.search(
-        r"(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति)(?:ों|ें)?(?!\w)",
+        r"(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति|ആളുകൾ|പേർ|പേര്|പേരുകൾ)(?:ों|ें)?(?!\w)",
         normalized,
         flags=re.IGNORECASE,
     )
@@ -199,6 +208,13 @@ def _people_count_single(normalized: str) -> Optional[int]:
     )
     if hindi:
         return _HI_NUMBER_WORDS[hindi.group(1)]
+    ml_spoken = "|".join(sorted(_ML_NUMBER_WORDS, key=len, reverse=True))
+    ml_match = re.search(
+        rf"({ml_spoken})\s*(?:ആളുകൾ|പേർ|പേര്|കുട്ടികൾ)(?!\w)",
+        normalized,
+    )
+    if ml_match:
+        return _ML_NUMBER_WORDS[ml_match.group(1)]
     latin = "|".join(sorted(_HINGLISH_NUMBER_WORDS, key=len, reverse=True))
     hinglish = re.search(rf"(?<![a-z])({latin})\s+(?:log|logon|logo|insaan|bande)(?![a-z])", normalized, flags=re.IGNORECASE)
     if hinglish:
@@ -221,31 +237,35 @@ def infer_incident_type(text: str) -> Optional[str]:
     def has_phrase(*phrases: str) -> bool:
         return any(phrase in text or phrase in lower for phrase in phrases)
 
-    animal = has_latin("dog", "dogs", "kutta", "kutte", "snake", "saanp", "rabies") or has_phrase("कुत्ता", "कुत्ते", "साँप", "सांप")
-    if animal and (has_latin("bite", "bit", "bitten", "attack", "attacked", "kaat", "kata", "kaata", "rabies") or has_phrase("काट")):
+    animal = has_latin("dog", "dogs", "kutta", "kutte", "snake", "saanp", "rabies") or has_phrase("कुत्ता", "कुत्ते", "साँप", "सांप", "പട്ടി", "പാമ്പ്")
+    if animal and (has_latin("bite", "bit", "bitten", "attack", "attacked", "kaat", "kata", "kaata", "rabies") or has_phrase("काट", "കടിയേറ്റു")):
         return "animal_attack"
     # Medical before food: "needs oxygen, also no khana" is a medical case (life threat first).
     if has_latin("bimar", "bimaar", "dawa", "dawai", "oxygen", "insulin", "dialysis", "doctor", "medicine", "medical",
                  "bleeding", "unconscious", "ambulance") or has_phrase(
-        "बीमार", "दवा", "ऑक्सीजन", "इंसुलिन", "डॉक्टर", "दवाइ", "डायलिसिस", "can't breathe", "cannot breathe", "साँस"
+        "बीमार", "दवा", "ऑक्सीजन", "इंसुलिन", "डॉक्टर", "दवाइ", "डायलिसिस", "can't breathe", "cannot breathe", "साँस",
+        "രോഗി", "ഓക്സിജൻ", "മരുന്ന്", "ആശുപത്രി", "ശ്വാസം", "ഡയാലിസിസ്"
     ):
         return "medical"
     if has_latin("ration", "bhook", "bhookh", "khana", "packets") or has_phrase(
-        "राशन", "भूख", "खाना", "पीने का पानी", "drinking water", "पैकेट"
+        "राशन", "भूख", "खाना", "पीने का पानी", "drinking water", "पैकेट",
+        "ഭക്ഷണം", "ഭക്ഷണപ്പൊതി", "കഴിക്കാൻ", "വിശപ്പ്"
     ):
         return "food"
     if has_latin("bachao", "rescue", "stranded", "fanse", "rooftop") or has_phrase(
         "chat par", "chhat par", "छत", "फंसे", "फँसे", "फंस", "fas gaye",
         "boat bhejo", "boat needed", "rescue boat", "send a boat", "boat chahiye",
         "नाव", "बचाओ", "बचाव",
+        "രക്ഷിക്കൂ", "രക്ഷാപ്രവർത്തനം", "വഞ്ചി", "ബോട്ട്", "വെള്ളം കയറി", "മുങ്ങി", "മേൽക്കൂര"
     ):
         return "rescue"
     if has_latin("beghar", "tarpaulin") or has_phrase(
         "जगह चाहिए", "jagah chahiye", "घर डूब", "ghar doob", "roof collapsed",
         "emergency shelter", "need shelter", "temporary shelter", "आश्रय", "बेघर",
+        "വീട് മുങ്ങി", "താമസിക്കാൻ സ്ഥലം", "അഭയം"
     ):
         return "shelter"
-    if has_phrase("waterlogging", "traffic stopped", "road is blocked", "road blocked", "रास्ता बंद"):
+    if has_phrase("waterlogging", "traffic stopped", "road is blocked", "road blocked", "रास्ता बंद", "റോഡ് തടസ്സപ്പെട്ടു"):
         return "info"
     return None
 

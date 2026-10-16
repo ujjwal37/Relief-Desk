@@ -875,6 +875,7 @@
     "forCase": "{id} · {title} के लिए",
     "parallel": "एक साथ",
     "details": "विवरण",
+    "stepDetails": "चरण विवरण",
     "hideDetails": "विवरण छिपाएँ",
     "humanNote": "मंज़ूरी देने तक कुछ नहीं भेजा जाता।",
     "intake": "रिपोर्ट समझी",
