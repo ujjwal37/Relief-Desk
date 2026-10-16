@@ -1,4 +1,19 @@
 <div class="cmd">
+  @if (helpOpen()) {
+    <div class="help-scrim" (click)="helpOpen.set(false)"></div>
+    <div class="help-sheet" role="dialog" aria-modal="true" [attr.aria-label]="'keys.title' | rdTranslate" data-testid="help-sheet">
+      <h2>{{ 'keys.title' | rdTranslate }}</h2>
+      <dl>
+        <dt><kbd>A</kbd></dt><dd>{{ 'keys.a' | rdTranslate }}</dd>
+        <dt><kbd>N</kbd></dt><dd>{{ 'keys.n' | rdTranslate }}</dd>
+        <dt><kbd>U</kbd></dt><dd>{{ 'keys.u' | rdTranslate }}</dd>
+        <dt><kbd>J</kbd> / <kbd>K</kbd></dt><dd>{{ 'keys.jk' | rdTranslate }}</dd>
+        <dt><kbd>/</kbd></dt><dd>{{ 'keys.search' | rdTranslate }}</dd>
+        <dt><kbd>?</kbd></dt><dd>{{ 'keys.help' | rdTranslate }}</dd>
+      </dl>
+      <button type="button" class="help-close" (click)="helpOpen.set(false)" cdkFocusInitial>{{ 'ui.close' | rdTranslate }}</button>
+    </div>
+  }
   @if (offline()) {
     <p class="offline-banner" role="alert" data-testid="offline-banner">{{ 'queue.offline' | rdTranslate }}</p>
   }
@@ -644,6 +659,7 @@
               >
                 ✓ {{ 'coord.approve' | rdTranslate }} <kbd>A</kbd>
               </button>
+              <button type="button" class="btn-sec btn-help" data-testid="help-btn" (click)="helpOpen.set(true)" [attr.aria-label]="'keys.title' | rdTranslate">?</button>
               <button type="button" class="btn-sec btn-next" data-testid="next-case" [attr.title]="'batch.shortcuts' | rdTranslate" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
             </div>
           } @else {

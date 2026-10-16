@@ -1211,5 +1211,14 @@
     "hide": "Hide steps",
     "badgeRules": "Rules",
     "badgeRecorded": "Recorded (Gemini)"
+  },
+  "keys": {
+    "title": "Keyboard shortcuts",
+    "a": "Approve and send the suggested team",
+    "n": "Next waiting case",
+    "u": "Undo the last send",
+    "jk": "Move down / up the queue",
+    "search": "Search cases",
+    "help": "Show this sheet"
   }
 }

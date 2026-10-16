@@ -748,6 +748,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (e.key === 'k' && i > 0) this.selectRequest(list[i - 1].id);
     // Triage shortcuts: A approve the suggested team, N next waiting case, U undo the last send.
     const key = e.key.toLowerCase();
+    if (e.key === '?') { e.preventDefault(); this.helpOpen.set(!this.helpOpen()); return; }
+    if (e.key === 'Escape' && this.helpOpen()) { this.helpOpen.set(false); return; }
     if (key === 'a') {
       const btn = document.querySelector('.btn-approve') as HTMLButtonElement | null;
       if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
@@ -758,6 +760,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   /** AI steps start collapsed into one truthful line. */
   readonly stepsOpen = signal(false);
+  /** '?' opens the keyboard sheet. */
+  readonly helpOpen = signal(false);
   /** Map is a toggle on narrow desktops (<=1280px). */
   readonly mapOpen = signal(false);
   /** First-visit keyboard tip, dismissed for good in localStorage. */

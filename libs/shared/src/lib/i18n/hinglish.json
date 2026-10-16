@@ -1211,5 +1211,14 @@
     "hide": "Steps chhupayein",
     "badgeRules": "Rules",
     "badgeRecorded": "Recorded (Gemini)"
+  },
+  "keys": {
+    "title": "Keyboard shortcuts",
+    "a": "Suggested team ko approve karke bhejein",
+    "n": "Agla waiting case",
+    "u": "Aakhri send undo karein",
+    "jk": "Queue mein neeche / upar",
+    "search": "Cases search karein",
+    "help": "Ye sheet dikhayein"
   }
 }
