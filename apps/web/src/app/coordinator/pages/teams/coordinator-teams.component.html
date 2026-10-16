@@ -22,8 +22,8 @@
   @if (notice()) { <p class="note" role="status">{{ notice() }}</p> }
   <ul class="list">
     @for (team of filtered(); track team.id) {
-      <li class="card" [class.open]="openId() === team.id" data-testid="team-card">
-        <button type="button" class="row" (click)="toggle(team.id); $event.stopPropagation()" (mouseenter)="highlightId.set(team.id)" (mouseleave)="highlightId.set(null)" [attr.aria-expanded]="openId() === team.id" [attr.aria-label]="team.name">
+      <li class="card" [class.open]="openId() === team.id" [attr.data-selected]="openId() === team.id" data-testid="team-card">
+        <button type="button" class="row" data-testid="team-row" (click)="toggle(team.id)" (mouseenter)="highlightId.set(team.id)" (mouseleave)="highlightId.set(null)" [attr.aria-expanded]="openId() === team.id" [attr.aria-selected]="openId() === team.id" [attr.aria-label]="team.name">
           <span class="icon" [style.color]="fill(team.kind)" aria-hidden="true">
             @switch (team.kind) {
               @case ('medical') {

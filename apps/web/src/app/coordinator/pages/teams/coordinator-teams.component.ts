@@ -98,7 +98,11 @@ export class CoordinatorTeamsComponent implements OnInit {
   }
 
   toggle(id: string): void {
-    this.openId.set(this.openId() === id ? null : id);
+    const next = this.openId() === id ? null : id;
+    this.openId.set(next);
+    this.highlightId.set(next);
+    if (!next || typeof document === 'undefined') return;
+    queueMicrotask(() => document.querySelector('[data-testid="team-detail"]')?.scrollIntoView({ block: 'nearest' }));
   }
 
   /** A team pin on the map opens that row, the same as clicking it in the list. */

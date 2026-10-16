@@ -201,18 +201,9 @@ class ChatIntakeAgent:
         # 4. If all critical fields present, or turn count reached threshold (<= 4 turns hero case)
         if not missing or state.turn_count >= 4:
             state.is_complete = True
-            summary_parts = [
-                f"{current.people.count or 1} person{'s' if (current.people.count or 1) > 1 else ''} needing {current.type.value}"
-            ]
-            if current.place_text:
-                summary_parts.append(f"at {current.place_text}")
-            vuln_list = [k for k, v in current.vulnerable.model_dump().items() if v]
-            if vuln_list:
-                summary_parts.append(f"Vulnerable: {', '.join(vuln_list)}")
-            if current.hazard != HazardType.NONE:
-                summary_parts.append(f"Hazard: {current.hazard.value}")
-
-            summary_text = " | ".join(summary_parts)
+            # The coordinator must not see a machine line like "1 person(s) needing other".
+            # The reporter's own words stay until Gemini writes the English reading.
+            summary_text = (user_message or "").strip()
             card = ConfirmationCardData(
                 incident_type=current.type.value,
                 place_text=current.place_text or "Champakulam",

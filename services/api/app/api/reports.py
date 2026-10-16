@@ -322,7 +322,10 @@ def _apply_card(extracted: ExtractedRequest, payload: ReportSubmitRequest, repor
         extracted.place_text = ruled
     elif card_place and not weak:
         extracted.place_text = card_place
-    return canon["summary"] if facts.summary else None
+    summary = canon["summary"] if facts.summary else None
+    if summary and "person(s) needing " in summary:
+        return None
+    return summary
 
 
 def _pin_for(payload: ReportSubmitRequest, extracted: ExtractedRequest, report_text: str) -> Tuple[float, float, Optional[str]]:

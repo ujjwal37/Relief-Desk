@@ -17,6 +17,8 @@ export interface StepDetailData {
   latencyMs?: number;
   fallbackReason?: string;
   recordedAt?: string;
+  /** Measured kilometres for this case and team, when the step text left a blank. */
+  distanceKm?: number | null;
   onNavigate?: (newIndex: number) => void;
 }
 
@@ -48,25 +50,26 @@ export interface StepDetailData {
           </ul>
         }
         <p class="why"><span>{{ 'step.why' | rdTranslate }}</span> {{ whyLine() }}</p>
-        @if (data.tools?.length) {
-          <p class="tools" data-testid="step-tools">
-            @for (tool of data.tools; track tool) { <code>{{ tool }}</code> }
-          </p>
-        } @else if (modelRan() || isMaps()) {
-          <p class="tools" data-testid="step-tools">{{ 'flow.noTools' | rdTranslate }}</p>
-        }
 
-        <button type="button" class="prompt-toggle" (click)="showPrompt.set(!showPrompt())" [attr.aria-expanded]="showPrompt()">
+        <button type="button" class="prompt-toggle" data-testid="show-prompt" (click)="showPrompt.set(!showPrompt())" [attr.aria-expanded]="showPrompt()">
           {{ (showPrompt() ? 'step.hidePrompt' : 'step.showPrompt') | rdTranslate }}
         </button>
         @if (showPrompt()) {
-          <div class="prompt-block">
+          <div class="prompt-block" data-testid="prompt-and-response">
             @if (promptText()) {
               <p class="lbl">{{ 'flow.prompt' | rdTranslate }}</p>
               <pre>{{ promptText() }}</pre>
             }
+            <p class="lbl">{{ 'ux.tools' | rdTranslate }}</p>
+            @if (data.tools?.length) {
+              <p class="tools" data-testid="step-tools">
+                @for (tool of data.tools; track tool) { <code>{{ tool }}</code> }
+              </p>
+            } @else {
+              <p class="tools" data-testid="step-tools">{{ 'ux.noTools' | rdTranslate }}</p>
+            }
             <p class="lbl">{{ 'ux.raw' | rdTranslate }}</p>
-            <pre>{{ data.rawOutput || ('coord.aiOffline' | rdTranslate) }}</pre>
+            <pre>{{ rawText() }}</pre>
           </div>
         }
       </div>
@@ -178,8 +181,12 @@ export class StepDetailDialogComponent {
   promptText(): string {
     this.lang.currentLang();
     if (this.data.prompt) return this.data.prompt;
-    if (this.modelRan() || this.isMaps()) return '';
+    if (this.data.badge === 'you' || this.modelRan() || this.isMaps()) return '';
     return this.lang.translate('step.noModel');
+  }
+
+  rawText(): string {
+    return this.withKm(this.data.rawOutput || '');
   }
 
   headline(): string {
@@ -201,17 +208,21 @@ export class StepDetailDialogComponent {
     if (this.data.stepIndex === 2) {
       return t('step.headlineUrgency').replace('{score}', String(Math.round(req.urgency_score || 0))).replace('{reason}', req.urgency_reason || '');
     }
+    if (this.data.badge === 'you' || this.data.stepIndex === 5) {
+      return t('coord.youDecide');
+    }
     if (this.isMaps()) {
       const parsed = this.parse(this.data.rawOutput);
       const team = String(parsed['team'] || '');
-      const km = parsed['km'];
-      if (team && km != null && km !== '') {
+      const km = this.kmOf(parsed);
+      if (team && km != null && !/boat free/i.test(team)) {
         return t('step.headlineMatch').replace('{team}', team).replace('{km}', String(km));
       }
-      if (team) return t('step.matchNoKm').replace('{team}', team);
-      return t('step.noTeam');
+      if (team && !/boat free/i.test(team)) return t('step.matchNoKm').replace('{team}', team);
+      const filled = this.withKm(this.plain(this.data.rawOutput));
+      return filled || t('step.noTeam');
     }
-    const text = this.plain(this.data.rawOutput);
+    const text = this.withKm(this.plain(this.data.rawOutput));
     return text || t('flow.sentExplain');
   }
 
@@ -223,7 +234,10 @@ export class StepDetailDialogComponent {
     if (req.type) out.push(t(`incidentType.${req.type}`));
     if (req.people_count) out.push(`${req.people_count} ${t('field.people')}`);
     if (req.place_text) out.push(req.place_text);
-    if (req.hazard && req.hazard !== 'unknown') out.push(String(req.hazard).replace(/_/g, ' '));
+    if (req.hazard && req.hazard !== 'unknown' && req.hazard !== 'none') {
+      const hazard = this.lang.translate(`hazardKind.${req.hazard}`);
+      out.push(hazard.startsWith('hazardKind.') ? String(req.hazard).replace(/_/g, ' ') : hazard);
+    }
     const flags = req.vulnerable;
     if (flags?.child) out.push(t('coord.metaChildren'));
     if (flags?.elderly) out.push(t('coord.metaElderly'));
@@ -235,15 +249,18 @@ export class StepDetailDialogComponent {
 
   whyLine(): string {
     this.lang.currentLang();
+    if (this.data.badge === 'you' || this.data.stepIndex === 5) {
+      return this.lang.translate('coord.youDecide');
+    }
     if (this.isMaps()) {
       const parsed = this.parse(this.data.rawOutput);
-      const km = parsed['km'];
+      const km = this.kmOf(parsed);
       const team = String(parsed['team'] || '');
-      if (team && km != null && km !== '') {
+      if (team && km != null && !/boat free/i.test(team)) {
         return this.lang.translate('step.whyMatch').replace('{team}', team).replace('{km}', String(km));
       }
     }
-    const text = this.plain(this.data.rawOutput);
+    const text = this.withKm(this.plain(this.data.rawOutput));
     if (text) return text.split(/(?<=[.!?])\s/)[0] || text;
     if (this.data.stepIndex === 2 && this.data.request.urgency_reason) return this.data.request.urgency_reason;
     return this.lang.translate('coord.youDecide');
@@ -292,5 +309,20 @@ export class StepDetailDialogComponent {
     const text = (output || '').trim();
     if (!text || text.startsWith('{') || text.startsWith('[')) return '';
     return text;
+  }
+
+  private kmOf(parsed: Record<string, unknown>): number | null {
+    const raw = parsed['km'] ?? parsed['distance_km'];
+    const n = typeof raw === 'number' ? raw : Number(raw);
+    if (raw != null && raw !== '' && Number.isFinite(n)) return n;
+    return this.data.distanceKm != null && Number.isFinite(this.data.distanceKm) ? this.data.distanceKm : null;
+  }
+
+  /** A blank "— km" is filled from the measured distance. It is never left as a dash. */
+  private withKm(text: string): string {
+    const km = this.data.distanceKm;
+    if (!text || !text.includes('—')) return text;
+    if (km == null || !Number.isFinite(km)) return text.replace(/\s*:?\s*—\s*km/g, '').trim();
+    return text.replace(/—\s*km/g, `${Number(km).toFixed(1)} km`);
   }
 }

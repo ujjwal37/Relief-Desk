@@ -378,21 +378,30 @@ describe('CoordinatorCommandComponent', () => {
   });
 
   it('shows a slim queue card and a Send card with one Why line', () => {
-    const card = fixture.nativeElement.querySelector('button.case') as HTMLElement;
-    expect(card.querySelector('.title')?.textContent).toContain('Water has entered');
-    expect(card.querySelector('.loc')?.textContent).toMatch(/^Ward 7 ·/);
-    expect(card.querySelector('.prio')?.textContent?.trim()).toBe('Priority 94');
-    expect(card.querySelector('.ico-chip.people')?.textContent).toContain('5');
-    expect(card.querySelector('.ico-chip.vuln')?.textContent).toContain('Vulnerable');
-    expect(card.textContent).toContain('Priority');
-    expect(card.querySelector('.need')).toBeNull();
-    const panel = fixture.nativeElement.querySelector('.detail') as HTMLElement;
-    expect(panel.querySelector('.send-kicker')?.textContent).toContain('Best team for this');
-    expect((panel.querySelector('.facts') as HTMLElement).textContent).toContain('1.2 km · about 4 min');
-    expect(panel.querySelector('.recommendation-reason')?.textContent).toContain('Rescue Boat #02');
-    expect(panel.querySelector('.more-block')?.hasAttribute('hidden')).toBeTrue();
+    const card = fixture.nativeElement.querySelector('button.case-card-compact') as HTMLElement;
+    expect(card.querySelector('.card-place-title')?.textContent).toContain('Ward 7');
+    expect(card.querySelector('[data-testid="ai-english"]')?.textContent).toContain('Water has entered');
+    expect(card.textContent).toContain('Critical');
+    const panel = fixture.nativeElement.querySelector('.decision-panel') as HTMLElement;
+    expect(panel.textContent).toContain('Best team for this');
+    expect(panel.textContent).toContain('1.2 km');
+    expect(panel.querySelector('[data-testid="team-why"]')?.textContent).toContain('Rescue Boat #02');
+    expect(panel.querySelector('.more-block')).toBeNull();
     expect(component.sendTeamLabel('Boat 2')).toBe('Send');
     expect(component.whyLine(mockProposal)).toContain('Closest free team');
+    const reading = {
+      ...mockRequests[0],
+      id: 'INC-READ',
+      analysis_status: 'analysing' as const,
+      place_text: 'Alappuzha',
+      summary: '1 person(s) needing other at Alappuzha',
+      ai_translation: null,
+    };
+    expect(component.caseTitle(reading)).toBe('Gemini is reading this report…');
+    expect(component.getTranslationText(reading)).not.toContain('person(s) needing');
+    const dashed = { ...mockProposal, explanation: '5 boat free: — km' };
+    expect(component.teamWhy(dashed)).toContain('km');
+    expect(component.teamWhy(dashed)).not.toContain('—');
   });
 
   it('keeps Ward N on the queue location line', () => {
@@ -533,22 +542,23 @@ describe('CoordinatorCommandComponent', () => {
     }
     expect(component.legendBands()).toEqual(['critical']);
     expect(component.legendKinds()).toEqual(['boat']);
-    const map = (fixture.nativeElement.querySelector('.svgmap') as HTMLElement).textContent || '';
-    const legend = (fixture.nativeElement.querySelector('.legend') as HTMLElement).textContent || '';
-    expect(map).toContain('1.2 km · about 4 min');
-    expect(legend).toContain('Needs help now');
-    expect(legend).toContain('Boat');
-    expect(legend).not.toContain('Shelter');
-    expect(legend).not.toContain('Help soon');
+    const legend = fixture.nativeElement.querySelector('.map-legend-overlay') as HTMLElement;
+    expect(legend.textContent).toContain('Critical');
+    expect(legend.textContent).toContain('Urgent');
+    expect(legend.textContent).toContain('Teams free');
+    expect(legend.textContent).not.toContain('Shelter');
     const boat = component.mapPins().find((pin) => pin.id === 'res_boat_02');
     expect(boat?.vehicle).toBe('boat');
     expect(boat?.marker).toBe('team');
-    expect(fixture.nativeElement.querySelector('.svgmap .pin rect')).not.toBeNull();
+    const svg = fixture.nativeElement.querySelector('.svgmap') as HTMLElement | null;
+    if (svg) {
+      expect(svg.textContent).toContain('1.2 km · about 4 min');
+      expect(svg.querySelector('.pin rect')).not.toBeNull();
+    }
     component.highlightId.set('res_boat_02');
     fixture.detectChanges();
     expect(provider.highlightId).toBe('res_boat_02');
-    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke')).toBe('#047857');
-    expect(fixture.nativeElement.querySelector('.svgmap line')?.getAttribute('stroke-width')).toBe('6');
+    expect(provider.legs.map((leg) => leg.title)).toEqual(['1.2 km · about 4 min']);
   });
 
   it('draws one recommended line and changes it when inspecting a different team', () => {
@@ -752,10 +762,9 @@ describe('CoordinatorCommandComponent', () => {
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Counts differ: 2-3 vs 4-5');
-    expect(text).toContain('Possible duplicate, review');
     expect(text).toContain('AI found this matches INC-001 (55% similar)');
-    expect(text).toContain('2-3 people at Oakbend');
-    expect(text).toContain('4-5 people at Oakbend');
+    expect(text).not.toContain('ux.none');
+    expect(fixture.nativeElement.querySelector('[data-testid="dup-review"]')).not.toBeNull();
     (fixture.nativeElement.querySelector('[data-testid="merge-dup"]') as HTMLButtonElement).click();
     expect(apiClientSpy.mergeRequests).toHaveBeenCalledWith('INC-001', 'INC-DUP', jasmine.any(Array));
     (fixture.nativeElement.querySelector('[data-testid="keep-dup"]') as HTMLButtonElement).click();

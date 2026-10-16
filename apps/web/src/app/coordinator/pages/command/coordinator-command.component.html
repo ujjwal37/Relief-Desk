@@ -56,6 +56,7 @@
               · {{ 'demo.waitingGemini' | rdTranslate:{ n: live.queue_position || 0 } }}
             }
             @if (live.status === 'done') { · {{ 'demo.done' | rdTranslate }} }
+            @if (geminiCalls() != null) { · <span data-testid="demo-gemini-calls">{{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }
           </p>
         }
       }
@@ -222,9 +223,9 @@
 
                 <!-- Line 2: Title & Location -->
                 <div class="card-line-mid">
-                  <strong class="card-place-title">{{ isAnalysing(req) ? ('flow.readingReport' | rdTranslate) : (req.place_text || getTranslationText(req)) }}</strong>
-                  @if (selectedRequestId() === req.id && !isAnalysing(req)) {
-                    <span class="ai-line">{{ 'xfactor.aiEnglish' | rdTranslate }}: {{ getTranslationText(req) }}</span>
+                  <strong class="card-place-title">{{ caseTitle(req) }}</strong>
+                  @if (selectedRequestId() === req.id) {
+                    <span class="ai-line" data-testid="ai-english">{{ 'xfactor.aiEnglish' | rdTranslate }}: {{ getTranslationText(req) }}</span>
                   }
                   @if (isMovedUp(req)) {
                     <span class="moved-tag">{{ 'card.movedUp' | rdTranslate }}</span>
@@ -355,7 +356,7 @@
           <!-- 1. Case Header -->
           <div class="decision-case-header">
             <div class="dec-title-row">
-              <h2 class="dec-place-title">{{ isAnalysing(req) ? ('flow.readingReport' | rdTranslate) : (req.place_text || getTranslationText(req)) }}</h2>
+              <h2 class="dec-place-title">{{ caseTitle(req) }}</h2>
               <span class="dec-band-tag" [class]="'band-' + bandOf(req.urgency_score)">
                 @if (bandOf(req.urgency_score) === 'critical') {
                   ▲ {{ 'filter.critical' | rdTranslate }}
@@ -396,7 +397,7 @@
                   <app-gemini-chip [confidence]="req.translation_confidence ?? fieldConf(req, 'type')" />
                 }
               </div>
-              <p class="rep-text">“{{ isAnalysing(req) ? ('flow.readingReport' | rdTranslate) : getTranslationText(req) }}”</p>
+              <p class="rep-text ai-english" data-testid="ai-english-full">“{{ getTranslationText(req) }}”</p>
             </div>
           </div>
 
@@ -443,7 +444,7 @@
                 @if (prop.wait_minutes) {
                   <p class="warnline">{{ waitLabel(prop) }}</p>
                 }
-                <p class="team-why-reason">{{ prop.explanation || whyLine(prop) }}</p>
+                <p class="team-why-reason" data-testid="team-why">{{ teamWhy(prop) }}</p>
                 <p class="straight-line-note">{{ 'coord.straightLine' | rdTranslate }}</p>
               </div>
 

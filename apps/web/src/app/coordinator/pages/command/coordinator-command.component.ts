@@ -333,6 +333,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
   readonly criticalCount = computed<number>(() => this.counts().critical);
   readonly teamsFree = computed(() => teamsFreeCounts(this.resources(), Date.now()));
+  geminiCalls(): number | null {
+    const calls = this.ui.aiHealth()?.quota?.calls;
+    return typeof calls === 'number' ? calls : null;
+  }
   teamsFreeLine(): string {
     this.langService.currentLang();
     return teamsFreeLabel((key) => this.langService.translate(key), this.resources());
@@ -1596,10 +1600,25 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.selectedTranslationLang.set(lang);
   }
 
+  /** The machine card line is not a translation. Show the reading sentence until Gemini finishes. */
+  waitingForReading(req: StoredRequest | undefined): boolean {
+    if (!req) return false;
+    if (this.isAnalysing(req)) return true;
+    const english = (req.ai_translation || '').trim();
+    if (english && !isMachineSummary(english)) return false;
+    if (req.analysis_status === 'complete' || this.isAnalysisFailed(req)) return false;
+    return isMachineSummary(req.summary) || isMachineSummary(req.ai_translation);
+  }
+
+  caseTitle(req: StoredRequest): string {
+    if (this.waitingForReading(req)) return this.langService.translate('flow.readingReport');
+    return req.place_text || this.getTranslationText(req);
+  }
+
   getTranslationText(req: StoredRequest | undefined): string {
     const fallback = this.langService.translate('coord.fallbackSummary');
     if (!req) return fallback;
-    if (this.isAnalysing(req)) {
+    if (this.waitingForReading(req)) {
       return this.langService.translate('flow.readingReport');
     }
     const ui = this.langService.currentLang();
@@ -1660,13 +1679,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   openStepDetailDialog(index: number): void {
     const req = this.selectedRequest();
     if (!req) return;
-    const stepKeys = ['flow.intake', 'flow.dedupe', 'flow.urgency', 'flow.matching', 'flow.explain'];
-    const agents = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer'];
+    const stepKeys = ['flow.intake', 'flow.dedupe', 'flow.urgency', 'flow.badgeTool', 'flow.explain', 'flow.badgeYou'];
+    const agents = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer', 'Approval'];
     const agentName = agents[index] || 'Intake';
     const traceStep = (req.trace || []).find((s) => s.agent === agentName);
     const provider = String(traceStep?.provider || '').toLowerCase();
     let badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' | 'fallback' | 'you' = 'fallback';
-    if (index === 3 || agentName === 'Matching' || provider === 'tool') badge = 'tool';
+    if (index === 5 || agentName === 'Approval') badge = 'you';
+    else if (index === 3 || agentName === 'Matching' || provider === 'tool') badge = 'tool';
     else if (provider === 'cache') badge = 'cache';
     else if (provider === 'gemini') badge = 'gemini';
     else if (provider === 'openai_compat' || provider === 'antigravity-local') badge = 'test';
@@ -1678,10 +1698,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       data: {
         request: req,
         stepIndex: index,
-        totalSteps: 5,
+        totalSteps: 6,
         stepNameKey: stepKeys[index] || 'flow.intake',
         badge,
-        providerLabel: badge === 'tool' ? 'Google Maps' : traceStep?.provider_label || undefined,
+        providerLabel: badge === 'tool' ? 'Google Maps' : badge === 'you' ? 'You' : traceStep?.provider_label || undefined,
+        distanceKm: this.distanceKm(this.activeProposal()),
         recordedAt,
         inputSummary: traceStep?.input_summary || undefined,
         prompt: traceStep?.prompt || undefined,
@@ -1823,11 +1844,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   getDangerText(req: StoredRequest): string {
     this.langService.currentLang();
-    if (req.hazard) {
-      if (req.hazard === 'water_rising') return this.langService.translate('hazard.water_rising');
-      return req.hazard.replace(/_/g, ' ');
-    }
-    return this.langService.translate('coord.floodRisk');
+    const hazard = (req.hazard || '').trim();
+    if (!hazard || hazard === 'unknown') return this.langService.translate('coord.floodRisk');
+    const key = `hazardKind.${hazard}`;
+    const text = this.langService.translate(key);
+    if (text !== key && !text.startsWith('hazardKind.') && !text.startsWith('ux.')) return text;
+    return hazard === 'none' ? this.langService.translate('hazardKind.none') : this.langService.translate('coord.floodRisk');
   }
 
   getWardText(req: StoredRequest): string {
@@ -1853,12 +1875,33 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return `~${mins} min`;
   }
 
+  /** Kilometres from the stored breakdown, or a fresh haversine when the pins exist. */
+  distanceKm(prop: MatchProposal | null | undefined): number | null {
+    if (!prop) return null;
+    const req = this.selectedRequest();
+    const team = this.resources().find((row) => row.id === prop.resource_id);
+    if (req?.lat != null && req.lng != null && team?.lat != null && team.lng != null) {
+      return haversineKm(req.lat, req.lng, team.lat, team.lng);
+    }
+    const given = prop.breakdown?.distance_km;
+    return given != null && Number.isFinite(given) ? given : null;
+  }
+
+  teamWhy(prop: MatchProposal): string {
+    const km = this.distanceKm(prop);
+    let text = prop.explanation || this.whyLine(prop);
+    if (km != null) text = text.replace(/—\s*km/g, `${km.toFixed(1)} km`);
+    else text = text.replace(/\s*:?\s*—\s*km/g, '').trim();
+    return text;
+  }
+
   propEtaSubline(prop: MatchProposal): string {
-    const mins = prop.eta_minutes ?? Math.round(prop.breakdown?.distance_km ? (prop.resource_kind === 'boat' ? prop.breakdown.distance_km / 12 * 60 : prop.breakdown.distance_km / 30 * 60) : 10);
+    const km = this.distanceKm(prop);
+    const mins = prop.eta_minutes ?? Math.round(km ? (prop.resource_kind === 'boat' ? km / 12 * 60 : km / 30 * 60) : 10);
     const mode = prop.travel_mode || (prop.resource_kind === 'boat' ? 'water' : 'road');
-    const km = prop.breakdown?.distance_km != null ? `${prop.breakdown.distance_km.toFixed(1)} km` : '';
+    const kmText = km != null ? `${km.toFixed(1)} km` : '';
     const seats = `${prop.capacity_remaining ?? prop.capacity_total} seats`;
-    return [`~${mins} min by ${mode}`, km, seats].filter(Boolean).join(' · ');
+    return [`~${mins} min by ${mode}`, kmText, seats].filter(Boolean).join(' · ');
   }
 
   toggleShowOriginal(): void {
@@ -1871,6 +1914,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 }
 
 const INTERNAL = /urgency score|vulnerable flags/i;
+const MACHINE_SUMMARY = /person\(s\) needing /i;
+
+export function isMachineSummary(text: string | null | undefined): boolean {
+  return MACHINE_SUMMARY.test(text || '');
+}
 
 /** A case title is what the reporter said. Scoring notes and the card's "| Vulnerable: …" tail never show. */
 export function reportLine(text: string | null | undefined): string {
@@ -1879,5 +1927,5 @@ export function reportLine(text: string | null | undefined): string {
     .filter((part) => !/^\s*(vulnerable|hazard):/i.test(part))
     .join(' ')
     .trim();
-  return kept && !INTERNAL.test(kept) ? kept : '';
+  return kept && !INTERNAL.test(kept) && !MACHINE_SUMMARY.test(kept) ? kept : '';
 }

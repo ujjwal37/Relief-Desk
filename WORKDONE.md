@@ -1452,3 +1452,51 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
   - `make record-traces` was not run here. No fabricated Gemini transcripts were committed.
   - One intake call at about 17 s is the measured wall clock on gemini-3.5-flash-lite. Thinking is disabled only for model names starting with gemini-2.5-flash. The timeout is GEMINI_TIMEOUT_S (20s). One validation repair and one transient retry can be included in that number. The pacer does not wait on an ordinary report.
 - Next (suggested task id): none
+
+### 2026-10-16 23:31 IST — step popup, case card, alerts, teams, demo login, reporter — Cursor
+- What changed:
+  - Step popup shows a headline of what the agent understood, chips for extracted facts, a one-line why, a footer (`Gemini <model> · <latency>` when a model ran, otherwise the unavailable line), and a collapsible "Show prompt and response" for the prompt, tools, and raw output. Empty tools say "No tools". "No model ran for this step" appears only inside that collapsible when no model ran.
+  - Header and the live-demo strip show the backend Gemini call count from `/api/health/ai` (`quota.calls`).
+  - "Offline fallback" is gone. The matching step is labelled "Google Maps" and the approval step "You". Hazard text never shows a raw key such as `ux.none`.
+  - Case card AI English is fully visible; the expand arrow sits below the text.
+  - A new report no longer shows the machine "N person(s) needing …" line. While analysis is in progress the card says "Gemini is reading this report…".
+  - Team explanations fill a measured distance in place of "— km".
+  - Alerts use their own kind labels (Report spike, Silent zone, Resource gap, Conflict, Stale requests) and ages from `detected_at` or the stored minute label. A stale sample at exactly the threshold is now included.
+  - Command and Teams share `teamsFreeCounts`. Clicking a team row selects it and scrolls the detail into view.
+  - Demo login with `DEMO_MODE` off shows "Demo mode is disabled" on a 403 and when health reports demo mode off.
+  - The reporter sees "Gemini is reading this report…" while the AI works and "Your report is in the coordinator queue" once it is stored.
+  - The three stale Command unit specs now match the rebuilt queue card, map legend, and duplicate panel.
+- Files:
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.spec.ts`
+  - `apps/web/src/app/coordinator/agents/ai-stepper.component.ts`
+  - `apps/web/src/app/coordinator/agents/pipeline-strip.component.ts`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.ts`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts`
+  - `apps/web/src/app/coordinator/pages/alerts/coordinator-alerts.component.ts`
+  - `apps/web/src/app/coordinator/pages/teams/coordinator-teams.component.ts`
+  - `apps/web/src/app/coordinator/pages/login/coordinator-login.component.ts`
+  - `apps/web/src/app/public/pages/status/status.component.html`
+  - `apps/web/src/app/public/components/confirmation-card/confirmation-card.component.html`
+  - `services/api/app/agents/chat_intake.py`
+  - `services/api/app/agents/pipeline.py`
+  - `services/api/app/api/reports.py`
+  - `services/api/app/tools/anomaly.py`
+  - `e2e/followups.spec.ts`
+- How verified (commands / screenshots):
+  - `npx ng build web` — passed (command SCSS budget warning only, under the error limit).
+  - `node scripts/check-i18n.mjs` — PASSED, 1010 keys.
+  - `pytest` in `services/api` — 300 passed, 1 skipped.
+  - `npx ng test` for the step dialog — 3 passed (`Gemini gemini-3.5-flash-lite · 17.2 s`, Google Maps headline, filled km).
+  - `npx playwright test followups.spec.ts` — 4 passed (popup, case-card geometry, Gemini calls, labels, team km, team counts and row select, alert kinds and ages, demo-mode-off error, 403 error, reporter progress and queue).
+  - `npx playwright test filter-counts.spec.ts live-demo.spec.ts agents-visible.spec.ts` — passed.
+  - Screenshots: step popup, case card, live demo.
+- Notes / risks / not done:
+  - `make record-traces` was not run. The fallback demo footer reads "Gemini unavailable, built-in rules used". The `Gemini <model> · <latency>` footer is locked by the step-dialog unit spec.
+  - Two older Coordinator layout unit specs still expect "Agent" and a restart-tour test id. Product copy was left as "Ask the desk".
+  - Command SCSS is about 23 kB against a 20 kB warning budget and a 30 kB error budget.
+- Next (suggested task id): none

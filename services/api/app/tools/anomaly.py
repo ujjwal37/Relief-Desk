@@ -96,7 +96,7 @@ def conflict_alerts(pairs: Iterable[Dict[str, str]]) -> List[AnomalyAlert]:
 
 
 def stale_alerts(ages_minutes: Iterable[float], threshold: int = 90) -> List[AnomalyAlert]:
-    stale = [age for age in ages_minutes if age > threshold]
+    stale = [age for age in ages_minutes if age >= threshold]
     if not stale:
         return []
     return [AnomalyAlert(

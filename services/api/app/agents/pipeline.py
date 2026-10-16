@@ -241,6 +241,16 @@ def _trace_step(
     }
 
 
+def _with_measured_km(text: str, km: Optional[float]) -> str:
+    """Replace a blank distance. Never leave '— km' in a sentence a coordinator reads."""
+    if not text or "—" not in text:
+        return text
+    if km is None:
+        return text.replace("— km", "").replace(": —", "").strip()
+    shown = f"{float(km):.1f} km"
+    return text.replace("— km", shown)
+
+
 def _km_between(req: StoredRequest, best) -> Optional[float]:
     """Distance already measured on the proposal, or a fresh haversine from the stored pins."""
     measured = None
@@ -439,6 +449,10 @@ def finish(request_id: str) -> None:
     )
     explain_context = {"facts": facts, "matching": json.loads(matching_output), "free_teams": capacity["available"], "inventory_explanation": best.explanation if best else None}
     explained = review("Explainer", explain_context, explanation)
+    measured = _km_between(req, best)
+    explained["text"] = _with_measured_km(explained.get("text") or "", measured)
+    if explained.get("raw_output"):
+        explained["raw_output"] = _with_measured_km(explained["raw_output"], measured)
 
     def row(agent, result, tools, at):
         built = _trace_step(agent, "complete", summary, result["text"], tools, at,
@@ -587,7 +601,7 @@ def ensure_trace(req: StoredRequest) -> None:
         _trace_step("Dedupe", "complete", summary, dedupe_out, [], marks[1], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=dedupe_prompt, raw_output=dedupe_out),
         _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], marks[2], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=triage_prompt, raw_output=scored.reason),
         _trace_step("Matching", "complete", summary, matching_output, ["check_capacity", "match_score"], marks[3], provider="tool", latency_ms=None, prompt=matching_prompt, raw_output=matching_output),
-        _trace_step("Explainer", "complete", summary, explanation, [], marks[4], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=explain_prompt, raw_output=explanation),
+        _trace_step("Explainer", "complete", summary, _with_measured_km(explanation, dist_km), [], marks[4], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=explain_prompt, raw_output=_with_measured_km(explanation, dist_km)),
     ]
     for step in built:
         if step.get("provider") == "cache" and req.created_at:

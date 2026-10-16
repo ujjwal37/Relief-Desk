@@ -195,6 +195,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
         prompt: step.asked || undefined,
         tools: step.tools,
         rawOutput: step.raw || undefined,
+        distanceKm: this.traceKm(),
         model: step.model || undefined,
         latencyMs: step.latencyMs || undefined,
         fallbackReason: step.note || undefined,
@@ -343,19 +344,37 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     }
     if (agent === 'Matching') {
       const team = String(parsed['team'] || parsed['resource_name'] || '');
-      const km = parsed['km'] ?? parsed['distance_km'];
+      const km = this.kmNumber(parsed['km'] ?? parsed['distance_km']);
       const capab = String(parsed['capability'] || parsed['kind'] || req.type || t('coord.queueNeedBoat'));
       const seats = parsed['seats'] ?? parsed['capacity'];
-      if (team && km != null && km !== '' && !team.includes('boat free')) {
+      if (team && km != null && !team.includes('boat free')) {
         const seatText = seats == null || seats === '' ? '' : String(seats);
         return cap(t('flow.sentMatch').replace('{team}', team).replace('{km}', String(km)).replace('{capability}', capab).replace('{seats}', seatText));
       }
       if (team && !team.includes('boat free')) return cap(t('step.matchNoKm').replace('{team}', team));
-      const plain = outputText(raw?.output);
-      if (plain && !plain.includes('—') && !plain.trim().startsWith('{')) return cap(plain);
+      const plain = this.fillKm(outputText(raw?.output), km);
+      if (plain && !plain.trim().startsWith('{')) return cap(plain);
       return cap(t('step.noTeam'));
     }
-    return outputText(raw?.output) || cap(t('flow.sentExplain'));
+    return this.fillKm(outputText(raw?.output), this.traceKm()) || cap(t('flow.sentExplain'));
+  }
+
+  private traceKm(): number | null {
+    const match = (this.request().trace || []).find((step) => step.agent === 'Matching');
+    const parsed = this.parse(match?.output);
+    return this.kmNumber(parsed['km'] ?? parsed['distance_km']);
+  }
+
+  private kmNumber(value: unknown): number | null {
+    if (value == null || value === '') return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private fillKm(text: string, km: number | null): string {
+    if (!text || !text.includes('—')) return text;
+    if (km == null) return text.replace(/\s*:?\s*—\s*km/g, '').trim();
+    return text.replace(/—\s*km/g, `${km.toFixed(1)} km`);
   }
 
   private dupId(raw?: NonNullable<StoredRequest['trace']>[number]): string {

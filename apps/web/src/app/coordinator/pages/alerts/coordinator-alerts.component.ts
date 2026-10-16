@@ -123,7 +123,7 @@ export class CoordinatorAlertsComponent implements OnInit {
   readonly cells = CELLS;
   readonly spikeRadius = 28;
   readonly landmarks = LANDMARKS.map((l) => ({ ...l, ...proj(l.lat, l.lng) }));
-  readonly kinds: Kind[] = ['spike', 'silent_zone', 'resource_gap', 'conflict'];
+  readonly kinds: Kind[] = ['spike', 'silent_zone', 'resource_gap', 'conflict', 'stale'];
   readonly alerts = signal<AnomalyAlert[]>([]);
   readonly medical = signal<ResPin[]>([]);
   readonly selectedId = signal<string | null>(null);
@@ -158,11 +158,16 @@ export class CoordinatorAlertsComponent implements OnInit {
     return (alert.reason || '').startsWith('Sample.') || (alert.title || '').startsWith('Sample');
   }
 
-  titleOf(alert: AnomalyAlert): string {
+  kindLabel(kind: string): string {
     this.lang.currentLang();
-    const key = `alerts.k.${alert.kind}`;
+    const key = `alerts.k.${kind}`;
     const text = this.lang.translate(key);
-    return text === key ? (alert.title || alert.kind) : text;
+    return text === key ? kind.replace(/_/g, ' ') : text;
+  }
+
+  titleOf(alert: AnomalyAlert): string {
+    const label = this.kindLabel(alert.kind);
+    return this.isSample(alert) ? `Sample: ${label}` : label;
   }
 
   /** Localise a known English reason. Unknown wording stays as stored. */
@@ -194,12 +199,22 @@ export class CoordinatorAlertsComponent implements OnInit {
   }
 
   ageText(alert: AnomalyAlert): string {
-    const stamp = alert.detected_at;
+    this.lang.currentLang();
+    const stamp = alert.detected_at || this.stampFromLabel(alert.age_label);
     if (!stamp) return '';
-    const m = Math.max(1, Math.round((Date.now() - new Date(stamp).getTime()) / 60000));
+    const then = new Date(stamp).getTime();
+    if (!Number.isFinite(then)) return '';
+    const m = Math.max(0, Math.round((Date.now() - then) / 60000));
+    if (m < 1) return this.lang.translate('coord.justNow');
     const key = m < 60 ? 'coord.updatedMin' : 'coord.updatedHour';
     const n = m < 60 ? m : Math.max(1, Math.round(m / 60));
     return this.lang.translate(key).replace('{n}', String(n));
+  }
+
+  private stampFromLabel(label: string | undefined): string {
+    const match = /(\d+)\s*min/.exec(label || '');
+    if (!match) return '';
+    return new Date(Date.now() - Number(match[1]) * 60000).toISOString();
   }
 
   ngOnInit(): void {

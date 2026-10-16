@@ -15,7 +15,7 @@ export interface StepStatusInfo {
     <div class="stepper-card">
       <header class="stepper-head">
         <div class="head-left">
-          <span class="step-count-title">{{ 'flow.headline' | rdTranslate:{ n: 5 } }}</span>
+          <span class="step-count-title">{{ 'flow.headline' | rdTranslate:{ n: 6 } }}</span>
           <span class="run-badge">{{ runBadge() }}</span>
         </div>
         <button type="button" class="how-decided-btn" (click)="howDecided.emit()">
@@ -135,7 +135,7 @@ export interface StepStatusInfo {
               }
             </span>
           </div>
-          <span class="node-title">{{ 'flow.matching' | rdTranslate }}</span>
+          <span class="node-title">{{ 'flow.badgeTool' | rdTranslate }}</span>
           <span class="node-result">{{ matchingResult() }}</span>
         </button>
 
@@ -165,6 +165,28 @@ export interface StepStatusInfo {
           </div>
           <span class="node-title">{{ 'flow.explain' | rdTranslate }}</span>
           <span class="node-result">{{ explainResult() }}</span>
+        </button>
+
+        <div class="line" [class.done]="nodeStatus(4) === 'done'"></div>
+
+        <button
+          type="button"
+          class="step-node"
+          data-testid="stepper-node-approval"
+          [class.done]="nodeStatus(4) === 'done'"
+          (click)="openStepDetail.emit(5)"
+        >
+          <div class="node-indicator">
+            <span class="indicator-icon">
+              @if (nodeStatus(4) === 'done') {
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>
+              } @else {
+                <span class="dot"></span>
+              }
+            </span>
+          </div>
+          <span class="node-title">{{ 'flow.badgeYou' | rdTranslate }}</span>
+          <span class="node-result">{{ 'coord.youDecide' | rdTranslate }}</span>
         </button>
       </div>
 
@@ -335,7 +357,7 @@ export class AiStepperComponent {
 
   readonly request = input<StoredRequest | null | undefined>(null);
   readonly activeProposal = input<MatchProposal | null | undefined>(null);
-  readonly runBadge = input<string>('Rules');
+  readonly runBadge = input<string>('');
   readonly isAnalysing = input<boolean>(false);
 
   readonly openStepDetail = output<number>();

@@ -71,6 +71,8 @@
     </button>
   </div>
 
+  <p class="ai-progress" *ngIf="busy" data-testid="ai-analysing" role="status">{{ 'flow.readingReport' | rdTranslate }}</p>
+
   <div class="sticky-bar" *ngIf="showActions">
     <button type="button" class="send-now" [disabled]="busy" (click)="onSend()">
       {{ busy ? ('report.submitting' | rdTranslate) : ('confirm.sendNow' | rdTranslate) }}

@@ -98,7 +98,7 @@ test.describe('agents visible', () => {
       await page.keyboard.press('Escape');
       await expect(dialog).toBeHidden();
 
-      await page.getByRole('button', { name: /\d+ reports/ }).first().click();
+      await page.locator('app-merged-chip').getByRole('button').first().click();
       const merge = page.getByRole('dialog', { name: 'Reports merged into this case' });
       await expect(merge).toBeVisible();
       await expect(merge.getByText('Not recorded').first()).toBeVisible();

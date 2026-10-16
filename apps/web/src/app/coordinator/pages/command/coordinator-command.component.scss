@@ -412,7 +412,11 @@ button {
       font-weight: 600;
       white-space: normal;
       overflow: visible;
-      line-height: 1.35;
+      text-overflow: unset;
+      max-height: none;
+      line-height: 1.4;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
   }
 
@@ -702,15 +706,32 @@ app-ai-stepper {
     white-space: normal;
     word-break: break-word;
     overflow-wrap: anywhere;
+    overflow: visible;
+    max-height: none;
+    display: block;
+  }
+
+  .rep-side,
+  .rep-eng {
+    overflow: visible;
+    max-height: none;
+    height: auto;
+  }
+
+  .ai-english {
+    padding-bottom: 8px;
   }
 }
 
 /* 3. 2x2 Field Grid */
 .field-grid-arrow {
+  position: static;
+  clear: both;
   text-align: center;
   font-size: 13px;
   color: var(--muted, #64748b);
-  margin: 6px 0;
+  margin: 10px 0 2px;
+  line-height: 1;
 }
 
 .field-2x2-grid {
