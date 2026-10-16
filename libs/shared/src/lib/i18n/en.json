@@ -227,7 +227,8 @@
     "trust1": "A human approves every dispatch",
     "trust2": "Synthetic data only",
     "wrong": "Wrong email or password. Try again.",
-    "required": "Required"
+    "required": "Required",
+    "demoDisabled": "Demo mode is disabled on this server. Please sign in with coordinator credentials."
   },
   "demo": {
     "phone": "Demo phone",
@@ -339,7 +340,7 @@
     "tracePending": "Waiting",
     "traceComplete": "Done",
     "aiGemini": "Gemini",
-    "aiOffline": "Offline fallback",
+    "aiOffline": "Gemini unavailable, built-in rules used",
     "aiRecorded": "Recorded (Gemini)",
     "updateLocation": "Update location",
     "lat": "Latitude",
@@ -772,6 +773,7 @@
     "asked": "What the agent was asked",
     "input": "Input",
     "raw": "Raw output",
+    "none": "None",
     "tools": "Tools",
     "badgeGemini": "Gemini",
     "badgeRules": "Rules",
@@ -904,8 +906,11 @@
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
     "waiting": "Waiting",
-    "badgeTool": "Rules engine",
+    "badgeTool": "Google Maps",
     "badgeCache": "Recorded (Gemini)",
+    "badgeYou": "You",
+    "fallbackBuiltIn": "Gemini unavailable, built-in rules used",
+    "readingReport": "Gemini is reading this report…",
     "simulateOutage": "Preview rules fallback",
     "simulatedOnly": "Preview only. Stored traces and dispatch decisions are unchanged."
   },

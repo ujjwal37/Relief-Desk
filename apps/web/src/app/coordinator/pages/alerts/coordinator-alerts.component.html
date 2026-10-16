@@ -23,7 +23,7 @@
       tabindex="0" (click)="select(it.alert)" (keydown.enter)="select(it.alert)">
       <div class="row-head">
         <span class="num" aria-hidden="true">{{ it.n }}</span>
-        <span class="kind"><ng-container *ngTemplateOutlet="icon; context: { $implicit: it.kind, s: 15 }"></ng-container>{{ isSample(it.alert) ? titleOf(it.alert) : ('alerts.k.' + it.kind | rdTranslate) }}</span>
+        <span class="kind"><ng-container *ngTemplateOutlet="icon; context: { $implicit: it.kind, s: 15 }"></ng-container>{{ ('alerts.k.' + it.kind | rdTranslate) }}</span>
         <span class="sample-badge" *ngIf="isSample(it.alert)">{{ 'alerts.sampleBadge' | rdTranslate }}</span>
         <span class="age" [attr.title]="it.alert.detected_at || ''">{{ ageText(it.alert) }}</span>
       </div>

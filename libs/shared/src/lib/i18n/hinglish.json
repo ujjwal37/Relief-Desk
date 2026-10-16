@@ -227,7 +227,8 @@
     "trust1": "Har dispatch ko insaan approve karta hai",
     "trust2": "Sirf synthetic data",
     "wrong": "Email ya password galat hai. Phir koshish karein.",
-    "required": "Zaroori"
+    "required": "Zaroori",
+    "demoDisabled": "Is server par demo mode band hai. Kripya coordinator credentials se sign in karein."
   },
   "demo": {
     "phone": "Demo phone",
@@ -339,7 +340,7 @@
     "tracePending": "Intezar",
     "traceComplete": "Ho gaya",
     "aiGemini": "Gemini",
-    "aiOffline": "Offline fallback",
+    "aiOffline": "Gemini unavailable, built-in rules",
     "aiRecorded": "Recorded (Gemini)",
     "updateLocation": "Location badlein",
     "lat": "Uttar-dakshin",
@@ -772,6 +773,7 @@
     "asked": "Agent se kya pucha gaya",
     "input": "Input",
     "raw": "Raw output",
+    "none": "Koi nahi",
     "tools": "Tools",
     "badgeGemini": "Gemini",
     "badgeRules": "Rules",
@@ -904,8 +906,11 @@
     "fellBack": "Isliye wapas gaye",
     "modelLatency": "Model · latency",
     "waiting": "Wait",
-    "badgeTool": "Rules engine",
+    "badgeTool": "Google Maps",
     "badgeCache": "Recorded (Gemini)",
+    "badgeYou": "Aap",
+    "fallbackBuiltIn": "Gemini unavailable, built-in rules use kiye gaye",
+    "readingReport": "Gemini ye report padh raha hai…",
     "simulateOutage": "Rules fallback preview dekhein",
     "simulatedOnly": "Sirf preview. Saved traces aur dispatch decisions nahi badalte."
   },

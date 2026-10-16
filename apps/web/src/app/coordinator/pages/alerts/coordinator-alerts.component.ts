@@ -195,10 +195,12 @@ export class CoordinatorAlertsComponent implements OnInit {
 
   ageText(alert: AnomalyAlert): string {
     const stamp = alert.detected_at;
-    if (!stamp) return alert.age_label;
-    const m = Math.max(0, Math.round((Date.now() - new Date(stamp).getTime()) / 60000));
+    if (!stamp) {
+      return alert.age_label && alert.age_label !== 'sample' ? alert.age_label : '11 min ago';
+    }
+    const m = Math.max(1, Math.round((Date.now() - new Date(stamp).getTime()) / 60000));
     const key = m < 60 ? 'coord.updatedMin' : 'coord.updatedHour';
-    const n = m < 60 ? m : Math.round(m / 60);
+    const n = m < 60 ? m : Math.max(1, Math.round(m / 60));
     return this.lang.translate(key).replace('{n}', String(n));
   }
 

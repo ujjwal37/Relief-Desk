@@ -34,6 +34,7 @@ export class CoordinatorLoginComponent {
   showPassword = signal(false);
   submitted = signal(false);
   failed = signal(false);
+  demoFailed = signal(false);
   isSubmitting = signal(false);
   toast = signal(false);
   private pwd = viewChild<ElementRef<HTMLInputElement>>('pwd');
@@ -44,6 +45,7 @@ export class CoordinatorLoginComponent {
   async onLogin(): Promise<void> {
     this.submitted.set(true);
     this.failed.set(false);
+    this.demoFailed.set(false);
     if (!this.email().trim() || !this.password()) return;
     this.isSubmitting.set(true);
     const result = await this.authService.login(this.email(), this.password());
@@ -56,6 +58,8 @@ export class CoordinatorLoginComponent {
   }
 
   async enterDemo(): Promise<void> {
+    this.failed.set(false);
+    this.demoFailed.set(false);
     this.isSubmitting.set(true);
     const ok = await this.authService.loginDemo();
     this.isSubmitting.set(false);
@@ -63,6 +67,7 @@ export class CoordinatorLoginComponent {
       try { sessionStorage.setItem('rd_start_tour', '1'); } catch { /* private mode */ }
       await this.goToDashboard();
     } else {
+      this.demoFailed.set(true);
       this.failed.set(true);
     }
   }

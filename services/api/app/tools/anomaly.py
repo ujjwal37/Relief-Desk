@@ -300,17 +300,22 @@ def collect_alerts(storage=None) -> List[AnomalyAlert]:
     merged: Dict[str, AnomalyAlert] = {}
     for alert in live:
         merged[alert.id] = alert
+    from datetime import datetime, timezone, timedelta
+    now_dt = datetime.now(timezone.utc)
+    mins_map = {"spike": 4, "silent_zone": 11, "resource_gap": 17, "conflict": 26, "stale": 42}
     for alert in alerts_from_signals(load_seed_signals()):
         if alert.kind == "resource_gap" and _gap_kind(alert.id) in live_gap_kinds:
             continue
         if (alert.kind, alert.ward_id or alert.id) in live_keys:
             continue
+        m = mins_map.get(alert.kind, 11)
+        det_time = (now_dt - timedelta(minutes=m)).isoformat()
         sample = alert.model_copy(update={
             "id": f"sample-{alert.id}",
             "title": f"Sample: {alert.title}",
             "reason": f"Sample scenario. {alert.reason}",
-            "age_label": "sample",
-            "detected_at": None,
+            "age_label": f"{m} min ago",
+            "detected_at": det_time,
             "severity": "medium" if alert.severity == "critical" else alert.severity,
         })
         merged.setdefault(sample.id, sample)

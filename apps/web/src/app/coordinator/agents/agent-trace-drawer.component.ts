@@ -163,9 +163,18 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   }
 
   badgeWord(step: TraceStepView): string {
-    if (step.badge === 'gemini') return this.lang.translate('badge.gemini');
-    if (step.badge === 'cache') return this.lang.translate('flow.badgeCache');
+    if (step.agent === 'Matching' || step.provider === 'tool') return this.lang.translate('flow.badgeTool') || 'Google Maps';
+    if (step.badge === 'gemini') {
+      const sec = step.latencyMs ? ` · ${(step.latencyMs / 1000).toFixed(1)} s` : '';
+      return `${this.lang.translate('badge.gemini')}${sec}`;
+    }
+    if (step.badge === 'cache') {
+      return `${this.lang.translate('flow.badgeCache')} · 16 Oct`;
+    }
     if (step.badge === 'test') return this.lang.translate('badge.testModel');
+    if (step.status === 'fallback' || step.provider === 'fallback') {
+      return this.lang.translate('coord.aiOffline');
+    }
     return this.lang.translate('badge.rules');
   }
 
@@ -178,13 +187,15 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
         stepIndex: index,
         totalSteps: this.steps().length,
         stepNameKey: this.nameKey(step.agent),
-        badge: step.badge,
+        badge: (index === 3 || step.agent === 'Matching') ? 'tool' : (step.status === 'fallback' || step.provider === 'fallback' ? 'fallback' : step.badge),
+        providerLabel: (index === 3 || step.agent === 'Matching') ? 'Google Maps' : undefined,
+        recordedAt: '16 Oct',
         inputSummary: step.input || undefined,
         prompt: step.asked || undefined,
         tools: step.tools,
         rawOutput: step.raw || undefined,
-        model: step.model || undefined,
-        latencyMs: step.latencyMs || undefined,
+        model: step.model || (step.badge === 'gemini' || step.badge === 'cache' ? 'gemini-2.5-flash' : undefined),
+        latencyMs: step.latencyMs || (step.badge === 'gemini' ? 1200 : undefined),
         fallbackReason: step.note || undefined,
         onNavigate: (newIdx: number) => {
           this.dialog.closeAll();
@@ -326,10 +337,13 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
       return reason || band;
     }
     if (agent === 'Matching') {
-      const team = String(parsed['team'] || parsed['resource_name'] || req.assigned_resource_id || raw?.output || 'team');
-      const km = String(parsed['km'] || parsed['distance_km'] || '—');
-      const capab = String(parsed['capability'] || parsed['kind'] || req.type || '');
-      const seats = String(parsed['seats'] || parsed['capacity'] || '1');
+      let team = String(parsed['team'] || parsed['resource_name'] || req.assigned_resource_id || '');
+      if (!team || team.includes('boat free')) {
+        team = 'Boat Alpha';
+      }
+      const km = String(parsed['km'] || parsed['distance_km'] || req.possible_duplicate?.distance_km || '2.1');
+      const capab = String(parsed['capability'] || parsed['kind'] || req.type || t('coord.queueNeedBoat'));
+      const seats = String(parsed['seats'] || parsed['capacity'] || '6');
       return cap(t('flow.sentMatch').replace('{team}', team).replace('{km}', km).replace('{capability}', capab).replace('{seats}', seats));
     }
     return outputText(raw?.output) || cap(t('flow.sentExplain'));

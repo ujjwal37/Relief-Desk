@@ -194,7 +194,7 @@
 
                 <!-- Line 2: Title & Location -->
                 <div class="card-line-mid">
-                  <strong class="card-place-title">{{ req.place_text || getTranslationText(req) }}</strong>
+                  <strong class="card-place-title">{{ isAnalysing(req) ? ('flow.readingReport' | rdTranslate) : (req.place_text || getTranslationText(req)) }}</strong>
                   <span class="sr-only">{{ getTranslationText(req) }}</span>
                 </div>
 
@@ -318,7 +318,7 @@
           <!-- 1. Case Header -->
           <div class="decision-case-header">
             <div class="dec-title-row">
-              <h2 class="dec-place-title">{{ req.place_text || getTranslationText(req) }}</h2>
+              <h2 class="dec-place-title">{{ isAnalysing(req) ? ('flow.readingReport' | rdTranslate) : (req.place_text || getTranslationText(req)) }}</h2>
               <span class="dec-band-tag" [class]="'band-' + bandOf(req.urgency_score)">
                 @if (bandOf(req.urgency_score) === 'critical') {
                   ▲ {{ 'filter.critical' | rdTranslate }}
@@ -359,7 +359,7 @@
                   <app-gemini-chip [confidence]="req.translation_confidence ?? fieldConf(req, 'type')" />
                 }
               </div>
-              <p class="rep-text">“{{ getTranslationText(req) }}”</p>
+              <p class="rep-text">“{{ isAnalysing(req) ? ('flow.readingReport' | rdTranslate) : getTranslationText(req) }}”</p>
             </div>
           </div>
 
@@ -368,19 +368,19 @@
           <div class="field-2x2-grid">
             <div class="field-cell">
               <span class="fc-label">{{ 'field.need' | rdTranslate }}</span>
-              <strong class="fc-value">{{ getNeedText(req) }}</strong>
+              <strong class="fc-value">{{ isAnalysing(req) ? '—' : getNeedText(req) }}</strong>
             </div>
             <div class="field-cell">
               <span class="fc-label">{{ 'field.people' | rdTranslate }}</span>
-              <strong class="fc-value">{{ getPeopleText(req) }}</strong>
+              <strong class="fc-value">{{ isAnalysing(req) ? '—' : getPeopleText(req) }}</strong>
             </div>
             <div class="field-cell">
               <span class="fc-label">{{ 'field.danger' | rdTranslate }}</span>
-              <strong class="fc-value">{{ getDangerText(req) }}</strong>
+              <strong class="fc-value">{{ isAnalysing(req) ? '—' : getDangerText(req) }}</strong>
             </div>
             <div class="field-cell">
               <span class="fc-label">{{ 'field.place' | rdTranslate }}</span>
-              <strong class="fc-value">{{ getWardText(req) }}</strong>
+              <strong class="fc-value">{{ isAnalysing(req) ? '—' : getWardText(req) }}</strong>
             </div>
           </div>
 

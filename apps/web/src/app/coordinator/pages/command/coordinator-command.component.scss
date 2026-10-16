@@ -633,7 +633,9 @@ app-ai-stepper {
   border-radius: 8px;
   border: 1px solid var(--border, #1c3125);
   background: var(--surface-2, #122119);
-  overflow: hidden;
+  overflow: visible;
+  height: auto;
+  min-height: fit-content;
 
   .rep-side {
     padding: 8px 12px;
@@ -677,8 +679,11 @@ app-ai-stepper {
   .rep-text {
     margin: 0;
     font-size: 12.5px;
-    line-height: 1.45;
+    line-height: 1.5;
     color: var(--text, #e2e8f0);
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -687,7 +692,7 @@ app-ai-stepper {
   text-align: center;
   font-size: 13px;
   color: var(--muted, #64748b);
-  margin: -6px 0;
+  margin: 6px 0;
 }
 
 .field-2x2-grid {

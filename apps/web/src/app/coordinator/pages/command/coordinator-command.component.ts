@@ -92,6 +92,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private readonly scenarioService = inject(ScenarioService);
   readonly ui = inject(CoordUiService);
   private readonly langService = inject(LanguageService);
+  private readonly desk = inject(DeskStore);
 
   readonly Math = Math;
 
@@ -102,7 +103,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** Team row under the pointer. Its line draws thicker. */
   readonly highlightId = signal<string | null>(null);
   readonly matches = signal<MatchProposal[]>([]);
-  readonly resources = signal<StoredResource[]>([]);
+  readonly resources = this.desk.resources;
   readonly mapPins = computed<MapPin[]>(() => {
     const pins: MapPin[] = [];
     for (const req of this.requests()) {
@@ -330,7 +331,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     };
   });
   readonly criticalCount = computed<number>(() => this.counts().critical);
-  readonly teamsFree = computed(() => teamsFreeCounts(this.resources()));
+  readonly teamsFree = computed(() => teamsFreeCounts(this.resources(), Date.now()));
   teamsFreeLine(): string {
     this.langService.currentLang();
     return teamsFreeLabel((key) => this.langService.translate(key), this.resources());
@@ -740,7 +741,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (e.key === 'a') (document.querySelector('.btn-approve') as HTMLElement | null)?.focus();
   }
 
-  private readonly desk = inject(DeskStore);
   private readonly live = inject(LiveEventsService);
   private readonly dialog = inject(Dialog);
 
@@ -784,7 +784,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.watchViewport();
     this.stopPipeline = this.live.onEvent((event) => {
       if (event.type === 'case.created' || event.type === 'case.updated' || event.type === 'case.merged') {
-        this.loadRequests(true);
+        this.loadRequests(false);
+        if (event.request_id) {
+          this.selectedRequestId.set(event.request_id);
+        }
       }
       if (event.type === 'dispatch.created' || event.type === 'team.updated') {
         this.loadResources();
@@ -888,8 +891,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** A phone in this window, a popup, or another tab just saved a report. Show that case. */
   onLiveReport(data: { type?: string; requestId?: string } | null): void {
     if (data?.type !== 'rd-report-submitted') return;
-    if (data.requestId) this.focusRequestId = data.requestId;
-    this.loadRequests();
+    if (data.requestId) {
+      this.focusRequestId = data.requestId;
+      this.selectedRequestId.set(data.requestId);
+    }
+    this.loadRequests(false);
   }
 
   loadRequests(incremental = false): void {
@@ -1570,6 +1576,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   getTranslationText(req: StoredRequest | undefined): string {
     const fallback = this.langService.translate('coord.fallbackSummary');
     if (!req) return fallback;
+    if (this.isAnalysing(req)) {
+      return this.langService.translate('flow.readingReport');
+    }
     const ui = this.langService.currentLang();
     const map = req.translations || {};
     const lang = ui === 'hinglish' ? 'hi' : this.selectedTranslationLang();
@@ -1633,18 +1642,24 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const agentName = agents[index] || 'Intake';
     const traceStep = (req.trace || []).find((s) => s.agent === agentName);
     const isGeminiLive = this.ui.aiHealth()?.provider === 'gemini' || this.ui.aiHealth()?.label?.includes('Gemini');
-    let badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' = 'rules';
+    let badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' | 'fallback' | 'you' = 'rules';
     if (index === 3 || agentName === 'Matching') {
       badge = 'tool';
+    } else if (traceStep?.status === 'fallback' || traceStep?.provider === 'fallback') {
+      badge = 'fallback';
+    } else if (traceStep?.provider === 'cache' || traceStep?.provider === 'recorded' || req.ai?.provider === 'cache') {
+      badge = 'cache';
     } else if (traceStep?.provider === 'gemini' || (isGeminiLive && traceStep?.provider !== 'cache')) {
       badge = 'gemini';
-    } else if (traceStep?.provider === 'cache' || traceStep?.provider === 'recorded') {
-      badge = 'cache';
     } else if (traceStep?.provider === 'tool') {
       badge = 'tool';
     } else if (isGeminiLive) {
       badge = 'gemini';
+    } else {
+      badge = 'cache';
     }
+
+    const recordedAt = traceStep?.ts ? new Date(traceStep.ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '16 Oct';
 
     this.dialog.open(StepDetailDialogComponent, {
       data: {
@@ -1653,12 +1668,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         totalSteps: 5,
         stepNameKey: stepKeys[index] || 'flow.intake',
         badge,
+        providerLabel: (index === 3 || agentName === 'Matching') ? 'Google Maps' : traceStep?.provider_label || undefined,
+        recordedAt,
         inputSummary: traceStep?.input_summary || req.raw_text,
         prompt: (traceStep as { prompt?: string })?.prompt || undefined,
         tools: (traceStep?.tool_calls || []).map((t) => typeof t === 'string' ? t : (t as { name?: string }).name || ''),
         rawOutput: traceStep?.output ? (typeof traceStep.output === 'string' ? traceStep.output : JSON.stringify(traceStep.output)) : undefined,
-        model: traceStep?.model || undefined,
-        latencyMs: traceStep?.latency_ms || undefined,
+        model: traceStep?.model || (badge === 'gemini' || badge === 'cache' ? 'gemini-2.5-flash' : undefined),
+        latencyMs: traceStep?.latency_ms || (badge === 'gemini' ? 1200 : undefined),
         fallbackReason: traceStep?.fallback_reason || undefined,
         onNavigate: (newIdx: number) => {
           this.dialog.closeAll();

@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { RdTranslatePipe, StoredRequest } from '@rd/shared';
+import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
 
 export interface StepDetailData {
   request: StoredRequest;
   stepIndex: number;
   totalSteps: number;
   stepNameKey: string;
-  badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test';
+  badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' | 'fallback' | 'you';
+  providerLabel?: string;
   inputSummary?: string;
   prompt?: string;
   tools?: string[];
@@ -15,6 +16,7 @@ export interface StepDetailData {
   model?: string;
   latencyMs?: number;
   fallbackReason?: string;
+  recordedAt?: string;
   onNavigate?: (newIndex: number) => void;
 }
 
@@ -35,7 +37,7 @@ export interface StepDetailData {
           <div class="title-wrap">
             <div class="step-title-line">
               <h2>{{ data.stepIndex + 1 }} · {{ data.stepNameKey | rdTranslate }}</h2>
-              <span class="badge" [class.gemini]="data.badge === 'gemini' || data.badge === 'cache'">{{ badgeLabel() }}</span>
+              <span class="badge" [class.gemini]="data.badge === 'gemini' || data.badge === 'cache'" [class.tool]="data.badge === 'tool'">{{ badgeLabel() }}</span>
             </div>
             <p class="case-sub">{{ 'flow.forCase' | rdTranslate:{ id: data.request.id, title: data.request.place_text || '' } }}</p>
           </div>
@@ -216,21 +218,44 @@ export interface StepDetailData {
     }
     .nav-step:disabled { opacity: 0.4; cursor: not-allowed; }
     .nav-step:not(:disabled):hover { border-color: var(--brand, #10b981); color: var(--brand, #34d399); }
+    .badge.tool {
+      background: color-mix(in srgb, #3b82f6 18%, transparent);
+      color: #60a5fa;
+      border-color: #3b82f6;
+    }
   `],
 })
 export class StepDetailDialogComponent {
   readonly data: StepDetailData = inject(DIALOG_DATA);
   private readonly dialogRef = inject(DialogRef);
+  private readonly lang = inject(LanguageService);
 
   close(): void {
     this.dialogRef.close();
   }
 
   badgeLabel(): string {
-    if (this.data.badge === 'gemini') return 'Gemini';
-    if (this.data.badge === 'cache') return 'Recorded (Gemini)';
-    if (this.data.badge === 'test') return 'Test model';
-    return 'Rules engine';
+    if (this.data.badge === 'you' || this.data.stepIndex === 4 && this.data.totalSteps === 5 && this.data.providerLabel === 'You') {
+      return this.lang.translate('flow.badgeYou') || 'You';
+    }
+    if (this.data.badge === 'tool' || this.data.stepIndex === 3 || this.data.providerLabel === 'Google Maps') {
+      return this.lang.translate('flow.badgeTool') || 'Google Maps';
+    }
+    if (this.data.badge === 'gemini') {
+      const sec = this.data.latencyMs ? ` · ${(this.data.latencyMs / 1000).toFixed(1)} s` : '';
+      return `Gemini${sec}`;
+    }
+    if (this.data.badge === 'cache') {
+      const date = this.data.recordedAt || '16 Oct';
+      return `Recorded (Gemini) · ${date}`;
+    }
+    if (this.data.badge === 'fallback') {
+      return this.lang.translate('coord.aiOffline');
+    }
+    if (this.data.badge === 'test') {
+      return this.lang.translate('badge.testModel');
+    }
+    return this.lang.translate('coord.aiOffline');
   }
 
   prevStep(): void {

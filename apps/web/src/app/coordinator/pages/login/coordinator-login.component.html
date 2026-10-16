@@ -39,7 +39,7 @@
       }
 
       @if (failed()) {
-        <div class="error-banner" role="alert">{{ 'auth.wrong' | rdTranslate }}</div>
+        <div class="error-banner" role="alert">{{ (demoFailed() ? 'auth.demoDisabled' : 'auth.wrong') | rdTranslate }}</div>
       }
 
       <form (submit)="$event.preventDefault(); onLogin()" novalidate>

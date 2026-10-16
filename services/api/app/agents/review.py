@@ -46,7 +46,7 @@ def language_review(agent: str, context: dict[str, Any], fallback: str) -> dict:
     cached = llm_client.get_cached(key)
     has_recording = cached and llm_client._memory_source.get(key) in ("gemini", "cache")
     if not llm_client.gemini_live() and not has_recording:
-        return {"text": fallback, "provider": "tool", "model": None, "latency_ms": 0}
+        return {"text": fallback, "provider": "tool", "model": None, "latency_ms": 0, "prompt": prompt, "raw_output": fallback}
     allowed = {float(n) for n in re.findall(r"\b\d+(?:\.\d+)?\b", prompt)}
 
     def validate(raw: str) -> ReviewText:
@@ -70,10 +70,11 @@ def language_review(agent: str, context: dict[str, Any], fallback: str) -> dict:
             raw = llm_client.generate_content(REVIEW_PROMPT, prompt, validator=validate, max_retries=1)
         ai = llm_client.last_ai.model_copy()
         if ai.provider not in ("gemini", "cache"):
-            return {"text": fallback, **ai.model_dump()}
+            return {"text": fallback, "prompt": prompt, "raw_output": fallback, **ai.model_dump()}
         value = validate(raw)
-        return {**ai.model_dump(), "text": value.text}
+        return {**ai.model_dump(), "text": value.text, "prompt": prompt, "raw_output": raw}
     except Exception:
         logger.exception("%s language review failed; preserving tool output", agent)
         return {"text": fallback, "provider": "fallback", "model": None,
-                "latency_ms": int((time.perf_counter() - started) * 1000), "fallback_reason": "invalid_review"}
+                "latency_ms": int((time.perf_counter() - started) * 1000), "fallback_reason": "invalid_review",
+                "prompt": prompt, "raw_output": fallback}

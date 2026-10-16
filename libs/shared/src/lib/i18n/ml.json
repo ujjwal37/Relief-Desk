@@ -227,7 +227,8 @@
     "trust1": "ഓരോ അയയ്ക്കലും ഒരു മനുഷ്യൻ അംഗീകരിക്കുന്നു",
     "trust2": "സിന്തറ്റിക് ഡാറ്റ മാത്രം",
     "wrong": "ഇമെയിലോ പാസ്‌വേഡോ തെറ്റ്. വീണ്ടും ശ്രമിക്കുക.",
-    "required": "ആവശ്യമാണ്"
+    "required": "ആവശ്യമാണ്",
+    "demoDisabled": "ഈ സെർവറിൽ ഡെമോ മോഡ് പ്രവർത്തനരഹിതമാക്കിയിരിക്കുന്നു. ദയവായി കോർഡിനേറ്റർ ക്രെഡൻഷ്യലുകൾ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക."
   },
   "demo": {
     "phone": "ഡെമോ ഫോൺ",
@@ -339,7 +340,7 @@
     "tracePending": "കാത്തിരിക്കുന്നു",
     "traceComplete": "കഴിഞ്ഞു",
     "aiGemini": "Gemini",
-    "aiOffline": "ഓഫ്‌ലൈൻ ഫാൾബാക്ക്",
+    "aiOffline": "Gemini ലഭ്യമല്ല, ഇൻ-ബിൽറ്റ് നിയമങ്ങൾ",
     "aiRecorded": "രേഖപ്പെടുത്തിയത് (Gemini)",
     "updateLocation": "സ്ഥാനം പുതുക്കുക",
     "lat": "അക്ഷാംശം",
@@ -772,6 +773,7 @@
     "asked": "ഏജന്റിനോട് ചോദിച്ചത്",
     "input": "ഇൻപുട്ട്",
     "raw": "അസംസ്കൃത ഔട്ട്പുട്ട്",
+    "none": "ഒന്നുമില്ല",
     "tools": "ഉപകരണങ്ങൾ",
     "badgeGemini": "Gemini",
     "badgeRules": "നിയമങ്ങൾ",
@@ -904,8 +906,11 @@
     "fellBack": "Fell back because",
     "modelLatency": "Model · latency",
     "waiting": "Waiting",
-    "badgeTool": "Rules engine",
+    "badgeTool": "Google Maps",
     "badgeCache": "റെക്കോർഡ് ചെയ്തത് (Gemini)",
+    "badgeYou": "നിങ്ങൾ",
+    "fallbackBuiltIn": "Gemini ലഭ്യമല്ല, ഇൻ-ബിൽറ്റ് നിയമങ്ങൾ ഉപയോഗിച്ചു",
+    "readingReport": "Gemini ഈ റിപ്പോർട്ട് വായിക്കുന്നു…",
     "simulateOutage": "നിയമങ്ങൾ അടിസ്ഥാനമാക്കിയ മാർഗം കാണുക",
     "simulatedOnly": "പ്രിവ്യൂ മാത്രം. സൂക്ഷിച്ച ട്രേസുകളും വിന്യാസ തീരുമാനങ്ങളും മാറില്ല."
   },

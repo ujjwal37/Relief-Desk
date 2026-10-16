@@ -42,7 +42,7 @@ export class CoordinatorTeamsComponent implements OnInit {
   private ui = inject(CoordUiService);
   private desk = inject(DeskStore);
 
-  readonly resources = signal<StoredResource[]>([]);
+  readonly resources = this.desk.resources;
   readonly requests = signal<StoredRequest[]>([]);
   readonly matches = signal<MatchProposal[]>([]);
   readonly strip = signal<Strip>('all');
@@ -68,10 +68,6 @@ export class CoordinatorTeamsComponent implements OnInit {
       if (!this.desk.casesReady()) return;
       this.requests.set(this.desk.requests());
     });
-    effect(() => {
-      if (!this.desk.teamsReady()) return;
-      this.resources.set(this.desk.resources());
-    });
   }
 
   readonly counts = computed(() => {
@@ -88,8 +84,8 @@ export class CoordinatorTeamsComponent implements OnInit {
 
   ngOnInit(): void {
     this.api.getResources().subscribe({
-      next: (rows) => this.resources.set(rows),
-      error: () => this.resources.set([]),
+      next: (rows) => this.desk.resources.set(rows),
+      error: () => this.desk.resources.set([]),
     });
     this.api.getRequests().subscribe({
       next: (rows) => this.requests.set(rows),
