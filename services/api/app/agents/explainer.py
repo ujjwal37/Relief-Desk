@@ -35,6 +35,8 @@ class ExplainerAgent:
         note = inventory_note(request, resource)
         if note:
             text_en += " " + note
+        if _life_threat(request) and "112" not in text_en:
+            text_en += " In an emergency call 112."
 
         res_name_hi = resource.name_hi or resource.name
         text_hi = (
@@ -110,13 +112,14 @@ class ExplainerAgent:
 
         prompt = (
             f"Explain why {resource.name} is matched to this rescue request in <= 2 sentences.\n"
+            f"Use plain words. Do not write the field names urgency_score or match_score.\n"
             f"Input numbers:\n"
-            f"- Distance: {breakdown.distance_km} km (score: {breakdown.distance_score})\n"
-            f"- Capacity remaining: {resource.capacity_remaining} (needed: {request.people_count or 1})\n"
-            f"- Urgency score: {breakdown.urgency_score}\n"
-            f"- Vulnerability score: {breakdown.vulnerability_fit_score}\n"
-            f"- Total match score: {breakdown.total_score}\n"
+            f"- Distance: {breakdown.distance_km} km\n"
+            f"- Seats free: {resource.capacity_remaining} (people reported: {request.people_count or 1})\n"
+            f"- How urgent this case is, as a number already on the card: {breakdown.urgency_score}\n"
+            f"- How well this team fits: {breakdown.total_score}\n"
             f"RULE: Cite ONLY these provided numbers. Do not invent any numbers.\n"
+            f"If someone may die (not breathing, unconscious, oxygen, bleeding), end with: In an emergency call 112.\n"
             f"Provide valid JSON: {{\"text_en\": \"...\", \"text_hi\": \"...\"}}"
         )
 
@@ -133,6 +136,10 @@ class ExplainerAgent:
                 logger.warning("LLM hallucinated numbers not in breakdown. Falling back to template.")
                 return fallback
 
+            en_text = _plain_words(en_text or fallback.text_en)
+            hi_text = _plain_words(hi_text or fallback.text_hi)
+            if _life_threat(request) and "112" not in en_text:
+                en_text += " In an emergency call 112."
             return Explanation(
                 text_en=en_text or fallback.text_en,
                 text_hi=hi_text or fallback.text_hi,
@@ -140,6 +147,21 @@ class ExplainerAgent:
         except Exception as e:
             logger.info("Explainer LLM generation skipped or failed: %s. Using template fallback.", e)
             return fallback
+
+
+def _plain_words(text: str) -> str:
+    """Internal score field names stay off the card."""
+    if not text:
+        return text
+    text = re.sub(r"urgency[_\s-]*scores?", "how urgent it is", text, flags=re.I)
+    text = re.sub(r"(?:total\s+)?match[_\s-]*scores?", "how well this team fits", text, flags=re.I)
+    return text
+
+
+def _life_threat(request: StoredRequest) -> bool:
+    from app.agents.intake import _LIFE_THREAT
+    kind = getattr(request.type, "value", request.type)
+    return kind == "medical" or bool(_LIFE_THREAT.search(request.raw_text or ""))
 
 
 explainer_agent = ExplainerAgent()

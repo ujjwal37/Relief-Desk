@@ -5,7 +5,8 @@ Nothing here dispatches. The coordinator picks an option; the choice is logged.
 from typing import List, Optional
 
 from app.agents.matching import (
-    BOAT_KMH, BOAT_MAX_KM, LAND_KMH, NEARBY_KM, _PRIMARY, _finish_minutes, travel_mode_for,
+    BOAT_KMH, BOAT_MAX_KM, LAND_KMH, _PRIMARY, _finish_minutes, offer_limit_km,
+    travel_mode_for, water_access_case,
 )
 from app.models.firestore_models import ResourceStatus, StoredRequest, StoredResource
 from app.tools.geo import haversine_distance
@@ -27,7 +28,9 @@ def _eta(km: Optional[float], res: StoredResource) -> Optional[int]:
 
 
 def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict:
-    if getattr(req.type, "value", req.type) == "info":
+    from app.tools.scoring import _SEVERE_INJURY
+    life_threat = bool(_SEVERE_INJURY.search(req.raw_text or ""))
+    if getattr(req.type, "value", req.type) == "info" and not life_threat:
         return {"request_id": req.id, "reason": "info_only", "detail": {}, "limit_km": BOAT_MAX_KM, "kind": None,
                 "options": {"reserve": None, "road": None, "wider": None, "escalate": None, "share": {"available": True}}}
     from app.agents.matching import deep_water
@@ -38,7 +41,7 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
     free = [r for r in right if r.status == ResourceStatus.AVAILABLE and (r.capacity_remaining or 0) > 0]
     busy = [r for r in right if r.status != ResourceStatus.AVAILABLE]
     need = req.people_count or 0
-    limit = BOAT_MAX_KM if any(k.value == "boat" for k in kinds) else NEARBY_KM
+    limit = offer_limit_km(req)
     if deep and getattr(req.type, "value", req.type) == "medical":
         limit = 10.0  # the matcher only sends a boat to a medical emergency when it is this close
 
@@ -75,7 +78,8 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
         getattr(req.type, "value", req.type), set())
     others = [r for r in resources if r.kind not in kinds and r.kind.value in useful and r.status == ResourceStatus.AVAILABLE
               and travel_mode_for(r) != "water" and (r.capacity_remaining or 0) > 0]
-    if others:
+    # A jetty or ghat needs a boat. A road ambulance is not offered as if it could reach them.
+    if others and not water_access_case(req) and not deep:
         best = min(others, key=lambda r: _km(req, r) if _km(req, r) is not None else 1e9)
         km = _km(req, best)
         road = {"team_id": best.id, "team": best.name, "kind": best.kind.value, "km": km, "eta_min": _eta(km, best)}

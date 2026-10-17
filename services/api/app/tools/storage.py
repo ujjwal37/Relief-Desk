@@ -907,7 +907,7 @@ class StorageService:
         if req.status in (RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS):
             raise ValueError(f"Request {request_id} is already dispatched")
         before = req.model_dump()
-        req.status = RequestStatus.CLOSED
+        req.status = RequestStatus.DISMISSED_HOAX
         req.flags = sorted(set((req.flags or []) + ["dismissed_hoax"]))
         req.updated_at = datetime.now(timezone.utc).isoformat()
         self._requests[req.id] = req

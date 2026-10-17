@@ -29,6 +29,15 @@ from app.tools.trust import hoax_reason_for
 
 logger = logging.getLogger("relief_desk.chat_intake")
 
+
+def _script_lang(text: str) -> Optional[str]:
+    """Malayalam or Devanagari in the report picks the question language."""
+    if re.search(r"[\u0D00-\u0D7F]", text or ""):
+        return "ml"
+    if re.search(r"[\u0900-\u097F]", text or ""):
+        return "hi"
+    return None
+
 _INJECTION = re.compile(
     r"\b(?:ignore (?:all )?previous instructions|system prompt|jailbreak|bypass)\b",
     re.IGNORECASE,
@@ -175,6 +184,11 @@ class ChatIntakeAgent:
             state.language = lang_override
         else:
             lang = state.language or "en"
+        # A Malayalam or Hindi report is asked about in that language, even if the UI is English.
+        script = _script_lang(user_message)
+        if script:
+            lang = script
+            state.language = script
 
         # 1. Safety guardrail: advice and injection requests return fixed lines only.
         advice = safety_refusal_lines(user_message)

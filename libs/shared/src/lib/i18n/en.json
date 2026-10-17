@@ -635,8 +635,8 @@
     "bucket3": "Last 3 hours",
     "card": {
       "alt_01": {
-        "title": "Dog attack alert · Anthikad, Thrissur",
-        "desc": "3 reports in 2 h. Avoid walking alone near Anthikad lanes after dark.",
+        "title": "Flooded lanes · Ward 9, Kuttanad",
+        "desc": "Water on the lanes. Stay on higher ground. In an emergency call 112.",
         "ago": "25 min ago"
       },
       "alt_02": {
@@ -653,7 +653,7 @@
     "hazard": {
       "cell_1031_7633_w7": "Water rising, Temple Road submerged",
       "cell_1011_7635_w4": "Waterlogging 2-3 feet",
-      "cell_1047_7613_w9": "Aggressive dogs spotted near Anthikad lanes",
+      "cell_1047_7613_w9": "Flood water on the lanes near Ward 9",
       "cell_0942_7641_w2": "Drinking water shortage, community kitchen operational"
     }
   },
@@ -864,7 +864,7 @@
     "agentHello": "Hi, what do you need to know?",
     "deskTitle": "Ask the desk",
     "deskHint": "Ask in plain words, in any language. Read-only: nothing is changed.",
-    "deskPlaceholder": "e.g. Which elderly cases in Aluva are still waiting?",
+    "deskPlaceholder": "e.g. Which elderly cases in Kainakary are still waiting?",
     "deskAsk": "Ask",
     "deskAsking": "Looking…",
     "deskMatches": "{n} matching cases",
@@ -989,6 +989,7 @@
     "simulateOutage": "Preview rules fallback",
     "simulatedOnly": "Preview only. Stored traces and dispatch decisions are unchanged.",
     "sentDedupeJoined": "Joined {n} reports about the same place.",
+    "sentDedupeNoPlace": "Joined {n} reports. No place was named, so this is not a same-place merge.",
     "badgeStraight": "Rules · straight line"
   },
   "uiRef": {
@@ -1168,6 +1169,7 @@
     "showPrompt": "Show prompt and response",
     "hidePrompt": "Hide prompt and response",
     "whyJoined": "{n} reports describe the same place and people, close in time, so they are one case.",
+    "whyJoinedNoPlace": "{n} reports were grouped, but no place was named. This is not a same-place merge.",
     "whyDistinct": "No other open case at this place in the last hour.",
     "joinedN": "{n} joined",
     "ofN": "step {k} of {n}",
@@ -1209,7 +1211,8 @@
       "knee": "knee-deep",
       "waist": "waist-deep",
       "chest": "chest-deep",
-      "roof": "up to the roof"
+      "roof": "up to the roof",
+      "floor": "up to the first floor"
     },
     "chip": "about {depth} · {src}",
     "srcGemini": "✨ Gemini estimate from the report",
@@ -1309,7 +1312,8 @@
       "too_small": "Only free team ({team}) has {seats} seats; {need} people need help.",
       "none_of_kind": "There is no team of this kind in the area.",
       "no_location": "No location yet, so distance to any team is unknown. Ask the reporter for a landmark or pin.",
-      "deep_water": "Chest-deep water: only a boat can reach them. The nearest free boat, {team}, is {km} km away (limit {limit} km for a medical emergency)."
+      "deep_water": "Chest-deep water: only a boat can reach them. The nearest free boat, {team}, is {km} km away (limit {limit} km).",
+      "info_only": "This report asks for information, not a team."
     },
     "stays": "Priority stays. The case keeps its place in the queue.",
     "yourOptions": "Your options",

@@ -14,7 +14,7 @@ def test_dismiss_hoax_closes_without_dispatch():
         return
     req = rows[0]
     out = storage_service.dismiss_hoax(req.id, actor="test")
-    assert out.status.value == "closed"
+    assert out.status.value == "dismissed_hoax"
     assert "dismissed_hoax" in out.flags
     assert out.assigned_resource_id is None
 

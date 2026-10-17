@@ -31,7 +31,7 @@ import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { Dialog } from '@angular/cdk/dialog';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
-import { haversineKm, etaMinutes, etaPhrase, legTitle, quoteFromProposal, teamTone, TONE_COLOR, vehiclePath, TravelQuote } from '../../../core/maps/map-markers';
+import { haversineKm, etaMinutes, boatMinutes, etaPhrase, legTitle, quoteFromProposal, teamTone, TONE_COLOR, vehiclePath, TravelQuote } from '../../../core/maps/map-markers';
 import { teamsFreeCounts, teamsFreeLabel } from '../../team-status';
 import { AiStepperComponent } from '../../agents/ai-stepper.component';
 import { StepDetailDialogComponent } from '../../agents/step-detail-dialog.component';
@@ -288,10 +288,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   // Computed signals
   readonly selectedRequest = computed<StoredRequest | undefined>(() => {
-    // Only a case that is in the visible list can be selected; an empty tab shows an empty detail.
-    const list = this.filteredRequests();
     const id = this.selectedRequestId();
-    return list.find((r) => r.id === id) || list[0];
+    if (!id) return undefined;
+    const held = this.requests().find((r) => r.id === id);
+    // A dispatched case leaves the waiting tab. Keep it on screen instead of the next case.
+    if (held) return held;
+    return this.filteredRequests()[0];
   });
 
   /** Which case the loaded `matches` belong to, so a proposal never shows on another case. */
@@ -317,7 +319,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     } else if (bf === 'completed') {
       list = list.filter((r) => this.isCompleted(r));
     } else {
-      list = list.filter((r) => !this.isDispatched(r) && !this.isCompleted(r));
+      list = list.filter((r) => this.isWaiting(r));
       if (bf === 'now') list = list.filter((r) => urgencyBand(r.urgency_score) === 'critical');
       if (bf === 'soon') list = list.filter((r) => urgencyBand(r.urgency_score) === 'high');
       if (bf === 'review') list = list.filter((r) => needsReview(r));
@@ -335,11 +337,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return list;
   });
 
-  readonly activeRequests = computed(() => this.requests().filter((r) => !this.isDispatched(r) && !this.isCompleted(r)));
+  readonly activeRequests = computed(() => this.requests().filter((r) => this.isWaiting(r)));
   readonly counts = computed(() => {
     const scoped = this.scopedRequests();
     return {
-      ...bandCounts(scoped.filter((r) => !this.isDispatched(r) && !this.isCompleted(r))),
+      ...bandCounts(scoped.filter((r) => this.isWaiting(r))),
       dispatched: scoped.filter((r) => this.isDispatched(r)).length,
       completed: scoped.filter((r) => this.isCompleted(r)).length,
     };
@@ -370,7 +372,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const points = focused
       ? [{ lat: req.lat as number, lng: req.lng as number }, ...teams.map((team) => ({ lat: team.lat, lng: team.lng }))]
       : this.requests()
-          .filter((row) => row.lat != null && row.lng != null && !this.isCompleted(row))
+          .filter((row) => row.lat != null && row.lng != null && !this.isCompleted(row) && !this.isDismissedHoax(row))
           .map((row) => ({ lat: row.lat as number, lng: row.lng as number }));
     if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
     const lats = points.map((point) => point.lat);
@@ -423,7 +425,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }),
   );
   readonly svgPins = computed(() => {
-    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r));
+    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r) && !this.isDismissedHoax(r));
     const res = this.resources();
     return [
       ...res.map((r) => {
@@ -616,8 +618,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   isDispatched(r: StoredRequest): boolean {
     return r.status === 'approved' || r.status === 'dispatched' || r.status === 'in_progress';
   }
+  isDismissedHoax(r: StoredRequest): boolean {
+    return r.status === 'dismissed_hoax' || (r.flags || []).includes('dismissed_hoax');
+  }
   isCompleted(r: StoredRequest): boolean {
     return r.status === 'completed' || r.status === 'resolved' || r.status === 'closed';
+  }
+  /** Waiting queue: not sent, not finished, and not a dismissed hoax. */
+  isWaiting(r: StoredRequest): boolean {
+    return !this.isDispatched(r) && !this.isCompleted(r) && !this.isDismissedHoax(r);
   }
   dispatchStep(r: StoredRequest): number {
     const status = String(r.status);
@@ -846,6 +855,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   onKey(e: KeyboardEvent): void {
     const t = e.target as HTMLElement;
     if (/INPUT|TEXTAREA|SELECT/.test(t?.tagName) || e.ctrlKey || e.metaKey) return;
+    if (e.key === 'Escape') {
+      if (this.helpOpen()) { this.helpOpen.set(false); return; }
+      if (this.traceRequestId()) { this.closeTrace(); return; }
+      if (this.sheetOpen()) { this.closeSheet(); return; }
+      if (this.selectedRequestId()) { this.selectedRequestId.set(''); return; }
+      return;
+    }
     if (this.traceRequestId() || this.assistOpen()) return;
     const list = this.filteredRequests();
     const i = list.findIndex((r) => r.id === this.selectedRequestId());
@@ -854,7 +870,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     // Triage shortcuts: A approve the suggested team, N next waiting case, U undo the last send.
     const key = e.key.toLowerCase();
     if (e.key === '?') { e.preventDefault(); this.helpOpen.set(!this.helpOpen()); return; }
-    if (e.key === 'Escape' && this.helpOpen()) { this.helpOpen.set(false); return; }
     if (key === 'a') {
       // A sends the suggested team only; it never dismisses a hoax or picks a no-team option.
       const btn = document.querySelector('.footer-buttons-row .btn-approve:not(.btn-dismiss-hoax):not(.nt-go):not(.btn-reject-go)') as HTMLButtonElement | null;
@@ -1181,7 +1196,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (!incremental) this.loadMatches(keep);
       return;
     }
-    if (next.length > 0 && !keep) this.selectRequest(next[0].id);
+    // A cleared selection stays cleared. Escape must not jump to the top case.
   }
 
   /** No free team of the right kind: reason + options, loaded when matching returns nothing. */
@@ -1273,7 +1288,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         this.matchesFor.set(requestId);
         const picked = this.pickedMatch.get(requestId);
         const pi = picked ? proposals.findIndex((p) => p.match_id === picked) : -1;
-        if (pi > 0) { this.matchIdx.set(pi); this.choseTeam.set(true); }
+        if (pi >= 0) { this.matchIdx.set(pi); this.choseTeam.set(true); }
         if (!proposals.length) {
           this.apiClient.getNoTeam(requestId).subscribe({ next: (n) => { if (this.selectedRequestId() === requestId) { this.noTeam.set(n); this.noTeamPick.set(this.noTeamOptionKeys(n)[0] || null); } }, error: () => this.noTeam.set(null) });
         }
@@ -1703,10 +1718,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         });
         this.resources.set(updatedResources);
 
-        // Reload matches for updated state
+        // Stay on this case. The toast and the panel both name the team that was approved.
+        this.pickedMatch.set(prop.request_id, prop.match_id);
         this.loadMatches(prop.request_id);
-        const next = this.filteredRequests().find((row) => row.id !== prop.request_id && !this.isDispatched(row) && !this.isCompleted(row));
-        if (next) this.selectRequest(next.id);
       },
       error: (err) => {
         this.approving.set(false);
@@ -2290,21 +2304,29 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return lang;
   }
 
+  /** Minutes from the proposal. The fallback uses the same 10 km/h boat and 20 km/h road speeds as the API. */
   propEta(prop: MatchProposal): string {
-    const mins = prop.eta_minutes ?? Math.round(prop.breakdown?.distance_km ? (prop.resource_kind === 'boat' ? prop.breakdown.distance_km / 12 * 60 : prop.breakdown.distance_km / 30 * 60) : 10);
-    return `~${mins} min`;
+    const mins = prop.eta_minutes ?? this.fallbackEta(prop);
+    return mins == null ? '' : `~${mins} min`;
   }
 
-  /** Kilometres from the stored breakdown, or a fresh haversine when the pins exist. */
+  private fallbackEta(prop: MatchProposal): number | null {
+    const km = prop.breakdown?.distance_km;
+    if (km == null || !Number.isFinite(km)) return null;
+    return prop.resource_kind === 'boat' ? boatMinutes(km) : etaMinutes(km);
+  }
+
+  /** The proposal's distance. A fresh haversine is only a fallback when the proposal has none. */
   distanceKm(prop: MatchProposal | null | undefined): number | null {
     if (!prop) return null;
+    const given = prop.breakdown?.distance_km;
+    if (given != null && Number.isFinite(given)) return given;
     const req = this.selectedRequest();
     const team = this.resources().find((row) => row.id === prop.resource_id);
     if (req?.lat != null && req.lng != null && team?.lat != null && team.lng != null) {
       return haversineKm(req.lat, req.lng, team.lat, team.lng);
     }
-    const given = prop.breakdown?.distance_km;
-    return given != null && Number.isFinite(given) ? given : null;
+    return null;
   }
 
   teamWhy(prop: MatchProposal): string {
@@ -2317,7 +2339,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   propEtaSubline(prop: MatchProposal): string {
     const km = this.distanceKm(prop);
-    const mins = prop.eta_minutes ?? (km != null ? Math.max(1, Math.round(prop.resource_kind === 'boat' ? km / 12 * 60 : km / 30 * 60)) : null);
+    const mins = prop.eta_minutes ?? this.fallbackEta(prop);
     const seats = prop.capacity_remaining ?? prop.capacity_total;
     const parts = [
       mins != null ? this.langService.translate('queue.away', { m: mins }) : '',

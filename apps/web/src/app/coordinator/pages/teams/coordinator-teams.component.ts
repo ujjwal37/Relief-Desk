@@ -205,11 +205,15 @@ export class CoordinatorTeamsComponent implements OnInit {
     if (picked) {
       const target = this.teamTarget();
       if (!target || target.lat == null || target.lng == null) return [];
+      const prop = this.matches().find((row) => row.resource_id === picked.id);
+      const quote = prop
+        ? quoteFromProposal(prop, picked.status === 'available')
+        : { km: haversineKm(target.lat, target.lng, picked.lat, picked.lng), teamAvailable: picked.status === 'available', water: picked.kind === 'boat' };
       return [{
         id: picked.id,
         from: { lat: target.lat, lng: target.lng },
         to: { lat: picked.lat, lng: picked.lng },
-        title: legTitle({ km: haversineKm(target.lat, target.lng, picked.lat, picked.lng), teamAvailable: picked.status === 'available' }, (key) => this.lang.translate(key)),
+        title: legTitle(quote, (key) => this.lang.translate(key)),
         suggested: true,
         mode: picked.kind === 'boat' ? 'water' : 'road',
       }];

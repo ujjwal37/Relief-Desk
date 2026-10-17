@@ -24,6 +24,7 @@ class RequestStatus(str, Enum):
     RESOLVED = "resolved"
     COMPLETED = "completed"
     CLOSED = "closed"
+    DISMISSED_HOAX = "dismissed_hoax"
 
 
 class StoredReport(BaseModel):
@@ -88,6 +89,8 @@ class StoredRequest(BaseModel):
     people_span: Optional[str] = None
     count_spans: List[str] = Field(default_factory=list)
     count_note: Optional[str] = None
+    # "stated" when the reports agree or only one states a count. "per_report" when they conflict.
+    count_rule: Optional[str] = None
     report_quotes: List[ReportQuote] = Field(default_factory=list)
     dedupe_trace: Optional[str] = None
     possible_duplicate: Optional[PossibleDuplicate] = None

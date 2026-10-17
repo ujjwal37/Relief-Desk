@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from app.models.firestore_models import ReportQuote, StoredRequest
-from app.tools.nlu_rules import counts_note, span_upper
+from app.tools.nlu_rules import counts_note
 from app.tools.storage import storage_service
 
 
@@ -97,11 +97,23 @@ def _fold_locked(
                 spans.append(label)
     primary.count_spans = spans
     primary.people_span = primary.people_span or (spans[0] if spans else None)
-    primary.count_note = counts_note(spans)
-    uppers = [span_upper(span) for span in spans if span_upper(span)]
-    uppers.extend(count for count in (primary.people_count, secondary.people_count) if count)
-    if uppers:
-        primary.people_count = max(uppers)
+    note = counts_note(spans)
+    own_count = primary.people_count
+    other_count = secondary.people_count
+    if note:
+        # Keep each report's count. The case count is the surviving report, not a combined total.
+        primary.count_note = note + ". Each report is listed. The case count is not a combined total."
+        primary.count_rule = "per_report"
+        primary.people_count = own_count if own_count else other_count
+    else:
+        primary.count_note = None
+        primary.count_rule = "stated"
+        if own_count is None and other_count is not None:
+            primary.people_count = other_count
+    extra = (secondary.summary or secondary.raw_text or "").strip()
+    base = (primary.summary or "").strip()
+    if extra and extra not in base and extra not in (primary.raw_text or ""):
+        primary.summary = f"{base}\n{extra}".strip() if base else extra
 
     for report_id in secondary.report_ids:
         if report_id not in primary.report_ids:
@@ -133,9 +145,14 @@ def _fold_locked(
 
     from app.tools.scoring import scoring_engine
 
+    prior = [
+        (float(primary.urgency_score or 0), primary.urgency_reason or ""),
+        (float(secondary.urgency_score or 0), secondary.urgency_reason or ""),
+    ]
     scored = scoring_engine.compute_urgency(primary)
-    primary.urgency_score = scored.score
-    primary.urgency_reason = scored.reason
+    best_score, best_reason = max([(float(scored.score), scored.reason)] + prior, key=lambda item: item[0])
+    primary.urgency_score = best_score
+    primary.urgency_reason = best_reason or scored.reason
     storage_service.save_request(secondary, actor=merged_by)
     storage_service.save_request(primary, actor=merged_by)
     storage_service.create_cluster(

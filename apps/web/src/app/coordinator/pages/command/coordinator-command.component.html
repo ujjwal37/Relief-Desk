@@ -515,7 +515,7 @@
                     <svg viewBox="0 0 24 24" width="22" height="22"><path [attr.d]="vehiclePath(prop.resource_kind)" fill="currentColor"/></svg>
                   </span>
                   <div class="team-name-line">
-                    <strong class="team-name">{{ prop.resource_name }}</strong>
+                    <strong class="team-name">{{ isDispatched(req) ? (assignedTeam(req)?.name || prop.resource_name) : prop.resource_name }}</strong>
                     <span class="team-specs">{{ propEtaSubline(prop) }}</span>
                   </div>
                 </div>
@@ -678,7 +678,7 @@
             <p class="completed-banner-note">{{ 'coord.completedNote' | rdTranslate }}</p>
           } @else if (isDispatched(req)) {
             <div class="dispatched-actions-row">
-              <p class="on-way-title" data-testid="team-on-way">{{ 'disp.onWay' | rdTranslate }}@if (sentLine(req); as sl) { <span> · {{ sl }}</span> }</p>
+              <p class="on-way-title" data-testid="team-on-way">{{ 'disp.onWay' | rdTranslate }}@if (assignedTeam(req); as team) { <span> · {{ team.name }}</span> }@if (sentLine(req); as sl) { <span> · {{ sl }}</span> }</p>
               <ol class="dispatch-steps">
                 <li [class.on]="dispatchStep(req) >= 0">{{ 'coord.stepSent' | rdTranslate }}</li>
                 <li [class.on]="dispatchStep(req) >= 1">{{ 'coord.stepAccepted' | rdTranslate }}</li>

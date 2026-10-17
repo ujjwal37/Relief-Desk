@@ -1,4 +1,5 @@
 import logging
+import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
@@ -96,6 +97,7 @@ class MatchingAgent:
             return []
         # A team that has not checked in for 90 min is not offered as available.
         resources = [r for r in resources if not _stale(r)]
+        resources = sorted(resources, key=lambda res: res.id)
         # A team already sent to another case is busy: never offered again until it is free.
         resources = [r for r in resources if not (getattr(r, "assigned_request_id", None) and r.assigned_request_id != request.id)]
 
@@ -127,8 +129,8 @@ class MatchingAgent:
             scored_candidates = [c for c in scored_candidates if travel_mode_for(c[0]) == "water"]
 
         # Distance score is 0 past 10 km, so a far team with more seats can outrank a nearer one.
-        # Keep teams near the closest suitable team. Boats beyond BOAT_MAX_KM are dropped.
-        scored_candidates = _keep_nearer(scored_candidates)
+        # Keep teams near the closest suitable team, inside this need's own kilometre limit.
+        scored_candidates = _keep_nearer(scored_candidates, offer_limit_km(request))
 
         # Rank by arrival time first (boats by water, land teams by road estimate), then by seat fit.
         def _rank(item):
@@ -138,7 +140,7 @@ class MatchingAgent:
             fits = 0 if res.capacity_remaining >= people_needed else 1
             # Water depth from the report: deep water puts boats first, shallow water ground teams.
             from app.agents.depth import depth_rank
-            return (depth_rank(request, res), round(eta * 60), fits, -breakdown.total_score)
+            return (depth_rank(request, res), round(eta * 60), fits, -breakdown.total_score, res.id)
 
         scored_candidates.sort(key=_rank)
         top_candidates = scored_candidates[:top_n]
@@ -227,8 +229,10 @@ NEARBY_KM = 30.0
 PRACTICAL_KM = 40.0
 # Rescue boats farther than this are not offered; the card then says no suitable team nearby.
 BOAT_MAX_KM = 25.0
-# Any team kind: farther than this is not offered as the suggestion.
-MAX_OFFER_KM = BOAT_MAX_KM
+# Medical teams use their own radius. It is not applied to rescue.
+MEDICAL_MAX_KM = 25.0
+# Kept so older callers still import a single offer cap. Per-need limits are offer_limit_km.
+MAX_OFFER_KM = MEDICAL_MAX_KM
 
 
 # Land teams: straight-line km at 20 km/h (a road estimate; the map shows the real drive time).
@@ -311,9 +315,24 @@ def needs_water_access(request: StoredRequest) -> bool:
     return hazard in ("water_rising", "stranded") or any(w in text for w in ("boat", "naav", "nav bhejo", "trapped", "cut off"))
 
 
-def _keep_nearer(scored: list) -> list:
-    # Never offer a team beyond MAX_OFFER_KM: the no-team options show the farther ones honestly.
-    scored = [item for item in scored if item[1].distance_km <= MAX_OFFER_KM]
+def offer_limit_km(request) -> float:
+    """Medical stays at 25 km (10 km in deep water). Rescue is not capped by the medical radius."""
+    kind = getattr(getattr(request, "type", None), "value", getattr(request, "type", None))
+    if kind == "medical":
+        return 10.0 if deep_water(request) else MEDICAL_MAX_KM
+    return NEARBY_KM
+
+
+def water_access_case(request) -> bool:
+    """Jetty, ferry, ghat, or someone already in the water. A road ambulance cannot reach them."""
+    place = getattr(request, "place_text", None) or ""
+    text = " ".join(filter(None, [getattr(request, "raw_text", None), getattr(request, "summary", None), place]))
+    return bool(re.search(r"jetty|ferry|\bghat\b|ജെട്ടി|घाट|boat jetty|in the water", text, flags=re.I))
+
+
+def _keep_nearer(scored: list, limit_km: float = MEDICAL_MAX_KM) -> list:
+    # Never offer a team beyond this need's limit: the no-team options show the farther ones honestly.
+    scored = [item for item in scored if item[1].distance_km <= limit_km]
     if len(scored) <= 1:
         return scored
     nearest = min(item[1].distance_km for item in scored)
