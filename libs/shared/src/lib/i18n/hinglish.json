@@ -199,7 +199,8 @@
     "sampleGap": "Namuna: Sansaadhan ki kami",
     "sampleBadge": "Namuna",
     "reasonConflict": "{place} mein \"{left}\" aur \"{right}\" alag baat",
-    "reasonStale": "{n} requests {mins} min se bina confirm ke hain, phir jaanchein"
+    "reasonStale": "{n} requests {mins} min se bina confirm ke hain, phir jaanchein",
+    "emptyTitle": "Sab theek hai"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -703,7 +704,9 @@
       "latency_p50_ms": "Yeh number batata hai yeh maap kitna achha hai. Doosri line simple tareeka hai.",
       "latency_p95_ms": "Yeh number batata hai yeh maap kitna achha hai. Doosri line simple tareeka hai.",
       "cost_per_1000_msgs_usd": "Yeh number batata hai yeh maap kitna achha hai. Doosri line simple tareeka hai."
-    }
+    },
+    "notRunTitle": "Accuracy test abhi nahi chala",
+    "notRunBody": "Abhi koi measured numbers nahi hain. Is page ko bharne ke liye labelled benchmark chalayein; yahan kuch bhi estimate nahi hai."
   },
   "home": {
     "title": "Hum kaise madad karein?",
@@ -968,7 +971,10 @@
   },
   "map": {
     "loading": "Sector map load ho raha hai…",
-    "routing": "Road route dhoondh rahe hain…"
+    "routing": "Road route dhoondh rahe hain…",
+    "zoom": "Map zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
   },
   "photo": {
     "add": "Photo jodein",
@@ -1222,5 +1228,7 @@
     "jk": "Queue mein neeche / upar",
     "search": "Cases search karein",
     "help": "Ye sheet dikhayein"
-  }
+  },
+  "teams.goCommand": "Command par jaayein",
+  "teams.sub": "{a} free · {b} busy"
 }

@@ -43,3 +43,9 @@ h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); }
   .bench-page { padding:20px 16px; gap:16px; }
   .table-wrap { display:none; }
 }
+
+.run-facts{display:flex;gap:16px;flex-wrap:wrap}
+.not-run{color:var(--muted)}
+.not-run-card{margin:16px 0;padding:24px;border:1px dashed var(--border);border-radius:12px;background:var(--surface);max-width:640px}
+.not-run-card h2{margin:0 0 6px;font-size:18px}
+.not-run-card p{margin:0;color:var(--muted)}

@@ -59,3 +59,9 @@ h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); } .sub { mar
 .dnum { flex:none; display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--c); color:var(--surface); font:600 14px var(--rd-font-family); }
 @media (max-width: 900px) { .alerts-page { grid-template-columns:1fr; padding:20px 16px; } .map-panel { min-height:420px; } }
 .mapbox { background:var(--map-bg); }
+
+.empty-title{font-weight:700;font-size:16px;color:var(--text);margin:0 0 4px}
+.head-action{margin-left:auto;display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:8px;background:var(--brand);color:var(--on-brand);font-weight:700;font-size:13px;text-decoration:none}
+.empty-card{list-style:none;padding:24px;border:1px dashed var(--border);border-radius:12px;background:var(--surface);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.empty-card .head-action{margin-left:0}
+.empty-card p{margin:0;color:var(--muted)}

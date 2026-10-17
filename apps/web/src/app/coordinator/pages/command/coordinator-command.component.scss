@@ -924,9 +924,17 @@ app-ai-stepper {
   }
 
   .footer-buttons-row {
-    display: grid;
-    grid-template-columns: auto auto 1fr auto;
-    gap: 6px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    > button { flex: 0 0 auto; width: auto; }
+    > .btn-approve { flex: 1 1 220px; min-height: 52px; font-size: 17px; font-weight: 800; }
+    > .btn-next { min-height: 52px; padding: 0 14px; font-size: 14px; }
+    > .btn-reject, > .btn-change, > .btn-help { min-height: 32px; padding: 0 10px; font-size: 12px; }
+    > .btn-reject { margin-left: auto; }
+    > .cap-warn { flex-basis: 100%; order: 9; margin: 0; }
   }
 
   .btn-quiet {

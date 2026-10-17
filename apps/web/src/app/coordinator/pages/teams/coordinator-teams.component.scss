@@ -52,3 +52,11 @@
 }
 
 @media (max-width:800px) { .teams { padding:20px 16px 32px; } .team-map { height:280px; } .row { padding:14px; } .strip { width:100%; } .strip button { flex:1; padding:0 8px; font-size:13px; } }
+
+.head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.head h1{margin:0}
+.head-sub{margin:0;color:var(--muted);font-size:14px}
+.head-action{margin-left:auto;display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:8px;background:var(--brand);color:var(--on-brand);font-weight:700;font-size:13px;text-decoration:none}
+.empty-card{list-style:none;padding:24px;border:1px dashed var(--border);border-radius:12px;background:var(--surface);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.empty-card .head-action{margin-left:0}
+.empty-card p{margin:0;color:var(--muted)}

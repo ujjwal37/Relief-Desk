@@ -1,6 +1,8 @@
 <section class="teams">
   <header class="head">
     <h1>{{ 'coord.teams' | rdTranslate }}</h1>
+    <p class="head-sub">{{ 'teams.sub' | rdTranslate:{ a: counts().free, b: counts().busy } }}</p>
+    <a class="head-action" routerLink="/coordinator/command" data-testid="teams-go-command">{{ 'teams.goCommand' | rdTranslate }}</a>
   </header>
 
   <div class="strip" role="group" [attr.aria-label]="'coord.teamStrip' | rdTranslate">
@@ -77,7 +79,7 @@
         }
       </li>
     } @empty {
-      <li class="empty">{{ 'coord.teamsEmpty' | rdTranslate }}</li>
+      <li class="empty empty-card"><p>{{ 'coord.teamsEmpty' | rdTranslate }}</p><a class="head-action" routerLink="/coordinator/command">{{ 'teams.goCommand' | rdTranslate }}</a></li>
     }
   </ul>
 </section>

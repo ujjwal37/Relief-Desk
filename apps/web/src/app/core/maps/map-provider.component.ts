@@ -62,7 +62,7 @@ export interface MapLeg {
         <div class="rd-route-loading" role="status"><i aria-hidden="true"></i>{{ 'map.routing' | rdTranslate }}</div>
       }
     } @else {
-      <ng-content></ng-content>
+      <div class="rd-zoom-wrap" [style.transform]="'scale(' + zoom() + ')'"><ng-content></ng-content>
       @if (builtin()) {
         <svg class="rd-schematic" viewBox="0 0 600 480" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Relief map">
           <rect width="600" height="480" fill="var(--map-bg, #efeae0)"/>
@@ -82,10 +82,19 @@ export interface MapLeg {
           }
         </svg>
       }
+      </div>
+      <div class="rd-zoom" role="group" [attr.aria-label]="'map.zoom' | rdTranslate">
+        <button type="button" data-testid="map-zoom-in" (click)="zoomBy(1)" [attr.aria-label]="'map.zoomIn' | rdTranslate">+</button>
+        <button type="button" data-testid="map-zoom-out" (click)="zoomBy(-1)" [attr.aria-label]="'map.zoomOut' | rdTranslate">−</button>
+      </div>
     }
   `,
   styles: [`
-    :host { display: block; width: 100%; height: 100%; min-height: 250px; position: relative; }
+    :host { display: block; width: 100%; height: 100%; min-height: 250px; position: relative; overflow: hidden; }
+    .rd-zoom-wrap { position: absolute; inset: 0; transform-origin: 50% 50%; transition: transform .2s ease; }
+    .rd-zoom { position: absolute; right: 10px; top: 56px; z-index: 7; display: flex; flex-direction: column; gap: 4px; }
+    .rd-zoom button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 18px; font-weight: 700; cursor: pointer; }
+    .rd-zoom button:focus-visible { outline: 2px solid var(--focus, #e3d3b0); }
     .rd-google-map, .rd-schematic { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 250px; display: block; }
     .rd-map-loading { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size: 200% 100%; animation: rd-map-pulse 1.8s ease-in-out infinite; }
     .rd-map-loading span { background: var(--surface); color: var(--text); padding: 8px 14px; border-radius: 999px; font-size: 13px; }
@@ -106,6 +115,9 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   /** Shown when Google Maps is off and the page did not supply its own schematic. */
   readonly builtin = signal(false);
   readonly loading = signal(true);
+  /** Zoom for the drawn fallback map (Google Maps has its own controls). */
+  readonly zoom = signal(1);
+  zoomBy(step: number): void { this.zoom.set(Math.min(3, Math.max(1, +(this.zoom() + step * 0.5).toFixed(1)))); }
   /** Road routes still on their way. Lines stay hidden until theirs arrives. */
   readonly routing = signal(0);
   private destroyed = false;
@@ -125,6 +137,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   @Input() cluster = false;
   /** Pin drawn larger and on top, kept out of clusters, and framed when no line is drawn. */
   @Input() selectedId: string | null = null;
+  /** The page draws its own schematic, so never draw the built-in one over it. */
+  @Input() ownSchematic = false;
   @Output() pinSelect = new EventEmitter<string>();
 
   @ViewChild('canvas') canvas?: ElementRef<HTMLDivElement>;
@@ -213,7 +227,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
 
   private fallbackIfBroken(): void {
     const text = this.canvas?.nativeElement?.innerText || '';
-    if (text.includes('Oops') || text.includes("didn't load")) {
+    if (text.includes('Oops') || text.includes("didn't load") || /limit reached|quota|for development purposes/i.test(text)) {
       this.fallBackToSvg();
     }
   }
@@ -224,7 +238,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
       this.builtin.set(false);
       return;
     }
-    const foreign = [...this.host.nativeElement.querySelectorAll('svg')].some(
+    const foreign = this.ownSchematic || [...this.host.nativeElement.querySelectorAll('svg')].some(
       (node) => !node.classList.contains('rd-schematic'),
     );
     this.builtin.set(!foreign);
@@ -357,7 +371,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           fontSize: '12px',
           fontWeight: '700',
         },
-        icon: { path: maps.SymbolPath?.CIRCLE ?? 0, scale: 0, labelOrigin: maps.Point ? new maps.Point(0, -22) : undefined },
+        icon: { path: maps.SymbolPath?.CIRCLE ?? 0, scale: 0, labelOrigin: maps.Point ? new maps.Point(0, -38) : undefined },
+        zIndex: 9999,
         clickable: false,
         visible: !waitForRoad || leg.mode === 'water',
       }); labelFor.set(leg.id, m); return m; });
@@ -469,7 +484,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           const mid = route.path[Math.floor(route.path.length / 2)];
           label.setPosition?.(mid);
           const cur = label.getLabel?.() || {};
-          label.setLabel?.({ ...cur, text: `${route.km} · ${route.mins} drive` });
+          label.setLabel?.({ ...cur, text: `~${route.mins} drive · ${route.km}` });
         }
       });
     });
@@ -480,7 +495,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     if (leg.mode !== 'water') return leg.title;
     const km = haversineKm(leg.from.lat, leg.from.lng, leg.to.lat, leg.to.lng);
     const d = km < 10 ? km.toFixed(1) : String(Math.round(km));
-    return km <= 30 ? `Boat · ~${d} km straight line · ~${boatMinutes(km)} min` : `Boat · ~${d} km straight line`;
+    return km <= 30 ? `Boat · ~${boatMinutes(km)} min · ${d} km straight` : `Boat · ${d} km straight`;
   }
 
   private fitPath(path: { lat: number; lng: number }[]): void {

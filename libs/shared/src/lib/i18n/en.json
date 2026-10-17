@@ -199,7 +199,8 @@
     "sampleGap": "Sample: Resource gap",
     "sampleBadge": "Sample",
     "reasonConflict": "\"{left}\" vs \"{right}\" in {place}",
-    "reasonStale": "{n} requests unconfirmed for {mins} min → needs recheck"
+    "reasonStale": "{n} requests unconfirmed for {mins} min → needs recheck",
+    "emptyTitle": "All clear"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -703,7 +704,9 @@
       "latency_p50_ms": "Half of messages are read at least this fast. Milliseconds.",
       "latency_p95_ms": "Almost all messages are read by this time. Milliseconds.",
       "cost_per_1000_msgs_usd": "What the reading step would cost for a thousand messages."
-    }
+    },
+    "notRunTitle": "Accuracy test not run yet",
+    "notRunBody": "No measured numbers yet. Run the labelled benchmark to fill this page; nothing here is estimated."
   },
   "home": {
     "title": "How can we help?",
@@ -968,7 +971,10 @@
   },
   "map": {
     "loading": "Loading sector map…",
-    "routing": "Finding road route…"
+    "routing": "Finding road route…",
+    "zoom": "Map zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
   },
   "photo": {
     "add": "Add photo",
@@ -1222,5 +1228,7 @@
     "jk": "Move down / up the queue",
     "search": "Search cases",
     "help": "Show this sheet"
-  }
+  },
+  "teams.goCommand": "Go to Command",
+  "teams.sub": "{a} free · {b} busy"
 }

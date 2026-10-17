@@ -15,7 +15,11 @@
     <h1 id="alerts-heading">{{ 'alerts.title' | rdTranslate }}</h1>
     <p class="sub">{{ 'alerts.subtitle' | rdTranslate }}</p>
     <div class="error" role="alert" *ngIf="error()">{{ error() }} <button type="button" (click)="reload()">{{ 'bench.retry' | rdTranslate }}</button></div>
-    <p class="empty" *ngIf="!error() && alerts().length === 0">{{ 'alerts.empty' | rdTranslate }}</p>
+    <div class="empty empty-card" data-testid="alerts-empty" *ngIf="!error() && alerts().length === 0">
+      <p class="empty-title">{{ 'alerts.emptyTitle' | rdTranslate }}</p>
+      <p>{{ 'alerts.empty' | rdTranslate }}</p>
+      <a class="head-action" href="/coordinator/command">{{ 'teams.goCommand' | rdTranslate }}</a>
+    </div>
 
     <article class="alert-row" *ngFor="let it of items(); trackBy: trackId"
       [class]="'alert-row k-' + it.kind" [class.selected]="selectedId() === it.alert.id" [class.done]="it.alert.acknowledged"
@@ -40,7 +44,7 @@
   </section>
 
   <section class="map-panel" *ngIf="!listOnly()" [attr.aria-label]="'alerts.mapAria' | rdTranslate">
-    <rd-map-provider class="mapbox" [pins]="googlePins()" [center]="center()" [focusToken]="focusNonce()" (pinSelect)="selectedId.set($event)">
+    <rd-map-provider class="mapbox" [ownSchematic]="true" [pins]="googlePins()" [center]="center()" [focusToken]="focusNonce()" (pinSelect)="selectedId.set($event)">
       <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="city-map" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="'alerts.mapAria' | rdTranslate">
         <rect [attr.width]="W" [attr.height]="H" fill="var(--map-bg)"></rect>
         <g class="world" [style.transform]="transform()">

@@ -29,6 +29,7 @@
 
   <!-- Slim Stats Line -->
   <div class="slim-stats-bar" data-testid="stats-line">
+    <p class="safety-inline" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
     <div class="batch-counters" data-testid="batch-counters" role="status">
       <span><b>{{ batch().waiting }}</b> {{ 'batch.waiting' | rdTranslate }}</span>
       <span><b>{{ batch().dispatched }}</b> {{ 'batch.dispatched' | rdTranslate }}</span>
@@ -183,9 +184,6 @@
                 <!-- Line 2: Title & Location -->
                 <div class="card-line-mid">
                   <strong class="card-place-title">{{ caseTitle(req) }}</strong>
-                  @if (selectedRequestId() === req.id) {
-                    <span class="ai-line" data-testid="ai-english">{{ 'xfactor.aiEnglish' | rdTranslate }}: {{ getTranslationText(req) }}</span>
-                  }
                   @if (isMovedUp(req)) {
                     <span class="moved-tag">{{ 'card.movedUp' | rdTranslate }}</span>
                   }
@@ -314,6 +312,7 @@
       <button type="button" class="map-toggle" data-testid="map-toggle" [attr.aria-pressed]="mapOpen()" (click)="mapOpen.set(!mapOpen())">{{ (mapOpen() ? 'queue.hideMap' : 'queue.showMap') | rdTranslate }}</button>
       <div class="map-card-wrapper map-card">
         <rd-map-provider
+          [ownSchematic]="true"
           [pins]="mapPins()"
           [legs]="mapLegs()"
           [center]="mapCenter()"

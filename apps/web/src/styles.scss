@@ -320,3 +320,24 @@ app-public-layout ion-item, app-public-layout ion-label {
 .cmd aside.decision-panel footer.decision-pinned-footer div.footer-buttons-row{display:flex !important;flex-wrap:nowrap;align-items:stretch}
 .cmd aside.decision-panel footer.decision-pinned-footer div.footer-buttons-row>button{grid-column:auto !important;flex:0 0 auto !important;width:auto !important}
 .cmd aside.decision-panel footer.decision-pinned-footer div.footer-buttons-row>button.btn-approve{flex:1 1 auto !important}
+
+/* g6: Command finish */
+body:has(.cmd) .top-strip{display:none}
+.cmd .slim-stats-bar{flex-wrap:nowrap;min-height:40px;padding:4px 16px}
+.cmd .slim-stats-bar .safety-inline{margin:0;font-size:12px;white-space:nowrap}
+.cmd .slim-stats-bar .safety-inline a{color:var(--muted);text-decoration:none}
+.cmd .slim-stats-bar section.live-demo{flex-wrap:nowrap}
+.cmd .slim-stats-bar section.live-demo .live-demo-progress,.cmd .slim-stats-bar section.live-demo .live-demo-note{margin:0;font-size:12px}
+.cmd .slim-stats-bar details.live-own:not([open])>summary{white-space:nowrap}
+.cmd .queue-col .case-card-compact .card-need-text,.cmd .queue-col .case-card-compact .merged-count-tag{display:none}
+.cmd .queue-col .case-card-compact .card-place-title{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cmd .queue-col .merged-chip-overlay{position:static;padding:0 10px 8px;margin-top:-6px}
+.cmd .queue-col .merged-chip-overlay button{min-height:0;padding:2px 8px;font-size:11px;border-radius:999px}
+.cmd .case-steps .step-node .node-title{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;text-align:center}
+.cmd .case-steps .step-node .node-result{white-space:normal !important;overflow:hidden;text-overflow:clip;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;text-align:center}
+.cmd .case-steps .step-node .node-indicator{width:36px;height:36px}
+.cmd .case-steps .step-node .indicator-icon svg{width:18px;height:18px}
+.cmd .case-steps .step-node{gap:3px}
+.cmd .case-steps .step-node .node-title{min-height:2.4em;font-size:12px}
+.cmd .slim-stats-bar section.live-demo{flex-direction:row}
+.cmd .slim-stats-bar details.live-own:not([open]){position:static}

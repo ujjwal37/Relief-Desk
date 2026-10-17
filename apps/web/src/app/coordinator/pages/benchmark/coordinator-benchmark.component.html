@@ -5,16 +5,18 @@
     <p class="sub">{{ 'bench.sub' | rdTranslate }}</p>
     @if (subtitle()) { <p class="meta">{{ subtitle() }}</p> }
     @if (gemini(); as g) {
-      <p class="meta">{{ 'bench.model' | rdTranslate }} {{ g.model || ('ux.notRecorded' | rdTranslate) }}</p>
-      <p class="meta">{{ 'bench.date' | rdTranslate }} {{ g.date || ('ux.notRecorded' | rdTranslate) }}</p>
-      <p class="meta">{{ 'ux.labelled' | rdTranslate }} {{ g.n || ('ux.notRecorded' | rdTranslate) }}</p>
-      @if (!g.measured) { <p>{{ (g.reason === 'fallback' ? 'bench.geminiUnreachable' : 'bench.geminiNotMeasured') | rdTranslate }}</p> }
+      <div class="run-facts">
+      @if (g.model) { <p class="meta">{{ 'bench.model' | rdTranslate }} {{ g.model }}</p> }
+      @if (g.date) { <p class="meta">{{ 'bench.date' | rdTranslate }} {{ g.date }}</p> }
+      @if (g.n) { <p class="meta">{{ 'ux.labelled' | rdTranslate }} {{ g.n }}</p> }
+      </div>
+      @if (!g.measured) { <p class="not-run">{{ (g.reason === 'fallback' ? 'bench.geminiUnreachable' : 'bench.geminiNotMeasured') | rdTranslate }}</p> }
       @if (g.measured) {
-        <p>{{ 'bench.geminiType' | rdTranslate }} {{ g.type || ('ux.notRecorded' | rdTranslate) }}</p>
-        <p>{{ 'bench.geminiWard' | rdTranslate }} {{ g.ward || ('ux.notRecorded' | rdTranslate) }}</p>
+        @if (g.type) { <p>{{ 'bench.geminiType' | rdTranslate }} {{ g.type }}</p> }
+        @if (g.ward) { <p>{{ 'bench.geminiWard' | rdTranslate }} {{ g.ward }}</p> }
       }
-      <p>{{ 'bench.keywordType' | rdTranslate }} {{ g.baseType || ('ux.notRecorded' | rdTranslate) }}</p>
-      <p>{{ 'bench.keywordWard' | rdTranslate }} {{ g.baseWard || ('ux.notRecorded' | rdTranslate) }}</p>
+      @if (g.baseType) { <p>{{ 'bench.keywordType' | rdTranslate }} {{ g.baseType }}</p> }
+      @if (g.baseWard) { <p>{{ 'bench.keywordWard' | rdTranslate }} {{ g.baseWard }}</p> }
     }
   </header>
 
@@ -23,9 +25,15 @@
   }
   @if (!error() && rows().length === 0) { <div class="skel"><i></i><i></i><i></i></div> }
 
-  @if (rows().length) {
+  @if (rows().length && !realRows().length) {
+    <div class="not-run-card" data-testid="bench-not-run" role="status">
+      <h2>{{ 'bench.notRunTitle' | rdTranslate }}</h2>
+      <p>{{ 'bench.notRunBody' | rdTranslate }}</p>
+    </div>
+  }
+  @if (realRows().length) {
     <div class="grid">
-      @for (row of rows(); track row.key) {
+      @for (row of realRows(); track row.key) {
         <article class="metric">
           <h2>{{ row.label | rdTranslate }}</h2>
           <p class="means">{{ row.means | rdTranslate }}</p>
@@ -84,6 +92,7 @@
     </div>
   }
 
+  @if (failures().length || marginText()) {
   <section class="failures">
     <h2>{{ 'ux.wrongTitle' | rdTranslate }}</h2>
     <ul>
@@ -93,4 +102,5 @@
     <p>{{ marginText() || ('ux.notRecorded' | rdTranslate) }}</p>
     @if (smallSample()) { <p>{{ 'ux.smallSample' | rdTranslate }}</p> }
   </section>
+  }
 </div>

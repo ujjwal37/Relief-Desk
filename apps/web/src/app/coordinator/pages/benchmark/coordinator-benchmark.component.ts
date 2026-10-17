@@ -46,6 +46,8 @@ export class CoordinatorBenchmarkComponent implements OnInit {
   private lang = inject(LanguageService);
 
   readonly rows = signal<MetricRow[]>([]);
+  /** Only metrics with at least one measured number. Empty cards are hidden, never padded. */
+  readonly realRows = computed(() => this.rows().filter((row) => !!(row.relief || row.baseline || this.geminiValue(row))));
   readonly cards = computed(() => this.rows().filter((row) => row.pct && row.relief).slice(0, 2));
   readonly tableRows = signal<{ caseId: string; aiUrgency: string; coordinator: string; aiTeam: string; result: string }[]>([]);
   readonly subtitle = signal('');
