@@ -44,6 +44,23 @@ export interface AiHealthResponse {
   };
 }
 
+export interface LiveDemoState {
+  running: boolean;
+  status: string;
+  received: number;
+  total: number;
+  joined: number;
+  flagged: number;
+  critical: number;
+  queue_position: number;
+  active_id?: string | null;
+  critical_id?: string | null;
+  hoax_id?: string | null;
+  primary_id?: string | null;
+  case_ids?: string[];
+  error?: string | null;
+}
+
 export interface SitrepResponse {
   brief: string;
   counts: {
@@ -79,6 +96,16 @@ export interface ChatTurnPayload {
   location_pin?: { lat: number; lng: number };
 }
 
+export interface NoTeamPick { team_id: string; team: string; km?: number | null; eta_min?: number | null; free_in_min?: number; job?: string | null; kind?: string }
+export interface NoTeamOptions {
+  request_id: string;
+  reason: 'all_busy' | 'too_far' | 'too_small' | 'none_of_kind' | 'info_only' | 'no_location' | 'deep_water';
+  detail: { busy?: number; km?: number; limit?: number; team?: string; seats?: number; need?: number };
+  limit_km: number;
+  kind: string | null;
+  options: { reserve: NoTeamPick | null; road: NoTeamPick | null; wider: NoTeamPick | null; escalate: { available: boolean } };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -108,6 +135,18 @@ export class ApiClientService {
 
   submitSampleReport(kind: 'hindi' | 'voice' | 'photo' | 'duplicate'): Observable<ReportSubmitResponse> {
     return this.http.post<ReportSubmitResponse>('/api/demo/sample-report', { kind });
+  }
+
+  startLiveDemo(): Observable<LiveDemoState> {
+    return this.http.post<LiveDemoState>('/api/demo/live-run', {}, this.getAuthHeaders());
+  }
+
+  getLiveDemo(): Observable<LiveDemoState> {
+    return this.http.get<LiveDemoState>('/api/demo/live-run', this.getAuthHeaders());
+  }
+
+  submitOwnReport(text: string): Observable<ReportSubmitResponse> {
+    return this.http.post<ReportSubmitResponse>('/api/demo/own-report', { text }, this.getAuthHeaders());
   }
 
   getScenarios(): Observable<ScenarioConfig[]> {
@@ -227,16 +266,43 @@ export class ApiClientService {
     return this.http.get<MatchProposal[]>(`/api/requests/${id}/matches?top_n=${topN}`, this.getAuthHeaders());
   }
 
-  approveMatch(id: string, allowOvercommit = false): Observable<any> {
+  undoMatch(matchId: string): Observable<any> {
+
+    return this.http.post<any>(`/api/matches/${matchId}/undo`, {}, this.getAuthHeaders());
+
+  }
+
+
+  approveMatch(id: string, allowOvercommit = false, confirmTake = false): Observable<any> {
     return this.http.post<any>(
       `/api/matches/${id}/approve`,
-      { allow_overcommit: allowOvercommit },
+      { allow_overcommit: allowOvercommit, confirm_take: confirmTake },
       this.getAuthHeaders()
     );
   }
 
   markArrived(id: string): Observable<StoredRequest> {
     return this.http.post<StoredRequest>(`/api/requests/${id}/arrived`, {}, this.getAuthHeaders());
+  }
+
+  getNoTeam(id: string): Observable<NoTeamOptions> {
+    return this.http.get<NoTeamOptions>(`/api/requests/${id}/no-team`, this.getAuthHeaders());
+  }
+
+  chooseNoTeam(id: string, option: string): Observable<{ option: string; sent: boolean }> {
+    return this.http.post<{ option: string; sent: boolean }>(`/api/requests/${id}/no-team`, { option }, this.getAuthHeaders());
+  }
+
+  dismissHoax(id: string, reason?: string): Observable<StoredRequest> {
+    return this.http.post<StoredRequest>(`/api/requests/${id}/dismiss-hoax`, { reason: reason || null }, this.getAuthHeaders());
+  }
+
+  sendNearestBoat(id: string): Observable<{ id: string; request_id: string; resource_id: string }> {
+    return this.http.post<{ id: string; request_id: string; resource_id: string }>(
+      `/api/requests/${id}/send-nearest-boat`,
+      {},
+      this.getAuthHeaders(),
+    );
   }
 
   completeRequest(id: string): Observable<StoredRequest> {

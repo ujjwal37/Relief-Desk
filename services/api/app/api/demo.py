@@ -106,6 +106,58 @@ def get_sample_file(sample_id: str):
     return FileResponse(path, media_type=media, filename=path.name)
 
 
+class OwnReportRequest(BaseModel):
+    text: str
+
+
+@router.post("/demo/live-run")
+def start_live_run(coordinator: CoordinatorUser = Depends(get_current_coordinator)):
+    """Eight synthetic reports through normal intake. A second call joins the current run."""
+    require_demo_mode()
+    from app.api.reports import ReportSubmitRequest, submit_report
+    from app.tools.live_demo import start
+
+    def submit(sample: dict):
+        data = {
+            "text": sample["text"],
+            "raw_text": sample["text"],
+            "channel": "text",
+            "lang": sample.get("lang") or "en",
+            "source_id": f"live_demo_{sample.get('id') or 'sample'}",
+            "scenario_id": "flood",
+            "location_pin": {"lat": sample.get("lat"), "lng": sample.get("lng")},
+        }
+        return submit_report(ReportSubmitRequest(**data))
+
+    return start(submit)
+
+
+@router.get("/demo/live-run")
+def live_run_state(coordinator: CoordinatorUser = Depends(get_current_coordinator)):
+    require_demo_mode()
+    from app.tools.live_demo import snapshot
+    return snapshot()
+
+
+@router.post("/demo/own-report")
+def own_report(payload: OwnReportRequest, coordinator: CoordinatorUser = Depends(get_current_coordinator)):
+    """A judge's own text. Never answered from a recorded Gemini file."""
+    from app.api.reports import ReportSubmitRequest, submit_report
+    text = (payload.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Type a flood report first.")
+    if len(text) > 500:
+        raise HTTPException(status_code=400, detail="Keep the report under 500 characters.")
+    return submit_report(ReportSubmitRequest(
+        text=text,
+        raw_text=text,
+        channel="text",
+        lang="en",
+        source_id="judge_input",
+        scenario_id="flood",
+    ))
+
+
 @router.post("/demo/sample-report")
 def submit_sample_report(payload: SampleReportRequest):
     """One-click synthetic sample through the normal intake pipeline."""
@@ -117,7 +169,7 @@ def submit_sample_report(payload: SampleReportRequest):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     if payload.kind.lower() == "duplicate":
-        has_hindi = any("चालाकुडी" in (row.raw_text or "") for row in storage_service.list_requests() if not row.merged_into)
+        has_hindi = any("पुलिंकुन्नु" in (row.raw_text or "") for row in storage_service.list_requests() if not row.merged_into)
         if not has_hindi:
             submit_report(ReportSubmitRequest(**sample_payload("hindi")))
     return submit_report(ReportSubmitRequest(**data))

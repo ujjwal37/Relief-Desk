@@ -20,10 +20,10 @@ export interface BandInput {
   translation_confidence?: number;
 }
 
-/** A case needs human review when it has any flag (hoax, low translation, duplicate conflict) or a re-check status. */
 export function needsReview(r: BandInput): boolean {
+  const realFlags = (r.flags ?? []).filter((f) => f !== 'synthetic');
   return (
-    (r.flags?.length ?? 0) > 0 ||
+    realFlags.length > 0 ||
     r.status === 'needs_recheck' ||
     (r.translation_confidence !== undefined && r.translation_confidence < 0.7)
   );

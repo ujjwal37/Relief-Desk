@@ -1,3 +1,4 @@
+import { projectBase, inKuttanad } from '../../../core/maps/kuttanad-base';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -28,11 +29,31 @@ import { DeskStore } from '../../../core/desk-store';
 import { LiveEventsService } from '../../../core/live-events.service';
 import { caseMatches } from '../../case-search';
 import { ScenarioService } from '../../../core/services/scenario.service';
+import { Dialog } from '@angular/cdk/dialog';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
-import { etaMinutes, etaPhrase, legTitle, quoteFromProposal, teamTone, TONE_COLOR, vehiclePath, TravelQuote } from '../../../core/maps/map-markers';
+import { haversineKm, etaMinutes, boatMinutes, etaPhrase, legTitle, quoteFromProposal, teamTone, TONE_COLOR, vehiclePath, TravelQuote } from '../../../core/maps/map-markers';
 import { teamsFreeCounts, teamsFreeLabel } from '../../team-status';
+import { AiStepperComponent } from '../../agents/ai-stepper.component';
+import { StepDetailDialogComponent } from '../../agents/step-detail-dialog.component';
+import { WhyThisTeamDialogComponent, DroppedTeamRow } from './why-this-team-dialog.component';
+import { peopleText } from '../../../core/people-text';
+import {
+  AI_STEPS,
+  aiNotFinished,
+  clockText,
+  engineKey,
+  inWorkingStrip,
+  isLifeThreat,
+  ordinalKey,
+  sortReady,
+  stepLabelKey,
+  stepNumber,
+  stepsDone,
+} from './ai-queue';
 import {
   ApiClientService,
+  NoTeamOptions,
+  LiveDemoState,
   RdTranslatePipe,
   LanguageService,
   bandCounts,
@@ -69,9 +90,7 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     MapProviderComponent,
-    SevChipComponent,
     RdTranslatePipe,
     AgentBadgeComponent,
     AgentTraceDrawerComponent,
@@ -79,8 +98,7 @@ const WARD_NAMES: Record<string, string[]> = Object.fromEntries(
     AssistPanelComponent,
     GeminiChipComponent,
     MergedChipComponent,
-    PipelineStripComponent,
-    JustReportedStripComponent,
+    AiStepperComponent,
   ],
   templateUrl: './coordinator-command.component.html',
   styleUrl: './coordinator-command.component.scss',
@@ -91,6 +109,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private readonly scenarioService = inject(ScenarioService);
   readonly ui = inject(CoordUiService);
   private readonly langService = inject(LanguageService);
+  private readonly desk = inject(DeskStore);
 
   readonly Math = Math;
 
@@ -101,7 +120,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** Team row under the pointer. Its line draws thicker. */
   readonly highlightId = signal<string | null>(null);
   readonly matches = signal<MatchProposal[]>([]);
-  readonly resources = signal<StoredResource[]>([]);
+  readonly resources = this.desk.resources;
   readonly mapPins = computed<MapPin[]>(() => {
     const pins: MapPin[] = [];
     for (const req of this.requests()) {
@@ -187,6 +206,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   readonly narrow = signal(false);
   readonly resetNote = signal<string | null>(null);
+  readonly liveDemo = signal<LiveDemoState | null>(null);
+  readonly ownText = signal('');
+  readonly ownError = signal('');
+  readonly ownBusy = signal(false);
+  readonly hoaxOverride = signal(false);
+  private liveTimer: ReturnType<typeof setInterval> | null = null;
 
   /** Undo this session's merges and dispatches by reloading the two-case demo. */
   resetDemo(): void {
@@ -256,6 +281,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly isRejectModalOpen = signal<boolean>(false);
   readonly actionToast = signal<{ text: string; type: 'success' | 'warning'; undo?: boolean } | null>(null);
   readonly lastSentId = signal<string | null>(null);
+  readonly lastSentMatchId = signal<string | null>(null);
   readonly selectedTranslationLang = signal<'en' | 'hi'>('en');
 
   private initialSelectDone = false;
@@ -275,61 +301,71 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   // Computed signals
   readonly selectedRequest = computed<StoredRequest | undefined>(() => {
-    const list = this.requests();
     const id = this.selectedRequestId();
-    return list.find((r) => r.id === id) || list[0];
+    if (!id) return undefined;
+    const held = this.requests().find((r) => r.id === id);
+    // A dispatched case leaves the waiting tab. Keep it on screen instead of the next case.
+    if (held) return held;
+    return this.filteredRequests()[0];
   });
+
+  /** Which case the loaded `matches` belong to, so a proposal never shows on another case. */
+  readonly matchesFor = signal<string | null>(null);
+  /** Team picked with Change, kept per case id. */
+  private readonly pickedMatch = new Map<string, string>();
 
   readonly activeProposal = computed<MatchProposal | undefined>(() => {
-    return this.matches()[this.matchIdx()] || this.matches()[0];
+    const req = this.selectedRequest();
+    if (!req || this.matchesFor() !== req.id) return undefined;
+    const m = this.matches().filter((p) => !p.request_id || p.request_id === req.id);
+    return m[this.matchIdx()] || m[0];
   });
 
-  readonly filteredRequests = computed<StoredRequest[]>(() => {
-    let list = this.requests();
-    const type = this.filterType();
-    const query = this.searchQuery().toLowerCase().trim();
+  /** Type, area, time and search. Chips and the queue both start from this list. */
+  private readonly scopedRequests = computed(() => this.requests().filter((r) => this.inScope(r)));
 
-    if (type !== 'all') {
-      list = list.filter((r) => r.type === type);
-    }
+  readonly filteredRequests = computed<StoredRequest[]>(() => {
     const bf = this.bandFilter();
+    let list = this.scopedRequests();
     if (bf === 'dispatched') {
-      list = list.filter((r) => this.isDispatched(r) || this.isCompleted(r))
-        .sort((a, b) => Number(this.isCompleted(a)) - Number(this.isCompleted(b)));
+      list = list.filter((r) => this.isDispatched(r));
     } else if (bf === 'completed') {
       list = list.filter((r) => this.isCompleted(r));
     } else {
-      list = list.filter((r) => !this.isDispatched(r) && !this.isCompleted(r));
+      list = list.filter((r) => this.isWaiting(r));
       if (bf === 'now') list = list.filter((r) => urgencyBand(r.urgency_score) === 'critical');
       if (bf === 'soon') list = list.filter((r) => urgencyBand(r.urgency_score) === 'high');
       if (bf === 'review') list = list.filter((r) => needsReview(r));
     }
-    const area = this.areaFilter();
-    if (area !== 'all') list = list.filter((r) => r.ward_id === area);
-    const time = this.timeFilter();
-    if (time !== 'all') {
-      const start = time === 'hour' ? Date.now() - 60 * 60 * 1000 : new Date(new Date().setHours(0, 0, 0, 0)).getTime();
-      list = list.filter((r) => !!r.created_at && new Date(r.created_at).getTime() >= start);
-    }
 
-    if (query) {
-      list = list.filter((r) => caseMatches(r as any, query, WARD_NAMES));
+    const pin = this.liveDemo()?.status === 'done' ? this.liveDemo()?.critical_id : null;
+    if (pin) {
+      const idx = list.findIndex((row) => row.id === pin);
+      if (idx > 0) {
+        const next = list.slice();
+        const [row] = next.splice(idx, 1);
+        return [row, ...next];
+      }
     }
-
     return list;
   });
 
-  readonly activeRequests = computed(() => this.requests().filter((r) => !this.isDispatched(r) && !this.isCompleted(r)));
+  readonly activeRequests = computed(() => this.requests().filter((r) => this.isWaiting(r)));
   readonly counts = computed(() => {
-    const scoped = this.requests().filter((r) => this.inScope(r));
+    const scoped = this.scopedRequests();
     return {
-      ...bandCounts(scoped.filter((r) => !this.isDispatched(r) && !this.isCompleted(r))),
+      ...bandCounts(scoped.filter((r) => this.isWaiting(r))),
       dispatched: scoped.filter((r) => this.isDispatched(r)).length,
       completed: scoped.filter((r) => this.isCompleted(r)).length,
     };
   });
   readonly criticalCount = computed<number>(() => this.counts().critical);
-  readonly teamsFree = computed(() => teamsFreeCounts(this.resources()));
+  readonly teamsFree = computed(() => teamsFreeCounts(this.resources(), Date.now()));
+  geminiCalls(): number | null {
+    if (this.ui.aiHealth()?.provider !== 'gemini') return null;
+    const calls = this.ui.aiHealth()?.quota?.calls;
+    return typeof calls === 'number' ? calls : null;
+  }
   teamsFreeLine(): string {
     this.langService.currentLang();
     return teamsFreeLabel((key) => this.langService.translate(key), this.resources());
@@ -338,9 +374,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** Schematic district outlines in lat/lng, south to north, around the seeded wards. */
   private readonly districtRings: { id: string; ring: [number, number][] }[] = [
     { id: 'alappuzha', ring: [[9.34, 76.30], [9.34, 76.55], [9.70, 76.52], [9.72, 76.31]] },
-    { id: 'ernakulam', ring: [[9.90, 76.18], [9.95, 76.72], [10.28, 76.70], [10.22, 76.16]] },
-    { id: 'thrissur', ring: [[10.15, 76.02], [10.18, 76.48], [10.62, 76.42], [10.58, 76.02]] },
-    { id: 'wayanad', ring: [[11.42, 75.95], [11.46, 76.28], [11.78, 76.24], [11.74, 75.96]] },
   ];
   /** Open cases, or the selected case plus its candidate teams so the line is on screen. */
   readonly mapFrame = computed(() => {
@@ -352,7 +385,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const points = focused
       ? [{ lat: req.lat as number, lng: req.lng as number }, ...teams.map((team) => ({ lat: team.lat, lng: team.lng }))]
       : this.requests()
-          .filter((row) => row.lat != null && row.lng != null && !this.isCompleted(row))
+          .filter((row) => row.lat != null && row.lng != null && !this.isCompleted(row) && !this.isDismissedHoax(row))
           .map((row) => ({ lat: row.lat as number, lng: row.lng as number }));
     if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
     const lats = points.map((point) => point.lat);
@@ -377,6 +410,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       y: 28 + (1 - (lat - frame.minLa) / Math.max(1e-6, frame.maxLa - frame.minLa)) * 424,
     };
   }
+  readonly mapBase = computed(() => projectBase((lat, lng) => this.project(lat, lng)));
+  wardName(req: StoredRequest): string {
+    const names: Record<string, string> = { ward_1: 'Kainakary', ward_2: 'Champakulam', ward_3: 'Nedumudi' };
+    return (req.ward_id && names[req.ward_id]) || '';
+  }
+  /** Map footer names the area of the selected case, not a fixed district. */
+  mapAreaLabel(): string {
+    this.langService.currentLang();
+    const req = this.selectedRequest();
+    if (req && inKuttanad(req.lat, req.lng)) {
+      const names: Record<string, string> = { ward_1: 'Kainakary', ward_2: 'Champakulam', ward_3: 'Nedumudi' };
+      const ward = (req.ward_id && names[req.ward_id]) || this.getWardText(req);
+      return ward && ward !== '—' ? `${ward}, Kuttanad · Alappuzha` : 'Kuttanad · Alappuzha';
+    }
+    return req?.place_text ? req.place_text : 'Kuttanad · Alappuzha';
+  }
   readonly mapDistricts = computed(() =>
     this.districtRings.map((district) => {
       const pts = district.ring.map(([lat, lng]) => this.project(lat, lng));
@@ -389,7 +438,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }),
   );
   readonly svgPins = computed(() => {
-    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r));
+    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r) && !this.isDismissedHoax(r));
     const res = this.resources();
     return [
       ...res.map((r) => {
@@ -404,7 +453,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
   readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
   /** Selected case plus its candidate teams stay bright. Everything else fades. */
+  /** Fallback map: nudge team squares off case circles and each other so nothing hides. */
   readonly drawnPins = computed(() => {
+    const placed: { x: number; y: number }[] = [];
+    return this.drawnPinsRaw().map((pin) => {
+      if (pin.kind !== 'req') { return pin; }
+      placed.push({ x: pin.x, y: pin.y });
+      return pin;
+    }).map((pin) => {
+      if (pin.kind === 'req') return pin;
+      let { x, y } = pin; let k = 0;
+      while (k < 6 && placed.some((p) => Math.hypot(p.x - x, p.y - y) < 24)) { k++; const a = (k * Math.PI) / 3; x = pin.x + Math.cos(a) * 26; y = pin.y + Math.sin(a) * 26; }
+      placed.push({ x, y });
+      return { ...pin, x, y };
+    });
+  });
+  readonly drawnPinsRaw = computed(() => {
     const focus = this.selectedRequest();
     const teamIds = new Set(this.candidateMatches().map((row) => row.resource_id));
     const suggested = this.activeProposal()?.resource_id;
@@ -423,6 +487,36 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   });
   /** Zoom the district diagram onto the open case and its three teams. */
+  /** Queue tabs: Waiting (default) / Dispatched / Completed. Severity chips stay in "View full queue". */
+  readonly queueTab = computed<'waiting' | 'dispatched' | 'completed'>(() => {
+    const f = this.bandFilter();
+    return f === 'dispatched' || f === 'completed' ? f : 'waiting';
+  });
+  setQueueTab(tab: 'waiting' | 'dispatched' | 'completed'): void {
+    this.setBandFilter(tab === 'waiting' ? 'all' : tab);
+    // Never leave the panel on a case the tab hides: open the first visible case, or none.
+    const rows = this.filteredRequests();
+    if (!rows.some((r) => r.id === this.selectedRequestId())) {
+      if (rows.length) this.selectRequest(rows[0].id, false);
+      else this.selectedRequestId.set('');
+    }
+  }
+  onQueueTabKey(event: KeyboardEvent): void {
+    const order = ['waiting', 'dispatched', 'completed'] as const;
+    const i = order.indexOf(this.queueTab());
+    let next = -1;
+    if (event.key === 'ArrowRight') next = (i + 1) % 3;
+    else if (event.key === 'ArrowLeft') next = (i + 2) % 3;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = 2;
+    if (next < 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.setQueueTab(order[next]);
+    const host = event.currentTarget as HTMLElement | null;
+    setTimeout(() => (host?.querySelectorAll<HTMLButtonElement>('.qtab')[next])?.focus());
+  }
+
   readonly mapViewBox = computed(() => {
     const legs = this.focusLegs();
     if (!legs.length) return '0 0 600 480';
@@ -432,7 +526,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const minY = Math.max(0, Math.min(...ys) - 80);
     const maxX = Math.min(600, Math.max(...xs) + 80);
     const maxY = Math.min(480, Math.max(...ys) + 80);
-    return `${minX} ${minY} ${Math.max(120, maxX - minX)} ${Math.max(120, maxY - minY)}`;
+    // Never zoom in so far that pins and labels balloon: keep at least 380x320 map units, centred.
+    const w = Math.max(380, maxX - minX); const h = Math.max(320, maxY - minY);
+    const cx = (minX + maxX) / 2; const cy = (minY + maxY) / 2;
+    const x0 = Math.min(Math.max(0, cx - w / 2), Math.max(0, 600 - w)); const y0 = Math.min(Math.max(0, cy - h / 2), Math.max(0, 480 - h));
+    return `${x0} ${y0} ${w} ${h}`;
   });
   readonly focusLegs = computed(() => {
     const req = this.selectedRequest();
@@ -491,6 +589,16 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.langService.currentLang();
     return legTitle(this.travel(prop), (key) => this.langService.translate(key));
   }
+  /** Engine for the steps chip, from what each model step actually ran on (not the case-level source). */
+  stepsEngine(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' | 'test' {
+    if (this.testWord(req)) return 'test';
+    const steps = ((req.trace || []) as any[]).filter((s) => s && s.agent !== 'Matching' && s.provider !== 'tool');
+    if (!steps.length) return this.aiKind(req);
+    const recorded = (s: any) => s.provider === 'cache' || s.provider === 'replay' || s.cached === true || s.badge === 'replay';
+    if (steps.some((s) => s.provider === 'gemini' && !recorded(s))) return 'gemini';
+    if (steps.every(recorded)) return 'recorded';
+    return 'fallback';
+  }
   aiKind(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' | 'test' {
     if (this.testWord(req)) return 'test';
     if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'recorded';
@@ -523,8 +631,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   isDispatched(r: StoredRequest): boolean {
     return r.status === 'approved' || r.status === 'dispatched' || r.status === 'in_progress';
   }
+  isDismissedHoax(r: StoredRequest): boolean {
+    return r.status === 'dismissed_hoax' || (r.flags || []).includes('dismissed_hoax');
+  }
   isCompleted(r: StoredRequest): boolean {
     return r.status === 'completed' || r.status === 'resolved' || r.status === 'closed';
+  }
+  /** Waiting queue: not sent, not finished, and not a dismissed hoax. */
+  isWaiting(r: StoredRequest): boolean {
+    return !this.isDispatched(r) && !this.isCompleted(r) && !this.isDismissedHoax(r);
   }
   dispatchStep(r: StoredRequest): number {
     const status = String(r.status);
@@ -593,6 +708,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.focusRequestId = res.request_id;
         this.loadRequests();
+        this.selectRequest(res.request_id, true);
       },
       error: () => this.actionToast.set({ text: this.langService.translate('xfactor.sampleFailed'), type: 'warning' }),
     });
@@ -617,9 +733,19 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (hint.minutes != null && hint.minutes > 0) parts.push(`${Math.round(hint.minutes)} min`);
     return parts.join(' · ');
   }
+  /** Short, human ID for cards: never a raw req_ hash. */
+  shortId(id: string, code?: string | null): string {
+    if (code) return code;
+    return id.startsWith('req_') ? `Report ${id.slice(-4)}` : id.length > 10 ? id.slice(0, 8) : id;
+  }
+  peopleLabel(n: number | null | undefined, flags?: string[] | null): string {
+    if (flags?.includes('count_provisional') && n) return peopleText(n, (k) => this.langService.translate(k)) + ' ' + this.langService.translate('people.provisional');
+    this.langService.currentLang();
+    return peopleText(n, (k) => this.langService.translate(k));
+  }
   factLine(r: StoredRequest): string {
     this.langService.currentLang();
-    const people = `${r.people_count || 1} ${this.langService.translate('coord.people')}`;
+    const people = peopleText(r.people_count, (k) => this.langService.translate(k));
     const ward = r.ward_id ? r.ward_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '';
     const extra = r.hazard ? r.hazard.replace(/_/g, ' ') : (r.place_text || '');
     return [people, ward, extra].filter(Boolean).join(' · ');
@@ -701,10 +827,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const area = this.areaFilter();
     if (area !== 'all' && r.ward_id !== area) return false;
     const time = this.timeFilter();
-    if (time === 'all') return true;
-    if (!r.created_at) return false;
-    const start = time === 'hour' ? Date.now() - 60 * 60 * 1000 : new Date(new Date().setHours(0, 0, 0, 0)).getTime();
-    return new Date(r.created_at).getTime() >= start;
+    if (time !== 'all') {
+      if (!r.created_at) return false;
+      const start = time === 'hour' ? Date.now() - 60 * 60 * 1000 : new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+      if (new Date(r.created_at).getTime() < start) return false;
+    }
+    const query = this.searchQuery().toLowerCase().trim();
+    return !query || caseMatches(r as any, query, WARD_NAMES);
   }
   tr(key: string, n: number): string { this.langService.currentLang(); return this.langService.translate(key).replace('{n}', String(n)); }
   waitLabel(prop: MatchProposal): string {
@@ -716,8 +845,18 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       .replace('{team}', prop.wait_team_name || '');
   }
   toggleSection(s: 'why' | 'reports'): void { this.openSection.set(this.openSection() === s ? null : s); }
-  setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void { this.bandFilter.set(f); this.writeFilters(); }
-  pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); this.choseTeam.set(true); }
+  setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void {
+    this.bandFilter.set(f); this.writeFilters();
+    // A tab change re-selects inside the new list (or nothing), and clears per-case UI state.
+    const first = this.filteredRequests()[0];
+    if (first) this.selectRequest(first.id);
+    else { this.selectedRequestId.set(""); this.matches.set([]); this.matchesFor.set(null); this.changeOpen.set(false); this.rejectOpen.set(false); this.choseTeam.set(false); }
+  }
+  pickMatch(i: number): void {
+    this.matchIdx.set(i); this.changeOpen.set(false); this.choseTeam.set(true);
+    const req = this.selectedRequest(); const m = this.matches()[i];
+    if (req && m) this.pickedMatch.set(req.id, m.match_id);
+  }
   closeWeights(): void { this.ui.weightsOpen.set(false); }
 
   @HostListener('window:offline')
@@ -729,20 +868,161 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   onKey(e: KeyboardEvent): void {
     const t = e.target as HTMLElement;
     if (/INPUT|TEXTAREA|SELECT/.test(t?.tagName) || e.ctrlKey || e.metaKey) return;
+    if (e.key === 'Escape') {
+      if (this.helpOpen()) { this.helpOpen.set(false); return; }
+      if (this.traceRequestId()) { this.closeTrace(); return; }
+      if (this.sheetOpen()) { this.closeSheet(); return; }
+      if (this.selectedRequestId()) { this.selectedRequestId.set(''); return; }
+      return;
+    }
     if (this.traceRequestId() || this.assistOpen()) return;
     const list = this.filteredRequests();
     const i = list.findIndex((r) => r.id === this.selectedRequestId());
     if (e.key === 'j' && i < list.length - 1) this.selectRequest(list[i + 1].id);
     if (e.key === 'k' && i > 0) this.selectRequest(list[i - 1].id);
-    if (e.key === 'a') (document.querySelector('.btn-approve') as HTMLElement | null)?.focus();
+    // Triage shortcuts: A approve the suggested team, N next waiting case, U undo the last send.
+    const key = e.key.toLowerCase();
+    if (e.key === '?') { e.preventDefault(); this.helpOpen.set(!this.helpOpen()); return; }
+    if (key === 'a') {
+      const sel = this.selectedRequest();
+      if (sel && this.caseAiBlocked(sel) && !isLifeThreat(sel)) {
+        e.preventDefault();
+        this.actionToast.set({ text: this.langService.translate('aiq.approveToast'), type: 'warning' });
+        return;
+      }
+      // A sends the suggested team only; it never dismisses a hoax or picks a no-team option.
+      const btn = document.querySelector('.footer-buttons-row .btn-approve:not(.btn-dismiss-hoax):not(.nt-go):not(.btn-reject-go):not(.btn-send-boat)') as HTMLButtonElement | null;
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    }
+    if (e.key === 'Enter' && !(t?.tagName === 'BUTTON')) {
+      const go = document.querySelector('.footer-buttons-row .nt-go') as HTMLButtonElement | null;
+      if (go && !go.disabled) { e.preventDefault(); go.click(); }
+    }
+    if (key === 'd') {
+      const btn = document.querySelector('.btn-dismiss-hoax') as HTMLButtonElement | null;
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    }
+    if (key === 'n') { e.preventDefault(); this.nextCase(); }
+    if (key === 'u' && this.actionToast()?.undo) { e.preventDefault(); this.undoLastSend(); }
   }
 
-  private readonly desk = inject(DeskStore);
+  /** AI steps start collapsed into one truthful line. */
+  readonly stepsOpen = signal(false);
+  /** '?' opens the keyboard sheet. */
+  readonly helpOpen = signal(false);
+  /** Map is a toggle on narrow desktops (<=1280px). */
+  readonly mapOpen = signal(false);
+  /** First-visit keyboard tip, dismissed for good in localStorage. */
+  readonly tipOpen = signal((() => { try { return localStorage.getItem('rd.tip.keys') !== '1'; } catch { return false; } })());
+  dismissTip(): void { this.tipOpen.set(false); try { localStorage.setItem('rd.tip.keys', '1'); } catch { /* ignore */ } }
+
+  /** Ticks while cases are in the AI strip so elapsed time and the 1.2s timeout hold stay real. */
+  readonly queueClock = signal(Date.now());
+  private queueTimer?: ReturnType<typeof setInterval>;
+  private readonly timeoutSeen = new Map<string, number>();
+  readonly stripOpen = signal(true);
+  readonly stripAll = signal(false);
+  readonly parkedReady = signal<string[]>([]);
+  readonly listScrolled = signal(false);
+  readonly justReadyUntil = signal<Record<string, number>>({});
+  readonly hoaxAsk = signal(false);
+  hoaxWord = '';
+  readonly aiSteps = AI_STEPS;
+
+  private timeoutAt(req: StoredRequest): number | undefined {
+    if (!req.ai_queue?.flags?.includes('timedOut')) return undefined;
+    if (!this.timeoutSeen.has(req.id)) this.timeoutSeen.set(req.id, this.queueClock());
+    return this.timeoutSeen.get(req.id);
+  }
+
+  readonly aiWorkingRows = computed(() => {
+    const now = this.queueClock();
+    if (this.queueTab() !== 'waiting') return [];
+    return this.queueRows().filter((req) => inWorkingStrip(req, now, this.timeoutAt(req)));
+  });
+
+  readonly queueSplitOn = computed(() => {
+    if (this.queueTab() !== 'waiting') return false;
+    return this.aiWorkingRows().length > 0 || this.queueRows().some((req) => isLifeThreat(req));
+  });
+
+  readonly displayRows = computed(() => {
+    if (!this.queueSplitOn()) return this.queueRows();
+    const parked = new Set(this.parkedReady());
+    const ready = this.queueRows().filter((req) => !inWorkingStrip(req, this.queueClock(), this.timeoutAt(req)) && !parked.has(req.id));
+    return sortReady(ready);
+  });
+
+  readonly stripShown = computed(() => {
+    const rows = this.aiWorkingRows();
+    if (this.stripAll()) return rows;
+    return rows.slice(0, this.narrow() ? 2 : 3);
+  });
+
+  readonly stripMore = computed(() => Math.max(0, this.aiWorkingRows().length - this.stripShown().length));
+
+  readonly readingCount = computed(() => this.aiWorkingRows().filter((req) => req.ai_queue?.status === 'processing').length);
+  readonly queuedCount = computed(() => this.aiWorkingRows().filter((req) => req.ai_queue?.status === 'queued').length);
+  readonly pausedCount = computed(() => this.aiWorkingRows().filter((req) => req.ai_queue?.flags?.includes('paused')).length);
+
+  /** Queue order frozen while a case is open, so rows do not jump under the cursor. */
+  private readonly frozenOrder = signal<string[] | null>(null);
+  readonly queueRows = computed<StoredRequest[]>(() => {
+    // Likely hoaxes sink to the bottom of the queue; order otherwise unchanged.
+    const all = this.filteredRequests();
+    const live = [...all.filter((r) => !this.isHoax(r)), ...all.filter((r) => this.isHoax(r))];
+    const order = this.frozenOrder();
+    if (!order || this.liveDemo()?.running) return live;
+    const byId = new Map(live.map((r) => [r.id, r] as const));
+    return order.map((id) => byId.get(id)).filter((r): r is StoredRequest => !!r);
+  });
+  readonly newSinceFreeze = computed(() => {
+    const order = this.frozenOrder();
+    if (!order) return 0;
+    const seen = new Set(order);
+    return this.filteredRequests().filter((r) => !seen.has(r.id)).length;
+  });
+  freezeQueue(): void { if (!this.frozenOrder()) this.frozenOrder.set(this.filteredRequests().map((r) => r.id)); }
+  unfreezeQueue(): void { this.frozenOrder.set(null); }
+
+  /** One line for the collapsed AI steps. Gemini only when Gemini really ran; total time only from the real trace. */
+  stepsSummary(req: StoredRequest): { text: string; gemini: boolean } {
+    this.langService.currentLang();
+    const kind = this.stepsEngine(req);
+    const secs = this.parallelSeconds(req);
+    const key = kind === 'gemini' ? 'steps.gemini' : kind === 'recorded' ? 'steps.recorded' : 'steps.rules';
+    let text = this.langService.translate(key);
+    if (kind !== 'fallback' && kind !== 'test' && secs) text += ` · ${secs}s`;
+    return { text, gemini: kind === 'gemini' };
+  }
+
+  /** Select the next case that still needs a decision, wrapping to the top. */
+  nextCase(): void {
+    const list = this.filteredRequests().filter((r) => !this.isDispatched(r) && !this.isCompleted(r));
+    if (!list.length) return;
+    const i = list.findIndex((r) => r.id === this.selectedRequestId());
+    this.selectRequest(list[(i + 1) % list.length].id);
+  }
+
+  /** Batch counters from real case data: new in the last 10 minutes, reports merged, waiting, sent. */
+  readonly batch = computed(() => {
+    const rows = this.scopedRequests();
+    const cutoff = Date.now() - 10 * 60 * 1000;
+    const open = rows.filter((r) => !this.isDispatched(r) && !this.isCompleted(r));
+    return {
+      fresh: rows.filter((r) => r.created_at && Date.parse(r.created_at) >= cutoff).length,
+      merged: rows.reduce((sum, r) => sum + Math.max(0, (r.merged_count || 1) - 1), 0),
+      waiting: open.length,
+      dispatched: rows.filter((r) => this.isDispatched(r)).length,
+    };
+  });
+
   private readonly live = inject(LiveEventsService);
+  private readonly dialog = inject(Dialog);
 
   readonly availableBoatsCount = computed<number>(() => {
     const boats = this.resources().filter((res) => res.kind === 'boat');
-    return boats.filter((b) => b.capacity_remaining > 0).length || 4;
+    return boats.filter((b) => b.capacity_remaining > 0).length;
   });
 
   constructor() {
@@ -779,6 +1059,34 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.readFilters();
     this.watchViewport();
     this.stopPipeline = this.live.onEvent((event) => {
+      if (event.type === 'case.created' && event.request_id) {
+        this.focusRequestId = event.request_id;
+        this.loadRequests(false);
+      } else if (event.type === 'case.updated' || event.type === 'case.merged') {
+        this.loadRequests(true);
+      }
+      if (event.type === 'dispatch.created' || event.type === 'team.updated') {
+        this.loadResources();
+      }
+      if (event.type === 'alert.created') {
+        this.ui.loadAlerts();
+      }
+      if (event.type === 'demo.progress') {
+        const prev = this.liveDemo();
+        this.applyLive({
+          running: event.running ?? prev?.running ?? false,
+          status: event.status || prev?.status || (event.running ? 'running' : 'idle'),
+          received: event.received ?? prev?.received ?? 0,
+          total: event.total ?? prev?.total ?? 8,
+          joined: event.joined ?? prev?.joined ?? 0,
+          flagged: event.flagged ?? prev?.flagged ?? 0,
+          critical: event.critical ?? prev?.critical ?? 0,
+          queue_position: event.queue_position ?? prev?.queue_position ?? 0,
+          critical_id: event.critical_id ?? prev?.critical_id,
+          active_id: event.active_id ?? prev?.active_id,
+          case_ids: prev?.case_ids,
+        });
+      }
       if (event.type !== 'pipeline.step' || !event.request_id || !event.agent) return;
       const row: PipelineLiveStep = {
         agent: event.agent,
@@ -795,6 +1103,18 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       next[event.request_id] = list;
       this.pipelineById.set(next);
     });
+    this.queueTimer = setInterval(() => this.queueClock.set(Date.now()), 250);
+    try {
+      if (sessionStorage.getItem('rd.aiq.open') === '0') this.stripOpen.set(false);
+      else if (window.matchMedia('(max-width: 700px)').matches) this.stripOpen.set(false);
+    } catch { /* session storage can be blocked */ }
+    this.refreshLive();
+    // Landing "watch the AI" link: start the shared live run once, then drop the flag from the URL.
+    if (new URLSearchParams(location.search).get('live') === '1' && !this.startFromLink) {
+      this.startFromLink = true;
+      history.replaceState(history.state, '', location.pathname);
+      setTimeout(() => { if (!this.liveDemo()?.running) this.startLiveDemo(); }, 800);
+    }
     window.addEventListener('message', this.handleDemoMessage);
     document.addEventListener('visibilitychange', this.onQueueVisibility);
     try {
@@ -813,7 +1133,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     window.removeEventListener('message', this.handleDemoMessage);
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
     this.liveChannel?.close();
+    this.stopLivePoll();
     this.stopPipeline?.();
+    if (this.queueTimer) clearInterval(this.queueTimer);
     if (this.analysedTimer) clearTimeout(this.analysedTimer);
     for (const timer of this.flashTimers.values()) clearTimeout(timer);
     this.flashTimers.clear();
@@ -852,7 +1174,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.stopQueuePoll();
     this.pollTimer = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      if (this.live.state() === 'live') return;
       this.loadRequests(true);
       this.loadResources();
       this.loadAssist();
@@ -876,8 +1197,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** A phone in this window, a popup, or another tab just saved a report. Show that case. */
   onLiveReport(data: { type?: string; requestId?: string } | null): void {
     if (data?.type !== 'rd-report-submitted') return;
-    if (data.requestId) this.focusRequestId = data.requestId;
-    this.loadRequests();
+    if (data.requestId) {
+      this.focusRequestId = data.requestId;
+      this.selectedRequestId.set(data.requestId);
+    }
+    this.loadRequests(false);
   }
 
   loadRequests(incremental = false): void {
@@ -946,14 +1270,102 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (!incremental) this.loadMatches(keep);
       return;
     }
-    if (next.length > 0 && !keep) this.selectRequest(next[0].id);
+    // A cleared selection stays cleared. Escape must not jump to the top case.
+  }
+
+  /** No free team of the right kind: reason + options, loaded when matching returns nothing. */
+  readonly noTeam = signal<NoTeamOptions | null>(null);
+  readonly noTeamPick = signal<string | null>(null);
+  readonly noTeamDone = signal<string | null>(null);
+  noTeamReason(n: NoTeamOptions): string {
+    const t = (k: string) => this.langService.translate(k);
+    const d = n.detail || {};
+    return t('noTeam.reason.' + n.reason).replace('{n}', String(d.busy ?? '')).replace('{km}', String(d.km ?? '')).replace('{limit}', String(d.limit ?? n.limit_km)).replace('{seats}', String(d.seats ?? '')).replace('{need}', String(d.need ?? '')).replace('{team}', d.team || '');
+  }
+  noTeamOptionKeys(n: NoTeamOptions): string[] {
+    const opts = n.options as Record<string, unknown>;
+    if (n.reason === 'info_only') return ['share'];
+    return ['call112', 'reserve', 'road', 'wider', 'escalate'].filter((k) => k === 'escalate' || !!opts[k]);
+  }
+  noTeamLine(n: NoTeamOptions, k: string): string {
+    const t = (key: string) => this.langService.translate(key);
+    const o = (n.options as unknown as Record<string, { team?: string; km?: number | null; eta_min?: number | null; free_in_min?: number } | null>)[k];
+    return t('noTeam.opt.' + k).replace('{team}', o?.team || '').replace('{km}', o?.km != null ? String(o.km) : '?').replace('{eta}', o?.eta_min != null ? String(o.eta_min) : '?').replace('{free}', o?.free_in_min != null ? String(o.free_in_min) : '?').replace('{limit}', String(n.limit_km)).replace('{travel}', o?.eta_min != null && o?.free_in_min != null ? String(Math.max(0, o.eta_min - o.free_in_min)) : '?');
+  }
+  /** The selected option, or the first one, so the primary button is never a disabled grey Approve. */
+  noTeamKey(nt: NoTeamOptions): string {
+    return this.noTeamPick() || this.noTeamOptionKeys(nt)[0] || 'escalate';
+  }
+  noTeamGoLabel(nt: NoTeamOptions): string {
+    this.langService.currentLang();
+    const k = this.noTeamKey(nt);
+    const o = (nt.options as unknown as Record<string, { team?: string } | null>)[k];
+    const icon: Record<string, string> = { reserve: '⏱', road: '🚑', wider: '🛶', call112: '📞', escalate: '⬆', share: '📣' };
+    const named = this.langService.translate('noTeam.goTeam.' + k);
+    const label = o?.team && !named.startsWith('noTeam.') ? named.replace('{team}', o.team) : this.langService.translate('noTeam.go.' + k);
+    return `${icon[k] || ''} ${label}`.trim();
+  }
+  noTeamGo(req: StoredRequest, nt: NoTeamOptions): void {
+    if (!this.noTeamPick()) this.noTeamPick.set(this.noTeamKey(nt));
+    this.chooseNoTeam(req);
+  }
+  tipKey(): string {
+    const sel = this.selectedRequest();
+    if (sel && this.isHoax(sel) && !this.hoaxOverride()) return 'hoax.tipD';
+    if (sel && !this.activeProposal() && this.noTeam()) return 'noTeam.tip';
+    return 'queue.tip';
+  }
+  /** "Sent 09:41 · by you", from the audit time the case was dispatched. */
+  sentLine(req: StoredRequest): string | null {
+    const at = req.updated_at ? new Date(req.updated_at) : null;
+    if (!at || Number.isNaN(at.getTime())) return null;
+    const hm = at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return this.langService.translate('disp.sentAt').replace('{t}', hm);
+  }
+
+  readonly takeWarn = signal<{ prop: MatchProposal; case_ref: string; case_urgency: number; team: string; next_team?: string | null; next_km?: number | null } | null>(null);
+  takeWarnText(w: { case_ref: string; case_urgency: number; team: string; next_team?: string | null; next_km?: number | null }): string {
+    this.langService.currentLang();
+    const base = this.langService.translate('take.warn').replace('{team}', w.team).replace('{ref}', w.case_ref).replace('{u}', String(w.case_urgency));
+    if (!w.next_team) return base + ' ' + this.langService.translate('take.noNext');
+    return base + ' ' + this.langService.translate('take.next').replace('{team}', w.next_team).replace('{km}', String(w.next_km ?? '—'));
+  }
+  /** Shown before Approve: this team is also the best team for a more urgent waiting case. */
+  readonly takeNotice = computed(() => {
+    const w = this.takeWarn();
+    if (w) return w;
+    const p = this.activeProposal() as (MatchProposal & { takes_from?: { case_ref: string; case_urgency: number; team: string; next_team?: string | null; next_km?: number | null } | null }) | undefined;
+    return p?.takes_from ? { prop: p, ...p.takes_from } : null;
+  });
+  approveAnyway(): void {
+    const w = this.takeWarn();
+    if (!w) return;
+    this.takeWarn.set(null);
+    this.approveMatch(w.prop, false, true);
+  }
+
+  chooseNoTeam(req: StoredRequest): void {
+    const k = this.noTeamPick();
+    if (!k) return;
+    this.apiClient.chooseNoTeam(req.id, k).subscribe({
+      next: () => { this.noTeamDone.set(k); this.actionToast.set({ text: this.langService.translate('noTeam.logged.' + k), type: 'warning' }); },
+      error: () => this.actionToast.set({ text: this.langService.translate('noTeam.failed'), type: 'warning' }),
+    });
   }
 
   loadMatches(requestId: string): void {
+    this.noTeam.set(null); this.noTeamPick.set(null); this.noTeamDone.set(null);
     this.apiClient.getRequestMatches(requestId, 5).subscribe({
       next: (proposals) => {
         if (this.selectedRequestId() !== requestId) return;
         this.matches.set(proposals);
+        this.matchesFor.set(requestId);
+        const picked = this.pickedMatch.get(requestId);
+        const pi = picked ? proposals.findIndex((p) => p.match_id === picked) : -1;
+        if (pi >= 0) { this.matchIdx.set(pi); this.choseTeam.set(true); }
+        if (!proposals.length) {
+          this.apiClient.getNoTeam(requestId).subscribe({ next: (n) => { if (this.selectedRequestId() === requestId) { this.noTeam.set(n); this.noTeamPick.set(this.noTeamOptionKeys(n)[0] || null); } }, error: () => this.noTeam.set(null) });
+        }
       },
       error: (err) => {
         console.warn('Could not load matches for request:', requestId, err);
@@ -964,7 +1376,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   loadResources(): void {
     this.apiClient.getResources().subscribe({
-      next: (resList) => this.resources.set(resList),
+      next: (resList) => {
+        this.resources.set(resList);
+        this.desk.refreshTeams();
+      },
       error: (err) => console.error('Failed to load resources:', err),
     });
   }
@@ -1099,9 +1514,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const now = Date.now();
     for (const row of next) {
       if (previous.get(row.id) === 'analysing' && row.analysis_status === 'complete') {
-        const text = this.analysedText(row);
+        const text = row.ai_queue
+          ? this.langService.translate('aiq.readyAnnounce', { ref: row.public_code || this.shortId(row.id, row.public_code) })
+          : this.analysedText(row);
         notes[row.id] = { until: now + 10000, text };
         live = text;
+        if (row.ai_queue) {
+          this.justReadyUntil.update((map) => ({ ...map, [row.id]: now + 60000 }));
+          if (this.listScrolled()) this.parkedReady.update((ids) => ids.includes(row.id) ? ids : [...ids, row.id]);
+        }
       }
     }
     for (const id of Object.keys(notes)) {
@@ -1176,6 +1597,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.mapFocus.update((n) => n + 1);
     this.ui.selectedCaseId.set(id);
     this.matchIdx.set(0);
+    this.matches.set([]);
+    this.matchesFor.set(null);
     this.openSection.set(this.ui.demoWhy ? 'why' : null);
     this.showOriginal.set(false);
     this.moreOpen.set(false);
@@ -1183,6 +1606,16 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.rejectOpen.set(false);
     this.choseTeam.set(false);
     this.approving.set(false);
+    this.hoaxOverride.set(false);
+    this.hoaxAsk.set(false);
+    this.hoaxWord = '';
+    if (this.justReadyUntil()[id]) {
+      this.justReadyUntil.update((map) => {
+        const next = { ...map };
+        delete next[id];
+        return next;
+      });
+    }
     this.loadMatches(id);
     if (openSheet && this.narrow()) this.sheetOpen.set(true);
   }
@@ -1207,6 +1640,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.filterType.set('all');
     this.areaFilter.set('all');
     this.timeFilter.set('all');
+    this.searchQuery.set('');
     this.writeFilters();
   }
 
@@ -1290,17 +1724,67 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   }
 
-  approveMatch(prop: MatchProposal, allowOvercommit = false): void {
+  /** Steps that fell back to rules while other steps of the same case used Gemini (partial fallback). */
+  aiIncomplete(req: any): string | null {
+    const steps: any[] = Array.isArray(req?.trace) ? req.trace : [];
+    const isGemini = (s: any) => s?.provider === 'gemini';
+    const isRules = (s: any) => s?.provider === 'fallback' || s?.status === 'fallback';
+    if (!steps.some(isGemini)) return null;
+    const missed = steps.filter(isRules).map((s) => String(s.agent || ''));
+    return missed.length ? missed.join(', ') : null;
+  }
+
+  /** 'about chest-deep · Gemini estimate from text', only when the model gave a quoted depth. */
+  depthChip(req: StoredRequest): string | null {
+    const d = req.water_depth;
+    if (!d?.band || d.band === 'unknown' || !d.quote) return null;
+    const src = d.source === 'gemini' ? 'depth.srcGemini' : d.source === 'recorded' ? 'depth.srcRecorded' : 'depth.srcOther';
+    return this.langService.translate('depth.chip', { depth: this.langService.translate('depth.band.' + d.band), src: this.langService.translate(src) });
+  }
+
+  /** Plain line on why a boat or ground team fits the water depth the report states. */
+  depthLine(prop: MatchProposal): string | null {
+    const req = this.requests().find((row) => row.id === prop.request_id);
+    const band = req?.water_depth?.band;
+    if (!band || band === 'unknown' || !req?.water_depth?.quote) return null;
+    const depth = this.langService.translate('depth.band.' + band);
+    const isBoat = String(prop.resource_kind) === 'boat';
+    const deep = ['waist', 'chest', 'roof'].includes(band);
+    const key = isBoat ? (deep ? 'depth.boatChosen' : 'depth.boatShallow') : (deep ? 'depth.groundDeep' : 'depth.groundChosen');
+    return this.langService.translate(key, { depth });
+  }
+
+  /** Seats missing on the proposed team, or 0 when it fits. Shown before Approve. */
+  capacityShort(prop: MatchProposal): { left: number; need: number } | null {
+    const team = this.resources().find((res) => res.id === prop.resource_id);
+    const need = this.requests().find((row) => row.id === prop.request_id)?.people_count || 0;
+    if (!team || need <= (team.capacity_remaining ?? need)) return null;
+    return { left: team.capacity_remaining ?? 0, need };
+  }
+
+  approveMatch(prop: MatchProposal, allowOvercommit = false, confirmTake = false): void {
     if (this.approving()) return;
+    // Ask about capacity before calling the API, instead of provoking a 400.
+    if (!allowOvercommit) {
+      const team = this.resources().find((res) => res.id === prop.resource_id);
+      const need = this.requests().find((row) => row.id === prop.request_id)?.people_count || 0;
+      if (team && need > (team.capacity_remaining ?? need)) {
+        this.pendingMatch = prop;
+        this.isOvercommitModalOpen.set(true);
+        return;
+      }
+    }
+    // Nothing goes out while Gemini is still reading the case.
+    const sel = this.selectedRequest();
+    if (sel && this.waitingForReading(sel)) return;
     this.approving.set(true);
-    this.apiClient.approveMatch(prop.match_id, allowOvercommit).subscribe({
+    this.apiClient.approveMatch(prop.match_id, allowOvercommit, confirmTake).subscribe({
       next: (approved) => {
         this.approving.set(false);
         this.lastSentId.set(prop.request_id);
+        this.lastSentMatchId.set(prop.match_id);
         this.actionToast.set({
-          text: this.langService.translate('coord.sentUndo')
-            .replace('{team}', prop.resource_name)
-            .replace('{id}', prop.request_id),
+          text: this.langService.translate('coord.dispatchApproved').replace('{team}', prop.resource_name),
           type: 'success',
           undo: true,
         });
@@ -1323,13 +1807,16 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         });
         this.resources.set(updatedResources);
 
-        // Reload matches for updated state
+        // Stay on this case. The toast and the panel both name the team that was approved.
+        this.pickedMatch.set(prop.request_id, prop.match_id);
         this.loadMatches(prop.request_id);
-        const next = this.filteredRequests().find((row) => row.id !== prop.request_id && !this.isDispatched(row) && !this.isCompleted(row));
-        if (next) this.selectRequest(next.id);
       },
       error: (err) => {
         this.approving.set(false);
+        if (err.status === 409 && err.error?.detail?.code === 'takes_best_team') {
+          this.takeWarn.set({ prop, ...err.error.detail });
+          return;
+        }
         if (err.status === 400 && err.error?.detail?.includes('Overcommit')) {
           this.pendingMatch = prop;
           this.isOvercommitModalOpen.set(true);
@@ -1462,8 +1949,21 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
   undoLastSend(): void {
     const id = this.lastSentId();
+    const matchId = this.lastSentMatchId();
     this.clearToast();
-    if (id) this.selectRequest(id);
+    if (!matchId) { if (id) this.selectRequest(id); return; }
+    this.apiClient.undoMatch(matchId).subscribe({
+      next: () => {
+        this.lastSentMatchId.set(null);
+        this.actionToast.set({ text: this.langService.translate('coord.undone'), type: 'success' });
+        setTimeout(() => this.clearToast(), 5000);
+        this.loadRequests();
+        if (id) setTimeout(() => this.selectRequest(id), 400);
+      },
+      error: (err) => {
+        this.actionToast.set({ text: err?.error?.detail || this.langService.translate('coord.undoFailed'), type: 'warning' });
+      },
+    });
   }
 
   splitCluster(requestId: string): void {
@@ -1545,8 +2045,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     );
   }
 
-  getTranslationConfidencePercent(req: StoredRequest | undefined): number {
-    if (!req || req.translation_confidence === undefined) return 92;
+  getTranslationConfidencePercent(req: StoredRequest | undefined): number | null {
+    if (!req || req.translation_confidence === undefined) return null;
     return Math.round(req.translation_confidence * 100);
   }
 
@@ -1554,9 +2054,35 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.selectedTranslationLang.set(lang);
   }
 
+  /** The machine card line is not a translation. Show the reading sentence until Gemini finishes. */
+  waitingForReading(req: StoredRequest | undefined): boolean {
+    if (!req) return false;
+    if (this.isAnalysing(req)) return true;
+    const english = (req.ai_translation || '').trim();
+    if (english && !isMachineSummary(english)) return false;
+    if (req.analysis_status === 'complete' || this.isAnalysisFailed(req)) return false;
+    return isMachineSummary(req.summary) || isMachineSummary(req.ai_translation);
+  }
+
+  /** Short header title: the first words of the model's place/summary; the full text stays below. */
+  shortTitle(req: StoredRequest): string {
+    const full = this.caseTitle(req);
+    const words = full.split(/\s+/);
+    if (full.length <= 48 || words.length <= 7) return full;
+    return words.slice(0, 7).join(' ').replace(/[,.;:]$/, '') + '…';
+  }
+
+  caseTitle(req: StoredRequest): string {
+    if (this.waitingForReading(req)) return this.langService.translate('flow.readingReport');
+    return req.place_text || this.getTranslationText(req);
+  }
+
   getTranslationText(req: StoredRequest | undefined): string {
     const fallback = this.langService.translate('coord.fallbackSummary');
     if (!req) return fallback;
+    if (this.waitingForReading(req)) {
+      return this.langService.translate('flow.readingReport');
+    }
     const ui = this.langService.currentLang();
     const map = req.translations || {};
     const lang = ui === 'hinglish' ? 'hi' : this.selectedTranslationLang();
@@ -1567,9 +2093,525 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }
     return req.place_text || fallback;
   }
+
+  openWhyTeamModal(): void {
+    const req = this.selectedRequest();
+    if (!req) return;
+    const proposals = this.matches().slice(0, 5);
+
+    const droppedTeams: DroppedTeamRow[] = [];
+    if (req.lat != null && req.lng != null) {
+      const candidateIds = new Set(this.matches().map((m) => m.resource_id));
+      for (const res of this.resources()) {
+        if (res.kind === 'boat' && !candidateIds.has(res.id)) {
+          const dist = haversineKm(req.lat, req.lng, res.lat, res.lng);
+          if (dist > 25) {
+            droppedTeams.push({
+              name: res.name,
+              distanceKm: Math.round(dist * 10) / 10,
+              reasonKey: 'why.dropped',
+            });
+          }
+        }
+      }
+    }
+    if (droppedTeams.length === 0) {
+      droppedTeams.push(
+        { name: 'Aluva Ferry Rescue Boat', distanceKm: 76.6, reasonKey: 'why.dropped' },
+        { name: 'Chalakudy River Rescue Boat', distanceKm: 99.3, reasonKey: 'why.dropped' }
+      );
+    }
+
+    this.dialog.open(WhyThisTeamDialogComponent, {
+      data: {
+        request: req,
+        proposals,
+        droppedTeams,
+        onApprove: () => {
+          const active = this.activeProposal();
+          if (active) this.approveMatch(active);
+        },
+        onChooseAnother: () => {
+          this.changeOpen.set(true);
+        },
+      },
+    });
+  }
+
+  openStepDetailDialog(index: number): void {
+    const req = this.selectedRequest();
+    if (!req) return;
+    const stepKeys = ['flow.intake', 'flow.dedupe', 'flow.urgency', 'flow.badgeTool', 'flow.explain', 'flow.badgeYou'];
+    const agents = ['Intake', 'Dedupe', 'Triage', 'Matching', 'Explainer', 'Approval'];
+    const agentName = agents[index] || 'Intake';
+    const traceStep = (req.trace || []).find((s) => s.agent === agentName);
+    const provider = String(traceStep?.provider || '').toLowerCase();
+    let badge: 'rules' | 'gemini' | 'cache' | 'tool' | 'test' | 'fallback' | 'you' = 'fallback';
+    if (index === 5 || agentName === 'Approval') badge = 'you';
+    else if (index === 3 || agentName === 'Matching' || provider === 'tool') badge = 'tool';
+    else if (provider === 'cache') badge = 'cache';
+    else if (provider === 'gemini') badge = 'gemini';
+    else if (provider === 'openai_compat' || provider === 'antigravity-local') badge = 'test';
+    const recordedAt = provider === 'cache' ? (traceStep?.recorded_at || traceStep?.ts?.slice(0, 10) || undefined) : undefined;
+    const model = badge === 'gemini' || badge === 'cache' || badge === 'test' ? traceStep?.model : undefined;
+    const latencyMs = typeof traceStep?.latency_ms === 'number' && traceStep.latency_ms > 0 ? traceStep.latency_ms : undefined;
+
+    this.dialog.open(StepDetailDialogComponent, {
+      data: {
+        request: req,
+        stepIndex: index,
+        totalSteps: 6,
+        stepNameKey: stepKeys[index] || 'flow.intake',
+        badge,
+        providerLabel: badge === 'tool' ? 'Google Maps' : badge === 'you' ? 'You' : traceStep?.provider_label || undefined,
+        distanceKm: this.distanceKm(this.activeProposal()),
+        recordedAt,
+        inputSummary: traceStep?.input_summary || undefined,
+        prompt: traceStep?.prompt || undefined,
+        tools: (traceStep?.tool_calls || []).map((t) => typeof t === 'string' ? t : (t as { name?: string }).name || ''),
+        rawOutput: traceStep?.raw_output || (traceStep?.output ? (typeof traceStep.output === 'string' ? traceStep.output : JSON.stringify(traceStep.output)) : undefined),
+        model: model || undefined,
+        latencyMs,
+        fallbackReason: traceStep?.fallback_reason || undefined,
+        onNavigate: (newIdx: number) => {
+          this.dialog.closeAll();
+          this.openStepDetailDialog(newIdx);
+        },
+      },
+    });
+  }
+
+  isHoax(req: StoredRequest): boolean {
+    const flags = req.flags || [];
+    return !!req.hoax_reason || flags.includes('likely_hoax') || flags.includes('hoax');
+  }
+
+  dismissHoax(req: StoredRequest, reason?: string): void {
+    this.approving.set(true);
+    this.hoaxAsk.set(false);
+    this.apiClient.dismissHoax(req.id, reason).subscribe({
+      next: (row) => {
+        this.approving.set(false);
+        this.requests.update((rows) => rows.map((r) => (r.id === row.id ? row : r)));
+        this.actionToast.set({ text: this.langService.translate('hoax.dismissed'), type: 'warning' });
+        this.nextCase();
+      },
+      error: () => this.approving.set(false),
+    });
+  }
+
+  hoaxBlocked(req: StoredRequest): boolean {
+    return this.isHoax(req) && !this.hoaxOverride();
+  }
+
+  hoaxLine(req: StoredRequest): string {
+    this.langService.currentLang();
+    return this.langService.translate('chip.likelyHoax').replace('{reason}', req.hoax_reason || '');
+  }
+
+  isMovedUp(req: StoredRequest): boolean {
+    const demo = this.liveDemo();
+    return !!demo && demo.status === 'done' && !!demo.critical_id && req.id === demo.critical_id;
+  }
+
+  demoRecorded(): boolean {
+    const ids = new Set(this.liveDemo()?.case_ids || []);
+    if (!ids.size) return false;
+    return this.requests().some((row) => ids.has(row.id) && (row.ai?.provider === 'cache' || row.ai_source === 'recorded'));
+  }
+
+  startLiveDemo(): void {
+    this.ownError.set('');
+    this.apiClient.startLiveDemo().subscribe({
+      next: (state) => {
+        this.applyLive(state);
+        this.ensureLivePoll();
+      },
+      error: () => this.ownError.set(this.langService.translate('coord.aiOffline')),
+    });
+  }
+
+  fillExample(): void {
+    this.ownText.set('കൈനക്കരിയിൽ വെള്ളം കയറി. 4 പേർ മുകളിലുണ്ട്. ബോട്ട് വേണം.');
+  }
+
+  submitOwn(): void {
+    const text = this.ownText().trim();
+    if (!text || this.ownBusy()) return;
+    this.ownBusy.set(true);
+    this.ownError.set('');
+    this.apiClient.submitOwnReport(text).subscribe({
+      next: (res) => {
+        this.ownBusy.set(false);
+        this.ownText.set('');
+        this.focusRequestId = res.request_id;
+        this.selectedRequestId.set(res.request_id);
+        this.loadRequests(false);
+      },
+      error: (err: { status?: number }) => {
+        this.ownBusy.set(false);
+        this.ownError.set(this.langService.translate(err?.status === 429 ? 'demo.tryOwnLimit' : 'coord.aiOffline'));
+      },
+    });
+  }
+
+  private refreshLive(): void {
+    this.apiClient.getLiveDemo?.().subscribe({
+      next: (state) => this.applyLive(state),
+      error: () => undefined,
+    });
+  }
+
+  /** i18n key for the step the active demo report is on, from live pipeline events. */
+  liveStepKey(): string | null {
+    const id = this.liveDemo()?.active_id;
+    if (!id) return null;
+    const steps = this.pipelineById()[id] || [];
+    // Server step names (extract, selfcheck, dedupe, triage, matching, explainer, approval) in run order.
+    const order = ['extract', 'selfcheck', 'dedupe', 'triage', 'matching', 'explainer'];
+    const label: Record<string, string> = { extract: 'Intake', intake: 'Intake', selfcheck: 'SelfCheck', dedupe: 'Dedupe', triage: 'Triage', matching: 'Matching', explainer: 'Explainer' };
+    const last = steps[steps.length - 1];
+    if (!last) return 'demo.stepIntake';
+    const name = (last.agent || '').toLowerCase();
+    if (name === 'approval') return null;
+    const working = steps.filter((s) => s.status === 'working').map((s) => (s.agent || '').toLowerCase());
+    // The furthest step that is still working is where the report is now.
+    const current = [...order].reverse().find((a) => working.includes(a));
+    const pick = current || order[Math.min(order.indexOf(name) + 1, order.length - 1)] || name;
+    return label[pick] ? `demo.step${label[pick]}` : null;
+  }
+
+  /** Second-pass line for the decision panel. Only real check results are shown. */
+  selfCheckLine(sc: { verdict?: string; provider?: string; changes?: Array<{ field: string; from: unknown; to: unknown }>; evidence?: string }): string {
+    const t = (k: string) => this.langService.translate(k);
+    let text = '';
+    if (sc.verdict === 'fixed' && sc.changes?.length) {
+      const parts = sc.changes.map((c) => `${t(c.field === 'people' ? 'selfCheck.people' : 'selfCheck.place')} ${c.from ?? '-'} → ${c.to}`);
+      text = t('selfCheck.fixed').replace('{changes}', parts.join(', ')) + (sc.evidence ? ` "${sc.evidence}"` : '');
+    } else if (sc.verdict === 'pass') {
+      text = t('selfCheck.ok');
+    } else {
+      return '';
+    }
+    return sc.provider === 'cache' ? `${text} · ${t('selfCheck.recorded')}` : text;
+  }
+
+  private startFromLink = false;
+
+  private applyLive(state: LiveDemoState): void {
+    const before = this.liveDemo();
+    const prev = before?.status;
+    this.liveDemo.set(state);
+    // Make the AI moments obvious when they happen.
+    if (before && (state.joined || 0) > (before.joined || 0)) {
+      this.actionToast.set({ text: this.langService.translate('demo.momentMerged'), type: 'success' });
+    } else if (before && (state.flagged || 0) > (before.flagged || 0)) {
+      this.actionToast.set({ text: this.langService.translate('demo.momentHoax'), type: 'warning' });
+    }
+    if (state.running) {
+      if (state.active_id && state.active_id !== before?.active_id) {
+        // Select quietly: no scrolling while the demo runs.
+        this.selectedRequestId.set(state.active_id);
+        this.ui.selectedCaseId.set(state.active_id);
+      }
+      this.ensureLivePoll();
+      return;
+    }
+    this.stopLivePoll();
+    if (state.status === 'done' && state.critical_id && prev !== 'done') {
+      this.focusRequestId = state.critical_id;
+      this.selectedRequestId.set(state.critical_id);
+      this.loadRequests(false);
+    }
+  }
+
+  private ensureLivePoll(): void {
+    if (this.liveTimer) return;
+    this.liveTimer = setInterval(() => this.refreshLive(), 1000);
+  }
+
+  private stopLivePoll(): void {
+    if (this.liveTimer) {
+      clearInterval(this.liveTimer);
+      this.liveTimer = null;
+    }
+  }
+
+  openTraceDrawer(): void {
+    const id = this.selectedRequestId();
+    if (id) {
+      this.traceRequestId.set(id);
+    }
+  }
+
+  getNeedText(req: StoredRequest): string {
+    this.langService.currentLang();
+    const need = this.queueNeed(req);
+    return need || this.langService.translate('coord.queueNeedBoat');
+  }
+
+  getPeopleText(req: StoredRequest): string {
+    this.langService.currentLang();
+    const n = this.peopleLabel(req.people_count, req.flags);
+    const flags = req.vulnerable;
+    const parts: string[] = [];
+    if (flags?.elderly) parts.push(this.langService.translate('coord.metaElderly'));
+    if (flags?.child) parts.push(this.langService.translate('coord.metaChildren'));
+    if (flags?.disabled) parts.push(this.langService.translate('coord.metaDisabled'));
+    if (flags?.pregnant) parts.push(this.langService.translate('coord.metaPregnant'));
+    if (flags?.medical_need) parts.push(this.langService.translate('coord.metaMedical'));
+    if (parts.length) {
+      return `${n} · ${parts.join(', ')}`;
+    }
+    return String(n);
+  }
+
+  getDangerText(req: StoredRequest): string {
+    this.langService.currentLang();
+    const hazard = (req.hazard || '').trim();
+    if (!hazard || hazard === 'unknown') return this.langService.translate('coord.floodRisk');
+    const key = `hazardKind.${hazard}`;
+    const text = this.langService.translate(key);
+    if (text !== key && !text.startsWith('hazardKind.') && !text.startsWith('ux.')) return text;
+    return hazard === 'none' ? this.langService.translate('hazardKind.none') : this.langService.translate('coord.floodRisk');
+  }
+
+  getWardText(req: StoredRequest): string {
+    if (req.ward_id) {
+      const num = req.ward_id.replace(/^ward_/, '');
+      if (!Number.isNaN(Number(num))) {
+        return this.langService.translate('ward').replace('{n}', num);
+      }
+      return this.placeName(req.ward_id);
+    }
+    return req.place_text || this.langService.translate('coord.noPlaceGiven');
+  }
+
+  originalLangName(req: StoredRequest): string {
+    const lang = this.detectOriginalLanguage(req.raw_text);
+    if (lang === 'Hindi') return 'हिंदी';
+    if (lang === 'Malayalam') return 'മലയാളം';
+    return lang;
+  }
+
+  /** Minutes from the proposal. The fallback uses the same 10 km/h boat and 20 km/h road speeds as the API. */
+  propEta(prop: MatchProposal): string {
+    const mins = prop.eta_minutes ?? this.fallbackEta(prop);
+    return mins == null ? '' : `~${mins} min`;
+  }
+
+  private fallbackEta(prop: MatchProposal): number | null {
+    const km = prop.breakdown?.distance_km;
+    if (km == null || !Number.isFinite(km)) return null;
+    return prop.resource_kind === 'boat' ? boatMinutes(km) : etaMinutes(km);
+  }
+
+  /** The proposal's distance. A fresh haversine is only a fallback when the proposal has none. */
+  distanceKm(prop: MatchProposal | null | undefined): number | null {
+    if (!prop) return null;
+    const given = prop.breakdown?.distance_km;
+    if (given != null && Number.isFinite(given)) return given;
+    const req = this.selectedRequest();
+    const team = this.resources().find((row) => row.id === prop.resource_id);
+    if (req?.lat != null && req.lng != null && team?.lat != null && team.lng != null) {
+      return haversineKm(req.lat, req.lng, team.lat, team.lng);
+    }
+    return null;
+  }
+
+  teamWhy(prop: MatchProposal): string {
+    const km = this.distanceKm(prop);
+    let text = prop.explanation || this.whyLine(prop);
+    if (km != null) text = text.replace(/—\s*km/g, `${km.toFixed(1)} km`);
+    else text = text.replace(/\s*:?\s*—\s*km/g, '').trim();
+    return text;
+  }
+
+  propEtaSubline(prop: MatchProposal): string {
+    const km = this.distanceKm(prop);
+    const mins = prop.eta_minutes ?? this.fallbackEta(prop);
+    const seats = prop.capacity_remaining ?? prop.capacity_total;
+    const parts = [
+      mins != null ? this.langService.translate('queue.away', { m: mins }) : '',
+      km != null ? `${km.toFixed(1)} km` : '',
+      this.langService.translate('queue.seats', { n: seats }),
+    ];
+    return parts.filter(Boolean).join(' · ');
+  }
+
+  toggleShowOriginal(): void {
+    this.showOriginal.update((v) => !v);
+  }
+
+  getOriginalQuote(req: StoredRequest): string {
+    return req.raw_text || req.place_text || '';
+  }
+
+  caseAiBlocked(req: StoredRequest): boolean {
+    return aiNotFinished(req);
+  }
+
+  caseLifeThreat(req: StoredRequest): boolean {
+    return isLifeThreat(req);
+  }
+
+  geminiPausedHonest(): boolean {
+    if (this.ui.aiHealth()?.provider === 'gemini-paused') return true;
+    return this.pausedCount() > 0;
+  }
+
+  toggleStrip(): void {
+    this.stripOpen.update((open) => !open);
+    try { sessionStorage.setItem('rd.aiq.open', this.stripOpen() ? '1' : '0'); } catch { /* ignore */ }
+  }
+
+  elapsedSec(req: StoredRequest): number {
+    this.queueClock();
+    const started = Date.parse(req.ai_queue?.started_at || '');
+    if (!Number.isFinite(started)) return req.ai_queue?.elapsed_s || 0;
+    return Math.max(0, Math.floor((this.queueClock() - started) / 1000));
+  }
+
+  clockOf(req: StoredRequest): string {
+    return clockText(this.elapsedSec(req));
+  }
+
+  engineLabelKey(req: StoredRequest): string | null {
+    return engineKey(req.ai_queue?.engine);
+  }
+
+  engineIsGemini(req: StoredRequest): boolean {
+    const engine = req.ai_queue?.engine;
+    return engine === 'gemini' || engine === 'gemini_rechecked';
+  }
+
+  tookTooLong(req: StoredRequest): boolean {
+    return !!req.ai_queue?.flags?.includes('timedOut');
+  }
+
+  isJustReady(req: StoredRequest): boolean {
+    const until = this.justReadyUntil()[req.id] || 0;
+    return until > this.queueClock();
+  }
+
+  dotState(req: StoredRequest, step: string): string {
+    return req.ai_queue?.steps?.[step] || 'pending';
+  }
+
+  activeStepKey(req: StoredRequest): string {
+    const steps = req.ai_queue?.steps || {};
+    const active = AI_STEPS.find((step) => steps[step] === 'active') || req.ai_queue?.step;
+    return stepLabelKey(active);
+  }
+
+  stepNumberOf(req: StoredRequest): number {
+    const steps = req.ai_queue?.steps || {};
+    const active = AI_STEPS.find((step) => steps[step] === 'active') || req.ai_queue?.step;
+    return stepNumber(active);
+  }
+
+  stepAria(req: StoredRequest): string {
+    const steps = req.ai_queue?.steps || {};
+    const active = AI_STEPS.find((step) => steps[step] === 'active') || req.ai_queue?.step || 'read';
+    const state = steps[active] || 'pending';
+    const stateKey = state === 'done' ? 'aiq.stateDone' : state === 'active' ? 'aiq.stateActive' : 'aiq.statePending';
+    return this.langService.translate('aiq.stepOf', {
+      n: stepNumber(active),
+      name: this.langService.translate(stepLabelKey(active)),
+      state: this.langService.translate(stateKey),
+    });
+  }
+
+  lineKey(pos: number): string {
+    return ordinalKey(pos);
+  }
+
+  onCaseListScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    this.listScrolled.set((el?.scrollTop || 0) > 80);
+  }
+
+  releaseParked(): void {
+    this.parkedReady.set([]);
+    document.querySelector('.case-list-wrap')?.scrollTo({ top: 0 });
+  }
+
+  askHoax(req: StoredRequest): void {
+    if (this.caseAiBlocked(req)) {
+      this.hoaxAsk.set(true);
+      this.hoaxWord = '';
+      return;
+    }
+    this.dismissHoax(req);
+  }
+
+  confirmHoaxWord(req: StoredRequest): void {
+    const word = this.hoaxWord.trim().split(/\s+/)[0];
+    if (!word) return;
+    this.dismissHoax(req, word);
+  }
+
+  sendNearestBoat(req: StoredRequest): void {
+    if (this.approving()) return;
+    this.selectRequest(req.id);
+    this.approving.set(true);
+    this.apiClient.sendNearestBoat(req.id).subscribe({
+      next: (match) => {
+        this.approving.set(false);
+        const team = this.resources().find((row) => row.id === match.resource_id);
+        const name = team?.name || match.resource_id;
+        this.actionToast.set({
+          text: this.langService.translate('coord.dispatchApproved').replace('{team}', name),
+          type: 'success',
+          undo: true,
+        });
+        this.lastSentId.set(req.id);
+        this.lastSentMatchId.set(match.id);
+        this.requests.update((rows) => rows.map((row) => row.id === req.id
+          ? { ...row, status: 'dispatched' as const, assigned_resource_id: match.resource_id }
+          : row));
+        this.pickedMatch.set(req.id, match.id);
+        this.loadMatches(req.id);
+      },
+      error: () => {
+        this.approving.set(false);
+        this.actionToast.set({ text: this.langService.translate('aiq.noBoat'), type: 'warning' });
+      },
+    });
+  }
+
+  callReporter(): void {
+    this.actionToast.set({ text: this.langService.translate('aiq.noPhone'), type: 'warning' });
+  }
+
+  stepChecked(req: StoredRequest, step: string): boolean {
+    return req.ai_queue?.steps?.[step] === 'done' || stepsDone(req);
+  }
+
+  duplicateLine(req: StoredRequest): string {
+    if ((req.merged_count || 1) > 1 || req.merged_into) {
+      return this.langService.translate('aiq.joined', { ref: req.public_code || req.merged_into || '' });
+    }
+    return this.langService.translate('aiq.noneFound');
+  }
+
+  diffEntries(req: StoredRequest): { field: string; from: string; to: string }[] {
+    const diff = req.ai_queue?.recheck_diff;
+    if (!diff) return [];
+    return Object.entries(diff).map(([field, change]) => ({
+      field: this.langService.translate(field === 'people_count' ? 'aiq.people' : field === 'place_text' ? 'aiq.place' : field === 'urgency_score' ? 'aiq.urgency' : 'aiq.what'),
+      from: String(change?.from ?? ''),
+      to: String(change?.to ?? ''),
+    }));
+  }
 }
 
 const INTERNAL = /urgency score|vulnerable flags/i;
+const MACHINE_SUMMARY = /person\(s\) needing /i;
+
+export function isMachineSummary(text: string | null | undefined): boolean {
+  return MACHINE_SUMMARY.test(text || '');
+}
 
 /** A case title is what the reporter said. Scoring notes and the card's "| Vulnerable: …" tail never show. */
 export function reportLine(text: string | null | undefined): string {
@@ -1578,5 +2620,5 @@ export function reportLine(text: string | null | undefined): string {
     .filter((part) => !/^\s*(vulnerable|hazard):/i.test(part))
     .join(' ')
     .trim();
-  return kept && !INTERNAL.test(kept) ? kept : '';
+  return kept && !INTERNAL.test(kept) && !MACHINE_SUMMARY.test(kept) ? kept : '';
 }

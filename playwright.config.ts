@@ -16,20 +16,31 @@ export default defineConfig({
   reporter: [['list'], ['json', { outputFile: 'e2e/results.json' }]],
   use: {
     baseURL: WEB,
-    launchOptions: { executablePath: process.env['CHROME_BIN'] || '/usr/bin/chromium' },
+    launchOptions: { executablePath: process.env['CHROME_BIN'] || (process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/usr/bin/chromium') },
     trace: 'retain-on-failure',
     screenshot: 'off',
   },
   webServer: [
     {
-      command: `DEMO_MODE=true GOOGLE_MAPS_API_KEY=replace-me AI_MODE=fallback GEMINI_API_KEY=replace-me LLM_PROVIDER= DEMO_SEED=full .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port ${API_PORT}`,
+      command: `${process.platform === 'win32' ? '.venv\\Scripts\\python.exe' : '.venv/bin/python'} -m uvicorn app.main:app --host 127.0.0.1 --port ${API_PORT}`,
       cwd: 'services/api',
+      env: {
+        DEMO_MODE: 'true',
+        GOOGLE_MAPS_API_KEY: 'replace-me',
+        AI_MODE: 'fallback',
+        GEMINI_API_KEY: 'replace-me',
+        LLM_PROVIDER: '',
+        DEMO_SEED: 'full',
+      },
       url: `${API}/healthz`,
       reuseExistingServer: true,
       timeout: 60_000,
     },
     {
-      command: `RD_API_TARGET=${API} npx ng serve web --port ${WEB_PORT} --host 127.0.0.1`,
+      command: `npx ng serve web --port ${WEB_PORT} --host 127.0.0.1`,
+      env: {
+        RD_API_TARGET: API,
+      },
       url: WEB,
       reuseExistingServer: true,
       timeout: 180_000,

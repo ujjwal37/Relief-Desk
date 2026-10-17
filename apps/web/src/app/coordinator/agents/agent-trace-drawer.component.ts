@@ -1,7 +1,11 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Dialog } from '@angular/cdk/dialog';
 import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
 import { testProviderWord } from './provider-label';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
+import { peopleText } from '../../core/people-text';
+import { StepDetailDialogComponent } from './step-detail-dialog.component';
+import { STEP_COUNT, caseRef, joinedCount } from '../case-facts';
 
 const outputText = (value: unknown) => typeof value === 'string' ? value : '';
 
@@ -12,6 +16,14 @@ const NAMES: Record<string, string> = {
   Triage: 'flow.urgency',
   Matching: 'flow.matching',
   Explainer: 'flow.explain',
+};
+
+const TECH_NAMES: Record<string, string> = {
+  Intake: 'ux.agentIntake',
+  Dedupe: 'ux.agentDedupe',
+  Triage: 'ux.agentTriage',
+  Matching: 'ux.agentMatching',
+  Explainer: 'ux.agentExplainer',
 };
 
 @Component({
@@ -25,12 +37,15 @@ const NAMES: Record<string, string> = {
 export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   private readonly lang = inject(LanguageService);
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly dialog = inject(Dialog);
+
   readonly request = input.required<StoredRequest>();
   readonly mobile = input(false);
   readonly closed = output<void>();
   readonly retry = output<void>();
   readonly expanded = signal<string | null>(null);
   readonly simulateOutage = signal(false);
+  readonly techOpen = signal(false);
   private poll: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
@@ -74,7 +89,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   readonly headerWord = computed(() => {
     this.lang.currentLang();
     const req = this.request();
-    if (this.simulateOutage()) return this.lang.translate('flow.badgeRules');
+    if (this.simulateOutage()) return this.lang.translate('coord.aiOffline');
     if (req.ai?.provider === 'cache') return this.lang.translate('flow.badgeCache');
     const intake = (req.trace || []).find((row) => row.agent === 'Intake');
     if (testProviderWord(req.ai?.provider || req.ai_source, intake?.vendor, (key) => this.lang.translate(key))) {
@@ -95,20 +110,20 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     if (src === 'gemini' || src === 'llm') {
       return this.lang.translate('flow.badgeGemini');
     }
-    return this.lang.translate('flow.badgeRules');
+    return this.lang.translate('coord.aiOffline');
   });
 
   readonly headline = computed(() => {
     this.lang.currentLang();
-    const n = this.steps().filter((step) => step.status !== 'waiting').length || this.steps().length;
-    return this.lang.translate('flow.headline').replace('{n}', String(n));
+    // Same count as the strip on the case: 5 AI steps plus You.
+    return this.lang.translate('flow.headline').replace('{n}', String(STEP_COUNT));
   });
 
   readonly contextLine = computed(() => {
     this.lang.currentLang();
     const req = this.request();
-    const title = (req.summary || req.place_text || req.id).slice(0, 48);
-    return this.lang.translate('flow.forCase').replace('{id}', req.id).replace('{title}', title);
+    const title = (req.place_text || req.summary || '').slice(0, 48);
+    return this.lang.translate('flow.forCase').replace('{id}', caseRef(req)).replace('{title}', title);
   });
 
   readonly totalText = computed(() => {
@@ -117,13 +132,13 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     const ends = (this.request().trace || []).map((step) => Date.parse(String((step as { ended_at?: string }).ended_at || ''))).filter((n) => Number.isFinite(n));
     if (starts.length && ends.length) {
       const ms = Math.max(0, Math.max(...ends) - Math.min(...starts));
-      if (ms > 0) return this.lang.translate('ux.seconds').replace('{n}', (ms / 1000).toFixed(1));
+      if (ms >= 100) return this.lang.translate('ux.seconds').replace('{n}', (ms / 1000).toFixed(1));
     }
     const listed = this.steps();
     if (listed.some((step) => step.latencyMs == null)) return null;
     const of = (agent: string) => listed.find((step) => step.agent === agent)?.latencyMs || 0;
     const ms = of('Intake') + Math.max(of('Dedupe'), of('Triage')) + of('Matching') + of('Explainer');
-    if (ms <= 0) return null;
+    if (ms < 100) return null;
     return this.lang.translate('ux.seconds').replace('{n}', (ms / 1000).toFixed(1));
   });
 
@@ -136,13 +151,67 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     this.lang.currentLang();
     const steps = this.steps();
     const done = steps.filter((step) => step.status === 'done' || step.status === 'fallback').length;
-    const k = Math.min(5, done + 1);
+    const k = Math.min(steps.length || 5, done + 1);
     const time = this.totalText() || this.lang.translate('ux.seconds').replace('{n}', '0');
-    return this.lang.translate('flow.loading').replace('{k}', String(k)).replace('{n}', '5').replace('{t}', time.replace(/[^\d.]/g, '') || '0');
+    return this.lang.translate('flow.loading').replace('{k}', String(k)).replace('{n}', String(steps.length || 5)).replace('{t}', time.replace(/[^\d.]/g, '') || '0');
   }
 
   nameKey(agent: string): string {
     return NAMES[agent] || 'flow.intake';
+  }
+
+  techNameKey(agent: string): string {
+    return TECH_NAMES[agent] || 'flow.agentIntake';
+  }
+
+  badgeWord(step: TraceStepView): string {
+    if (step.agent === 'Matching' || step.provider === 'tool') return this.lang.translate(this.usedRoutes(step) ? 'flow.badgeTool' : 'flow.badgeStraight');
+    if (step.badge === 'gemini') {
+      const sec = step.latencyMs ? ` · ${(step.latencyMs / 1000).toFixed(1)} s` : '';
+      return `${this.lang.translate('badge.gemini')}${sec}`;
+    }
+    if (step.badge === 'cache') {
+      const date = step.recordedAt ? ` · ${step.recordedAt}` : '';
+      return `${this.lang.translate('badge.recorded')}${date}`;
+    }
+    if (step.badge === 'test') return this.lang.translate('badge.testModel');
+    if (step.status === 'fallback' || step.provider === 'fallback' || step.badge === 'rules') {
+      return this.lang.translate('coord.aiOffline');
+    }
+    return this.lang.translate('coord.aiOffline');
+  }
+
+  /** Google Maps only when a Routes call is recorded on the step; otherwise it is straight-line rules. */
+  usedRoutes(step: TraceStepView): boolean {
+    return (step.tools || []).some((tool) => /route|maps|directions/i.test(tool));
+  }
+
+  openStepDetail(index: number): void {
+    const step = this.steps()[index];
+    if (!step) return;
+    this.dialog.open(StepDetailDialogComponent, {
+      data: {
+        request: this.request(),
+        stepIndex: index,
+        totalSteps: STEP_COUNT,
+        stepNameKey: this.nameKey(step.agent),
+        badge: (index === 3 || step.agent === 'Matching') ? 'tool' : (step.status === 'fallback' || step.provider === 'fallback' ? 'fallback' : step.badge),
+        providerLabel: (index === 3 || step.agent === 'Matching') ? (this.usedRoutes(step) ? 'Google Maps' : 'rules') : undefined,
+        recordedAt: step.recordedAt || undefined,
+        inputSummary: step.input || undefined,
+        prompt: step.asked || undefined,
+        tools: step.tools,
+        rawOutput: step.raw || undefined,
+        distanceKm: this.traceKm(),
+        model: step.model || undefined,
+        latencyMs: step.latencyMs || undefined,
+        fallbackReason: step.note || undefined,
+        onNavigate: (newIdx: number) => {
+          this.dialog.closeAll();
+          this.openStepDetail(newIdx);
+        },
+      },
+    });
   }
 
   toggle(agent: string): void {
@@ -162,6 +231,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEsc(): void {
+    if (this.dialog.openDialogs.length) return;
     this.closed.emit();
   }
 
@@ -196,7 +266,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     if (agent === 'Intake') return JSON.stringify({ type: req.type, people: req.people_count, place: req.place_text });
     if (agent === 'Dedupe') return req.dedupe_trace || 'Review duplicate evidence with the coordinator.';
     if (agent === 'Triage') return req.urgency_reason;
-    return `Python urgency score: ${req.urgency_score}. A coordinator reviews the team proposal.`;
+    return `Urgency score: ${req.urgency_score}. A coordinator reviews the team proposal.`;
   }
 
   private fallbackCount(): number {
@@ -235,6 +305,9 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
       asked: prompt,
       raw: output,
       note,
+      recordedAt: String(raw?.provider || '').toLowerCase() === 'cache'
+        ? (String((raw as { recorded_at?: string } | undefined)?.recorded_at || '').slice(0, 10) || null)
+        : null,
       sentence: this.sentence(agent, raw),
       linkId: agent === 'Dedupe' ? this.dupId(raw) : null,
       badge,
@@ -260,10 +333,15 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     const cap = (text: string) => text.trim();
     if (agent === 'Intake') {
       const need = String(parsed['need'] || parsed['type'] || req.type || t('coord.queueNeedBoat'));
-      const people = String(parsed['people'] || req.people_count || 1);
+      const people = peopleText(Number(parsed['people']) || req.people_count, t);
       return cap(t('flow.sentIntake').replace('{need}', need).replace('{people}', people));
     }
     if (agent === 'Dedupe') {
+      // Same field as the merged chip and the strip.
+      if (joinedCount(req) > 1) {
+        const key = (req.place_text || '').trim() ? 'flow.sentDedupeJoined' : 'flow.sentDedupeNoPlace';
+        return cap(t(key).replace('{n}', String(joinedCount(req))));
+      }
       const id = this.dupId(raw);
       if (id) {
         const mins = String(parsed['minutes'] || req.possible_duplicate?.minutes || '—');
@@ -277,13 +355,38 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
       return reason || band;
     }
     if (agent === 'Matching') {
-      const team = String(parsed['team'] || parsed['resource_name'] || req.assigned_resource_id || raw?.output || 'team');
-      const km = String(parsed['km'] || parsed['distance_km'] || '—');
-      const capab = String(parsed['capability'] || parsed['kind'] || req.type || '');
-      const seats = String(parsed['seats'] || parsed['capacity'] || '1');
-      return cap(t('flow.sentMatch').replace('{team}', team).replace('{km}', km).replace('{capability}', capab).replace('{seats}', seats));
+      const team = String(parsed['team'] || parsed['resource_name'] || '');
+      const km = this.kmNumber(parsed['km'] ?? parsed['distance_km']);
+      const capab = String(parsed['capability'] || parsed['kind'] || req.type || t('coord.queueNeedBoat'));
+      const seats = parsed['seats'] ?? parsed['capacity'];
+      if (team && km != null && !team.includes('boat free')) {
+        const seatText = seats == null || seats === '' ? '' : String(seats);
+        return cap(t('flow.sentMatch').replace('{team}', team).replace('{km}', String(km)).replace('{capability}', capab).replace('{seats}', seatText));
+      }
+      if (team && !team.includes('boat free')) return cap(t('step.matchNoKm').replace('{team}', team));
+      const plain = this.fillKm(outputText(raw?.output), km);
+      if (plain && !plain.trim().startsWith('{')) return cap(plain);
+      return cap(t('step.noTeam'));
     }
-    return outputText(raw?.output) || cap(t('flow.sentExplain'));
+    return this.fillKm(outputText(raw?.output), this.traceKm()) || cap(t('flow.sentExplain'));
+  }
+
+  private traceKm(): number | null {
+    const match = (this.request().trace || []).find((step) => step.agent === 'Matching');
+    const parsed = this.parse(match?.output);
+    return this.kmNumber(parsed['km'] ?? parsed['distance_km']);
+  }
+
+  private kmNumber(value: unknown): number | null {
+    if (value == null || value === '') return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private fillKm(text: string, km: number | null): string {
+    if (!text || !text.includes('—')) return text;
+    if (km == null) return text.replace(/\s*:?\s*—\s*km/g, '').trim();
+    return text.replace(/—\s*km/g, `${km.toFixed(1)} km`);
   }
 
   private dupId(raw?: NonNullable<StoredRequest['trace']>[number]): string {

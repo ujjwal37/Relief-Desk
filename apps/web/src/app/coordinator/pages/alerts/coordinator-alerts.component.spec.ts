@@ -109,14 +109,14 @@ describe('CoordinatorAlertsComponent', () => {
     button.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.focusNonce()).toBe(1);
-    expect(fixture.componentInstance.center().lat).toBeCloseTo(10.308, 3);
-    expect(fixture.componentInstance.center().lng).toBeCloseTo(76.331, 3);
+    expect(fixture.componentInstance.center().lat).toBeCloseTo(9.381, 3);
+    expect(fixture.componentInstance.center().lng).toBeCloseTo(76.488, 3);
     const buttons = fixture.nativeElement.querySelectorAll('button.secondary');
     (buttons[1] as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(fixture.componentInstance.selectedId()).toBe('silent-ward-5');
-    expect(fixture.componentInstance.center().lat).toBeCloseTo(10.078, 3);
-    expect(fixture.componentInstance.center().lng).toBeCloseTo(76.268, 3);
+    expect(fixture.componentInstance.center().lat).toBeCloseTo(9.479, 3);
+    expect(fixture.componentInstance.center().lng).toBeCloseTo(76.438, 3);
     expect(fixture.componentInstance.transform()).toContain('scale(1.35)');
   });
 

@@ -48,7 +48,7 @@ _IN_WATER = re.compile(
     re.I,
 )
 _TRAPPED = re.compile(r"trapped|stuck|can'?t get out|cannot get out|unable to (?:leave|get out|move)|phanse|phas", re.I)
-_SEVERE_INJURY = re.compile(r"bleeding|unconscious|not breathing|can'?t breathe|breathing (?:difficulty|problem)|unresponsive|fainted", re.I)
+_SEVERE_INJURY = re.compile(r"bleeding|unconscious|not breathing|can'?t breathe|breathing (?:difficulty|problem)|unresponsive|fainted|\u0d36\u0d4d\u0d35\u0d3e\u0d38\u0d02 (?:\u0d0e\u0d1f\u0d41\u0d15\u0d4d\u0d15\u0d41\u0d28\u0d4d\u0d28\u0d3f\u0d32\u0d4d\u0d32|\u0d07\u0d32\u0d4d\u0d32)|\u0d2c\u0d4b\u0d27\u0d02 \u0d07\u0d32\u0d4d\u0d32|\u0938\u093e\u0901?\u0902?\u0938 \u0928\u0939\u0940\u0902|\u092c\u0947\u0939\u094b\u0936|saa?ns nahi|sans nahi|behosh|swasam (?:edukkunnilla|illa)|shwasam illa|bodham illa", re.I)
 _LIFE_SUPPORT = re.compile(r"oxygen|dialysis|insulin|ventilator|\u0911\u0915\u094d\u0938\u0940\u091c\u0928", re.I)
 _LABOUR = re.compile(r"labou?r pain|in labou?r|contractions|water broke|delivery pain|\u092a\u094d\u0930\u0938\u0935", re.I)
 _ROOF = re.compile(
@@ -100,7 +100,7 @@ class ScoringEngine:
             return "immediate", "people are trapped and the water is rising"
         if req.hazard == HazardType.INJURY and _SEVERE_INJURY.search(text):
             return "immediate", "a serious injury: bleeding, breathing trouble or unresponsive"
-        if _SEVERE_INJURY.search(text) and re.search(r"unconscious|not breathing|unresponsive", text, re.I):
+        if _SEVERE_INJURY.search(text) and re.search(r"unconscious|not breathing|unresponsive|\u0d36\u0d4d\u0d35\u0d3e\u0d38\u0d02 (?:\u0d0e\u0d1f\u0d41\u0d15\u0d4d\u0d15\u0d41\u0d28\u0d4d\u0d28\u0d3f\u0d32\u0d4d\u0d32|\u0d07\u0d32\u0d4d\u0d32)|\u0d2c\u0d4b\u0d27\u0d02 \u0d07\u0d32\u0d4d\u0d32|\u0938\u093e\u0901?\u0902?\u0938 \u0928\u0939\u0940\u0902|\u092c\u0947\u0939\u094b\u0936|saa?ns nahi|sans nahi|behosh|swasam (?:edukkunnilla|illa)|shwasam illa|bodham illa", text, re.I):
             return "immediate", "someone is unresponsive or not breathing"
         if _LIFE_SUPPORT.search(text):
             return "immediate", "someone depends on oxygen, dialysis or insulin"
@@ -152,7 +152,8 @@ class ScoringEngine:
         # People: log scale so one person is not penalised. 50 people -> 1.0.
         count = req.people_count if req.people_count is not None else 1
         p_score = min(1.0, math.log2(1 + max(1, count)) / math.log2(51))
-        reasons_parts.append(f"{count} person{'s' if count != 1 else ''}")
+        # Score as one person when unknown, but never claim a count the report did not give.
+        reasons_parts.append("people not stated" if not req.people_count else f"{count} person{'s' if count != 1 else ''}")
 
         # Hazard.
         in_water = bool(_IN_WATER.search(text))
@@ -210,7 +211,7 @@ class ScoringEngine:
             req.flags = list(req.flags or []) + ["verify"]
 
         # A hoax or spam copy is kept, but it must not sit in Needs help now.
-        hoax = any(flag in (req.flags or []) for flag in ("hoax", "hoax_or_flood"))
+        hoax = any(flag in (req.flags or []) for flag in ("hoax", "hoax_or_flood", "likely_hoax"))
         if hoax:
             final_score = min(final_score, 40.0)
 
@@ -289,7 +290,8 @@ class ScoringEngine:
         if req.lat is not None and req.lng is not None:
             dist_km = haversine_distance(req.lat, req.lng, res.lat, res.lng)
         else:
-            dist_km = 2.5
+            # No location: distance is unknown, so no team is offered on a made-up distance.
+            return None
 
         if dist_km <= 0.5:
             dist_score = 30.0

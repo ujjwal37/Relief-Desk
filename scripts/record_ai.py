@@ -20,9 +20,13 @@ from app.llm.record import record_seeded_reports  # noqa: E402
 def main() -> None:
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--traces', nargs='+', help='Record complete traces for these seed case IDs only')
+    parser.add_argument(
+        '--traces',
+        nargs='*',
+        help='Record complete pipeline traces. With no ids, every demo seed case is run once through Gemini.',
+    )
     args = parser.parse_args()
-    if args.traces:
+    if args.traces is not None:
         from app.llm.record import record_seeded_traces
         if not record_seeded_traces(args.traces):
             raise SystemExit('No complete Gemini traces recorded; fallback provenance was preserved.')

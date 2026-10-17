@@ -244,12 +244,13 @@ def case_merge(
     if req is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Case '{case_id}' not found")
     cluster = storage_service.get_cluster(req.cluster_id) if req.cluster_id else None
+    from app.api.public import public_code_for
     reports = []
     if req.report_quotes:
         for quote in req.report_quotes:
             linked = storage_service.get_report(quote.report_id)
             reports.append({
-                "id": quote.report_id,
+                "id": public_code_for(quote.report_id), "internal_id": quote.report_id,
                 "text": quote.text,
                 "at": linked.created_at if linked else req.created_at,
                 "channel": linked.channel if linked else None,
@@ -261,7 +262,7 @@ def case_merge(
             member = storage_service.get_request(rid)
             linked = next((row for row in storage_service.list_reports() if row.request_id == rid), None)
             reports.append({
-                "id": rid,
+                "id": public_code_for(rid), "internal_id": rid,
                 "text": (member.raw_text if member else None) or (linked.raw_text if linked else None),
                 "at": member.created_at if member else (linked.created_at if linked else None),
                 "channel": linked.channel if linked else None,
@@ -278,6 +279,10 @@ def case_merge(
         why = f"{why}. {req.count_note}" if why else req.count_note
     if why is None and cluster and cluster.evidence:
         why = " ".join(cluster.evidence)
+    if why:
+        import re as _re
+        # The case's urgency is shown on the card; an older score in this text would contradict it.
+        why = _re.sub(r",?\s*(?:with |and )?(?:an? )?urgency(?: score)?(?: of)? \d+(?:\.\d+)?", "", why, flags=_re.I).strip()
     return {
         "count": req.merged_count or 1,
         "why": why,
@@ -302,11 +307,20 @@ def list_requests(
     from app.models.firestore_models import RequestStatus
     from app.tools.scoring import scoring_engine
 
-    closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED}
+    closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED, RequestStatus.DISMISSED_HOAX}
     from app.agents.pipeline import ensure_trace
+    from app.tools.case_queue import refresh_queue, recheck_if_live
+    capped = set(refresh_queue(reqs))
+    rechecked = recheck_if_live(reqs)
     refreshed = []
+    from app.api.public import public_code_for
     for req in reqs:
         ensure_trace(req)
+        if not req.public_code:
+            req.public_code = public_code_for(req.report_ids[0] if req.report_ids else req.id)
+        from app.agents.depth import fill_depth
+        fill_depth(req)
+        _fix_place(req)
         before = req.urgency_score
         if req.status not in closed:
             result = scoring_engine.compute_urgency(req)
@@ -315,13 +329,33 @@ def list_requests(
             req.wait_points = result.breakdown.get("wait_points")
             req.wait_minutes = int(result.breakdown.get("wait_minutes") or 0)
         score_changed = req.urgency_score != before
-        if _changed_since(req, updated_since) or score_changed:
+        if _changed_since(req, updated_since) or score_changed or req.id in capped:
             refreshed.append(req)
+            if req.id in capped or req.id == rechecked:
+                storage_service.save_request(req, actor="ai_queue")
 
     if sort == "urgency":
         refreshed = sorted(refreshed, key=lambda r: r.urgency_score, reverse=True)
     # A merge can land while this list is being built. Drop the copy that joined another case.
-    return [req for req in refreshed if not req.merged_into]
+    visible = [req for req in refreshed if not req.merged_into]
+    return _collapse_identical_hoaxes(visible)
+
+
+def _collapse_identical_hoaxes(rows):
+    """Identical hoax text is one row. This is not a same-place merge."""
+    import re as _re
+    seen = set()
+    kept = []
+    for req in rows:
+        flags = set(req.flags or [])
+        hoax = bool(getattr(req, "hoax_reason", None)) or bool(flags & {"hoax", "likely_hoax", "dismissed_hoax"})
+        key = _re.sub(r"\s+", " ", (req.raw_text or "").strip().lower())
+        if hoax and key:
+            if key in seen:
+                continue
+            seen.add(key)
+        kept.append(req)
+    return kept
 
 
 @router.get("/requests/{id}", response_model=StoredRequest, summary="Get single request detail")
@@ -335,4 +369,28 @@ def get_request_detail(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Request '{id}' not found"
         )
+    from app.tools.case_queue import refresh_queue
+    if refresh_queue([req]):
+        storage_service.save_request(req, actor="ai_queue")
     return req
+
+
+def _fix_place(req) -> None:
+    """One place truth per case: ward comes from coordinates; a hoax with no place has no pin."""
+    from app.tools.gazetteer import ward_for_point
+    flags = set(req.flags or [])
+    hoax = bool(getattr(req, "hoax_reason", None)) or bool(flags & {"likely_hoax", "hoax"})
+    place = (req.place_text or "").strip()
+    if place and len(place) > 60:
+        # A whole sentence is not a place; keep only a short named span.
+        import re as _re
+        m = _re.search(r"\b(?:near|at|in)\s+((?:[A-Z][\w'-]+\s?){1,4})", place)
+        req.place_text = m.group(1).strip() if m else None
+        place = req.place_text or ""
+    if hoax and not place:
+        req.lat = None
+        req.lng = None
+        req.ward_id = None
+        return
+    if req.lat is not None and req.lng is not None:
+        req.ward_id = ward_for_point(req.lat, req.lng)

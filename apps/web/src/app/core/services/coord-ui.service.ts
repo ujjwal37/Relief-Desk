@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { AnomalyAlert, ApiClientService } from '@rd/shared';
+import { AiHealthResponse, AnomalyAlert, ApiClientService } from '@rd/shared';
 
 /** Small shared state for the coordinator shell: header search, weights drawer, tour, alerts. */
 @Injectable({ providedIn: 'root' })
@@ -15,6 +15,7 @@ export class CoordUiService {
   readonly tourStep = signal(0);
   readonly demoWhy = typeof location !== 'undefined' && location.search.includes('demo=1');
   readonly lastRefresh = signal<number>(Date.now());
+  readonly aiHealth = signal<AiHealthResponse | null>(null);
 
   private static readonly TOUR_KEY = 'rd_tour_done';
 

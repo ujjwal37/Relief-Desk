@@ -184,7 +184,16 @@ def test_five_reports_against_a_slow_local_model(monkeypatch, tmp_path):
         approve_at = time.perf_counter()
         matches = client.get(f"/api/requests/{primary.id}/matches", headers=AUTH)
         assert matches.status_code == 200 and matches.json()
-        approved = client.post(f"/api/matches/{matches.json()[0]['match_id']}/approve", headers=AUTH, json={})
+        blocked = client.post(f"/api/matches/{matches.json()[0]['match_id']}/approve", headers=AUTH, json={"confirm_take": True})
+        assert blocked.status_code == 409
+        assert blocked.json()["detail"]["code"] == "ai_not_finished"
+        # The 45s cap hands the case to rules. A person can approve after that.
+        from datetime import datetime, timedelta, timezone
+        from app.tools.case_queue import refresh_queue
+        primary.ai_queue.started_at = (datetime.now(timezone.utc) - timedelta(seconds=50)).isoformat()
+        refresh_queue([primary])
+        storage_service.save_request(primary, actor="test")
+        approved = client.post(f"/api/matches/{matches.json()[0]['match_id']}/approve", headers=AUTH, json={"confirm_take": True})
         assert approved.status_code == 200, approved.text
         status_url = f"/api/reports/{bodies[0]['report_id']}/status?token={bodies[0]['status_token']}"
         reached = _wait_for(lambda: client.get(status_url).json()["hero_title"] == "status.heroOnWay", 3.0)

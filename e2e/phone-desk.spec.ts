@@ -48,10 +48,14 @@ test('a phone report reaches the desk, merges, and comes back approved', async (
 
   const row = desk.getByRole('option', { name: new RegExp(tag) });
   await expect(row).toBeVisible({ timeout: 20_000 });
+  await desk.goto('/coordinator/overview');
   const strip = desk.getByTestId('just-reported');
   await expect(strip).toBeVisible();
   await expect(strip).toContainText(tag);
   await expect(strip.getByText('New', { exact: true }).first()).toBeVisible();
+  await desk.goto('/coordinator/command');
+  await desk.locator('#coord-search').fill(tag);
+  await expect(row).toBeVisible();
   await row.click();
   await shot(desk, 'phone-desk-arrived');
 
@@ -140,12 +144,12 @@ test('a Hindi report uses Hindi labels, reaches the desk, and the status stays H
   await expect(row).toBeVisible({ timeout: 20_000 });
   await row.scrollIntoViewIfNeeded();
   await expect(row).toContainText('6');
-  await expect(row).toContainText(/Ward 12/);
   await row.click();
-  await desk.getByRole('button', { name: 'More details' }).click();
-  await desk.getByRole('button', { name: 'Show original' }).click();
-  await expect(desk.locator('p.quote')).toContainText('6 लोग फंसे');
-  await expect(desk.locator('p.quote')).toContainText(tag);
+  // The pin is outside the mapped wards, so the area is the reporter's own words.
+  await expect(desk.locator('.decision-panel')).toContainText(/Ward 12|वार्ड 12/);
+  await desk.locator('details.show-report > summary').click();
+  await expect(desk.locator('.rep-orig')).toContainText('6 लोग फंसे');
+  await expect(desk.locator('.rep-orig')).toContainText(tag);
 
   const approve = desk.getByRole('button', { name: 'Approve and send' });
   await expect(approve).toBeEnabled({ timeout: 20_000 });

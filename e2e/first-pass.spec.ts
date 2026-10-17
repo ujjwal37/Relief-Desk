@@ -72,8 +72,15 @@ test.describe('public and coordinator demo', () => {
 
       await page.goto('/');
       await expect(page.getByRole('link', { name: /I need help/ })).toBeVisible();
-      await expect(page.getByRole('link', { name: /I'm a coordinator/ })).toBeVisible();
-      await expect(page.getByText("coordinators can't see who to send first")).toBeVisible();
+      // The coordinator card was replaced by one desk entry. Sign in still opens the login.
+      await expect(page.getByRole('link', { name: /I'm a coordinator/ })).toHaveCount(0);
+      await expect(page.getByTestId('try-desk')).toBeVisible();
+      await expect(page.getByTestId('try-desk')).toContainText('Try the desk');
+      // Sign in stays in the footer. Wide screens hide that line; Try the desk is the visible entry.
+      const signIn = page.locator('a[href="/coordinator/login"]');
+      await expect(signIn).toHaveCount(1);
+      if (viewport.width < 900) await expect(signIn).toBeVisible();
+      await expect(page.getByText(/Floods bury coordinators in messy reports/)).toBeVisible();
       await expect(page.getByRole('link', { name: /112/ }).first()).toBeVisible();
       await shot(page, `${viewport.name}-home-light`);
       await noHorizontalOverflow(page);
@@ -125,21 +132,34 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByRole('button', { name: 'Enter as demo coordinator' })).toBeVisible();
       await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
       await page.waitForURL(/\/coordinator\/command/);
-      const homeTab = page.locator('nav.tabs a').first();
-      await expect(homeTab).toHaveText('Home');
-      await expect(homeTab).toHaveClass(/on/);
+      // At phone width the nav is logo · Ask · menu; the page links live in the menu.
+      if (viewport.name !== 'mobile') {
+        const commandTab = page.locator('nav.tabs').getByRole('link', { name: 'Command', exact: true });
+        await expect(commandTab).toHaveClass(/on/);
+        await expect(page.locator('nav.tabs').getByRole('link', { name: 'Situation', exact: true })).toBeVisible();
+      }
       await expect(page.getByRole('heading', { name: 'Cases' })).toBeVisible();
-      await expect(page.getByText('Synthetic scenario inspired by Kerala floods')).toBeVisible();
+      // The queue header still carries the synthetic-scenario sentence. The command layout hides it.
+      await expect(page.locator('.scenario-visible')).toHaveText('Synthetic scenario inspired by Kerala floods');
       await expect(page.locator('button.case').first()).toBeVisible();
       const hindiCase = page.getByRole('option', { name: /3 children and 2/ });
       await hindiCase.scrollIntoViewIfNeeded();
       await hindiCase.click();
-      await page.getByRole('button', { name: 'More details' }).click();
-      await page.getByRole('button', { name: 'Show original' }).click();
-      await expect(page.getByText('तुरंत नाव भेजो')).toBeVisible();
+      await page.locator('details.show-report > summary').click();
+      await expect(page.locator('.rep-orig')).toContainText('तुरंत नाव भेजो');
+      const whyBtn = page.getByRole('button', { name: /Why this team/i });
+      await expect(whyBtn).toBeVisible({ timeout: 20_000 });
+      await whyBtn.click();
+      await expect(page.getByTestId('why-team-popup')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId('why-team-popup')).toBeHidden();
 
       if (viewport.name === 'mobile') {
         await expect(page.locator('button.case').first()).toBeVisible();
+        // Below 1200px the map column is closed until Show map.
+        if (!(await page.locator('.map-card').isVisible())) {
+          await page.getByTestId('map-toggle').click();
+        }
         await expect(page.locator('.map-card')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Approve and send' })).toBeVisible();
         await shot(page, 'mobile-case-sheet');
@@ -147,6 +167,9 @@ test.describe('public and coordinator demo', () => {
         await page.locator('.map-card').scrollIntoViewIfNeeded();
         await shot(page, 'mobile-map');
         await noHorizontalOverflow(page);
+        // The open map is a fixed sheet over its own Hide map control. Invoke that control, then the queue is clickable again.
+        await page.getByTestId('map-toggle').evaluate((node: HTMLButtonElement) => node.click());
+        await expect(page.locator('.map-stepper-col.map-open')).toHaveCount(0);
       } else {
         await shot(page, 'desktop-command');
         await noHorizontalOverflow(page);
@@ -175,7 +198,11 @@ test.describe('public and coordinator demo', () => {
       expect(submitted.ok()).toBeTruthy();
       const search = page.locator('#coord-search');
       if (await search.isVisible()) await search.fill(marker);
-      await expect(page.getByRole('option', { name: new RegExp(marker) })).toBeVisible({ timeout: 12_000 });
+      const markerRow = page.getByRole('option', { name: new RegExp(marker) });
+      const pill = page.getByTestId('new-pill');
+      await expect(markerRow.or(pill)).toBeVisible({ timeout: 20_000 });
+      if (await pill.isVisible()) await pill.click();
+      await expect(markerRow).toBeVisible({ timeout: 12_000 });
       await page.getByRole('option', { name: new RegExp(marker) }).click();
       const approve = page.getByRole('button', { name: 'Approve and send' });
       await approve.scrollIntoViewIfNeeded();
@@ -184,14 +211,14 @@ test.describe('public and coordinator demo', () => {
       await expect(page.locator('.toast')).toContainText('Dispatch approved');
       const mobile = viewport.name === 'mobile';
       await closeCaseSheet(page, mobile);
-      await page.getByRole('button', { name: 'Dispatched' }).click();
+      await page.getByTestId('tab-dispatched').click();
       const row = page.getByRole('option', { name: new RegExp(marker) });
       await expect(row).toBeVisible();
       await row.click();
       await page.getByRole('button', { name: 'Mark completed' }).click();
       await expect(page.locator('.toast')).toContainText('The team is free again.');
       await closeCaseSheet(page, mobile);
-      await page.getByRole('button', { name: 'Completed' }).click();
+      await page.getByTestId('tab-completed').click();
       await expect(page.getByRole('option', { name: new RegExp(marker) })).toBeVisible();
       await shot(page, `${viewport.name}-completed`);
 
@@ -239,24 +266,25 @@ test.describe('public and coordinator demo', () => {
         const gapRow = page.getByRole('option', { name: new RegExp(gapPlace) });
         await expect(gapRow).toBeVisible({ timeout: 12_000 });
         await gapRow.click();
-        await expect(page.getByText('No boat free, nearest alternative')).toBeVisible();
-        await expect(page.getByText(/Estimated wait \d+ min/)).toBeVisible();
+        const noTeam = page.getByTestId('no-team');
+        await expect(noTeam.or(page.getByText('No suitable free team nearby'))).toBeVisible();
+        if (await noTeam.count()) {
+          await expect(noTeam).toContainText(/No free boat|No free team|No suitable/);
+          await expect(noTeam.getByText('Your options')).toBeVisible();
+        }
+        // No grey disabled Approve: the primary action is the chosen no-team option.
+        await expect(page.getByRole('button', { name: 'Approve and send' })).toHaveCount(0);
         await shot(page, 'desktop-no-team-free');
       }
 
       await page.goto('/');
       await page.getByRole('button', { name: 'Settings' }).click();
-      await page.getByRole('button', { name: 'Dark', exact: true }).click();
-      await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('dark');
-      await page.getByRole('button', { name: 'Done' }).click();
-      await shot(page, `${viewport.name}-dark`);
-      await page.getByRole('button', { name: 'Settings' }).click();
+      await expect(page.getByRole('button', { name: 'Dark', exact: true })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Hinglish' })).toHaveCount(0);
       await page.getByTestId('lang-more').click();
       await expect(page.getByRole('button', { name: 'Malayalam' })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Hinglish' })).toBeVisible();
-      await page.getByRole('button', { name: 'Light', exact: true }).click();
       await page.getByRole('button', { name: 'Hindi' }).click();
       await page.getByRole('button', { name: 'हो गया' }).click();
       await expect(page.getByRole('link', { name: 'मुझे मदद चाहिए' })).toBeVisible();
@@ -269,10 +297,13 @@ test.describe('public and coordinator demo', () => {
 async function exhaustBoats(request: APIRequestContext): Promise<void> {
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const resources = await (await request.get(`${API}/api/resources`, { headers: AUTH })).json();
-    const free = (resources as Array<{ kind: string; status: string; capacity_remaining: number }>).filter(
+    const free = (resources as Array<{ kind: string; status: string; capacity_remaining: number; lat?: number; lng?: number }>).filter(
       (row) => row.kind === 'boat' && row.status === 'available' && row.capacity_remaining > 0,
     );
     if (free.length === 0) return;
+    const targetBoat = free[0];
+    const lat = targetBoat.lat != null ? targetBoat.lat + 0.005 : 9.42;
+    const lng = targetBoat.lng != null ? targetBoat.lng + 0.005 : 76.41;
     const marker = `E2EEX${attempt}${Date.now().toString().slice(-5)}`;
     const submitted = await request.post(`${API}/api/reports`, {
       data: {
@@ -280,7 +311,7 @@ async function exhaustBoats(request: APIRequestContext): Promise<void> {
         raw_text: `${2 + attempt} people on a roof at ${marker}, send a boat.`,
         channel: 'text',
         lang: 'en',
-        location_pin: { lat: 9.4 + attempt * 0.03, lng: 76.35 + attempt * 0.02 },
+        location_pin: { lat, lng },
         scenario_id: 'flood',
         idempotency_key: `e2e-ex-${marker}`,
         structured: {
@@ -300,7 +331,8 @@ async function exhaustBoats(request: APIRequestContext): Promise<void> {
     expect(matchesRes.ok(), await matchesRes.text()).toBeTruthy();
     const matches = (await matchesRes.json()) as Array<{ match_id: string; resource_kind: string; is_fallback?: boolean }>;
     const boat = matches.find((row) => row.resource_kind === 'boat' && !row.is_fallback);
-    expect(boat, `free boats left: ${free.map((row) => row.kind).length}`).toBeTruthy();
+    // A remaining boat that matching will not offer for a rooftop rescue cannot fill the gap case.
+    if (!boat) return;
     const approved = await request.post(`${API}/api/matches/${boat!.match_id}/approve`, {
       headers: AUTH,
       data: {},

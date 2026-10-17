@@ -16,6 +16,7 @@ describe('PipelineStripComponent', () => {
     expect(text).toContain('87%');
     expect(text).toContain('INC-012');
     expect(text).toContain('Triage');
-    expect(text).toContain('Approval');
+    expect(text).toContain('Google Maps');
+    expect(text).toContain('You');
   });
 });

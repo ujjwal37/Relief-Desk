@@ -96,7 +96,7 @@ def conflict_alerts(pairs: Iterable[Dict[str, str]]) -> List[AnomalyAlert]:
 
 
 def stale_alerts(ages_minutes: Iterable[float], threshold: int = 90) -> List[AnomalyAlert]:
-    stale = [age for age in ages_minutes if age > threshold]
+    stale = [age for age in ages_minutes if age >= threshold]
     if not stale:
         return []
     return [AnomalyAlert(
@@ -223,7 +223,7 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
                 id=f"spike-{ward}",
                 kind="spike",
                 title="Report spike",
-                reason=f"{ward}: {len(stamps)} new cases in {SPIKE_WINDOW_MIN} min (usual {usual:.1f} per {SPIKE_WINDOW_MIN} min)",
+                reason=f"{_WARD_NAMES.get(ward, ward)}: {len(stamps)} new cases in {SPIKE_WINDOW_MIN} min (usual {usual:.1f} per {SPIKE_WINDOW_MIN} min)",
                 ward_id=ward,
                 severity="critical",
                 detected_at=first,
@@ -288,6 +288,18 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
     return alerts
 
 
+_WARD_NAMES = {"ward_1": "Kainakary", "ward_2": "Champakulam", "ward_3": "Nedumudi"}
+
+# Sample scenario wards are named after real Kuttanad panchayats, never a case or a far district.
+_SAMPLE_WARDS = {"Ward 4": ("ward_2", "Champakulam"), "Ward 5": ("ward_1", "Kainakary"), "Ward 7": ("ward_3", "Nedumudi")}
+
+
+def _kuttanad_place(text: str) -> str:
+    for key, (_wid, name) in _SAMPLE_WARDS.items():
+        text = text.replace(key, name)
+    return text
+
+
 def _gap_kind(alert_id: str) -> str:
     return alert_id.removeprefix("gap-none-").removeprefix("gap-")
 
@@ -300,17 +312,26 @@ def collect_alerts(storage=None) -> List[AnomalyAlert]:
     merged: Dict[str, AnomalyAlert] = {}
     for alert in live:
         merged[alert.id] = alert
+    from datetime import datetime, timezone, timedelta
+    now_dt = datetime.now(timezone.utc)
+    mins_map = {"spike": 4, "silent_zone": 11, "resource_gap": 17, "conflict": 26, "stale": 42}
     for alert in alerts_from_signals(load_seed_signals()):
         if alert.kind == "resource_gap" and _gap_kind(alert.id) in live_gap_kinds:
             continue
         if (alert.kind, alert.ward_id or alert.id) in live_keys:
             continue
+        m = mins_map.get(alert.kind, 11)
+        det_time = (now_dt - timedelta(minutes=m)).isoformat()
+        reason, ward = _kuttanad_place(alert.reason or ""), alert.ward_id
+        if ward in _SAMPLE_WARDS:
+            ward = _SAMPLE_WARDS[ward][0]
         sample = alert.model_copy(update={
             "id": f"sample-{alert.id}",
             "title": f"Sample: {alert.title}",
-            "reason": f"Sample scenario. {alert.reason}",
-            "age_label": "sample",
-            "detected_at": None,
+            "reason": f"Sample scenario. {reason}",
+            "ward_id": ward,
+            "age_label": f"{m} min ago",
+            "detected_at": det_time,
             "severity": "medium" if alert.severity == "critical" else alert.severity,
         })
         merged.setdefault(sample.id, sample)

@@ -15,6 +15,13 @@ client = TestClient(app)
 AUTH = {'Authorization': 'Bearer demo-coordinator-token'}
 
 
+def test_demo_login_is_forbidden_when_demo_mode_is_off(monkeypatch):
+    monkeypatch.setattr(settings, 'DEMO_MODE', False)
+    response = client.post('/api/auth/demo-login')
+    assert response.status_code == 403
+    assert 'off' in response.json()['detail'].lower()
+
+
 def test_surge_is_authenticated_and_demo_only(monkeypatch):
     assert client.post('/api/demo/simulate-surge').status_code == 401
     monkeypatch.setattr(settings, 'DEMO_MODE', False)

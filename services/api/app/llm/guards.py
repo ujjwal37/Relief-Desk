@@ -56,12 +56,15 @@ class Guard:
         self.opened_at = self.now()
         self.open_for = max(1.0, seconds)
 
-    def wait_turn(self) -> None:
+    def wait_turn(self, max_wait: float | None = None) -> None:
+        """Pace calls. With `max_wait`, refuse (TimeoutError) rather than wait longer."""
         with self._lock:
             current = self.now()
             delay = 0.0
             if current < self._next:
                 delay = self._next - current
+            if max_wait is not None and delay > max_wait:
+                raise TimeoutError("Model pacing wait too long")
             self._next = max(current, self._next) + self.gap
         if delay:
             self.sleep(delay)

@@ -63,8 +63,13 @@ export class MergedChipComponent {
       return;
     }
     this.open.set(true);
-    this.api.getMerge(this.requestId()).subscribe({
+    // Never show another case's reports while this one loads.
+    this.reports.set([]);
+    this.why.set(null);
+    const asked = this.requestId();
+    this.api.getMerge(asked).subscribe({
       next: (body) => {
+        if (asked !== this.requestId()) return;
         this.why.set(body?.why ?? null);
         this.reports.set(Array.isArray(body?.reports) ? body.reports : []);
       },
@@ -89,6 +94,10 @@ export class MergedChipComponent {
   @HostListener('document:keydown.escape')
   onEsc(): void {
     if (this.open()) this.open.set(false);
+  }
+
+  meta(row: MergeReportView): string {
+    return [this.clock(row.at), row.channel, row.lang].filter(Boolean).join(' · ');
   }
 
   clock(value: string | null): string | null {

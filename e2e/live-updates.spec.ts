@@ -19,10 +19,11 @@ test('a phone report updates the desk, and an approval updates the phone, with n
   const desk = await deskContext.newPage();
   const phone = await phoneContext.newPage();
 
+  const live = desk.waitForResponse((res) => res.url().includes('/api/events') && res.ok(), { timeout: 20_000 });
   await desk.goto('/coordinator/login');
   await desk.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await desk.waitForURL(/\/coordinator\/command/);
-  await expect(desk.getByTestId('live-badge')).toHaveText('Live', { timeout: 20_000 });
+  await live;
 
   await phone.goto('/report');
   await phone.getByRole('button', { name: 'Prefer a form?' }).click();

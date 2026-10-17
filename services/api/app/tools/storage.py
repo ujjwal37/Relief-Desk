@@ -332,6 +332,8 @@ class StorageService:
         self, kind: Optional[ResourceKind] = None, event_id: str = "event_kerala_flood"
     ) -> List[StoredResource]:
         res_list = [r for r in self._resources.values() if r.event_id == event_id]
+        if settings.DEMO_MODE:
+            simulate_demo_checkins(res_list)
         if kind:
             return [r for r in res_list if r.kind == kind]
         return res_list
@@ -780,6 +782,58 @@ class StorageService:
         )
         return match
 
+    def undo_approval(self, match_id: str, actor: str = "coordinator") -> StoredMatch:
+        """Undo a dispatch a few seconds after Approve: give back seats and supplies,
+        stop the simulated move, put the case back in Waiting. Audited."""
+        with self._hold_lock:
+            match = self._matches.get(match_id)
+            if not match:
+                raise ValueError(f"Match {match_id} not found")
+            if match.state == MatchState.PROPOSED:
+                return match  # retry-safe
+            if match.state != MatchState.APPROVED:
+                raise ValueError("Only an approved dispatch can be undone")
+            req = self._requests.get(match.request_id)
+            if req and req.status not in (RequestStatus.DISPATCHED, RequestStatus.APPROVED):
+                raise ValueError("The team is already working this case; it cannot be undone")
+            res = self._resources.get(match.resource_id)
+            amount = (req.reserved_people if req and req.reserved_people else None) or (req.people_count if req and req.people_count else 1)
+            if res is not None:
+                if res.simulated and res.sim_origin_lat is not None and res.sim_origin_lng is not None:
+                    res.lat, res.lng = res.sim_origin_lat, res.sim_origin_lng
+                res.simulated = False
+                res.sim_step = 0
+                if req and req.required_supplies:
+                    for supply, n in req.required_supplies.items():
+                        res.supplies[supply] = res.supplies.get(supply, 0) + n
+                if res.assigned_request_id == match.request_id:
+                    res.assigned_request_id = None
+                self._resources[res.id] = res
+                self.release_capacity(res.id, amount, actor=actor)
+            # Re-open the other offers this approval had closed, so Change still works.
+            for other in self._matches.values():
+                if (other.id != match.id and other.request_id == match.request_id
+                        and other.state == MatchState.REJECTED
+                        and other.rejected_reason == "Another team was dispatched"):
+                    other.state = MatchState.PROPOSED
+                    other.rejected_reason = None
+                    other.updated_at = datetime.now(timezone.utc).isoformat()
+            before = match.model_dump()
+            match.state = MatchState.PROPOSED
+            match.approved_by = None
+            match.updated_at = datetime.now(timezone.utc).isoformat()
+            self._matches[match_id] = match
+            if req:
+                before_req = req.model_dump()
+                req.status = RequestStatus.MATCHED
+                req.assigned_resource_id = None
+                req.reserved_people = None
+                req.updated_at = match.updated_at
+                self._requests[req.id] = req
+                self.record_audit(actor=actor, action="status_change", target=req.id, before=before_req, after=req.model_dump())
+            self.record_audit(actor=actor, action="match_undone", target=match_id, before=before, after=match.model_dump())
+            return match
+
     def mark_arrived(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
         """Coordinator marks the team on scene. Audited. Does not change capacity."""
         req = self._requests.get(request_id)
@@ -843,6 +897,24 @@ class StorageService:
             if not still_out:
                 res.assigned_request_id = None
             self._resources[resource_id] = res
+        return req
+
+    def dismiss_hoax(self, request_id: str, actor: str = "coordinator", reason: str | None = None) -> StoredRequest:
+        """Coordinator confirms a flagged report is a hoax: close it. Nothing is sent; the audit log keeps it."""
+        req = self._requests.get(request_id)
+        if not req:
+            raise ValueError(f"Request {request_id} not found")
+        if req.status in (RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS):
+            raise ValueError(f"Request {request_id} is already dispatched")
+        before = req.model_dump()
+        req.status = RequestStatus.DISMISSED_HOAX
+        req.flags = sorted(set((req.flags or []) + ["dismissed_hoax"]))
+        word = (reason or "").strip().split()
+        if word:
+            req.hoax_reason = word[0][:40]
+        req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._requests[req.id] = req
+        self.record_audit(actor=actor, action="dismiss_hoax", target=req.id, before=before, after=req.model_dump())
         return req
 
     def reject_match(
@@ -943,11 +1015,12 @@ class StorageService:
                     id=item["id"],
                     pack_id=item.get("pack_id") or pack_id,
                     type=IncidentType(item.get("type", "rescue")),
-                    place_text=item.get("description", ""),
-                    ward_id=item.get("ward_id"),
-                    lat=float(item.get("lat", 10.50)),
-                    lng=float(item.get("lng", 76.30)),
-                    people_count=int(item.get("people", 1)),
+                    # Place is the named spot only (landmark), never the whole description.
+                    place_text=_seed_place(item),
+                    ward_id=_seed_ward(item),
+                    lat=(float(item["lat"]) if item.get("lat") is not None else None),
+                    lng=(float(item["lng"]) if item.get("lng") is not None else None),
+                    people_count=(int(item["people"]) if item.get("people") else None),
                     vulnerable=vuln,
                     hazard=HazardType(item.get("hazard", "unknown")),
                     status=RequestStatus.NEW,
@@ -966,27 +1039,26 @@ class StorageService:
                     created_at=stamp,
                     updated_at=stamp,
                 )
+                # A seed head count is kept only when the report text itself states it; otherwise unknown.
+                import re as _re
+                _words = {1: "one|a|an|my|single", 2: "two|couple", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+                _txt = (raw_text or "").lower()
+                _n = req.people_count
+                if _n and not (_re.search(rf"(?<![\d.]){_n}(?![\d.])", _txt) or (_n in _words and _re.search(rf"\b({_words[_n]})\b", _txt))):
+                    req.people_count = None
                 urg_res = scoring_engine.compute_urgency(req)
                 req.urgency_score = urg_res.score
                 req.urgency_reason = urg_res.reason
 
-                # Hero demo case: INC-001 has merged duplicates and update
-                if req.id == "INC-001":
-                    req.merged_count = 3
-                    req.update_count = 1
-                    cluster_id = f"cl_seed_{req.id}"
-                    req.cluster_id = cluster_id
-                    cluster = StoredCluster(
-                        id=cluster_id,
-                        request_ids=[req.id, "INC-001-dup1", "INC-001-dup2"],
-                        evidence=[
-                            "3 reports, same lane, within 9 min",
-                            "Now 5 people = update, urgency raised",
-                        ],
-                        merged_by="dedupe_agent",
-                    )
-                    self._clusters[cluster.id] = cluster
-
+                # No invented merges: INC-001 stands alone until a real duplicate report joins it.
+                if req.people_count is None and _re.search(r"\b(?:my |an |a |one )?(?:elderly )?(?:father|mother|grandmother|grandfather|patient|son|daughter|husband|wife|man|woman|person)\b", _txt):
+                    req.people_count = 1
+                    if "count_provisional" not in req.flags:
+                        req.flags.append("count_provisional")
+                from app.api.public import public_code_for as _pc
+                req.public_code = req.public_code or _pc(req.id)
+                _u = scoring_engine.compute_urgency(req)
+                req.urgency_score, req.urgency_reason = _u.score, _u.reason
                 self._requests[req.id] = req
                 count += 1
             except Exception as e:
@@ -1019,6 +1091,8 @@ class StorageService:
             if settings.DEMO_MODE:
                 from app.tools.demo_seed import load_demo_pack
                 demo = load_demo_pack(self)
+                from app.tools.demo_cases import load_demo_cases
+                load_demo_cases(self)
         else:
             resources = self.load_seed_resources(only_ids=SMALL_TEAM_IDS)
             incidents = self.load_seed_incidents(only_ids=SMALL_CASE_IDS)
@@ -1089,6 +1163,27 @@ def _attach_recorded(storage) -> None:
         logger.warning("Could not attach recorded Gemini readings: %s", exc)
 
 
+def _seed_place(item: dict) -> Optional[str]:
+    """Short place for a seeded case: its landmark name, else a 'near X' span, else None."""
+    import re as _re
+    from app.tools.gazetteer import landmark_name
+    name = landmark_name(item.get("landmark_id"))
+    if name:
+        return name
+    m = _re.search(r"\b(?:near|at|in)\s+((?:[A-Z][\w'-]+\s?){1,4})", item.get("description") or "")
+    return m.group(1).strip() if m else None
+
+
+def _seed_ward(item: dict) -> Optional[str]:
+    """Ward from the case's coordinates; falls back to the seed ward only when there are none."""
+    from app.tools.gazetteer import ward_for_point
+    lat, lng = item.get("lat"), item.get("lng")
+    if lat is not None and lng is not None:
+        return ward_for_point(float(lat), float(lng))
+    return item.get("ward_id")
+
+
+
 # Singleton instance
 storage_service = StorageService()
 # Auto-load seed resources and incidents
@@ -1112,4 +1207,41 @@ try:
 except Exception:
     pass
 
+
+DEMO_CHECKIN_STALE_MIN = 90
+
+
+def simulate_demo_checkins(resources, now=None):
+    """DEMO_MODE only: synthetic teams 'check in' so Free/Busy reflect a live desk.
+
+    A synthetic team whose last check-in is older than 90 min gets a fresh simulated
+    check-in 2-26 min ago and is flagged simulated=True. About one in five teams is left
+    alone so the 'Not updated' state still shows. Real (non-synthetic) teams are never touched.
+    """
+    import zlib
+    now = now or datetime.now(timezone.utc)
+    changed = 0
+    for res in resources:
+        if not getattr(res, "synthetic", False):
+            continue
+        h = zlib.crc32(res.id.encode("utf-8"))
+        if h % 5 == 0:
+            # About one in five synthetic teams shows a late check-in (simulated), so the
+            # 'Not updated' state is visible. Done once; flagged simulated.
+            if not getattr(res, 'simulated', False):
+                res.location_updated_at = (now - timedelta(minutes=150 + h % 60)).isoformat()
+                res.simulated = True
+            continue
+        try:
+            last = datetime.fromisoformat(str(res.location_updated_at).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            last = None
+        if last is not None and last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        if last is not None and (now - last) <= timedelta(minutes=DEMO_CHECKIN_STALE_MIN):
+            continue
+        res.location_updated_at = (now - timedelta(minutes=2 + h % 25)).isoformat()
+        res.simulated = True
+        changed += 1
+    return changed
 

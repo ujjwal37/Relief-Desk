@@ -3,7 +3,7 @@ import threading
 import time
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from app.agents.chat_intake import chat_intake_agent, ChatTurnResponse, ConfirmationCardData
 from app.agents.intake import extract_with_rules, intake_agent
@@ -17,9 +17,10 @@ from app.tools.translation import translation_service, TranslationResult
 from app.models.firestore_models import PossibleDuplicate, ReportQuote, StoredReport, StoredRequest, RequestStatus
 from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.tools.request_contract import canonical_request_dict
-from app.tools.nlu_rules import extract_place, people_bounds, vulnerable_flags
+from app.agents.summary import guard_summary, summary_from_report
+from app.tools.nlu_rules import extract_place, people_bounds, people_count, place_is_usable, vulnerable_flags
 from app.agents.dedupe import confidence_phrase
-from app.tools.trust import detect_hoax_or_flood
+from app.tools.trust import detect_hoax_or_flood, hoax_reason_for
 from app.tools.gazetteer import gazetteer
 from app.llm.client import llm_client
 
@@ -179,14 +180,20 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         if citizen_text:
             report_text = citizen_text
 
+    hoax_blob = _hoax_blob(payload, citizen_text or report_text)
+    hoax_reason = None if demo_sample else hoax_reason_for(hoax_blob)
     if not demo_sample:
         for flag in detect_hoax_or_flood(
             storage_service.list_reports(),
-            citizen_text or report_text,
+            hoax_blob,
             payload.source_id,
         ):
             if flag not in flags:
                 flags.append(flag)
+        if hoax_reason:
+            for flag in ("hoax", "likely_hoax"):
+                if flag not in flags:
+                    flags.append(flag)
 
     # Rule-based type, place, and people. The status page can show tips before any model call.
     extracted = extract_with_rules(report_text)
@@ -202,16 +209,17 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         pack_id=payload.scenario_id,
         type=extracted.type,
         picked_type=(payload.structured.incident_type if payload.structured else None),
-        place_text=extracted.place_text or "Alappuzha",
+        place_text=extracted.place_text or (payload.location_pin.get("ward") if payload.location_pin else "") or "",
         ward_id=ward_id,
         lat=pin_lat,
         lng=pin_lng,
-        people_count=extracted.people.count or 1,
+        people_count=_stated_people(extracted.people.count, citizen_text or report_text),
         people_span=(people_bounds(citizen_text or report_text) or (None, None, None))[2],
         vulnerable=extracted.vulnerable,
         hazard=extracted.hazard,
         status=RequestStatus.NEW,
         flags=list(flags),
+        hoax_reason=hoax_reason,
         raw_text=citizen_text or report_text,
         summary=machine_summary,
         analysis_status="analysing",
@@ -220,6 +228,8 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     urgency_res = scoring_engine.compute_urgency(req_obj)
     req_obj.urgency_score = urgency_res.score
     req_obj.urgency_reason = urgency_res.reason
+    from app.tools.case_queue import begin_case
+    begin_case(req_obj, citizen_text or report_text, others=storage_service.list_requests())
     storage_service.save_request(req_obj, actor="intake_pipeline")
     _link_report(raw_report, req_obj, req_id, machine_summary, citizen_text or report_text)
 
@@ -231,6 +241,13 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     finished: Dict[str, ReportSubmitResponse] = {}
 
     def job() -> None:
+        from app.llm.pacer import forbid_replay, set_pace
+        source = payload.source_id or ""
+        pace = source == "judge_input" or source.startswith("live_demo_")
+        if pace:
+            set_pace(True)
+        if source == "judge_input":
+            forbid_replay(True)
         try:
             finished["response"] = _enrich_report(
                 payload, req_id, raw_report.id, report_text, citizen_text, flags, transcript, asr_confidence,
@@ -240,6 +257,11 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
             logger.exception("Background intake failed for %s", req_id)
             _mark_failed(req_id)
             finished["response"] = provisional
+        finally:
+            if pace:
+                set_pace(False)
+            if source == "judge_input":
+                forbid_replay(False)
 
     # Tests run this inline, so the body they read is the finished case.
     # Production returns the provisional ids and lets the thread emit case.updated.
@@ -250,9 +272,18 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
 
 
 @router.post("/reports", response_model=ReportSubmitResponse)
-def submit_report(payload: ReportSubmitRequest):
+def submit_report(payload: ReportSubmitRequest, request: Request = None):
+    if (payload.source_id or "") == "judge_input":
+        from app.llm.pacer import LIMIT_MESSAGE, judge_limit
+        ip = "local"
+        if request is not None and request.client is not None:
+            ip = request.client.host or "local"
+        if not judge_limit.allow(ip) or not llm_client.gemini_live():
+            raise HTTPException(status_code=429, detail=LIMIT_MESSAGE)
     try:
         return _submit_report_impl(payload)
+    except HTTPException:
+        raise
     except Exception:
         storage_service.release_idempotent(payload.idempotency_key)
         raise
@@ -284,6 +315,10 @@ def _apply_card(extracted: ExtractedRequest, payload: ReportSubmitRequest, repor
     for flag, value in canon["vulnerable"].items():
         setattr(extracted.vulnerable, flag, bool(value or heard.get(flag)))
     card_place = (facts.place_text or "").strip()
+    if not place_is_usable(card_place):
+        card_place = ""
+    if not place_is_usable(extracted.place_text):
+        extracted.place_text = None
     ruled = extract_place(report_text)
     weak = (
         not card_place
@@ -295,12 +330,44 @@ def _apply_card(extracted: ExtractedRequest, payload: ReportSubmitRequest, repor
         extracted.place_text = ruled
     elif card_place and not weak:
         extracted.place_text = card_place
-    return canon["summary"] if facts.summary else None
+    stated = people_count(report_text)
+    if extracted.people.count == 0 or (extracted.people.count is not None and extracted.people.count <= 0):
+        extracted.people.count = stated if stated else None
+    elif facts.people_count == 0 and stated != 0:
+        extracted.people.count = stated
+    summary = canon["summary"] if facts.summary else None
+    if summary and "person(s) needing " in summary:
+        return None
+    if not summary:
+        return None
+    return summary_from_report(report_text, summary)
+
+
+def _hoax_blob(payload: ReportSubmitRequest, report_text: str) -> str:
+    """Hoax phrases can sit in the original message while the card summary is only the last reply."""
+    parts = [report_text or ""]
+    if payload.structured and payload.structured.summary:
+        parts.append(payload.structured.summary)
+    if payload.raw_text:
+        parts.append(payload.raw_text)
+    if payload.text:
+        parts.append(payload.text)
+    return "\n".join(part for part in parts if part)
+
+
+def _stated_people(count: Optional[int], report_text: str) -> Optional[int]:
+    """Unknown stays null. A card that says 0 is not a headcount the citizen gave."""
+    bounds = people_bounds(report_text)
+    stated = bounds[1] if bounds else None
+    if count is None or count <= 0:
+        return stated if stated else None
+    return count
 
 
 def _pin_for(payload: ReportSubmitRequest, extracted: ExtractedRequest, report_text: str) -> Tuple[float, float, Optional[str]]:
-    pin_lat = payload.location_pin.get("lat") if payload.location_pin else 9.498
-    pin_lng = payload.location_pin.get("lng") if payload.location_pin else 76.339
+    # No pin and no confident place: store no location rather than a made-up default pin.
+    pin_lat = payload.location_pin.get("lat") if payload.location_pin else None
+    pin_lng = payload.location_pin.get("lng") if payload.location_pin else None
     ward_id = _resolve_ward_id(extracted.place_text, report_text)
     geo = gazetteer.lookup(extracted.place_text or report_text or "")
     if not payload.location_pin and geo.lat is not None and geo.lng is not None and not geo.is_low_confidence:
@@ -334,11 +401,12 @@ def _response_for(
     transcript: Optional[str],
     asr_confidence: Optional[float],
 ) -> ReportSubmitResponse:
+    reading = req_obj.analysis_status == "analysing" and not (req_obj.ai_translation or "").strip()
     return ReportSubmitResponse(
         report_id=raw_report.id,
         request_id=req_obj.id,
         status_token=raw_report.status_token or "",
-        summary=f"{req_obj.people_count} person(s) needing {req_obj.type.value} at {req_obj.place_text}",
+        summary="" if reading else (req_obj.ai_translation or req_obj.summary or ""),
         urgency_score=req_obj.urgency_score,
         dedupe_decision=decision,
         flags=list(flags),
@@ -366,6 +434,14 @@ def _enrich_report(
     and refines the case. Each save emits case.updated or case.merged.
     """
     from app.agents.pipeline import finish
+    from app.llm.pacer import forbid_replay, set_pace
+
+    source = payload.source_id or ""
+    pace = source == "judge_input" or source.startswith("live_demo_")
+    if pace:
+        set_pace(True)
+    if source == "judge_input":
+        forbid_replay(True)
 
     req_obj = storage_service.get_request(req_id)
     raw_report = storage_service.get_report(report_id)
@@ -475,10 +551,19 @@ def _refine_with_model(
             analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
         ai_usage = llm_client.last_ai.model_copy()
     trans_res = _translation_for(report_text, analysis, ai_usage)
+    if (payload.source_id or "") == "judge_input" and ai_usage.provider == "cache":
+        ai_usage.provider = "fallback"
+        ai_usage.cached = False
+        ai_usage.fallback_reason = "judge_no_replay"
     ai_source = {"gemini": "gemini", "cache": "recorded", "antigravity-local": "antigravity-local",
                  "openai_compat": "openai_compat"}.get(
         ai_usage.provider, "offline_fallback"
     )
+    model_reason = (getattr(analysis, "hoax_reason", None) or "").strip()
+    if getattr(analysis, "likely_hoax", False) or model_reason:
+        for flag in ("hoax", "likely_hoax"):
+            if flag not in flags:
+                flags.append(flag)
     machine_summary = _apply_card(analysis, payload, report_text)
     if trans_res.is_low_confidence and "low_translation_confidence" not in flags:
         flags.append("low_translation_confidence")
@@ -493,16 +578,20 @@ def _refine_with_model(
     joined = (req_obj.merged_count or 1) > 1
     pin_lat, pin_lng, ward_id = _pin_for(payload, analysis, report_text)
     req_obj.type = analysis.type
-    req_obj.place_text = analysis.place_text or req_obj.place_text
+    chosen_place = analysis.place_text or req_obj.place_text
+    if not place_is_usable(chosen_place):
+        chosen_place = extract_place(citizen_text or report_text)
+    req_obj.place_text = chosen_place if place_is_usable(chosen_place) else ""
     req_obj.ward_id = ward_id
     req_obj.lat = pin_lat
     req_obj.lng = pin_lng
-    counted = analysis.people.count or req_obj.people_count or 1
+    # Unknown stays unknown (None): never invent a count of 1.
+    counted = analysis.people.count or req_obj.people_count or None
     bounds = people_bounds(citizen_text or report_text)
-    if bounds and counted < bounds[1]:
+    if bounds and (counted or 0) < bounds[1]:
         counted = bounds[1]
     # Reports that joined while the model worked may carry a larger count. Keep the largest.
-    req_obj.people_count = max(counted, req_obj.people_count or 1) if joined else counted
+    req_obj.people_count = (max(counted or 0, req_obj.people_count or 0) or None) if joined else counted
     if joined:
         for name, value in analysis.vulnerable.model_dump().items():
             if value:
@@ -510,10 +599,30 @@ def _refine_with_model(
     else:
         req_obj.vulnerable = analysis.vulnerable
     req_obj.hazard = analysis.hazard
-    req_obj.flags = sorted(set(req_obj.flags) | set(flags))
-    req_obj.summary = machine_summary or req_obj.summary
+    from app.agents.depth import validate_depth
+    depth = validate_depth(getattr(analysis, "water_depth", None), getattr(analysis, "water_depth_quote", None), citizen_text or report_text, ai_source)
+    if not depth or depth.get("band") == "unknown":
+        from app.agents.depth import depth_from_text
+        depth = depth_from_text(citizen_text or report_text) or depth
+    if depth is not None or not joined:
+        req_obj.water_depth = depth
+    flags = set(flags)
+    # Two readings of the head count disagree: keep the larger, mark it provisional for the coordinator.
+    model_count = analysis.people.count
+    if model_count and bounds and not (bounds[0] <= model_count <= bounds[1]):
+        flags.add("count_provisional")
+    if any(getattr(n, "value", n) == "rescue" for n in (getattr(analysis, "secondary_needs", None) or [])):
+        flags.add("also_rescue")
+    req_obj.flags = sorted(set(req_obj.flags) | flags)
+    if model_reason and not req_obj.hoax_reason:
+        req_obj.hoax_reason = model_reason[:300]
+    source_words = citizen_text or report_text
+    req_obj.summary = summary_from_report(source_words, machine_summary or req_obj.summary or source_words)
     if not (req_obj.raw_text or "").strip():
         req_obj.raw_text = (getattr(analysis, "original_text", None) or analysis.notes or getattr(analysis, "text_en", None) or "").strip() or req_obj.raw_text
+    if trans_res.text_en:
+        trans_res.text_en = guard_summary(citizen_text or report_text, trans_res.text_en)
+        trans_res.translations["en"] = trans_res.text_en
     req_obj.ai_translation = trans_res.text_en
     req_obj.ai_source = ai_source
     req_obj.ai = ai_usage
@@ -583,7 +692,7 @@ def _demo_hindi_target_id(exclude_id: str) -> Optional[str]:
     for row in storage_service.list_requests():
         if row.id == exclude_id or row.merged_into:
             continue
-        if row.id in hindi_ids or "चालाकुडी" in (row.raw_text or ""):
+        if row.id in hindi_ids or "पुलिंकुन्नु" in (row.raw_text or ""):
             return row.id
     return None
 

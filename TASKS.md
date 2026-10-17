@@ -205,3 +205,19 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | XF-05 | SITREP from real counts + EN/HI/ML drafts only | C | DONE | XF-04 | Numbers from open cases/resources; send=false; 120s cache |
 | XF-06 | Boat vs road note in How it decided | C | DONE | XF-05 | Same haversine distance; no invented closures |
 | XF-07 | Local-test fixes: Routes API, nearby boats, roof/boat triage, distinct voice, duplicate sample, faster photo/sitrep | C | DONE | XF-06 | Road routes use Routes API; boats capped ~25 km with Chalakudy/Aluva teams; roof+window or boat rescue ≥ Urgent 60; voice sample is a distinct Aluva medicine case with live transcript; reworded duplicate shows Merge/Keep; photo downscaled with progress; sitrep cached/skeleton; stale tests updated |
+
+## Coordinator Desktop UI Rebuild (16 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| T-REBUILD-01 | Rebuild Relief Desk Coordinator Desktop UI (Pine & Sand, 3-column layout, compact 5-step horizontal stepper, Why This Team modal, Step Details popup, Alt B trace drawer, 100% i18n parity, no horizontal scroll at 1440x900) | A | DONE | XF-07 | node scripts/check-i18n.mjs passes, npx ng build web passes, Playwright first-pass and agents-visible pass, all 7 screenshots captured at 1440x900 |
+| T-REBUILD-02 | Coordinator Desk punch list: fix AI provider labels, first summary place/people, SSE queue arrival, step details accessible name, explanation km, alert kind titles, team counts sync & row click, demo login failure handling | A | DONE | T-REBUILD-01 | All punch list issues resolved, check-i18n passes (972 keys), ng build passes, pytest passes, Playwright first-pass, agents-visible, and capture-screenshots pass |
+
+## Judge correctness (17 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| JC-01 | Correctness bugs from the judge pass: merge floor 0.60, no merge across different places or conflicting head counts, same-landmark merge across languages, depth vs people location, vague places, Malayalam landmarks, one ETA, stable matching, same team name after approve, hoax state, i18n, desk refs | C | DONE | T-REBUILD-02 | `python3 -m pytest` in `services/api` passes including `tests/test_judge_correctness.py`; `npx ng build web` and `node scripts/check-i18n.mjs` pass. No auto-dispatch. |
+
+## AI queue (17 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| AQ-01 | AI working strip and Ready for you: per-step status, 45s rules cap, life-threat pre-filter, Gemini recheck when the circuit closes, approve blocked until steps finish | C | DONE | JC-01 | `python3 -m pytest` in `services/api` passes including `tests/test_ai_queue.py` with no Gemini calls; `npx ng build web` and `node scripts/check-i18n.mjs` pass. A person still approves every dispatch. |

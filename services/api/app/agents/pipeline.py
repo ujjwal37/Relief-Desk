@@ -61,7 +61,7 @@ _spawn: Callable[[Callable[[], None]], None] = _start_thread
 
 
 def score_urgency(
-    people_count: int,
+    people_count: Optional[int],
     incident_type: str,
     child: bool = False,
     elderly: bool = False,
@@ -89,7 +89,7 @@ def score_urgency(
     req = StoredRequest(
         id="tool_score",
         type=kind,
-        people_count=max(0, int(people_count)),
+        people_count=max(0, int(people_count or 0)),
         hazard=hz,
         raw_text=report_text or None,
         created_at=created,
@@ -206,34 +206,93 @@ def _trace_step(
     model: Optional[str] = None,
     latency_ms: Optional[int] = None,
     tokens: Optional[int] = None,
+    prompt: Optional[str] = None,
+    raw_output: Optional[str] = None,
 ) -> dict:
     """One trace row. provider is gemini, cache, fallback, tool, or a test provider such as
     openai_compat. model is set only when a model ran. provider_label never says Gemini for a test model."""
     from app.llm.providers import display_name, vendor
 
     measured = max(0, int(round((time.perf_counter() - started) * 1000)))
+    if agent == "Matching":
+        plabel = "Google Maps"
+    elif agent == "Approval":
+        plabel = "You"
+    elif model:
+        plabel = display_name(provider)
+    else:
+        plabel = "Google Maps" if provider == "tool" else "Gemini unavailable, built-in rules used"
+
     return {
         "agent": agent,
         "status": status,
         "input_summary": (summary or "")[:180],
         "output": output or "",
         "provider": provider,
-        "provider_label": display_name(provider) if model else "Rules",
+        "provider_label": plabel,
         "vendor": vendor(provider),
         "model": model,
         "latency_ms": latency_ms if latency_ms is not None else measured,
         "tokens": tokens,
         "tool_calls": tools,
+        "prompt": prompt,
+        "raw_output": raw_output or output or "",
         "ts": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def _with_measured_km(text: str, km: Optional[float]) -> str:
+    """Replace a blank distance. Never leave '— km' in a sentence a coordinator reads."""
+    if not text or "—" not in text:
+        return text
+    if km is None:
+        return text.replace("— km", "").replace(": —", "").strip()
+    shown = f"{float(km):.1f} km"
+    return text.replace("— km", shown)
+
+
+def _km_between(req: StoredRequest, best) -> Optional[float]:
+    """Distance already measured on the proposal, or a fresh haversine from the stored pins."""
+    measured = None
+    if best is not None and getattr(best, "breakdown", None) is not None:
+        measured = best.breakdown.distance_km
+    if measured is not None:
+        return round(float(measured), 2)
+    if best is None or req.lat is None or req.lng is None:
+        return None
+    resource = storage_service.get_resource(best.resource_id)
+    if resource is None or resource.lat is None or resource.lng is None:
+        return None
+    from app.tools.geo import haversine_distance
+    return round(haversine_distance(float(req.lat), float(req.lng), float(resource.lat), float(resource.lng)), 2)
+
+
+def _matching_payload(req: StoredRequest, best, kind: str) -> str:
+    km = _km_between(req, best)
+    return json.dumps({
+        "team": best.resource_name if best else "No suitable team available",
+        "km": km,
+        "kind": best.resource_kind.value if best else kind,
+        "match_score": best.score if best else None,
+        "seats": best.capacity_remaining if best else 0,
+    })
 
 
 def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
     """The Intake row reports the model call that actually happened, in English for the coordinator."""
     ai = req.ai
     provider = (ai.provider if ai else None) or ("gemini" if req.ai_source == "gemini" else "fallback")
+    if provider not in ("gemini", "cache", "antigravity-local", "openai_compat"):
+        provider = "fallback"
     ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local", "openai_compat") else None
     english = (req.translations or {}).get("en") or req.ai_translation or req.summary or summary or req.type.value
+    from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_user_prompt
+    from app.llm.client import llm_client
+    user_prompt = intake_user_prompt(req.raw_text or summary)
+    remembered = llm_client.sent_prompt(llm_client.cache_key(SYSTEM_INTAKE_PROMPT, user_prompt))
+    intake_prompt = remembered or f"{SYSTEM_INTAKE_PROMPT}\n\n{user_prompt}"
+    raw_out = req.ai_translation or req.summary or english
+    latency = ai.latency_ms if (ai and ai.latency_ms) else None
     row = _trace_step(
         "Intake",
         "complete",
@@ -243,10 +302,14 @@ def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
         started,
         provider=provider,
         model=ran_model,
-        latency_ms=ai.latency_ms if ai else None,
+        latency_ms=latency,
         tokens=ai.tokens if ai else None,
+        prompt=intake_prompt,
+        raw_output=raw_out,
     )
-    row["fallback_reason"] = ai.fallback_reason if ai else "seed_not_recorded"
+    row["fallback_reason"] = ai.fallback_reason if ai else None
+    if provider == "cache" and req.created_at:
+        row["recorded_at"] = req.created_at[:10]
     return row
 
 
@@ -261,7 +324,7 @@ def _extract_working(channel: str) -> str:
 def _extract_summary(req: StoredRequest) -> str:
     bits = [getattr(req.type, "value", req.type) or "report"]
     if req.people_count:
-        bits.append(f"{req.people_count} people")
+        bits.append("1 person" if req.people_count == 1 else f"{req.people_count} people")
     if req.place_text:
         bits.append(req.place_text)
     return " · ".join(str(bit) for bit in bits)
@@ -272,6 +335,8 @@ def mark_analysing(request_id: str, channel: str = "text") -> None:
     if req is None:
         return
     req.analysis_status = "analysing"
+    from app.tools.case_queue import note_progress
+    note_progress(req, active="read")
     now = time.perf_counter()
     working = _extract_working(channel) or _extract_summary(req)
     req.trace = [
@@ -282,6 +347,7 @@ def mark_analysing(request_id: str, channel: str = "text") -> None:
             "",
             [],
             now,
+            provider="tool" if agent == "Matching" else "fallback",
         )
         for agent in _TRACE_AGENTS
     ]
@@ -299,6 +365,8 @@ def note_dedupe(req: StoredRequest) -> None:
     """The duplicate check is decided before the model runs. Show it while Intake still works."""
     if req.analysis_status != "analysing":
         return
+    from app.tools.case_queue import note_progress
+    note_progress(req, done=("read", "duplicates"), active="urgency")
     for step in req.trace or []:
         if step.get("agent") == "Dedupe":
             step["status"] = "complete"
@@ -318,6 +386,24 @@ def finish(request_id: str) -> None:
         return
     req = req.model_copy(deep=True)
     started = time.perf_counter()
+    from app.tools.case_queue import abandon_if_capped, mark_steps_done, note_progress
+    capped = abandon_if_capped(req)
+    # Second Gemini pass on the extraction; corrections need a quote from the report.
+    from app.agents.self_check import should_check, self_check
+    checked = None
+    if not capped and should_check(req):
+        emit_pipeline_step(request_id, "selfcheck", "working", "Gemini is double-checking the extracted facts...")
+        try:
+            checked = self_check(req)
+        except Exception:
+            logger.exception("self-check crashed")
+            checked = None
+    elif capped:
+        checked = None
+    if checked is not None:
+        req.self_check = checked
+        emit_pipeline_step(request_id, "selfcheck", "complete", checked.get("reason") or checked.get("verdict", ""),
+                           {"verdict": checked.get("verdict"), "changes": checked.get("changes")})
     scored = scoring_engine.compute_urgency(req)
     triage_at = time.perf_counter()
     req.urgency_score = scored.score
@@ -361,22 +447,29 @@ def finish(request_id: str) -> None:
         with ai_priority(report_priority(req.urgency_score)):
             return language_review(agent, context, fallback)
 
-    # Independent language checks share the same guarded model queue.
-    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="case-review") as pool:
-        dup_future = pool.submit(review, "Dedupe", dedupe_context, _dedupe_output(req))
-        urg_future = pool.submit(review, "Triage", triage_context, scored.reason)
-        duplicate = dup_future.result()
-        urgency = urg_future.result()
+    def rules_only(text: str) -> dict:
+        return {"text": text, "provider": "fallback", "model": None, "latency_ms": 0, "prompt": None, "raw_output": text, "fallback_reason": "timeout_45s", "cached": False}
+
+    # Past 45s the Gemini call is abandoned and rules finish the remaining steps.
+    if not capped:
+        capped = abandon_if_capped(req)
+    if capped:
+        duplicate = rules_only(_dedupe_output(req))
+        urgency = rules_only(scored.reason)
+    else:
+        note_progress(req, active="urgency")
+        # Independent language checks share the same guarded model queue.
+        emit_pipeline_step(request_id, "dedupe", "working", "Gemini is checking for duplicates...")
+        emit_pipeline_step(request_id, "triage", "working", "Gemini is rating urgency...")
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="case-review") as pool:
+            dup_future = pool.submit(review, "Dedupe", dedupe_context, _dedupe_output(req))
+            urg_future = pool.submit(review, "Triage", triage_context, scored.reason)
+            duplicate = dup_future.result()
+            urgency = urg_future.result()
     matching_started = time.perf_counter()
     proposals = matching_agent.find_matches(req, top_n=1, save_to_storage=False)
     best = proposals[0] if proposals else None
-    matching_output = json.dumps({
-        "team": best.resource_name if best else "No suitable team available",
-        "km": best.breakdown.distance_km if best else None,
-        "kind": best.resource_kind.value if best else kind,
-        "match_score": best.score if best else None,
-        "seats": best.capacity_remaining if best else 0,
-    })
+    matching_output = _matching_payload(req, best, kind)
     matching_ms = int((time.perf_counter() - matching_started) * 1000)
     emit_pipeline_step(
         request_id,
@@ -390,12 +483,22 @@ def finish(request_id: str) -> None:
         },
     )
     explain_context = {"facts": facts, "matching": json.loads(matching_output), "free_teams": capacity["available"], "inventory_explanation": best.explanation if best else None}
-    explained = review("Explainer", explain_context, explanation)
+    if capped:
+        explained = rules_only(explanation)
+    else:
+        note_progress(req, done=("urgency",), active="team")
+        emit_pipeline_step(request_id, "explainer", "working", "Gemini is explaining the choice...")
+        explained = review("Explainer", explain_context, explanation)
+    measured = _km_between(req, best)
+    explained["text"] = _with_measured_km(explained.get("text") or "", measured)
+    if explained.get("raw_output"):
+        explained["raw_output"] = _with_measured_km(explained["raw_output"], measured)
 
     def row(agent, result, tools, at):
         built = _trace_step(agent, "complete", summary, result["text"], tools, at,
                             provider=result["provider"], model=result.get("model"),
-                            latency_ms=result.get("latency_ms"), tokens=result.get("tokens"))
+                            latency_ms=result.get("latency_ms"), tokens=result.get("tokens"),
+                            prompt=result.get("prompt"), raw_output=result.get("raw_output"))
         built["fallback_reason"] = result.get("fallback_reason")
         built["cached"] = result.get("cached", False)
         return built
@@ -409,11 +512,12 @@ def finish(request_id: str) -> None:
         "matching": capacity,
         "explainer": explained["text"],
     }
+    matching_prompt = "Deterministic Haversine distance and capacity match via Google Maps coordinates"
     req.trace = [
         _intake_row(req, summary, started),
         row("Dedupe", duplicate, [], started),
         row("Triage", urgency, ["score_urgency"], triage_at),
-        _trace_step("Matching", "complete", summary, matching_output, ["check_capacity", "match_score"], matching_started, latency_ms=matching_ms),
+        _trace_step("Matching", "complete", summary, matching_output, ["check_capacity", "match_score"], matching_started, provider="tool", latency_ms=matching_ms, prompt=matching_prompt, raw_output=matching_output),
         row("Explainer", explained, [], match_at),
     ]
     req.analysis_status = "complete"
@@ -423,6 +527,17 @@ def finish(request_id: str) -> None:
         latest.trace = req.trace
         latest.analysis = req.analysis
         latest.analysis_status = "complete"
+        used_gemini = bool(req.ai and req.ai.provider == "gemini" and not req.ai.cached)
+        mark_steps_done(req, used_gemini=used_gemini and not capped)
+        if req.ai_queue is not None:
+            latest.ai_queue = req.ai_queue
+        if req.self_check is not None:
+            latest.self_check = req.self_check
+            if req.self_check.get("verdict") == "fixed":
+                latest.people_count = req.people_count
+                latest.place_text = req.place_text
+                latest.urgency_score = req.urgency_score
+                latest.urgency_reason = req.urgency_reason
         storage_service.save_request(latest, actor="pipeline")
     emit_pipeline_step(
         request_id,
@@ -450,8 +565,38 @@ def _dedupe_output(req: StoredRequest) -> str:
     return base
 
 
+def _fill_known_trace_fields(req: StoredRequest) -> None:
+    """Put the real prompt and tool names on a trace that stored a model reply without them."""
+    if not req.trace:
+        return
+    from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_user_prompt
+    from app.llm.client import llm_client
+
+    user_prompt = intake_user_prompt(req.raw_text or req.summary or "")
+    intake_prompt = llm_client.sent_prompt(llm_client.cache_key(SYSTEM_INTAKE_PROMPT, user_prompt)) or f"{SYSTEM_INTAKE_PROMPT}\n\n{user_prompt}"
+    for row in req.trace:
+        if not isinstance(row, dict):
+            continue
+        agent = row.get("agent")
+        provider = str(row.get("provider") or "")
+        ran_model = bool(row.get("model")) or provider in ("gemini", "cache", "openai_compat", "antigravity-local")
+        if agent == "Matching":
+            if not row.get("tool_calls"):
+                row["tool_calls"] = ["check_capacity", "match_score"]
+            if not row.get("prompt"):
+                row["prompt"] = "Deterministic Haversine distance and capacity match via Google Maps coordinates"
+            if not row.get("provider_label"):
+                row["provider_label"] = "Google Maps"
+        elif agent == "Triage" and not row.get("tool_calls"):
+            row["tool_calls"] = ["score_urgency"]
+        if row.get("prompt") or agent != "Intake" or not ran_model:
+            continue
+        row["prompt"] = intake_prompt
+
+
 def ensure_trace(req: StoredRequest) -> None:
     """Fill a missing trace from the scoring and capacity tools. Does not change the score."""
+    _fill_known_trace_fields(req)
     if req.trace or req.analysis_status == "analysing":
         return
     summary = (req.raw_text or req.place_text or "")[:180]
@@ -463,23 +608,55 @@ def ensure_trace(req: StoredRequest) -> None:
     kind = {"medical": "medical", "food": "food", "shelter": "shelter"}.get(req.type.value, "boat")
     capacity = check_capacity(kind)
     marks.append(time.perf_counter())
-    explanation = strip_advice(
-        f"The urgency score is {scored.score}. "
-        f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch."
-    )
+
+    from app.agents.matching import matching_agent
+    proposals = matching_agent.find_matches(req, top_n=1, save_to_storage=False)
+    best = proposals[0] if proposals else None
+    dist_km = _km_between(req, best)
+    matching_output = _matching_payload(req, best, kind)
+
+    if best and dist_km is not None:
+        explanation = f"{best.resource_name} is {dist_km} km away with {best.capacity_remaining} free seats. Total match score is {best.score} based on proximity and urgency."
+    elif best:
+        explanation = f"{best.resource_name} has {best.capacity_remaining} free seats. Total match score is {best.score}."
+    else:
+        explanation = strip_advice(
+            f"The urgency score is {scored.score}. "
+            f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch."
+        )
     explanation = f"{explanation} This note is not medical or legal advice."
     marks.append(time.perf_counter())
     marks.append(time.perf_counter())
-    durations = [max(0, int((marks[i + 1] - marks[i]) * 1000)) for i in range(5)]
+
+    from app.agents.review import REVIEW_PROMPT, review_prompt
+    facts = {"type": req.type.value, "people": req.people_count, "vulnerable": req.vulnerable.model_dump(),
+             "hazard": req.hazard.value, "urgency_score": scored.score, "required_supplies": req.required_supplies, "routing_note": req.routing_note}
+    dedupe_context = {"facts": facts, "tool_result": dedupe_out}
+    triage_context = {"facts": facts, "breakdown": scored.breakdown, "reason": scored.reason}
+    explain_context = {"facts": facts, "matching": json.loads(matching_output), "free_teams": capacity["available"], "inventory_explanation": best.explanation if best else None}
+
+    dedupe_prompt = f"{REVIEW_PROMPT}\n\n{review_prompt('Dedupe', dedupe_context)}"
+    triage_prompt = f"{REVIEW_PROMPT}\n\n{review_prompt('Triage', triage_context)}"
+    matching_prompt = "Deterministic Haversine distance and capacity match via Google Maps coordinates"
+    explain_prompt = f"{REVIEW_PROMPT}\n\n{review_prompt('Explainer', explain_context)}"
+
+    recorded = req.ai is not None and req.ai.provider in ("gemini", "cache")
+    ai_prov = req.ai.provider if recorded else "fallback"
+    ai_model = req.ai.model if recorded else None
+    ai_latency = req.ai.latency_ms if recorded and req.ai and req.ai.latency_ms else None
+
+    intake_step = _intake_row(req, summary, marks[0])
+
     built = [
-        _intake_row(req, summary, marks[0]),
-        _trace_step("Dedupe", "complete", summary, dedupe_out, [], marks[1]),
-        _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], marks[2]),
-        _trace_step("Matching", "complete", summary, f"{capacity['available']} {kind} free", ["check_capacity"], marks[3]),
-        _trace_step("Explainer", "complete", summary, explanation, [], marks[4]),
+        intake_step,
+        _trace_step("Dedupe", "complete", summary, dedupe_out, [], marks[1], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=dedupe_prompt, raw_output=dedupe_out),
+        _trace_step("Triage", "complete", summary, f"score {scored.score}", ["score_urgency"], marks[2], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=triage_prompt, raw_output=scored.reason),
+        _trace_step("Matching", "complete", summary, matching_output, ["check_capacity", "match_score"], marks[3], provider="tool", latency_ms=None, prompt=matching_prompt, raw_output=matching_output),
+        _trace_step("Explainer", "complete", summary, _with_measured_km(explanation, dist_km), [], marks[4], provider=ai_prov, model=ai_model, latency_ms=ai_latency, prompt=explain_prompt, raw_output=_with_measured_km(explanation, dist_km)),
     ]
-    for step, duration in zip(built[1:], durations[1:]):
-        step["latency_ms"] = duration
+    for step in built:
+        if step.get("provider") == "cache" and req.created_at:
+            step["recorded_at"] = req.created_at[:10]
     before = req.urgency_score
     req.trace = built
     req.urgency_score = before

@@ -38,7 +38,11 @@
       <p class="or"><span>{{ 'auth.orAccount' | rdTranslate }}</span></p>
       }
 
-      @if (failed()) {
+      @if (demoFailed()) {
+        <div class="error-banner" role="alert" data-testid="demo-login-error">{{ 'auth.demoDisabled' | rdTranslate }}</div>
+      }
+
+      @if (failed() && !demoFailed()) {
         <div class="error-banner" role="alert">{{ 'auth.wrong' | rdTranslate }}</div>
       }
 

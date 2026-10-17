@@ -1,4 +1,22 @@
 <div class="cmd">
+  @if (helpOpen()) {
+    <div class="help-scrim" (click)="helpOpen.set(false)"></div>
+    <div class="help-sheet" role="dialog" aria-modal="true" [attr.aria-label]="'keys.title' | rdTranslate" data-testid="help-sheet">
+      <h2>{{ 'keys.title' | rdTranslate }}</h2>
+      <dl>
+        <dt><kbd>A</kbd></dt><dd>{{ 'keys.a' | rdTranslate }}</dd>
+        <dt><kbd>N</kbd></dt><dd>{{ 'keys.n' | rdTranslate }}</dd>
+        <dt><kbd>U</kbd></dt><dd>{{ 'keys.u' | rdTranslate }}</dd>
+        <dt><kbd>J</kbd> / <kbd>K</kbd></dt><dd>{{ 'keys.jk' | rdTranslate }}</dd>
+        <dt><kbd>/</kbd></dt><dd>{{ 'keys.search' | rdTranslate }}</dd>
+        <dt><kbd>?</kbd></dt><dd>{{ 'keys.help' | rdTranslate }}</dd>
+      </dl>
+      <button type="button" class="help-close" (click)="helpOpen.set(false)" cdkFocusInitial>{{ 'ui.close' | rdTranslate }}</button>
+    </div>
+  }
+  @if (offline()) {
+    <p class="offline-banner" role="alert" data-testid="offline-banner">{{ 'queue.offline' | rdTranslate }}</p>
+  }
   @if (actionToast()) {
     <div class="toast" role="status" data-testid="dispatch-banner" [class.ok]="actionToast()?.type === 'success'" [class.warn]="actionToast()?.type === 'warning'">
       <span>{{ actionToast()?.text }}</span>
@@ -9,44 +27,208 @@
     </div>
   }
 
-  <app-just-reported (picked)="openReported($event)" />
-
-  <div class="grid">
-    <!-- CASES -->
-    <section class="cases" data-tour="cases" aria-labelledby="cases-h">
-      <p class="sr-only" aria-live="polite">{{ analysedLive() }}</p>
-      @if (assist().proposals.length) {
-        <app-assist-banner [count]="assist().proposals.length" (review)="assistOpen.set(true)" />
+  <!-- Slim Stats Line -->
+  <div class="slim-stats-bar" data-testid="stats-line">
+    <p class="safety-inline" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
+    <div class="batch-counters" data-testid="batch-counters" role="status">
+      <span><b>{{ batch().waiting }}</b> {{ 'batch.waiting' | rdTranslate }}</span>
+      <span><b>{{ batch().dispatched }}</b> {{ 'batch.dispatched' | rdTranslate }}</span>
+    </div>
+  @if (!narrow()) {
+    <section class="live-demo" data-testid="live-demo" [attr.aria-label]="'demo.run' | rdTranslate">
+      <div class="live-demo-top">
+        <p class="live-demo-problem">{{ 'home.hero' | rdTranslate }}</p>
+        <button type="button" class="live-demo-go" data-testid="run-live-demo" (click)="startLiveDemo()" [disabled]="liveDemo()?.running">
+          @if (liveDemo()?.running) { {{ 'demo.running' | rdTranslate }} } @else {
+            <span class="run-long">{{ 'demo.run' | rdTranslate }}</span><span class="run-short">{{ 'demo.runShort' | rdTranslate }}</span>
+          }
+        </button>
+        @if (geminiCalls() != null) { <span class="gem-calls" data-testid="gem-calls-chip">{{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }
+      </div>
+      @if (liveDemo(); as live) {
+        @if (live.status !== 'idle') {
+          <p class="live-demo-progress" data-testid="demo-progress" role="status">
+            {{ 'demo.received' | rdTranslate:{ n: live.received } }}
+            · {{ 'demo.joined' | rdTranslate:{ n: live.joined } }}
+            · {{ 'demo.flagged' | rdTranslate:{ n: live.flagged } }}
+            · {{ 'demo.critical' | rdTranslate:{ n: live.critical } }}
+            @if (live.status === 'waiting' || (live.queue_position || 0) > 0) {
+              · {{ 'demo.waitingGemini' | rdTranslate:{ n: live.queue_position || 0 } }}
+            }
+            @if (live.running && liveStepKey(); as stepKey) { · <span data-testid="demo-now">{{ 'demo.now' | rdTranslate:{ step: (stepKey | rdTranslate) } }}</span> }
+            @if (live.status === 'done') { · {{ 'demo.done' | rdTranslate }} }
+            @if (geminiCalls() != null) { · <span data-testid="demo-gemini-calls">{{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }
+          </p>
+        }
       }
-      <div class="cases-head">
-        <span class="queue-kicker">{{ 'uiRef.activeQueue' | rdTranslate }}</span>
-        <h1 id="cases-h">{{ 'uiRef.casesAction' | rdTranslate }}</h1>
-        <span class="queue-total">{{ counts().total }}</span>
-        @if (resetNote(); as n) { <span class="reset-note" role="status">{{ n | rdTranslate }}</span> }
-        <p class="scenario">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
-        <div class="samples" data-tour="sample">
-          <button type="button" data-testid="sample-hindi" (click)="sendSample('hindi')">{{ 'xfactor.sampleHindi' | rdTranslate }}</button>
-          <button type="button" data-testid="sample-voice" (click)="sendSample('voice')">{{ 'xfactor.sampleVoice' | rdTranslate }}</button>
-          <button type="button" data-testid="sample-photo" (click)="sendSample('photo')">{{ 'xfactor.samplePhoto' | rdTranslate }}</button>
-          <button type="button" data-testid="sample-duplicate" (click)="sendSample('duplicate')">{{ 'xfactor.sampleDuplicate' | rdTranslate }}</button>
+      @if (demoRecorded()) {
+        <p class="live-demo-note">{{ 'demo.recordedNotice' | rdTranslate }}</p>
+      }
+      <details class="live-own">
+        <summary>{{ 'demo.tryOwn' | rdTranslate }}</summary>
+        <textarea id="own-report" data-testid="own-report" rows="2" maxlength="500" [value]="ownText()" (input)="ownText.set($any($event.target).value)" [placeholder]="'demo.tryOwnPlaceholder' | rdTranslate"></textarea>
+        <div class="live-own-row">
+          <button type="button" class="sample-btn" (click)="fillExample()">{{ 'demo.exampleMl' | rdTranslate }}</button>
+          <button type="button" class="live-demo-go" data-testid="send-own" (click)="submitOwn()" [disabled]="ownBusy() || !ownText().trim()">{{ 'demo.sendOwn' | rdTranslate }}</button>
+        </div>
+        <!-- sample reports -->
+        <div class="samples sample-row" data-tour="sample">
+          <button type="button" class="sample-btn" data-testid="sample-hindi" (click)="sendSample('hindi')">
+            {{ 'sample.hindi' | rdTranslate }}
+          </button>
+          <button type="button" class="sample-btn" data-testid="sample-voice" (click)="sendSample('voice')">
+            {{ 'sample.voice' | rdTranslate }}
+          </button>
+          <button type="button" class="sample-btn" data-testid="sample-photo" (click)="sendSample('photo')">
+            {{ 'sample.photo' | rdTranslate }}
+          </button>
+        </div>
+
+        @if (ownError()) { <p class="live-demo-note" data-testid="own-error" role="alert">{{ ownError() }}</p> }
+      </details>
+    </section>
+  }
+    <div class="stats-left">
+      <span class="stat-pill stat-free">
+        {{ 'stat.teamsFree' | rdTranslate:{ a: teamsFree().free, b: teamsFree().total } }}
+      </span>
+      <span class="stat-sep">·</span>
+      <span class="stat-text">
+        {{ 'stat.busy' | rdTranslate:{ n: teamsFree().busy } }}
+      </span>
+      <span class="stat-sep">·</span>
+      <span class="stat-text">
+        {{ 'stat.notUpdated' | rdTranslate:{ n: teamsFree().notUpdated } }}
+      </span>
+      <span class="stat-divider">|</span>
+      <span class="stat-text stat-dispatched">
+        <strong>{{ counts().dispatched }}</strong> {{ 'coord.filterDispatched' | rdTranslate }}
+      </span>
+      <span class="stat-sep">·</span>
+      <span class="stat-text stat-completed">
+        <strong>{{ counts().completed }}</strong> {{ 'coord.filterCompleted' | rdTranslate }}
+      </span>
+    </div>
+    @if (resetNote(); as n) {
+      <span class="reset-note" role="status">{{ n | rdTranslate }}</span>
+    }
+  </div>
+
+
+  <!-- AI Hero Banner (One line) -->
+@if (narrow()) {
+    <div class="hero-line" data-testid="hero-line">
+    <span class="hero-sparkle" aria-hidden="true">✨</span>
+    <span class="hero-text">{{ 'home.hero' | rdTranslate }}</span>
+  </div>
+  }
+
+  <div class="grid coordinator-grid">
+    <!-- LEFT COLUMN: QUEUE -->
+    <section class="cases queue-col" data-tour="cases" aria-labelledby="cases-h">
+      <p class="sr-only" aria-live="polite">{{ analysedLive() }}</p>
+
+      <div class="queue-header">
+        @if (assist().proposals.length) {
+          <app-assist-banner [count]="assist().proposals.length" (review)="assistOpen.set(true)" />
+        }
+
+        <div class="queue-title-row">
+          <h2 id="cases-h" class="cases-heading">{{ 'coord.cases' | rdTranslate }}</h2>
+          <p class="scenario-visible">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
+        </div>
+        <div class="queue-tabs" role="tablist" [attr.aria-label]="'queue.tabsLabel' | rdTranslate" (keydown)="onQueueTabKey($event)">
+          <button type="button" role="tab" class="qtab" data-testid="tab-waiting" [class.on]="queueTab() === 'waiting'" [attr.aria-selected]="queueTab() === 'waiting'" [attr.tabindex]="queueTab() === 'waiting' ? 0 : -1" (click)="setQueueTab('waiting')" [attr.aria-label]="queueSplitOn() ? ('aiq.waitingCount' | rdTranslate:{ ready: displayRows().length, n: aiWorkingRows().length }) : ('batch.waiting' | rdTranslate)">
+            @if (queueSplitOn() && aiWorkingRows().length) {
+              <span class="ql-full">{{ 'aiq.waitingCount' | rdTranslate:{ ready: displayRows().length, n: aiWorkingRows().length } }}</span>
+              <span class="ql-short" aria-hidden="true">{{ 'aiq.inAi' | rdTranslate:{ n: aiWorkingRows().length } }}</span>
+            } @else {
+              <span class="ql-full">{{ 'batch.waiting' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabWaiting' | rdTranslate }}</span> <b class="seg-pill">{{ batch().waiting }}</b>
+            }
+          </button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-dispatched" [class.on]="queueTab() === 'dispatched'" [attr.aria-selected]="queueTab() === 'dispatched'" [attr.tabindex]="queueTab() === 'dispatched' ? 0 : -1" (click)="setQueueTab('dispatched')" [attr.aria-label]="'coord.filterDispatched' | rdTranslate"><span class="ql-full">{{ 'coord.filterDispatched' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabSent' | rdTranslate }}</span> <b class="seg-pill">{{ counts().dispatched }}</b></button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-completed" [class.on]="queueTab() === 'completed'" [attr.aria-selected]="queueTab() === 'completed'" [attr.tabindex]="queueTab() === 'completed' ? 0 : -1" (click)="setQueueTab('completed')" [attr.aria-label]="'coord.filterCompleted' | rdTranslate"><span class="ql-full">{{ 'coord.filterCompleted' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabDone' | rdTranslate }}</span> <b class="seg-pill">{{ counts().completed }}</b></button>
         </div>
       </div>
-      <div class="filters" role="group">
-        <button type="button" [class.on]="bandFilter() === 'all'" (click)="setBandFilter('all')">{{ 'coord.filterAll' | rdTranslate }} {{ counts().total }}</button>
-        <button type="button" class="f-now" [class.on]="bandFilter() === 'now'" (click)="setBandFilter('now')">{{ 'coord.filterNow' | rdTranslate }} {{ counts().critical }}</button>
-        <button type="button" [class.on]="bandFilter() === 'soon'" (click)="setBandFilter('soon')">{{ 'coord.filterSoon' | rdTranslate }} {{ counts().high }}</button>
-        <button type="button" [class.on]="bandFilter() === 'review'" (click)="setBandFilter('review')">{{ 'coord.filterReview' | rdTranslate }} {{ counts().review }}</button>
-        <button type="button" [class.on]="bandFilter() === 'dispatched'" (click)="setBandFilter('dispatched')">{{ 'coord.filterDispatched' | rdTranslate }} {{ counts().dispatched }}</button>
-        <button type="button" [class.on]="bandFilter() === 'completed'" (click)="setBandFilter('completed')">{{ 'coord.filterCompleted' | rdTranslate }} {{ counts().completed }}</button>
-      </div>
-      <div class="list" role="listbox" [attr.aria-label]="'ui.cases' | rdTranslate">
-        @for (req of filteredRequests(); track req.id) {
-          @if (isCompleted(req) && bandFilter() === 'dispatched') {
-            <article class="case-wrap done">
-              <button type="button" role="option" class="case collapsed" [class.sel]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
-                <span class="title">{{ getTranslationText(req) }}</span>
-                <span class="id">{{ req.id }} · {{ 'coord.filterCompleted' | rdTranslate }}</span>
+
+
+      <!-- Case List -->
+      <div class="list case-list-wrap" role="listbox" [attr.aria-label]="'coord.cases' | rdTranslate" (scroll)="onCaseListScroll($event)">
+        @if (newSinceFreeze() > 0) {
+          <button type="button" class="new-pill" data-testid="new-pill" (click)="unfreezeQueue()">{{ 'queue.newPill' | rdTranslate:{ n: newSinceFreeze() } }}</button>
+        }
+        @if (parkedReady().length) {
+          <button type="button" class="aiq-new" data-testid="new-ready" (click)="releaseParked()">{{ 'aiq.newReady' | rdTranslate:{ n: parkedReady().length } }}</button>
+        }
+        @if (queueTab() === 'waiting' && queueSplitOn()) {
+          @if (aiWorkingRows().length) {
+            <p class="aiq-flow">{{ (narrow() ? 'aiq.flowShort' : 'aiq.flow') | rdTranslate }}</p>
+            <section class="aiq-strip" data-testid="ai-queue" [class.open]="stripOpen()">
+              <button type="button" class="aiq-head" (click)="toggleStrip()" [attr.aria-expanded]="stripOpen()">
+                <span class="aiq-pulse" [class.off]="!readingCount()" aria-hidden="true"></span>
+                <span class="aiq-head-title">{{ 'aiq.working' | rdTranslate }}</span>
+                <b class="aiq-count">{{ aiWorkingRows().length }}</b>
+                @if (geminiPausedHonest()) { <span class="aiq-pause" aria-hidden="true">||</span> }
+                <span class="aiq-summary">{{ 'aiq.readingLine' | rdTranslate:{ reading: readingCount(), queued: queuedCount() } }}</span>
+                <span class="aiq-chev" aria-hidden="true">{{ stripOpen() ? '▾' : '▸' }}</span>
               </button>
+              @if (stripOpen()) {
+                @if (geminiPausedHonest() && pausedCount() >= 3) {
+                  <p class="aiq-banner"><strong>{{ 'aiq.pausedBanner' | rdTranslate }}</strong></p>
+                }
+                @for (req of stripShown(); track req.id) {
+                  <button type="button" class="aiq-row" [class.sel]="selectedRequestId() === req.id" [class.queued]="req.ai_queue?.status === 'queued'" [class.late]="elapsedSec(req) >= 30 && !tookTooLong(req)" data-testid="ai-row" (click)="freezeQueue(); selectRequest(req.id, true)">
+                    <span class="aiq-dots" [attr.aria-label]="stepAria(req)">
+                      @for (step of aiSteps; track step) {
+                        <span class="aiq-dot" [class.done]="dotState(req, step) === 'done'" [class.active]="dotState(req, step) === 'active'" [class.gem]="dotState(req, step) === 'active' && req.ai_queue?.engine === 'gemini'"></span>
+                      }
+                    </span>
+                    <span class="aiq-row-main">
+                      <span class="aiq-title">{{ caseTitle(req) }}</span>
+                      <span class="aiq-meta">
+                        @if (tookTooLong(req)) {
+                          {{ 'aiq.timeout' | rdTranslate }}
+                        } @else {
+                          {{ shortId(req.id, req.public_code) }} · <b>{{ activeStepKey(req) | rdTranslate }}</b> · {{ clockOf(req) }}
+                        }
+                      </span>
+                      @if (req.ai_queue?.flags?.includes('paused')) {
+                        <span class="aiq-status"><span aria-hidden="true">||</span> {{ 'aiq.paused' | rdTranslate }}</span>
+                      }
+                    </span>
+                    @if (req.ai_queue?.status === 'queued' && req.ai_queue?.queue_pos) {
+                      <span class="aiq-pos">{{ lineKey(req.ai_queue?.queue_pos || 0) | rdTranslate:{ n: req.ai_queue?.queue_pos } }}</span>
+                    }
+                  </button>
+                }
+                @if (stripMore() > 0) {
+                  <button type="button" class="aiq-more" (click)="stripAll.set(true)">{{ 'aiq.more' | rdTranslate:{ n: stripMore() } }}</button>
+                }
+              }
+            </section>
+            <p class="aiq-hint">{{ 'aiq.slideHint' | rdTranslate }}</p>
+          }
+          <div class="aiq-ready-head">
+            <span>{{ 'aiq.ready' | rdTranslate }}</span>
+            <b>{{ displayRows().length }}</b>
+            <span class="aiq-decide">{{ 'aiq.youDecide' | rdTranslate }}</span>
+          </div>
+        }
+        @for (req of displayRows(); track req.id) {
+          @if (queueSplitOn() && caseLifeThreat(req)) {
+            <article class="aiq-life" [class.sel]="selectedRequestId() === req.id" data-testid="life-threat-card" [attr.aria-live]="'assertive'">
+              <p class="aiq-life-label">{{ 'aiq.lifeThreat' | rdTranslate }}</p>
+              <button type="button" class="aiq-life-title" (click)="freezeQueue(); selectRequest(req.id, true)">{{ req.place_text || caseTitle(req) }}</button>
+              <p class="aiq-life-quote">“{{ getOriginalQuote(req) }}”</p>
+              @if (req.ai_queue?.life_phrase) { <p class="aiq-life-phrase">{{ req.ai_queue?.life_phrase }}</p> }
+              @if (req.ai_queue?.place_unverified) { <span class="aiq-unverified">{{ 'aiq.place' | rdTranslate }} · {{ 'aiq.unverified' | rdTranslate }}</span> }
+              <p class="aiq-life-meta">{{ shortId(req.id, req.public_code) }} · @if (caseAiBlocked(req)) { {{ 'aiq.stillChecking' | rdTranslate }} } @else if (engineLabelKey(req); as ek) { <span [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span> }</p>
+              <div class="aiq-life-actions">
+                <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="$event.stopPropagation(); sendNearestBoat(req)">{{ 'aiq.sendBoat' | rdTranslate }}</button>
+                <button type="button" class="btn-sec" (click)="$event.stopPropagation(); callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
+                <a class="btn-sec aiq-call" href="tel:112">{{ 'aiq.call112' | rdTranslate }}</a>
+              </div>
+              <p class="sr-only">{{ 'aiq.lifeAnnounce' | rdTranslate:{ place: req.place_text || shortId(req.id, req.public_code) } }}</p>
             </article>
           } @else if (isAnalysisFailed(req)) {
             <article class="case-wrap failed">
@@ -55,79 +237,206 @@
               <button type="button" class="trace-chip" (click)="retryAnalysis()">{{ 'ux.retry' | rdTranslate }}</button>
             </article>
           } @else {
-            <div class="case-wrap" [class.sel]="selectedRequestId() === req.id" [class.row-flash]="flashIds().has(req.id)" [attr.data-case-id]="req.id">
-              <button type="button" role="option" class="case" [class.sel]="selectedRequestId() === req.id" [attr.data-band]="bandOf(req.urgency_score)" [attr.aria-selected]="selectedRequestId() === req.id" (click)="selectRequest(req.id, true)">
-                <span class="queue-status">
-                  <app-sev-chip [band]="bandOf(req.urgency_score)" />
-                  <span class="prio" [attr.title]="fullStamp(req.created_at)">{{ 'uiRef.priority' | rdTranslate }} {{ Math.round(req.urgency_score) }}</span>
-                  @if (req.flags?.includes('verify')) { <span class="verify-badge" style="display:inline-block;padding:0 7px;border-radius:999px;background:var(--sev-high-tint, #fef3c7);color:var(--sev-high, #b45309);font:600 11px/18px var(--rd-font-family);margin-left:6px" [attr.title]="'coord.verifyHint' | rdTranslate">{{ 'coord.verify' | rdTranslate }}</span> }
-                </span>
-                <span class="q-top">
-                  <span class="q-main">
-                    <span class="title">{{ getTranslationText(req) }}</span>
-                    <span class="loc">{{ locationLine(req) }}</span>
-                  </span>
-                </span>
-                <span class="q-meta">
-                  <span class="wait">{{ waitTime(req) }}</span>
-                  <span class="case-id">{{ req.id }}</span>
-                  <span class="ico-chips">
-                    <span class="ico-chip people">
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-7 1.7-7 4v2h14v-2c0-2.3-3.7-4-7-4z"/></svg>
-                      {{ req.people_count || 1 }}
-                    </span>
-                    @if (hasVulnerable(req)) {
-                      <span class="ico-chip vuln">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg>
-                        {{ 'coord.chipVulnerable' | rdTranslate }}
-                      </span>
+            <div
+              class="case-wrap"
+              [class.sel]="selectedRequestId() === req.id"
+              [class.row-flash]="flashIds().has(req.id)"
+              [class.moved-up]="isMovedUp(req)"
+              [class.aiq-enter]="isJustReady(req)"
+              [attr.data-case-id]="req.id"
+            >
+              <button
+                type="button"
+                role="option"
+                class="case case-card-compact"
+                [class.sel]="selectedRequestId() === req.id"
+                [attr.data-band]="bandOf(req.urgency_score)"
+                [attr.aria-selected]="selectedRequestId() === req.id"
+                (click)="freezeQueue(); selectRequest(req.id, true)"
+              >
+                <!-- Line 1: Band badge & Need text -->
+                <div class="card-line-top">
+                  <span class="card-band-tag" [class]="'band-' + bandOf(req.urgency_score)">
+                    @if (bandOf(req.urgency_score) === 'critical') {
+                      ▲ {{ 'filter.critical' | rdTranslate }}
+                    } @else if (bandOf(req.urgency_score) === 'high') {
+                      ◆ {{ 'filter.urgent' | rdTranslate }}
+                    } @else {
+                      {{ (bandOf(req.urgency_score) === 'medium' ? 'coord.band.medium' : 'band.other') | rdTranslate }}
                     }
+                    <small class="card-score">{{ Math.round(req.urgency_score) }}</small>
                   </span>
-                </span>
-                @if (isAnalysing(req)) { <span class="tag ai" data-testid="ai-analysing">{{ 'ux.aiAnalysing' | rdTranslate }}</span> }
-                @if (analysedLabel(req.id)) { <span class="sr-only">{{ analysedLabel(req.id) }}</span> }
+                  <span class="card-need-text">{{ getNeedText(req) }}</span>
+                  <span class="card-age">{{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}</span>
+                </div>
+
+                <!-- Line 2: Title & Location -->
+                <div class="card-line-mid">
+                  <strong class="card-place-title">{{ caseTitle(req) }}</strong>
+                  @if (isMovedUp(req)) {
+                    <span class="moved-tag">{{ 'card.movedUp' | rdTranslate }}</span>
+                  }
+                  @if (isHoax(req)) {
+                    <span class="hoax-chip" data-testid="hoax-chip">{{ hoaxLine(req) }}</span>
+                  }
+                  <span class="sr-only">{{ getTranslationText(req) }}</span>
+                </div>
+
+                <!-- Line 3: Meta & chips -->
+                <div class="card-line-meta">
+                  <span class="card-meta-text">
+                    {{ shortId(req.id, req.public_code) }} · {{ peopleLabel(req.people_count, req.flags) }}@if (wardName(req); as wn) { · {{ wn }} }
+                    @if (engineLabelKey(req); as ek) {
+                      · <span class="aiq-engine" data-testid="ai-engine" [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span>
+                    }
+                    @if (tookTooLong(req)) { · {{ 'aiq.tookTooLong' | rdTranslate }} }
+                  </span>
+                  @if (isJustReady(req)) { <span class="aiq-just">{{ 'aiq.justReady' | rdTranslate }}</span> }
+                  <div class="card-meta-chips">
+                    @if ((req.merged_count || 1) > 1) {
+                      <span class="merged-count-tag">+{{ (req.merged_count || 1) - 1 }} {{ 'alerts.reports' | rdTranslate }}</span>
+                    }
+                    @if (isReview(req)) {
+                      <span class="ai-review-tag" [attr.title]="'filter.aiReview' | rdTranslate">✨</span>
+                    }
+                  </div>
+                </div>
+
+                @if (isAnalysing(req)) {
+                  <span class="tag ai" data-testid="ai-analysing">{{ 'ux.aiAnalysing' | rdTranslate }}</span>
+                }
               </button>
+
               @if ((req.merged_count || 1) > 1) {
-                <div class="hooks">
-                  <app-merged-chip [count]="req.merged_count || 1" [requestId]="req.id" [mobile]="narrow()" (undo)="splitCluster(req.id)" />
+                <div class="merged-chip-overlay">
+                  <app-merged-chip
+                    [count]="req.merged_count || 1"
+                    [requestId]="req.id"
+                    [mobile]="narrow()"
+                    (undo)="splitCluster(req.id)"
+                  />
                 </div>
               }
             </div>
           }
         } @empty {
-          <p class="empty">{{ 'coord.noFilterMatch' | rdTranslate }} <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button></p>
+          @if (!(queueTab() === 'waiting' && aiWorkingRows().length)) {
+          <p class="empty" data-testid="filter-empty">
+            @if (queueTab() === 'dispatched') {
+              {{ 'queue.nothingSent' | rdTranslate }}
+            } @else {
+              {{ (counts().dispatched + counts().completed > 0 && !filteredRequests().length && bandFilter() === 'all' ? 'queue.allCaughtUp' : 'coord.noFilterMatch') | rdTranslate }}
+            }
+            @if (bandFilter() !== 'all' && bandFilter() !== 'dispatched' && bandFilter() !== 'completed') {
+              <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button>
+            }
+          </p>
+          }
         }
       </div>
+      <details class="full-queue" data-testid="full-queue">
+        <summary>{{ 'queue.viewFull' | rdTranslate }}</summary>
+        <!-- Filter Chips -->
+        <div class="filters filter-row" role="group" [attr.aria-label]="'coord.cases' | rdTranslate">
+          <button
+            type="button"
+            class="filter-chip"
+            [class.on]="bandFilter() === 'all'"
+            (click)="setBandFilter('all')"
+            [attr.aria-pressed]="bandFilter() === 'all'"
+          >
+            {{ 'coord.filterAll' | rdTranslate }} {{ counts().total }}
+          </button>
+          <button
+            type="button"
+            class="filter-chip f-now chip-crit"
+            [class.on]="bandFilter() === 'now'"
+            (click)="setBandFilter('now')"
+            [attr.aria-pressed]="bandFilter() === 'now'"
+            [attr.title]="'filter.critical.tip' | rdTranslate"
+          >
+            <span class="chip-shape">▲</span> {{ 'filter.critical' | rdTranslate }} {{ counts().critical }} <span class="tip-ico" aria-hidden="true">ⓘ</span>
+          </button>
+          <button
+            type="button"
+            class="filter-chip chip-urgent"
+            [class.on]="bandFilter() === 'soon'"
+            (click)="setBandFilter('soon')"
+            [attr.aria-pressed]="bandFilter() === 'soon'"
+            [attr.title]="'filter.urgent.tip' | rdTranslate"
+          >
+            <span class="chip-shape">◆</span> {{ 'filter.urgent' | rdTranslate }} {{ counts().high }} <span class="tip-ico" aria-hidden="true">ⓘ</span>
+          </button>
+          <button
+            type="button"
+            class="filter-chip chip-review"
+            [class.on]="bandFilter() === 'review'"
+            (click)="setBandFilter('review')"
+            [attr.aria-pressed]="bandFilter() === 'review'"
+            [attr.title]="'filter.aiReview.tip' | rdTranslate"
+          >
+            {{ 'filter.aiReview' | rdTranslate }} {{ counts().review }} <span class="tip-ico" aria-hidden="true">ⓘ</span>
+          </button>
+        </div>
+
+        <!-- Secondary status chips: Dispatched & Completed -->
+        <div class="secondary-filter-row">
+          <button
+            type="button"
+            class="filter-chip sec-chip"
+            data-testid="filter-dispatched"
+            [attr.data-count]="counts().dispatched"
+            [class.on]="bandFilter() === 'dispatched'"
+            (click)="setBandFilter('dispatched')"
+            [attr.aria-pressed]="bandFilter() === 'dispatched'"
+            [attr.aria-label]="'coord.filterDispatched' | rdTranslate"
+          >
+            {{ 'coord.filterDispatched' | rdTranslate }} {{ counts().dispatched }}
+          </button>
+          <button
+            type="button"
+            class="filter-chip sec-chip"
+            data-testid="filter-completed"
+            [attr.data-count]="counts().completed"
+            [class.on]="bandFilter() === 'completed'"
+            (click)="setBandFilter('completed')"
+            [attr.aria-pressed]="bandFilter() === 'completed'"
+            [attr.aria-label]="'coord.filterCompleted' | rdTranslate"
+          >
+            {{ 'coord.filterCompleted' | rdTranslate }} {{ counts().completed }}
+          </button>
+        </div>
+      </details>
     </section>
 
-    <!-- CENTRE -->
-    <section class="centre">
-      <div class="intelligence-card">
-        <div class="intelligence-heading">
-          <span class="intelligence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3"/></svg></span>
-          <div><h2>{{ 'uiRef.areaIntelligence' | rdTranslate }}</h2><p>{{ selectedRequest()?.place_text || ('coord.scenarioLabel' | rdTranslate) }}</p></div>
-        </div>
-        <div class="tiles map-intel" data-testid="map-intel">
-        <div class="tile t-now"><span class="lbl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5"/></svg>{{ 'coord.tileNow' | rdTranslate }}</span><span class="num">{{ counts().critical }}</span><span class="unit">{{ 'coord.unitCases' | rdTranslate }}</span></div>
-        <div class="tile"><span class="lbl">{{ 'coord.tileSoon' | rdTranslate }}</span><span class="num">{{ counts().high }}</span><span class="unit">{{ 'coord.unitCases' | rdTranslate }}</span></div>
-        <div class="tile"><span class="lbl">{{ 'coord.tileTeams' | rdTranslate }}</span><span class="num">{{ teamsFree().free }}</span><span class="unit">{{ teamsFreeLine() }}</span></div>
-        <div class="tile"><span class="lbl">{{ 'coord.tileQuiet' | rdTranslate }}</span><span class="num">{{ quietCount() }}</span><span class="unit">{{ 'coord.unitQuiet' | rdTranslate }}</span></div>
-      </div>
-
-      </div>
-
-      <div class="map-card">
-        <rd-map-provider [pins]="mapPins()" [legs]="mapLegs()" [center]="mapCenter()" [focusToken]="mapFocus()" [highlightId]="highlightId()" (pinSelect)="selectRequest($event, true)">
+    <!-- CENTRE COLUMN: TALLER MAP + COMPACT AI STEPPER -->
+    <section class="centre map-stepper-col" [class.map-open]="mapOpen()">
+      <div class="map-card-wrapper map-card">
+        <rd-map-provider
+          [ownSchematic]="true"
+          [pins]="mapPins()"
+          [legs]="mapLegs()"
+          [center]="mapCenter()"
+          [focusToken]="mapFocus()"
+          [highlightId]="highlightId()"
+          [selectedId]="selectedRequestId()"
+          (pinSelect)="selectRequest($event, true)"
+        >
           <svg [attr.viewBox]="mapViewBox()" class="svgmap" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
             <rect width="600" height="480" fill="var(--map-bg)"/>
+            @if (mapBase(); as mb) {
+            @for (w of mb.water; track $index) { <polygon class="kb-water" [attr.points]="w"/> }
+            @for (w of mb.wards; track w.id) { <polygon class="kb-ward" [attr.points]="w.points"/><text class="kb-wlabel" [attr.x]="w.lx" [attr.y]="w.ly" text-anchor="middle">{{ w.name }}</text> }
+            @for (r of mb.rivers; track $index) { <polyline class="kb-river" [attr.points]="r"/> }
+            }
             @for (d of mapDistricts(); track d.id) {
               <polygon class="district" [attr.points]="d.points"></polygon>
               <text class="dlabel" [attr.x]="d.lx" [attr.y]="d.ly" text-anchor="middle">{{ ('coord.district.' + d.id) | rdTranslate }}</text>
             }
             @for (leg of focusLegs(); track leg.id) {
-              <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#047857' : '#6b7280'" [attr.stroke-width]="leg.suggested ? (highlightId() === leg.id ? 6 : 4) : (highlightId() === leg.id ? 5 : 2)" stroke-linecap="round"/>
-              <rect [attr.x]="leg.lx - (leg.label.length * 3.2 + 10)" [attr.y]="leg.ly - 15" [attr.width]="leg.label.length * 6.4 + 20" height="23" rx="11.5" fill="#0f172a" opacity=".88"/>
-              <text class="leg" [class.on]="leg.suggested" [attr.x]="leg.lx" [attr.y]="leg.ly" text-anchor="middle">{{ leg.label }}</text>
+              <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#166534' : '#6b7280'" [attr.stroke-width]="leg.suggested ? (highlightId() === leg.id ? 6 : 4) : (highlightId() === leg.id ? 5 : 2)" stroke-linecap="round"/>
+              <rect [attr.x]="leg.lx - (leg.label.length * 3.2 + 10)" [attr.y]="leg.ly - 49" [attr.width]="leg.label.length * 6.4 + 20" height="23" rx="11.5" fill="#0f172a" opacity=".88"/>
+              <text class="leg" [class.on]="leg.suggested" [attr.x]="leg.lx" [attr.y]="leg.ly - 34" text-anchor="middle">{{ leg.label }}</text>
             }
             @if (movementTrail()) {
               <polyline [attr.points]="movementTrail()" fill="none" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -135,7 +444,7 @@
             @for (p of drawnPins(); track p.id) {
               @if (p.kind === 'team') {
                 <g class="pin" [class.dim]="p.dim" [class.suggested]="p.suggested" [attr.opacity]="p.dim ? null : p.fade" [attr.transform]="'translate(' + p.x + ' ' + p.y + ')'">
-                  <rect x="-10" y="-10" width="20" height="20" rx="3" fill="#047857" [attr.stroke]="p.suggested ? '#065f46' : 'var(--surface)'" [attr.stroke-width]="p.suggested ? 3 : 2"/>
+                  <rect x="-10" y="-10" width="20" height="20" rx="3" fill="#166534" [attr.stroke]="p.suggested ? '#14532d' : 'var(--surface)'" [attr.stroke-width]="p.suggested ? 3 : 2"/>
                   <circle cx="8" cy="-8" r="4" [attr.fill]="p.fill" stroke="var(--surface)" stroke-width="1.5"/>
                 </g>
               }
@@ -153,275 +462,440 @@
             }
           </svg>
         </rd-map-provider>
-        <div class="legend" [attr.aria-label]="'ui.mapKey' | rdTranslate">
-          @if (legendBands().length) {
-            <span class="lg-grp"><b>{{ 'coord.legendCases' | rdTranslate }}</b>
-              <span class="grp"><span class="disc">{{ counts().critical || counts().total }}</span>{{ 'coord.legendGroup' | rdTranslate }}</span>
-              @for (band of legendBands(); track band) {
-                <span><i class="d" [class.crit]="band === 'critical'" [class.high]="band === 'high'" [class.med]="band === 'medium'" [class.low]="band === 'low'"></i>{{ ('coord.band.' + band) | rdTranslate }}</span>
-              }
-            </span>
-          }
-          @if (legendKinds().length) {
-            <span class="lg-grp"><b>{{ 'coord.legendTeams' | rdTranslate }}</b>
-              @for (kind of legendKinds(); track kind) {
-                <span><i class="sq" [style.background]="teamFill(kind)"></i>{{ ('coord.kind.' + kind) | rdTranslate }}</span>
-              }
-            </span>
-          }
+
+        <!-- Top Right Map Legend -->
+        <div class="map-legend-overlay" [attr.aria-label]="'ui.mapKey' | rdTranslate">
+          <span class="legend-item"><i class="dot dot-crit"></i> {{ 'filter.critical' | rdTranslate }}</span>
+          <span class="legend-item"><i class="dot dot-urgent"></i> {{ 'filter.urgent' | rdTranslate }}</span>
+          <span class="legend-item"><i class="dot dot-other"></i> {{ 'band.other' | rdTranslate }}</span>
+          <span class="legend-item"><i class="sq sq-team"></i> {{ 'coord.tileTeams' | rdTranslate }}</span>
+        </div>
+
+        <!-- Bottom Left Stylised map watermark -->
+        <div class="map-status-overlay">
+          <span>{{ mapAreaLabel() }}@if (selectedRequest(); as sr) { · {{ shortId(sr.id, sr.public_code) }} }</span>
         </div>
       </div>
+
     </section>
 
-    <!-- DETAIL -->
+    <!-- RIGHT COLUMN: DECISION PANEL -->
     <aside class="detail decision-panel" [attr.aria-label]="'coord.decision' | rdTranslate">
       @if (selectedRequest(); as req) {
-        <div class="detail-scroll">
-          <div class="d-head">
-            <app-sev-chip [band]="bandOf(req.urgency_score)" />
-            @if (req.flags?.includes('verify')) { <span class="verify-badge" style="display:inline-block;padding:0 7px;border-radius:999px;background:var(--sev-high-tint, #fef3c7);color:var(--sev-high, #b45309);font:600 11px/18px var(--rd-font-family);margin-left:6px" [attr.title]="'coord.verifyHint' | rdTranslate">{{ 'coord.verify' | rdTranslate }}</span> }
-            <span class="id" [attr.title]="fullStamp(req.updated_at) || fullStamp(req.created_at)">{{ req.id }}{{ ageLabel(req) ? ' · ' + ageLabel(req) : '' }}</span>
-          </div>
-          <h2>{{ getTranslationText(req) }}@if (showGeminiChip(req)) { <app-gemini-chip [confidence]="fieldConf(req, 'type')" /> }</h2>
-          <p class="fact-line">{{ factLine(req) }}@if (showGeminiChip(req)) { <app-gemini-chip [confidence]="fieldConf(req, 'people')" /> }</p>
-          <app-pipeline-strip [steps]="pipelineSteps(req)" [analysing]="isAnalysing(req)" />
-          @if (!offline() && !needsDupReview(req) && isLowTranslationConfidence(req)) {
-            <p class="check-line">{{ checkThisLine(req) }}</p>
-          }
-          @if (!offline() && needsDupReview(req)) {
-            <div class="dup-review" data-testid="dup-review">
-              <p>{{ dupAiLine(req) }}</p>
-              @if (req.count_note) { <p class="count-note" data-testid="counts-differ">{{ req.count_note }}</p> }
-              <button type="button" data-testid="merge-dup" (click)="confirmMerge(req)">{{ 'coord.mergeReports' | rdTranslate }}</button>
-              <button type="button" data-testid="keep-dup" (click)="keepSeparate(req)">{{ 'coord.keepSeparate' | rdTranslate }}</button>
-            </div>
-          }
-
-          <div class="response-heading"><span>{{ 'uiRef.response' | rdTranslate }}</span><span class="response-reports">{{ req.merged_count || 1 }} {{ 'uiRef.reports' | rdTranslate }}</span></div>
-
-          @if (isAnalysing(req) && !activeProposal()) {
-            <div class="send-card skel"><p class="facts">{{ 'coord.findingTeam' | rdTranslate }}</p></div>
-          } @else if (activeProposal(); as prop) {
-            <section class="recommendation-summary">
-              <p class="recommendation-label">{{ 'uiRef.recommendation' | rdTranslate }} <span class="ai-src">{{ 'flow.badgeTool' | rdTranslate }}</span></p>
-              <p class="recommendation-reason">{{ prop.explanation || whyLine(prop) }}</p>
-              <div class="recommendation-stats">
-                <div><span>{{ 'ui.urgency' | rdTranslate }}</span><b>{{ Math.round(req.urgency_score) }}/100</b></div>
-                <div><span>{{ 'uiRef.teamFit' | rdTranslate }}</span><b>{{ fitPct(prop) }}%</b></div>
-                <div><span>{{ 'uiRef.reports' | rdTranslate }}</span><b>{{ req.merged_count || 1 }}</b></div>
-              </div>
-            </section>
-            <div class="best send-card" data-tour="detail" [class.dim]="needsDupReview(req)">
-              <p class="send-kicker">{{ 'coord.bestTeam' | rdTranslate }}</p>
-              <div class="send-row">
-                <span class="veh" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="22" height="22"><path [attr.d]="vehiclePath(prop.resource_kind)" fill="currentColor"/></svg>
-                </span>
-                <div class="send-copy">
-                  <div class="team">{{ prop.resource_name }}</div>
-                  <div class="facts">{{ legLabel(prop) }}</div>
-                  @if (prop.route_note) { <p class="route-note" data-testid="route-note">{{ prop.route_note }}</p> }
-                </div>
-              </div>
-
-              @if (prop.is_fallback && prop.fallback_label) { <p class="warnline">{{ prop.fallback_label | rdTranslate }}</p> }
-              @if (prop.wait_minutes) { <p class="warnline">{{ waitLabel(prop) }}</p> }
-              @if (prop.capacity_remaining < (req.people_count || 1) || prop.overcommit_warning) { <p class="warnline">{{ 'coord.overcommit' | rdTranslate }}</p> }
-            </div>
-            @if (!narrow()) {
-              <button type="button" class="how-link how-desk" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
-            }
-          } @else {
-            <div class="best send-card no-team"><p class="facts">{{ 'coord.noTeamNow' | rdTranslate }}</p></div>
-            @if (!narrow()) {
-              <button type="button" class="how-link how-desk" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
-            }
-          }
-
-          <section class="report-pair" data-testid="report-pair">
-            <div>
-              <p class="cap">{{ 'xfactor.originalReport' | rdTranslate }}</p>
-              <p class="quote">“{{ req.raw_text || req.place_text }}”</p>
-            </div>
-            <div>
-              <p class="cap">{{ 'xfactor.aiEnglish' | rdTranslate }}@if (showGeminiChip(req)) { <app-gemini-chip [confidence]="req.translation_confidence ?? fieldConf(req, 'type')" /> }</p>
-              <p class="quote">“{{ getTranslationText(req) }}”</p>
-            </div>
-          </section>
-
-          <button type="button" class="more-toggle" [attr.aria-expanded]="moreOpen()" (click)="moreOpen.set(!moreOpen())">
-            {{ (moreOpen() ? 'coord.hideMoreDetails' : 'coord.moreDetails') | rdTranslate }}
-          </button>
-
-          <div class="more-block" [hidden]="!moreOpen()">
-            <p class="place">{{ req.ward_id ? (req.ward_id.replace('_', ' ') | titlecase) + ' · ' : '' }}{{ req.place_text }} · {{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }}</p>
-            @if (countSpans(req).length > 1) { <p class="count-note" data-testid="counts-differ">{{ countsDiffer(req) }}</p> }
-            <div class="d-hooks">
-              @if ((req.merged_count || 1) > 1) {
-                <app-merged-chip [count]="req.merged_count || 1" [requestId]="req.id" [mobile]="narrow()" (undo)="splitCluster(req.id)" />
-              }
-            </div>
-            <div class="said">
-              <div class="said-head">
-                <span class="cap">{{ 'coord.said' | rdTranslate }}</span>
-                @if (isLowTranslationConfidence(req)) { <span class="tag warn">{{ 'coord.lowTrans' | rdTranslate }} ({{ getTranslationConfidencePercent(req) }}%)</span> }
-                <button type="button" class="link" (click)="showOriginal.set(!showOriginal())">{{ (showOriginal() ? 'coord.showTranslation' : 'coord.showOriginal') | rdTranslate }}</button>
-              </div>
-              @if ((req.report_quotes?.length || 0) > 1) {
-                @for (quote of req.report_quotes; track quote.report_id) {
-                  <p class="quote" data-testid="report-quote">“{{ quote.text }}”</p>
+        <div class="decision-scroll-content">
+          <!-- 1. Case Header -->
+          <div class="decision-case-header">
+            <div class="dec-title-row">
+              <h2 class="dec-place-title" [attr.title]="caseTitle(req)">{{ caseTitle(req) }}</h2>
+              @if (isHoax(req)) { <span class="hoax-chip hoax-head" data-testid="hoax-head">{{ hoaxLine(req) }}</span> }
+              <button type="button" class="map-toggle" data-testid="map-toggle" [attr.aria-pressed]="mapOpen()" (click)="mapOpen.set(!mapOpen())">{{ (mapOpen() ? 'queue.hideMap' : 'queue.showMap') | rdTranslate }}</button>
+              <span class="dec-band-tag" [class]="'band-' + bandOf(req.urgency_score)">
+                @if (bandOf(req.urgency_score) === 'critical') {
+                  ▲ {{ 'filter.critical' | rdTranslate }}
+                } @else if (bandOf(req.urgency_score) === 'high') {
+                  ◆ {{ 'filter.urgent' | rdTranslate }}
+                } @else {
+                  {{ 'band.other' | rdTranslate }}
                 }
-              } @else {
-                <p class="quote">“{{ showOriginal() ? (req.raw_text || req.place_text) : getTranslationText(req) }}”</p>
-              }
-              @if (req.analysis_status === 'analysing') { <p class="ai-read">{{ 'coord.traceWorking' | rdTranslate }}</p> }
-              <p class="ai-read">
-                <span class="cap">{{ 'coord.aiReading' | rdTranslate }}</span>
-                <span class="ai-src" [class.live]="aiKind(req) === 'gemini'" data-testid="ai-source">{{ aiSourceText(req) }}</span>
-              </p>
-              @if ((req.merged_count || 1) > 1) { <p class="more">{{ tr('coord.moreReports', (req.merged_count || 1) - 1) }}</p> }
+              </span>
+              <span class="dec-score-number" [style.color]="getUrgencyColor(req.urgency_score)">
+                {{ Math.round(req.urgency_score) }}
+              </span>
             </div>
+            @if (!isHoax(req)) {
+              <dl class="dec-facts" data-testid="dec-facts">
+                @if (aiIncomplete(req); as miss) {
+                  <div><dt>{{ 'dec.aiIncomplete' | rdTranslate }}</dt><dd class="flag" data-testid="dec-ai-incomplete">{{ 'dec.aiIncompleteRules' | rdTranslate }} {{ miss }}</dd></div>
+                }
+                <div><dt>{{ 'dec.depth' | rdTranslate }}</dt><dd data-testid="dec-depth-row">@if (depthChip(req); as dc) { {{ dc }} <q class="dec-quote">{{ req.water_depth?.quote }}</q> } @else { {{ 'dec.notStated' | rdTranslate }} }</dd></div>
+                @if (req.self_check && selfCheckLine($any(req.self_check)); as sc) {
+                  <div><dt>{{ 'dec.selfCheck' | rdTranslate }}</dt><dd data-testid="dec-selfcheck-row" [class.flag]="req.self_check?.verdict && req.self_check?.verdict !== 'pass'">{{ sc }}</dd></div>
+                }
+              </dl>
+            }
+            <p class="dec-case-sub">
+              <span [attr.title]="req.id">{{ shortId(req.id, req.public_code) }}</span> · {{ getWardText(req) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
+              @if (engineLabelKey(req); as ek) {
+                · <span class="aiq-engine" data-testid="ai-engine-panel" [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span>
+              }
+              @if (tookTooLong(req)) { · {{ 'aiq.provenanceTimeout' | rdTranslate }} }
+            </p>
+            @if (caseAiBlocked(req)) {
+              <span class="aiq-work-badge">{{ 'aiq.workingBadge' | rdTranslate:{ t: clockOf(req) } }}</span>
+            }
+          </div>
+          @if (caseAiBlocked(req)) {
+            <div class="aiq-notice" data-testid="ai-notice">
+              <p>{{ 'aiq.stillWorking' | rdTranslate:{ step: stepNumberOf(req), name: (activeStepKey(req) | rdTranslate) } }}</p>
+              @if (geminiPausedHonest()) { <p>{{ 'aiq.pausedNote' | rdTranslate }}</p> }
+            </div>
+            <div class="aiq-fields" data-testid="ai-fields">
+              <div class="aiq-field"><span>{{ 'aiq.what' | rdTranslate }}</span><span>{{ getNeedText(req) }}</span>@if (stepChecked(req, 'read')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.place' | rdTranslate }}</span><span>{{ req.place_text || ('dec.notStated' | rdTranslate) }}</span>@if (req.ai_queue?.place_unverified || !stepChecked(req, 'read')) { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> } @else { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.duplicates' | rdTranslate }}</span><span>@if (stepChecked(req, 'duplicates')) { {{ duplicateLine(req) }} } @else { {{ 'aiq.checking' | rdTranslate }} }</span>@if (stepChecked(req, 'duplicates')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.people' | rdTranslate }}</span><span>{{ peopleLabel(req.people_count, req.flags) }}</span>@if (stepChecked(req, 'urgency')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.urgency' | rdTranslate }}</span><span>@if (stepChecked(req, 'urgency')) { {{ Math.round(req.urgency_score) }} } @else { {{ 'aiq.beingRated' | rdTranslate }} }</span>@if (stepChecked(req, 'urgency')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.team' | rdTranslate }}</span><span>@if (stepChecked(req, 'team')) { {{ activeProposal()?.resource_name || ('aiq.notChosen' | rdTranslate) }} } @else { {{ 'aiq.notChosen' | rdTranslate }} }</span>@if (stepChecked(req, 'team')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+            </div>
+            @for (row of diffEntries(req); track row.field) {
+              <p class="aiq-diff">{{ 'aiq.diffLine' | rdTranslate:{ field: row.field, from: row.from, to: row.to } }}</p>
+            }
+          }
+
+          <div class="case-steps">
+          <!-- Compact 5-Step Horizontal AI Stepper Under Map -->
+          @if (selectedRequest(); as sreq) {
+            <div class="steps-line" data-testid="steps-line">
+              <span class="steps-badge" [class.gemini]="stepsSummary(sreq).gemini">{{ stepsSummary(sreq).text }}</span>
+              <button type="button" class="steps-toggle" (click)="openTraceDrawer()">{{ 'ux.viewTrace' | rdTranslate }}</button>
+            </div>
+          }
+          <app-ai-stepper
+            [request]="selectedRequest()"
+            [activeProposal]="activeProposal()"
+            [runBadge]="selectedRequest() ? aiSourceText(selectedRequest()!) : ('coord.aiOffline' | rdTranslate)"
+            [isAnalysing]="selectedRequest() ? isAnalysing(selectedRequest()!) : false"
+            (openStepDetail)="openStepDetailDialog($event)"
+            (howDecided)="openTraceDrawer()"
+          />
+          </div>
+
+          <details class="show-report">
+            <summary>{{ 'queue.showReport' | rdTranslate }}</summary>
+          <!-- 2. Original Report alongside AI English -->
+          <div class="report-comparison-box" data-testid="report-pair">
+            <div class="rep-side rep-orig">
+              <div class="rep-side-head">
+                <span class="rep-lbl">{{ 'xfactor.originalReport' | rdTranslate }} · {{ originalLangName(req) }}</span>
+                <button
+                  type="button"
+                  class="btn-show-orig"
+                  (click)="toggleShowOriginal()"
+                >
+                  {{ (showOriginal() ? 'coord.showTranslation' : 'coord.showOriginal') | rdTranslate }}
+                </button>
+              </div>
+              <p class="rep-text">“{{ getOriginalQuote(req) }}”</p>
+            </div>
+            <div class="rep-side rep-eng">
+              <div class="rep-side-head">
+                <span class="rep-lbl">{{ 'xfactor.aiEnglish' | rdTranslate }}</span>
+                @if (showGeminiChip(req)) {
+                  <app-gemini-chip [confidence]="req.translation_confidence ?? fieldConf(req, 'type')" />
+                }
+              </div>
+              @if (req.self_check && selfCheckLine($any(req.self_check)); as scLine) {
+                <p class="rep-text self-check" data-testid="self-check">✓ {{ scLine }}</p>
+              }
+              <p class="rep-text ai-english" data-testid="ai-english-full">“{{ getTranslationText(req) }}”</p>
+            </div>
+          </div>
+
+          </details>
+
+          <!-- 3. Down arrow and 2x2 Field Grid -->
+          <div class="field-grid-arrow" aria-hidden="true">↓</div>
+          <div class="field-2x2-grid">
+            <div class="field-cell">
+              <span class="fc-label">{{ 'field.need' | rdTranslate }}</span>
+              <strong class="fc-value">{{ isAnalysing(req) ? '—' : getNeedText(req) }}</strong>
+            </div>
+            <div class="field-cell">
+              <span class="fc-label">{{ 'field.people' | rdTranslate }}</span>
+              <strong class="fc-value">{{ isAnalysing(req) ? '—' : getPeopleText(req) }}</strong>
+            </div>
+            <div class="field-cell">
+              <span class="fc-label">{{ 'field.danger' | rdTranslate }}</span>
+              <strong class="fc-value">{{ isAnalysing(req) ? '—' : getDangerText(req) }}</strong>
+            </div>
+            <div class="field-cell">
+              <span class="fc-label">{{ 'field.place' | rdTranslate }}</span>
+              <strong class="fc-value">{{ isAnalysing(req) ? '—' : getWardText(req) }}</strong>
+            </div>
+          </div>
+
+          <!-- 4. Decision: Best team for this -->
+          <div class="decision-block">
+            <span class="block-kicker">{{ 'coord.decision' | rdTranslate }}</span>
+            <h3 class="block-subheading">{{ 'coord.bestTeam' | rdTranslate }}</h3>
 
             @if (activeProposal(); as prop) {
-              <div class="best">
-                <div class="best-head">
-                  <span class="cap">{{ 'coord.bestTeam' | rdTranslate }}</span>
-                  <span class="fit">{{ tr('coord.fit', fitPct(prop)) }}</span>
-                </div>
-                <div class="team">{{ prop.resource_name }}</div>
-                @if (req.assigned_resource_id) {
-                  <a class="link" [routerLink]="['/team', req.assigned_resource_id]">{{ 'team.open' | rdTranslate }}</a>
-                }
-                <div class="score-facts">{{ prop.capacity_remaining }}/{{ prop.capacity_total }} {{ 'coord.seats' | rdTranslate }} · {{ ('coord.kind.' + prop.resource_kind) | rdTranslate }}
-                  @if (prop.simulated || assignedTeam(req)?.simulated) { <span class="tag">{{ 'coord.simulated' | rdTranslate }}</span> }
-                </div>
-                @if (req.routing_note) { <p class="reason-cap">{{ 'coord.referralStock' | rdTranslate }}</p><p class="expl">{{ req.routing_note }}</p> }
-                @if (prop.explanation) {
-                  <p class="reason-cap">{{ 'coord.reasoning' | rdTranslate }}</p>
-                  <p class="expl reason" data-testid="decision-reason">{{ prop.explanation }}</p>
-                }
-                @if (prop.route_note) { <p class="expl" data-testid="route-note-why">{{ prop.route_note }}</p> }
-              </div>
-
-              <div class="acc">
-                <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'why'" (click)="toggleSection('why')"><span>{{ 'coord.why' | rdTranslate }}</span><span class="chev">{{ openSection() === 'why' ? '⌃' : '⌄' }}</span></button>
-                @if (openSection() === 'why') {
-                  <div class="acc-b">
-                    <div class="bd"><span>{{ 'ui.distance' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.distance_score / 30) * 100"></b></div><em>{{ prop.breakdown.distance_score.toFixed(1) }}/30</em></div>
-                    <div class="bd"><span>{{ 'ui.capacity' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.capacity_fit_score / 25) * 100"></b></div><em>{{ prop.breakdown.capacity_fit_score.toFixed(1) }}/25</em></div>
-                    <div class="bd"><span>{{ 'ui.urgency' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.urgency_score / 25) * 100"></b></div><em>{{ prop.breakdown.urgency_score.toFixed(1) }}/25</em></div>
-                    <div class="bd"><span>{{ 'ui.vuln' | rdTranslate }}</span><div class="bar"><b [style.width.%]="(prop.breakdown.vulnerability_fit_score / 20) * 100"></b></div><em>{{ prop.breakdown.vulnerability_fit_score.toFixed(1) }}/20</em></div>
-                    @if (prop.explanation) { <p class="expl">{{ prop.explanation }}</p> }
+              <div class="best-team-banner">
+                <div class="best-team-main-row">
+                  <span class="team-veh-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22"><path [attr.d]="vehiclePath(prop.resource_kind)" fill="currentColor"/></svg>
+                  </span>
+                  <div class="team-name-line">
+                    <strong class="team-name">{{ isDispatched(req) ? (assignedTeam(req)?.name || prop.resource_name) : prop.resource_name }}</strong>
+                    <span class="team-specs">{{ propEtaSubline(prop) }}</span>
                   </div>
+                </div>
+                @if (prop.is_fallback && prop.fallback_label) {
+                  <p class="warnline">{{ prop.fallback_label | rdTranslate }}</p>
                 }
-              </div>
-            }
-
-            @if (req.possible_duplicate; as hint) {
-              <div class="dup-evidence">
-                <p class="cap">{{ 'coord.possibleDuplicate' | rdTranslate }}</p>
-                <p>{{ hint.target_id }}{{ dupEvidence(req) ? ' · ' + dupEvidence(req) : '' }}</p>
-              </div>
-            }
-
-            @if (otherTeams().length) {
-              <ul class="candidates">
-                @for (m of otherTeams(); track m.resource_id) {
-                  <li [class.on]="highlightId() === m.resource_id" (mouseenter)="highlightId.set(m.resource_id)" (mouseleave)="highlightId.set(null)">
-                    <span>{{ m.resource_name }}</span>
-                    <span class="eta">{{ legLabel(m) }}</span>
-                  </li>
+                @if (prop.wait_minutes) {
+                  <p class="warnline">{{ waitLabel(prop) }}</p>
                 }
-              </ul>
-            }
+                @if (depthLine(prop); as dl) {
+                  <p class="team-why-reason depth-line" data-testid="depth-why">{{ dl }}</p>
+                }
+                <p class="team-why-reason" data-testid="team-why">{{ teamWhy(prop) }}</p>
+                <button type="button" class="why-link" (click)="openWhyTeamModal()">{{ 'why.title' | rdTranslate }} ›</button>
+                <p class="straight-line-note">{{ 'coord.straightLine' | rdTranslate }}</p>
+              </div>
 
-            <div class="acc">
-              <button type="button" class="acc-h" [attr.aria-expanded]="openSection() === 'reports'" (click)="toggleSection('reports')"><span>{{ (req.merged_count || 1) > 1 ? tr('coord.allReports', req.merged_count || 1) : ('coord.reportDetails' | rdTranslate) }}</span><span class="chev">{{ openSection() === 'reports' ? '⌃' : '⌄' }}</span></button>
-              @if (openSection() === 'reports') {
-                <div class="acc-b">
-                  @if (req.report_quotes?.length) {
-                    @for (quote of req.report_quotes; track quote.report_id) {
-                      <p class="expl" data-testid="report-quote">“{{ quote.text }}”</p>
+              <!-- 5. Why this team mini table -->
+              <div class="why-mini-table-wrap">
+                <div class="why-mini-table-head">
+                  <h4 class="why-title">{{ 'why.title' | rdTranslate }}</h4>
+                  <button type="button" class="btn-more-details" (click)="openWhyTeamModal()">
+                    {{ 'panel.moreDetails' | rdTranslate }} ›
+                  </button>
+                </div>
+                <table class="why-mini-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>{{ 'why.team' | rdTranslate }}</th>
+                      <th>{{ 'why.eta' | rdTranslate }}</th>
+                      <th>{{ 'why.seats' | rdTranslate }}</th>
+                      <th>{{ 'why.total' | rdTranslate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (m of chooserMatches(); track m.match_id || m.resource_id; let i = $index) {
+                      <tr
+                        [class.chosen]="i === matchIdx()"
+                        (click)="pickMatch(i)"
+                        (mouseenter)="highlightId.set(m.resource_id)"
+                        (mouseleave)="highlightId.set(null)"
+                      >
+                        <td class="col-num">{{ i + 1 }}</td>
+                        <td class="col-team">
+                          <strong>{{ m.resource_name }}</strong>
+                          @if (i === 0) {
+                            <span class="chosen-dot">· {{ 'why.chosen' | rdTranslate }}</span>
+                          }
+                        </td>
+                        <td class="col-eta">{{ propEta(m) }}</td>
+                        <td class="col-seats">{{ m.capacity_remaining }}/{{ m.capacity_total }} ✓</td>
+                        <td class="col-score"><strong>{{ (m.score || 0).toFixed(1) }}</strong></td>
+                      </tr>
                     }
-                  } @else {
-                    <p class="expl">“{{ req.raw_text || req.place_text }}”</p>
-                  }
-                  <div class="conf">
-                    <span>{{ 'ui.type' | rdTranslate }} {{ Math.round((req.confidence?.type || 0.96) * 100) }}%</span>
-                    <span>{{ 'ui.place' | rdTranslate }} {{ Math.round((req.confidence?.place || 0.88) * 100) }}%</span>
-                    <span>{{ 'ui.peopleW' | rdTranslate }} {{ Math.round((req.confidence?.people || 0.82) * 100) }}%</span>
-                  </div>
-                  @if (req.cluster_id) { <button type="button" class="link" (click)="splitCluster(req.id)">{{ 'ui.undoMerge' | rdTranslate }}</button> }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              @if (noTeam(); as nt) {
+                <section class="no-team-card" data-testid="no-team">
+                  <h3>{{ ('noTeam.title.' + (nt.kind || 'other')) | rdTranslate:{ km: nt.limit_km } }}</h3>
+                  <p class="nt-reason">{{ noTeamReason(nt) }}</p>
+                  <p class="nt-stays">{{ 'noTeam.stays' | rdTranslate }}</p>
+                  <fieldset class="nt-options">
+                    <legend>{{ 'noTeam.yourOptions' | rdTranslate }}</legend>
+                    @for (k of noTeamOptionKeys(nt); track k) {
+                      <label class="nt-opt" [class.on]="noTeamPick() === k" [attr.data-testid]="'no-team-' + k">
+                        <input type="radio" name="nt-opt" [value]="k" [checked]="noTeamPick() === k" (change)="noTeamPick.set(k)" />
+                        <span>{{ noTeamLine(nt, k) }}</span>
+                      </label>
+                    }
+                  </fieldset>
+                  <p class="nt-foot">{{ 'noTeam.footer' | rdTranslate }}</p>
+                </section>
+              } @else {
+                <div class="team-finding" data-testid="team-finding" role="status" aria-live="polite">
+                  <span class="tf-bar"></span><span class="tf-bar"></span><span class="tf-bar short"></span>
+                  <p>{{ 'coord.findingTeam' | rdTranslate }}</p>
                 </div>
               }
-            </div>
-            @if (narrow()) {
-              <button type="button" class="how-link how-phone" (click)="openTrace(req, $event)">{{ 'ux.viewTrace' | rdTranslate }}</button>
+            }
+
+            @if (needsDupReview(req)) {
+              <div class="dup-review" data-testid="dup-review">
+                <p>{{ dupAiLine(req) }}</p>
+                @if (req.count_note) { <p class="count-note" data-testid="counts-differ">{{ req.count_note }}</p> }
+                <button type="button" data-testid="merge-dup" (click)="confirmMerge(req)">{{ 'coord.mergeReports' | rdTranslate }}</button>
+                <button type="button" data-testid="keep-dup" (click)="keepSeparate(req)">{{ 'coord.keepSeparate' | rdTranslate }}</button>
+              </div>
             }
           </div>
         </div>
 
-        <div class="actionbar" data-tour="actions">
-          <p class="approve-note">{{ 'coord.youDecide' | rdTranslate }}</p>
-          @if (offline()) { <p class="offline-bar">{{ 'coord.approveOffline' | rdTranslate }}</p> }
-          @else if (needsDupReview(req)) { <p class="dup-note">{{ 'coord.decideDupFirst' | rdTranslate }}</p> }
-          @if (changeOpen()) {
-            <div class="chooser" role="listbox" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">
-              @for (m of chooserMatches(); track m.match_id; let i = $index) {
-                <button type="button" role="option" [class.on]="i === matchIdx()" (click)="pickMatch(i)" (mouseenter)="highlightId.set(m.resource_id)" (mouseleave)="highlightId.set(null)">{{ m.resource_name }} <em>{{ legLabel(m) }}</em> · {{ 'coord.sendThisTeam' | rdTranslate }}</button>
+        <!-- 6. Pinned Footer Actions -->
+        <footer class="decision-pinned-footer" data-tour="actions">
+          @if (tipOpen() && !(selectedRequest() && (isDispatched(selectedRequest()!) || isCompleted(selectedRequest()!)))) {
+            <p class="key-tip" role="note" data-testid="key-tip">{{ tipKey() | rdTranslate }} <button type="button" (click)="dismissTip()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
+          }
+          @if (!isDispatched(req) && !isCompleted(req)) {
+            <p class="you-decide-msg">{{ 'coord.youDecide' | rdTranslate }}</p>
+          }
+          @if (!isDispatched(req) && !isCompleted(req) && takeNotice(); as tw) {
+            <div class="take-warn" role="alert" data-testid="take-warning">
+              <p>⚠ {{ takeWarnText(tw) }}</p>
+              @if (takeWarn()) {
+              <div class="take-btns">
+                <button type="button" class="btn-quiet" (click)="takeWarn.set(null)">{{ 'ui.cancel' | rdTranslate }}</button>
+                <button type="button" class="btn-sec" data-testid="take-anyway" (click)="approveAnyway()">{{ 'take.anyway' | rdTranslate }}</button>
+              </div>
               }
             </div>
           }
+
+          @if (changeOpen()) {
+            <div class="chooser chooser-panel" role="listbox" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">
+              @for (m of chooserMatches(); track m.match_id; let i = $index) {
+                <button
+                  type="button"
+                  role="option"
+                  class="chooser-opt"
+                  [class.on]="i === matchIdx()"
+                  (click)="pickMatch(i)"
+                  (mouseenter)="highlightId.set(m.resource_id)"
+                  (mouseleave)="highlightId.set(null)"
+                >
+                  {{ m.resource_name }} <em>{{ legLabel(m) }}</em> · {{ 'coord.sendThisTeam' | rdTranslate }}
+                </button>
+              }
+            </div>
+          }
+
           @if (rejectOpen() && activeProposal(); as rejectProp) {
-            <div class="reject-inline">
+            <div class="reject-inline reject-panel">
+              <p class="reject-team" data-testid="reject-team">{{ 'reject.which' | rdTranslate:{ team: rejectProp.resource_name } }}</p>
               <div class="reject-picks">
                 @for (key of rejectReasons; track key) {
-                  <button type="button" [class.on]="rejectReasonText === (key | rdTranslate)" (click)="pickRejectReason(key)">{{ key | rdTranslate }}</button>
+                  <button type="button" [class.on]="rejectReasonText === (key | rdTranslate)" (click)="pickRejectReason(key)">
+                    {{ key | rdTranslate }}
+                  </button>
                 }
               </div>
-              <input type="text" class="reject-input" [(ngModel)]="rejectReasonText" [placeholder]="'ui.rjPh' | rdTranslate" />
-              <button type="button" class="btn-quiet" (click)="closeRejectModal(); rejectOpen.set(false)">{{ 'ui.cancel' | rdTranslate }}</button>
-              <button type="button" class="btn-sec" (click)="confirmReject()">{{ 'ui.rjGo' | rdTranslate }}</button>
+              <input
+                type="text"
+                class="reject-input"
+                [(ngModel)]="rejectReasonText"
+                [placeholder]="'ui.rjPh' | rdTranslate"
+              />
+              <div class="reject-btns">
+                <button type="button" class="btn-quiet" (click)="closeRejectModal(); rejectOpen.set(false)">
+                  {{ 'ui.cancel' | rdTranslate }}
+                </button>
+                <button type="button" class="btn-approve btn-reject-go" (click)="confirmReject()">
+                  {{ 'ui.rjGo' | rdTranslate }}
+                </button>
+              </div>
             </div>
           }
           @if (isCompleted(req)) {
-            <p class="decide">{{ 'coord.completedNote' | rdTranslate }}</p>
+            <p class="completed-banner-note">{{ 'coord.completedNote' | rdTranslate }}</p>
           } @else if (isDispatched(req)) {
-            <ol class="dispatch-steps">
-              <li [class.on]="dispatchStep(req) >= 0">{{ 'coord.stepSent' | rdTranslate }}</li>
-              <li [class.on]="dispatchStep(req) >= 1">{{ 'coord.stepAccepted' | rdTranslate }}</li>
-              <li [class.on]="dispatchStep(req) >= 2">{{ 'coord.stepOnWay' | rdTranslate }}</li>
-              <li [class.on]="dispatchStep(req) >= 3">{{ 'coord.stepOnScene' | rdTranslate }}</li>
-            </ol>
-            <div class="btns">
-              @if (req.status !== 'in_progress') {
-                <button type="button" class="btn-sec" (click)="markArrived(req)">{{ 'coord.markArrived' | rdTranslate }}</button>
-              }
-              <button type="button" class="btn-approve" (click)="markCompleted(req)">{{ 'coord.markCompleted' | rdTranslate }}</button>
-            </div>
-          } @else if (!activeProposal()) {
-            <div class="btns">
-              <button type="button" class="btn-approve">{{ 'coord.callDispatcher' | rdTranslate }}</button>
-            </div>
-          } @else if (activeProposal(); as prop) {
-            <div class="btns approval-buttons">
-              <button type="button" class="btn-approve" [disabled]="needsDupReview(req) || offline() || approving()" (click)="approveMatch(prop)">{{ 'coord.approve' | rdTranslate }}</button>
-              <div class="sec-row">
-                <button type="button" class="btn-sec" (click)="changeOpen.set(!changeOpen()); rejectOpen.set(false)" [attr.aria-expanded]="changeOpen()" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">{{ 'confirm.change' | rdTranslate }}</button>
-                <button type="button" class="btn-quiet" (click)="rejectOpen.set(true); changeOpen.set(false); openRejectModal(prop)">{{ 'coord.reject' | rdTranslate }}</button>
+            <div class="dispatched-actions-row">
+              <p class="on-way-title" data-testid="team-on-way">{{ 'disp.onWay' | rdTranslate }}@if (assignedTeam(req); as team) { <span> · {{ team.name }}</span> }@if (sentLine(req); as sl) { <span> · {{ sl }}</span> }</p>
+              <ol class="dispatch-steps">
+                <li [class.on]="dispatchStep(req) >= 0">{{ 'coord.stepSent' | rdTranslate }}</li>
+                <li [class.on]="dispatchStep(req) >= 1">{{ 'coord.stepAccepted' | rdTranslate }}</li>
+                <li [class.on]="dispatchStep(req) >= 2">{{ 'coord.stepOnWay' | rdTranslate }}</li>
+                <li [class.on]="dispatchStep(req) >= 3">{{ 'coord.stepOnScene' | rdTranslate }}</li>
+              </ol>
+              <div class="btns">
+                @if (req.status !== 'in_progress') {
+                  <button type="button" class="btn-sec btn-arrived" (click)="markArrived(req)">{{ 'disp.markArrived' | rdTranslate }}</button>
+                }
+                <button type="button" class="btn-approve" (click)="markCompleted(req)">{{ 'coord.markCompleted' | rdTranslate }}</button>
               </div>
             </div>
+          } @else if (isHoax(req) && !hoaxOverride()) {
+            <div class="footer-buttons-row hoax-actions">
+              <button type="button" class="btn-approve btn-dismiss-hoax" data-testid="dismiss-hoax" [disabled]="offline() || approving()" (click)="dismissHoax(req)">{{ 'hoax.dismiss' | rdTranslate }} <kbd>D</kbd></button>
+              <button type="button" class="btn-sec btn-not-hoax" data-testid="not-hoax" (click)="hoaxOverride.set(true)">{{ 'hoax.notHoax' | rdTranslate }}</button>
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
+            </div>
+          } @else if (caseLifeThreat(req)) {
+            <div class="footer-buttons-row aiq-life-actions">
+              <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="sendNearestBoat(req)">{{ 'aiq.sendBoat' | rdTranslate }}</button>
+              <button type="button" class="btn-sec" (click)="callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
+              <a class="btn-sec aiq-call" href="tel:112">{{ 'aiq.call112' | rdTranslate }}</a>
+            </div>
+            <p class="aiq-foot">{{ 'aiq.footnote' | rdTranslate }}</p>
+          } @else if (caseAiBlocked(req)) {
+            <div class="footer-buttons-row">
+              <button type="button" class="btn-approve is-locked" data-testid="approve-locked" disabled aria-disabled="true">{{ 'aiq.approveLocked' | rdTranslate }}</button>
+              @if (hoaxAsk()) {
+                <input type="text" class="aiq-hoax-word" [(ngModel)]="hoaxWord" [placeholder]="'aiq.hoaxWordPh' | rdTranslate" [attr.aria-label]="'aiq.hoaxWord' | rdTranslate" (keydown.enter)="confirmHoaxWord(req)" />
+                <button type="button" class="btn-sec" (click)="confirmHoaxWord(req)">{{ 'aiq.markHoax' | rdTranslate }}</button>
+              } @else {
+                <button type="button" class="btn-sec btn-dismiss-hoax" data-testid="dismiss-hoax" (click)="askHoax(req)">{{ 'aiq.markHoax' | rdTranslate }}</button>
+              }
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'aiq.nextReady' | rdTranslate }}</button>
+            </div>
+            <p class="aiq-foot">{{ 'aiq.footnote' | rdTranslate }}</p>
+          } @else if (activeProposal(); as prop) {
+            <div class="footer-buttons-row">
+              <button
+                type="button"
+                class="btn-approve"
+                [hidden]="rejectOpen()"
+                [disabled]="rejectOpen() || needsDupReview(req) || offline() || approving() || hoaxBlocked(req) || waitingForReading(req)"
+                [attr.title]="waitingForReading(req) ? ('flow.readingReport' | rdTranslate) : null"
+                (click)="approveMatch(prop)"
+              >
+                ✓ <span class="btn-label">{{ 'coord.approve' | rdTranslate }}</span> <kbd>A</kbd>
+              </button>
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" [attr.title]="'batch.shortcuts' | rdTranslate" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
+              @if (!rejectOpen()) {
+              <button
+                type="button"
+                class="btn-quiet btn-reject"
+                [attr.aria-label]="'coord.reject' | rdTranslate"
+                [attr.title]="'coord.reject' | rdTranslate"
+                (click)="rejectOpen.set(!rejectOpen()); changeOpen.set(false); openRejectModal(prop)"
+              >
+                ✕ <span class="btn-label">{{ 'coord.reject' | rdTranslate }}</span>
+              </button>
+              }
+              <button
+                type="button"
+                class="btn-sec btn-change"
+                (click)="changeOpen.set(!changeOpen()); rejectOpen.set(false)"
+                [attr.aria-expanded]="changeOpen()"
+                [attr.aria-label]="'coord.chooseTeam' | rdTranslate"
+              >
+                ✎ <span class="btn-label">{{ 'confirm.change' | rdTranslate }}</span>
+              </button>
+              @if (capacityShort(prop); as cap) {
+                <p class="cap-warn" role="note" data-testid="capacity-warning">⚠ {{ 'coord.capacityShort' | rdTranslate:{ left: cap.left, need: cap.need } }}</p>
+              }
+              <button type="button" class="btn-sec btn-help" data-testid="help-btn" (click)="helpOpen.set(true)" [attr.aria-label]="'keys.title' | rdTranslate">?</button>
+            </div>
+          } @else if (noTeam(); as nt) {
+            <div class="footer-buttons-row">
+              <button type="button" class="btn-approve nt-go" data-testid="no-team-go" [disabled]="!!noTeamDone() || offline()" (click)="noTeamGo(req, nt)">
+                <span class="btn-label">{{ noTeamGoLabel(nt) }}</span> <kbd>↵</kbd>
+              </button>
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
+            </div>
+          } @else {
+            <div class="footer-buttons-row">
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
+            </div>
           }
-        </div>
+        </footer>
       } @else {
         <p class="empty pad">{{ 'coord.noSelection' | rdTranslate }}</p>
       }
     </aside>
   </div>
 
+  <!-- Agent Trace Drawer (Alt B layout, 640px) -->
   @if (traceRequest(); as traced) {
-    <app-agent-trace-drawer [request]="traced" [mobile]="narrow()" (closed)="closeTrace()" (retry)="retryTrace()" />
+    <app-agent-trace-drawer
+      [request]="traced"
+      [mobile]="narrow()"
+      (closed)="closeTrace()"
+      (retry)="retryTrace()"
+    />
   }
+
+  <!-- Assist Panel Drawer -->
   @if (assistOpen()) {
     <app-assist-panel
       [proposals]="assist().proposals"
@@ -435,101 +909,6 @@
     />
   }
 
-  <!-- WEIGHTS SLIDER DRAWER (Slide-over from right) -->
-  @if (ui.weightsOpen()) {
-    <div class="drawer-backdrop" (click)="closeWeights()"></div>
-    <aside class="weights-drawer card">
-      <div class="drawer-header">
-        <h3>{{ 'ui.wTitle' | rdTranslate }}</h3>
-        <button type="button" class="drawer-close" (click)="closeWeights()">✕</button>
-      </div>
-
-      <p class="drawer-desc">
-        {{ 'ui.wDesc' | rdTranslate }}
-      </p>
-
-      <div class="slider-group">
-        <div class="slider-label-row">
-          <span>{{ 'ui.wVuln' | rdTranslate }}</span>
-          <span class="mono">{{ currentWeights().w_vulnerability }}</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="60"
-          [value]="currentWeights().w_vulnerability"
-          (input)="onWeightChange('w_vulnerability', $event)"
-        />
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label-row">
-          <span>{{ 'ui.wPeople' | rdTranslate }}</span>
-          <span class="mono">{{ currentWeights().w_people }}</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="50"
-          [value]="currentWeights().w_people"
-          (input)="onWeightChange('w_people', $event)"
-        />
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label-row">
-          <span>{{ 'ui.wHazard' | rdTranslate }}</span>
-          <span class="mono">{{ currentWeights().w_hazard }}</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="50"
-          [value]="currentWeights().w_hazard"
-          (input)="onWeightChange('w_hazard', $event)"
-        />
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label-row">
-          <span>{{ 'ui.wWait' | rdTranslate }}</span>
-          <span class="mono">{{ currentWeights().w_wait_time }}</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="30"
-          [value]="currentWeights().w_wait_time"
-          (input)="onWeightChange('w_wait_time', $event)"
-        />
-      </div>
-
-      <div class="slider-group">
-        <div class="slider-label-row">
-          <span>{{ 'ui.wConf' | rdTranslate }}</span>
-          <span class="mono">{{ currentWeights().confidence_discount_factor }}</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          [value]="currentWeights().confidence_discount_factor"
-          (input)="onWeightChange('confidence_discount_factor', $event)"
-        />
-      </div>
-
-      <div class="drawer-actions">
-        <button type="button" class="btn-reset" (click)="resetWeightsToDefaults()">
-          {{ 'ui.reset' | rdTranslate }}
-        </button>
-        <button type="button" class="btn-save" (click)="closeWeights()">
-          {{ 'ui.close' | rdTranslate }}
-        </button>
-      </div>
-    </aside>
-  }
-
   <!-- Overcommit Warning Modal -->
   @if (isOvercommitModalOpen()) {
     <div class="modal-backdrop">
@@ -538,9 +917,7 @@
           <span class="warning-icon">⚠️</span>
           <h4>{{ 'ui.ocTitle' | rdTranslate }}</h4>
         </div>
-        <p class="modal-body">
-          {{ 'ui.ocBody' | rdTranslate }}
-        </p>
+        <p class="modal-body">{{ 'ui.ocBody' | rdTranslate }}</p>
         <div class="modal-actions">
           <button type="button" class="btn-cancel" (click)="cancelOvercommit()">{{ 'ui.cancel' | rdTranslate }}</button>
           <button type="button" class="btn-confirm-overcommit" (click)="confirmOvercommit()">
@@ -558,9 +935,7 @@
         <div class="modal-header">
           <h4>{{ 'ui.rjTitle' | rdTranslate }}</h4>
         </div>
-        <p class="modal-body">
-          {{ 'ui.rjBody' | rdTranslate }}
-        </p>
+        <p class="modal-body">{{ 'ui.rjBody' | rdTranslate }}</p>
         <input
           type="text"
           class="reject-input"

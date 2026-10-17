@@ -15,8 +15,8 @@
         <span>{{ 'landing.deskLine2' | rdTranslate }}</span>
         <span class="accent">{{ 'landing.deskLine3' | rdTranslate }}</span>
       </h1>
-      <p class="judge problem">{{ 'landing.problem' | rdTranslate }}</p>
-      <p class="judge does">{{ 'landing.does' | rdTranslate }}</p>
+      <p class="hero-line">{{ 'landing.heroLine' | rdTranslate }}</p>
+      <a href="#" class="try-desk" data-testid="try-desk" (click)="openDemo($event, true)">{{ 'landing.tryDesk' | rdTranslate }} <span aria-hidden="true">→</span></a>
       <p class="scenario">{{ 'landing.scenarioLabel' | rdTranslate }}</p>
 
       <div class="cards">
@@ -28,11 +28,6 @@
           <span class="sos-foot">{{ 'landing.voiceText' | rdTranslate }} <span aria-hidden="true">→</span></span>
         </a>
 
-        <a routerLink="/coordinator/login" class="coord">
-          <span class="chip">{{ 'landing.signIn' | rdTranslate }}</span>
-          <span class="coord-title">{{ 'landing.coordCard' | rdTranslate }}</span>
-          <span class="coord-sub">{{ 'landing.coordCardSub' | rdTranslate }} <span aria-hidden="true">→</span></span>
-        </a>
       </div>
 
       <div class="rows">
@@ -40,28 +35,24 @@
         <a routerLink="/nearby" class="row"><span>{{ 'landing.alertsNear' | rdTranslate }}</span><span aria-hidden="true">›</span></a>
       </div>
 
-      <a href="#" class="judge-desk" (click)="openDemo($event)">{{ 'landing.judgeLink' | rdTranslate }}</a>
-
-      <ul class="trust">
-        <li>{{ 'landing.trustOffline' | rdTranslate }}</li>
-        <li>{{ 'landing.trustLang' | rdTranslate }}</li>
-        <li>{{ 'landing.trustArea' | rdTranslate }}</li>
-      </ul>
+      <p class="trust-line">{{ 'landing.trustOffline' | rdTranslate }} · {{ 'landing.trustLang' | rdTranslate }}</p>
     </section>
 
     <aside class="right" aria-hidden="true">
-      <div class="phone">
-        <div class="phone-head">{{ 'nav.report' | rdTranslate }}</div>
-        <div class="phone-body">
-          <div class="spark">✦</div>
-          <div class="ph-title">{{ 'landing.previewTitle' | rdTranslate }}</div>
-          <div class="ph-sub">{{ 'landing.previewSub' | rdTranslate }}</div>
-          <div class="ph-chip">{{ 'landing.chipFlood' | rdTranslate }}</div>
-          <div class="ph-chip">{{ 'landing.chipAnimal' | rdTranslate }}</div>
-          <div class="ph-chip">{{ 'landing.chipHurt' | rdTranslate }}</div>
-          <div class="ph-chip">{{ 'landing.chipOther' | rdTranslate }}</div>
+      <div class="desk-preview">
+        <div class="dp-head"><b>{{ 'nav.command' | rdTranslate }}</b><span class="dp-gem">✨ {{ 'steps.short.intake' | rdTranslate }} · {{ 'steps.short.dedupe' | rdTranslate }} · {{ 'steps.short.urgency' | rdTranslate }}</span></div>
+        <div class="dp-body">
+          <div class="dp-queue">
+            <div class="dp-card on"><span class="crit">▲ {{ 'filter.critical' | rdTranslate }} 94</span><span>{{ 'landing.chipFlood' | rdTranslate }}</span></div>
+            <div class="dp-card"><span class="crit">▲ {{ 'filter.critical' | rdTranslate }} 91</span><span>{{ 'landing.chipHurt' | rdTranslate }}</span></div>
+            <div class="dp-card"><span class="urg">◆ {{ 'filter.urgent' | rdTranslate }} 72</span><span>{{ 'landing.chipAnimal' | rdTranslate }}</span></div>
+          </div>
+          <div class="dp-case">
+            <div class="dp-steps"><i></i><i></i><i></i><i></i><i></i><i class="you"></i></div>
+            <div class="dp-team">{{ 'coord.kind.boat' | rdTranslate }}</div>
+            <div class="dp-approve">✓ {{ 'coord.approve' | rdTranslate }}</div>
+          </div>
         </div>
-        <div class="ph-composer">{{ 'landing.composer' | rdTranslate }}</div>
       </div>
     </aside>
   </main>

@@ -1323,3 +1323,283 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - How verified (commands / screenshots): `python3 -c "from app.main import app"` imported. `python3 -m pytest tests` — 295 passed, 1 skipped. `node scripts/check-i18n.mjs` — 903 keys, template lint pass. `npx ng build web` succeeded (command stylesheet 27.89 kB vs 20 kB warning). Targeted `ng test web` road-route — 2 passed; `ng test shared` band.util — 3 passed.
 - Notes / risks / not done: Routes API still needs the key’s Routes API enabled; REQUEST_DENIED keeps the straight line after the first denial. Boat cap is haversine, not a live waterway graph. Voice transcription needs a live Gemini call (catalog fallback if ASR fails). Photo/sitrep latency still depends on the free-tier model. Browser retest of the six local issues was not recorded in this environment.
 - Next (suggested task id): T-036
+
+### 2026-10-16 19:05 IST — T-REBUILD-01 — Antigravity
+- What changed: Rebuilt the Relief Desk Coordinator Desktop UI according to the approved redesign specs (UI_REBUILD_PLAN.md, BUILD_SPEC.md, REAL_DATA.md, home-1440.png, why-this-team.png, step-details-popup.png, steps-alt-b.png):
+  - Preserved Pine & Sand dark/light theme tokens without orange accents; zero edits to core/maps or backend/API.
+  - Header: Home & Teams tabs, "✨ Ask the desk" button (opens agent chat side panel), More menu with full actions.
+  - Slim stats line: teams free/busy/not updated, dispatched and completed counts only (as spans to avoid Playwright button collisions).
+  - AI Hero Banner: 1-line summary ("AI reads flood reports in any language, checks for duplicates, rates urgency and finds the closest free team. You approve.").
+  - Left column: 3 compact sample buttons in ONE row (Hindi report · Voice note · Flood photo), filter chips (All, Critical ⓘ, Urgent ⓘ, ✨AI suggests review ⓘ) with secondary Dispatched/Completed chips, compact case cards with auto-selection on sample click.
+  - Centre column: Taller map on top with pins, watermark and district outlines; compact horizontal 5-step AI row underneath (Understood the report → Checked for duplicates [parallel] → Rated urgency [parallel] → Found the closest team → Explained the choice) with ✓/spinner indicators and real dynamic summaries.
+  - Right column: Decision panel showing original report alongside AI English translation, 2x2 field grid (Need / People / Danger / Place), best team proposal banner with ~ETA, km and seats, Why this team mini table (#, Team, ETA, Seats, Score), pinned footer with Reject / Change / Approve and send actions and safety note ("Nothing is sent until you approve.").
+  - Dialogs & Drawers: CDK WhyThisTeamDialogComponent with score breakdown & dropped teams (>25km), StepDetailDialogComponent with inputs, prompts, tools, model latency and previous/next navigation, and Alt B AgentTraceDrawerComponent.
+  - Bug fixes: needsReview() ignores synthetic flag; removed 92% translation confidence default; removed fallback boat counts; updated ETA labels to "~N min"; removed "Python tool" labels in favor of "Rules engine".
+  - Full i18n parity across en, hi, hinglish, ml (971 keys).
+- Files:
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/why-this-team-dialog.component.ts`
+  - `apps/web/src/app/coordinator/agents/ai-stepper.component.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.html`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.scss`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.ts`
+  - `apps/web/src/app/coordinator/agents/trace-step.component.html`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.html`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.scss`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.ts`
+  - `apps/web/src/app/coordinator/pages/benchmark/coordinator-benchmark.component.html`
+  - `libs/shared/src/lib/i18n/en.json`
+  - `libs/shared/src/lib/i18n/hi.json`
+  - `libs/shared/src/lib/i18n/hinglish.json`
+  - `libs/shared/src/lib/i18n/ml.json`
+  - `libs/shared/src/lib/utils/band.util.ts`
+  - `libs/shared/src/lib/utils/band.util.spec.ts`
+  - `libs/shared/src/lib/services/language.service.ts`
+  - `playwright.config.ts`
+  - `e2e/first-pass.spec.ts`
+  - `e2e/agents-visible.spec.ts`
+  - `e2e/capture-screenshots.spec.ts`
+  - `TASKS.md`
+  - `WORKDONE.md`
+- How verified (commands / screenshots):
+  - `node scripts/check-i18n.mjs` — PASSED (971 keys, all 4 languages, 0 template errors).
+  - `npx ng build web` — PASSED with code 0 (all lazy routes bundled cleanly).
+  - `npx playwright test e2e/first-pass.spec.ts e2e/agents-visible.spec.ts` — PASSED (4 passed across desktop and mobile viewports, 47.6s).
+  - `npx playwright test e2e/capture-screenshots.spec.ts` — PASSED (1 passed).
+  - Captured 7 screenshots at 1440x900 with zero horizontal scroll:
+    - `e2e/screenshots/home-idle-dark-en.png`
+    - `e2e/screenshots/home-idle-light-en.png`
+    - `e2e/screenshots/home-idle-dark-hi.png`
+    - `e2e/screenshots/home-sample-processing.png`
+    - `e2e/screenshots/why-this-team-modal.png`
+    - `e2e/screenshots/step-details-popup.png`
+    - `e2e/screenshots/teams-page.png`
+- Notes / risks / not done:
+  - core/maps was untouched as instructed.
+  - Backend and mobile remain completely unchanged.
+  - All screenshots verified visually against mockups and viewport constraints.
+- Next (suggested task id): none (all UI rebuild requirements complete).
+
+### 2026-10-16 20:12 IST — T-REBUILD-02 — Antigravity
+- What changed:
+  1. AI Labels Clash: Wired live Gemini detection into `aiKind()` and `openStepDetailDialog()` via shared `ui.aiHealth` signal so cases show Gemini / Recorded when Gemini live is active rather than Offline fallback, while Matching step is accurately identified as "Rules engine".
+  2. First Summary Accuracy: Removed hardcoded "Alappuzha" and default 1-person fallbacks in `services/api/app/api/reports.py`. Added comprehensive Malayalam digits (൦-൯), number words, location cues, and people indicators to `nlu_rules.py` for immediate rule-based extraction on arrival before AI enrichment.
+  3. Reporter Queue Arrival: Connected SSE events (`case.created`, `case.updated`, `case.merged`, `team.updated`, `dispatch.created`, `alert.created`) in `coordinator-command` to immediately reload requests, resources, and alerts. Preserved 5-second polling fallback regardless of SSE state.
+  4. Step Details Button Accessibility: Added `[attr.aria-label]="'flow.stepDetails' | rdTranslate"` with full i18n parity (`stepDetails` across en, hi, hinglish, ml) and `data-testid="step-details-btn"` to Alt B details button in `agent-trace-drawer`.
+  5. Missing km in Explanation: Fixed Explainer and pipeline fallback templates to consistently include computed distance km and ensure matching breakdown populates `distance_km`.
+  6. Alert Titles: Updated `titleOf()` in `coordinator-alerts.component.ts` to translate the alert's actual `kind` (`alerts.k.*`), eliminating the blanket "Resource gap" label across sample alerts.
+  7. Team Counts & Row Click: Synchronized `loadResources()` with `DeskStore.refreshTeams()`, made entire team card clickable with `(click)="toggle(team.id)"`, added `data-testid="team-card"`, and set exact accessible name `[attr.aria-label]="team.name"`.
+  8. Demo Login Failure: Handled `!ok` in `CoordinatorLoginComponent.enterDemo()` by setting `this.failed.set(true)` to surface failed authentication visibly.
+- Files:
+  - `services/api/app/api/reports.py`
+  - `services/api/app/agents/pipeline.py`
+  - `services/api/app/llm/replay_seed.py`
+  - `services/api/app/tools/demo_cases.py`
+  - `services/api/app/tools/nlu_rules.py`
+  - `apps/web/src/app/core/services/coord-ui.service.ts`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/teams/coordinator-teams.component.html`
+  - `apps/web/src/app/coordinator/pages/alerts/coordinator-alerts.component.ts`
+  - `apps/web/src/app/coordinator/pages/login/coordinator-login.component.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.html`
+  - `libs/shared/src/lib/i18n/en.json`
+  - `libs/shared/src/lib/i18n/hi.json`
+  - `libs/shared/src/lib/i18n/hinglish.json`
+  - `libs/shared/src/lib/i18n/ml.json`
+  - `TASKS.md`
+  - `WORKDONE.md`
+- How verified (commands / screenshots):
+  - `node scripts/check-i18n.mjs` — PASSED (972 keys across en, hi, hinglish, ml with 0 template errors).
+  - `npx ng build web` — PASSED with code 0.
+  - `pytest services/api/tests/test_intake_nlu.py services/api/tests/test_confirmation.py services/api/tests/test_dedupe.py services/api/tests/test_events.py services/api/tests/test_gemini_live.py` — PASSED (28 passed).
+  - `npx playwright test e2e/agents-visible.spec.ts` — PASSED (2 passed in 25.4s).
+  - `npx playwright test e2e/first-pass.spec.ts` — PASSED (2 passed in 38.8s).
+  - `npx playwright test e2e/capture-screenshots.spec.ts` — PASSED (1 passed).
+  - 7 updated screenshots in `e2e/screenshots/` and copied to artifact directory.
+- Notes / risks / not done:
+  - `apps/web/src/app/core/maps/` was completely untouched.
+  - All Playwright accessible queries validated.
+- Next (suggested task id): none
+
+### 2026-10-16 22:40 IST — live Gemini demo + filter counts — Cursor
+- What changed:
+  - Command Dispatched and Completed chips and the case list now share one scope (type, area, time, and search). Dispatched lists only dispatched cases. Completed lists only completed cases. Clear filters also clears the search box.
+  - Live demo of 8 paced reports, hoax flag, judge own-report limit, and honest Gemini step labels. A Gemini step stores the system and user prompt that was sent (including a validation repair) and the tools that ran. "No model ran for this step" is shown only when no model ran. Older traces that stored a model without a prompt or tool names are filled on read.
+- Files:
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `e2e/filter-counts.spec.ts`
+  - `e2e/live-demo.spec.ts`
+  - `services/api/app/agents/pipeline.py`
+  - `services/api/app/agents/review.py`
+  - `services/api/app/llm/client.py`
+  - `services/api/app/llm/pacer.py`
+  - `services/api/app/tools/live_demo.py`
+  - `services/api/tests/test_live_demo.py`
+  - `data/synthetic/live_samples.json`
+- How verified (commands / screenshots):
+  - `npx ng test web --watch=false --browsers=ChromeHeadless --include='**/coordinator-command.component.spec.ts'` — 31 passed. 3 older DOM specs still expect the pre-rebuild card markup.
+  - `npx playwright test e2e/filter-counts.spec.ts` — 1 passed. Approves a case, then checks the Dispatched chip count equals the visible rows; after complete, the Completed chip matches; a search that matches nothing zeros both chips and shows the empty state; Clear filters clears the search.
+  - `pytest tests/test_live_demo.py tests/test_xfactor_ai.py` — 12 passed.
+- Notes / risks / not done:
+  - `make record-traces` was not run here. No fabricated Gemini transcripts were committed.
+  - One intake call at about 17 s is the measured wall clock on gemini-3.5-flash-lite. Thinking is disabled only for model names starting with gemini-2.5-flash. The timeout is GEMINI_TIMEOUT_S (20s). One validation repair and one transient retry can be included in that number. The pacer does not wait on an ordinary report.
+- Next (suggested task id): none
+
+### 2026-10-16 23:31 IST — step popup, case card, alerts, teams, demo login, reporter — Cursor
+- What changed:
+  - Step popup shows a headline of what the agent understood, chips for extracted facts, a one-line why, a footer (`Gemini <model> · <latency>` when a model ran, otherwise the unavailable line), and a collapsible "Show prompt and response" for the prompt, tools, and raw output. Empty tools say "No tools". "No model ran for this step" appears only inside that collapsible when no model ran.
+  - Header and the live-demo strip show the backend Gemini call count from `/api/health/ai` (`quota.calls`).
+  - "Offline fallback" is gone. The matching step is labelled "Google Maps" and the approval step "You". Hazard text never shows a raw key such as `ux.none`.
+  - Case card AI English is fully visible; the expand arrow sits below the text.
+  - A new report no longer shows the machine "N person(s) needing …" line. While analysis is in progress the card says "Gemini is reading this report…".
+  - Team explanations fill a measured distance in place of "— km".
+  - Alerts use their own kind labels (Report spike, Silent zone, Resource gap, Conflict, Stale requests) and ages from `detected_at` or the stored minute label. A stale sample at exactly the threshold is now included.
+  - Command and Teams share `teamsFreeCounts`. Clicking a team row selects it and scrolls the detail into view.
+  - Demo login with `DEMO_MODE` off shows "Demo mode is disabled" on a 403 and when health reports demo mode off.
+  - The reporter sees "Gemini is reading this report…" while the AI works and "Your report is in the coordinator queue" once it is stored.
+  - The three stale Command unit specs now match the rebuilt queue card, map legend, and duplicate panel.
+- Files:
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.spec.ts`
+  - `apps/web/src/app/coordinator/agents/ai-stepper.component.ts`
+  - `apps/web/src/app/coordinator/agents/pipeline-strip.component.ts`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.ts`
+  - `apps/web/src/app/coordinator/layouts/coordinator-layout.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.spec.ts`
+  - `apps/web/src/app/coordinator/pages/alerts/coordinator-alerts.component.ts`
+  - `apps/web/src/app/coordinator/pages/teams/coordinator-teams.component.ts`
+  - `apps/web/src/app/coordinator/pages/login/coordinator-login.component.ts`
+  - `apps/web/src/app/public/pages/status/status.component.html`
+  - `apps/web/src/app/public/components/confirmation-card/confirmation-card.component.html`
+  - `services/api/app/agents/chat_intake.py`
+  - `services/api/app/agents/pipeline.py`
+  - `services/api/app/api/reports.py`
+  - `services/api/app/tools/anomaly.py`
+  - `e2e/followups.spec.ts`
+- How verified (commands / screenshots):
+  - `npx ng build web` — passed (command SCSS budget warning only, under the error limit).
+  - `node scripts/check-i18n.mjs` — PASSED, 1010 keys.
+  - `pytest` in `services/api` — 300 passed, 1 skipped.
+  - `npx ng test` for the step dialog — 3 passed (`Gemini gemini-3.5-flash-lite · 17.2 s`, Google Maps headline, filled km).
+  - `npx playwright test followups.spec.ts` — 4 passed (popup, case-card geometry, Gemini calls, labels, team km, team counts and row select, alert kinds and ages, demo-mode-off error, 403 error, reporter progress and queue).
+  - `npx playwright test filter-counts.spec.ts live-demo.spec.ts agents-visible.spec.ts` — passed.
+  - Screenshots: step popup, case card, live demo.
+- Notes / risks / not done:
+  - `make record-traces` was not run. The fallback demo footer reads "Gemini unavailable, built-in rules used". The `Gemini <model> · <latency>` footer is locked by the step-dialog unit spec.
+  - Two older Coordinator layout unit specs still expect "Agent" and a restart-tour test id. Product copy was left as "Ask the desk".
+  - Command SCSS is about 23 kB against a 20 kB warning budget and a 30 kB error budget.
+- Next (suggested task id): none
+
+### 2026-10-17 12:40 IST — QA chat intake — Cursor
+- What changed: Citizen phone chat now fills location, people, need, and water from the whole report and from typed answers (English, Hindi, Hinglish, Malayalam), and it does not ask again for a slot that is already filled. A bit.ly / OTP hoax is detected on the chat path the same way as a normal report and the case is held as a likely hoax. "Nobody is stranded" is not a rescue, and Kuttanad place names such as Pulincunnu are kept. "vellam koodunnu" counts as water already rising. Summaries are built from the report, not the last chat reply, and they cannot rename a stated condition (severe diabetic emergency stays that, on the rules path and when a mocked Gemini reply upgrades it).
+- Files:
+  - `services/api/app/agents/chat_intake.py`
+  - `services/api/app/agents/summary.py`
+  - `services/api/app/agents/intake.py`
+  - `services/api/app/api/reports.py`
+  - `services/api/app/tools/nlu_rules.py`
+  - `services/api/app/llm/client.py`
+  - `services/api/tests/test_chat_intake_truth.py`
+- How verified (commands / screenshots):
+  - `python3 -m pytest` in `services/api` — 337 passed, 1 skipped. No API key (`AI_MODE` fallback). Gemini summary guard covered with a mocked client.
+- Notes / risks / not done:
+  - The coordinator desk still prints a missing people count as 0 in a couple of Angular labels. The stored value is null. Those desk components were left untouched.
+  - A hoax is flagged and not matched. A coordinator still has to dismiss it. Nothing is auto-deleted.
+- Next (suggested task id): none
+
+### 2026-10-17 14:25 IST — JC-01 — Cursor
+- What changed: Judge-pass correctness on the rules path (no Gemini key). Auto-merge needs similarity 0.60 unless the reports name the same gazetteer landmark or the same distinctive place and the head counts agree. Different wards, different landmarks, a missing place, or unequal counts (4 vs 8, 4 vs 6, 2 vs 6, 2-3 vs 4-5) stay separate; a count conflict at the same place is held for review and the case count is not a silent max. Same Kainakary jetty merges across Malayalam and English and keeps the higher urgency. Malayalam-script aliases for Kuttanad landmarks LM-01–LM-15 (and Chalakudy jetty) geocode. "near the bridge" / "പാലം" stay place-unclear and do not become Ward 11 Wayanad. "on the roof" / "छत पर" is not a water depth; "water up to the roof" is roof and "water up to the first floor" is floor. "12 of us" wins over "a child". Chest-deep and jetty rescue do not offer a road ambulance. Medical offers stay within 25 km; rescue uses 30 km. One ETA (boats 10 km/h, road 20 km/h) on the API and on the desk. Match order is stable. Approve stays on the approved case and the toast and panel read that team. Dismissed hoax is its own state, not completed, and identical hoax text is not described as the same place. Ask cites only returned Kainakary refs. A Malayalam report is asked in Malayalam. The explainer uses plain words and says call 112 for a life threat. Dog attack is hidden from the scenario switcher and the public Ward 9 sample is a flood; the yaml pack remains. info_only copy no longer renders a raw key.
+- Files:
+  - `services/api/app/agents/dedupe.py`
+  - `services/api/app/agents/depth.py`
+  - `services/api/app/agents/intake.py`
+  - `services/api/app/agents/matching.py`
+  - `services/api/app/agents/no_team.py`
+  - `services/api/app/agents/explainer.py`
+  - `services/api/app/agents/desk_query.py`
+  - `services/api/app/agents/chat_intake.py`
+  - `services/api/app/api/clusters.py`
+  - `services/api/app/api/public.py`
+  - `services/api/app/models/firestore_models.py`
+  - `services/api/app/tools/case_merge.py`
+  - `services/api/app/tools/gazetteer.py`
+  - `services/api/app/tools/nlu_rules.py`
+  - `services/api/app/tools/storage.py`
+  - `services/api/tests/test_judge_correctness.py`
+  - `services/api/tests/test_dedupe_robustness.py`
+  - `services/api/tests/test_content_truth.py`
+  - `services/api/tests/test_live_demo.py`
+  - `data/gazetteer/kerala_gazetteer.json`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/teams/coordinator-teams.component.ts`
+  - `apps/web/src/app/coordinator/pages/situation/coordinator-situation.component.ts`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `apps/web/src/app/core/services/scenario.service.ts`
+  - `libs/shared/src/lib/i18n/en.json`
+  - `libs/shared/src/lib/i18n/hi.json`
+  - `libs/shared/src/lib/i18n/hinglish.json`
+  - `libs/shared/src/lib/i18n/ml.json`
+  - `libs/shared/src/lib/models/request.model.ts`
+  - `TASKS.md`
+- How verified (commands / screenshots):
+  - `python3 -m pytest` in `services/api` — 357 passed, 1 skipped. Includes `tests/test_judge_correctness.py`.
+  - `npx ng build web` — passed (existing command SCSS budget warning and duplicate `findingTeam` key warning).
+  - `node scripts/check-i18n.mjs` — PASSED, 1213 keys.
+  - `CI=true npx ng test web --watch=false --browsers=ChromeHeadless --include=coordinator-command.component.spec.ts` — approve stays on the dispatched case and a cleared selection survives the next queue refresh. 29 passed, 5 failed on older copy assertions.
+  - Demo desk in the browser at port 4200: approve stayed on the same case with the same team in the toast and the panel; Escape cleared the selection.
+- Notes / risks / not done:
+  - The tester patch's DEMO_MODE filter that drops every landmark outside Alappuzha was not applied. Chalakudy and Aluva must stay in the gazetteer.
+  - Playwright e2e still clicks the Dog attack menu button. The pack yaml is still loaded by the API; only the switcher and the public Ward 9 sample changed.
+  - Browser check on the demo desk (rules mode): approving Kainakary RD-7692 stayed on that case, and the toast and the on-the-way line both named Kainakary Mobile Medical Van (Ambulance). Escape then showed "No case selected." Dog attack is not in the scenario switcher. Five older command-component unit specs still fail on copy that this branch already shipped (Gemini reading label, district polygons, Google Maps in the trace). They were not part of this fix.
+  - A live Gemini key was not used. The eight live-Gemini failures are covered on the rules fallback path.
+- Next (suggested task id): none
+
+### 2026-10-17 15:30 IST — AQ-01 — Cursor
+- What changed: Each new case carries an AI queue: Read, Duplicates, Urgency, Team, elapsed time, engine (gemini / rules / gemini_rechecked), and queue position. A 45s cap abandons the model call and finishes on rules. Life-threat phrases (English, Hindi, Manglish, Malayalam) skip the strip and land in Ready, with the place marked unverified. Send nearest boat is a person tap that approves the nearest free boat, including when the report was read as medical. Other approves stay blocked until the four steps finish or rules take over. When the Gemini circuit is closed, rules-fallback cases are rechecked Critical first, about 10 a minute, and the diff is stored. The Waiting tab shows the strip and a Ready list sorted by urgency (life-threat first). Motion is removed under prefers-reduced-motion. Copy is in en, hi, hinglish, and ml. A hoax marked before the AI finishes asks for one word. The next-ready button has no keyboard letter.
+- Files:
+  - `services/api/app/tools/case_queue.py`
+  - `services/api/app/models/firestore_models.py`
+  - `services/api/app/agents/pipeline.py`
+  - `services/api/app/api/reports.py`
+  - `services/api/app/api/matches.py`
+  - `services/api/app/api/clusters.py`
+  - `services/api/app/tools/storage.py`
+  - `services/api/tests/test_ai_queue.py`
+  - `services/api/tests/test_request_contract.py`
+  - `services/api/tests/test_slow_llm_load.py`
+  - `apps/web/src/app/coordinator/pages/command/ai-queue.ts`
+  - `apps/web/src/app/coordinator/pages/command/ai-queue.spec.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss`
+  - `libs/shared/src/lib/models/request.model.ts`
+  - `libs/shared/src/lib/services/api-client.service.ts`
+  - `libs/shared/src/lib/i18n/en.json`
+  - `libs/shared/src/lib/i18n/hi.json`
+  - `libs/shared/src/lib/i18n/hinglish.json`
+  - `libs/shared/src/lib/i18n/ml.json`
+  - `TASKS.md`
+- How verified (commands / screenshots):
+  - `python3 -m pytest` in `services/api` — 359 passed, 1 skipped, including `tests/test_ai_queue.py`. No test calls Gemini.
+  - `npx ng build web` — passed (existing findingTeam duplicate-key warning and NG8107 warnings).
+  - `node scripts/check-i18n.mjs` — PASSED, 1283 keys.
+  - `CI=true npx ng test web --watch=false --browsers=ChromeHeadless --include=ai-queue.spec.ts` — 4 passed (urgency order, just-ready is not a sort key, one engine field, 1.2s timeout hold).
+  - Demo desk in the browser, rules mode: the Veliyanad life-threat card was first under Ready for you, labelled life threat, place unverified, engine Rules. Send nearest boat stayed on that case. The toast and the on-the-way line both named Motorized Rescue Boat.
+- Notes / risks / not done:
+  - In rules mode the pipeline finishes in well under a second, so the AI working strip is empty on a quiet desk. It shows while a case is still queued or processing.
+  - Recheck runs only when Gemini is live and the circuit is closed. Tests drive it with a fake client.
+  - A live Gemini key was not used.
+- Next (suggested task id): none

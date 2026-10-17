@@ -24,7 +24,11 @@ export class CoordinatorLoginComponent {
   constructor() {
     const forced = this.route.snapshot.queryParamMap.get('demo') === '1';
     this.api.getHealth().subscribe({
-      next: (h) => this.demoMode.set(forced || !!h?.demo_mode),
+      next: (h) => {
+        const on = forced || !!h?.demo_mode;
+        this.demoMode.set(on);
+        if (!on) this.demoFailed.set(true);
+      },
       error: () => this.demoMode.set(true),
     });
   }
@@ -34,6 +38,7 @@ export class CoordinatorLoginComponent {
   showPassword = signal(false);
   submitted = signal(false);
   failed = signal(false);
+  demoFailed = signal(false);
   isSubmitting = signal(false);
   toast = signal(false);
   private pwd = viewChild<ElementRef<HTMLInputElement>>('pwd');
@@ -44,6 +49,7 @@ export class CoordinatorLoginComponent {
   async onLogin(): Promise<void> {
     this.submitted.set(true);
     this.failed.set(false);
+    this.demoFailed.set(false);
     if (!this.email().trim() || !this.password()) return;
     this.isSubmitting.set(true);
     const result = await this.authService.login(this.email(), this.password());
@@ -56,12 +62,17 @@ export class CoordinatorLoginComponent {
   }
 
   async enterDemo(): Promise<void> {
+    this.failed.set(false);
+    this.demoFailed.set(false);
     this.isSubmitting.set(true);
     const ok = await this.authService.loginDemo();
     this.isSubmitting.set(false);
     if (ok) {
       try { sessionStorage.setItem('rd_start_tour', '1'); } catch { /* private mode */ }
       await this.goToDashboard();
+    } else {
+      this.demoFailed.set(true);
+      this.failed.set(true);
     }
   }
 

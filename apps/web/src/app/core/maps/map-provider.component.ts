@@ -1,3 +1,4 @@
+import { projectBase } from './kuttanad-base';
 import { RdTranslatePipe } from '@rd/shared';
 import { CommonModule } from '@angular/common';
 import { PINE_SAND_MAP_STYLE } from './pine-sand-map-style';
@@ -22,6 +23,17 @@ import { boatMinutes, haversineKm, markerDataUrl, TONE_COLOR, vehiclePath, PinTo
 import { MapProviderService } from './map-provider.service';
 import { computeRoadRoute, RoadRoute, RoutingDeniedError } from './road-route';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
+
+/** Points near the median, so one far-off team does not shrink the whole map. Off-frame pins stay drawn at the edge. */
+function mainCluster(points: { lat: number; lng: number }[]): { lat: number; lng: number }[] {
+  if (points.length < 4) return points;
+  const med = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
+  const mLat = med(points.map((p) => p.lat)); const mLng = med(points.map((p) => p.lng));
+  const dist = points.map((p) => Math.hypot(p.lat - mLat, p.lng - mLng));
+  const cut = Math.max(0.15, med(dist) * 2.5);
+  const kept = points.filter((_, i) => dist[i] <= cut);
+  return kept.length >= 2 ? kept : points;
+}
 
 /** Road route for one team->case pair. Shared by every map so a leg is routed once. */
 const ROUTES = new Map<string, Promise<RoadRoute | null>>();
@@ -62,10 +74,15 @@ export interface MapLeg {
         <div class="rd-route-loading" role="status"><i aria-hidden="true"></i>{{ 'map.routing' | rdTranslate }}</div>
       }
     } @else {
-      <ng-content></ng-content>
+      <div class="rd-zoom-wrap" [style.transform]="'scale(' + zoom() + ')'"><ng-content></ng-content>
       @if (builtin()) {
         <svg class="rd-schematic" viewBox="0 0 600 480" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Relief map">
           <rect width="600" height="480" fill="var(--map-bg, #efeae0)"/>
+          @if (schematicBase(); as sb) {
+            @for (w of sb.water; track $index) { <polygon class="kb-water" [attr.points]="w"/> }
+            @for (w of sb.wards; track w.id) { <polygon class="kb-ward" [attr.points]="w.points"/><text class="kb-wlabel" [attr.x]="w.lx" [attr.y]="w.ly" text-anchor="middle">{{ w.name }}</text> }
+            @for (r of sb.rivers; track $index) { <polyline class="kb-river" [attr.points]="r"/> }
+          }
           @for (leg of schematicLegs(); track leg.id) {
             <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.stroke" [attr.stroke-width]="leg.width" [attr.stroke-dasharray]="leg.dash" stroke-linecap="round"/>
             @if (leg.title) {
@@ -74,7 +91,7 @@ export interface MapLeg {
           }
           @for (pin of schematicPins(); track pin.id) {
             <g [attr.transform]="'translate(' + pin.x + ' ' + pin.y + ')'" [attr.opacity]="pin.opacity">
-              <circle r="11" [attr.fill]="pin.fill" stroke="#fff" stroke-width="2"/>
+              <circle r="16" [attr.fill]="pin.fill" stroke="#fff" stroke-width="2.5"/>
               @if (pin.path) {
                 <path [attr.d]="pin.path" fill="#fff" transform="translate(-12 -12)"/>
               }
@@ -82,18 +99,27 @@ export interface MapLeg {
           }
         </svg>
       }
+      </div>
+      <div class="rd-zoom" role="group" [attr.aria-label]="'map.zoom' | rdTranslate">
+        <button type="button" data-testid="map-zoom-in" (click)="zoomBy(1)" [attr.aria-label]="'map.zoomIn' | rdTranslate">+</button>
+        <button type="button" data-testid="map-zoom-out" (click)="zoomBy(-1)" [attr.aria-label]="'map.zoomOut' | rdTranslate">−</button>
+      </div>
     }
   `,
   styles: [`
-    :host { display: block; width: 100%; height: 100%; min-height: 250px; position: relative; }
+    :host { display: block; width: 100%; height: 100%; min-height: 250px; position: relative; overflow: hidden; background: var(--map-bg, #efeae0); }
+    .rd-zoom-wrap { position: absolute; inset: 0; transform-origin: 50% 50%; transition: transform .2s ease; }
+    .rd-zoom { position: absolute; right: 10px; top: 56px; z-index: 7; display: flex; flex-direction: column; gap: 4px; }
+    .rd-zoom button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 18px; font-weight: 700; cursor: pointer; }
+    .rd-zoom button:focus-visible { outline: 2px solid var(--focus, #1b3c53); }
     .rd-google-map, .rd-schematic { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 250px; display: block; }
     .rd-map-loading { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size: 200% 100%; animation: rd-map-pulse 1.8s ease-in-out infinite; }
     .rd-map-loading span { background: var(--surface); color: var(--text); padding: 8px 14px; border-radius: 999px; font-size: 13px; }
     @keyframes rd-map-pulse { to { background-position: -200% 0; } }
     @media (prefers-reduced-motion: reduce) { .rd-map-loading { animation: none; } }
-    .rd-leg { font-size: 13px; font-weight: 700; fill: #0f1720; }
+    .rd-leg { font-size: 13px; font-weight: 700; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
     .rd-route-loading { position: absolute; z-index: 6; top: 10px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--e1); font-size: 12px; font-weight: 600; pointer-events: none; }
-    .rd-route-loading i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand, #047857); animation: rd-spin .8s linear infinite; }
+    .rd-route-loading i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand, #166534); animation: rd-spin .8s linear infinite; }
     @keyframes rd-spin { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .rd-route-loading i { animation: none; } }
   `],
@@ -106,6 +132,9 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   /** Shown when Google Maps is off and the page did not supply its own schematic. */
   readonly builtin = signal(false);
   readonly loading = signal(true);
+  /** Zoom for the drawn fallback map (Google Maps has its own controls). */
+  readonly zoom = signal(1);
+  zoomBy(step: number): void { this.zoom.set(Math.min(3, Math.max(1, +(this.zoom() + step * 0.5).toFixed(1)))); }
   /** Road routes still on their way. Lines stay hidden until theirs arrives. */
   readonly routing = signal(0);
   private destroyed = false;
@@ -125,6 +154,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   @Input() cluster = false;
   /** Pin drawn larger and on top, kept out of clusters, and framed when no line is drawn. */
   @Input() selectedId: string | null = null;
+  /** The page draws its own schematic, so never draw the built-in one over it. */
+  @Input() ownSchematic = false;
   @Output() pinSelect = new EventEmitter<string>();
 
   @ViewChild('canvas') canvas?: ElementRef<HTMLDivElement>;
@@ -213,7 +244,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
 
   private fallbackIfBroken(): void {
     const text = this.canvas?.nativeElement?.innerText || '';
-    if (text.includes('Oops') || text.includes("didn't load")) {
+    if (text.includes('Oops') || text.includes("didn't load") || /limit reached|quota|for development purposes/i.test(text)) {
       this.fallBackToSvg();
     }
   }
@@ -224,7 +255,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
       this.builtin.set(false);
       return;
     }
-    const foreign = [...this.host.nativeElement.querySelectorAll('svg')].some(
+    const foreign = this.ownSchematic || [...this.host.nativeElement.querySelectorAll('svg')].some(
       (node) => !node.classList.contains('rd-schematic'),
     );
     this.builtin.set(!foreign);
@@ -235,7 +266,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     const suggested = new Set(this.legs.filter((leg) => leg.suggested).map((leg) => `${leg.to.lat},${leg.to.lng}`));
     return this.pins.map((pin) => {
       const onLeg = suggested.has(`${pin.lat},${pin.lng}`);
-      const fill = pin.tone ? TONE_COLOR[pin.tone] : (onLeg ? '#047857' : '#0f1720');
+      const fill = pin.tone ? TONE_COLOR[pin.tone] : (onLeg ? '#166534' : '#0f1720');
       return {
         id: pin.id,
         ...this.toSvg(pin.lat, pin.lng, frame),
@@ -262,10 +293,18 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         ly: (from.y + to.y) / 2 - 8,
         title: this.legLabel(leg),
         dash: leg.mode === 'water' ? '8 6' : null,
-        stroke: leg.suggested ? '#047857' : '#6b7280',
+        stroke: leg.suggested ? '#166534' : '#6b7280',
         width: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
       };
     });
+  }
+
+  schematicBase() {
+    const f = this.schematicFrame();
+    return projectBase((lat, lng) => ({
+      x: 28 + ((lng - f.minLo) / Math.max(1e-6, f.maxLo - f.minLo)) * 544,
+      y: 28 + (1 - (lat - f.minLa) / Math.max(1e-6, f.maxLa - f.minLa)) * 424,
+    }));
   }
 
   private schematicFrame(): { minLa: number; maxLa: number; minLo: number; maxLo: number } {
@@ -277,8 +316,9 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           ...this.legs.flatMap((leg) => [leg.from, leg.to]),
         ];
     if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
-    const lats = points.map((point) => point.lat);
-    const lngs = points.map((point) => point.lng);
+    const cluster = focused ? points : mainCluster(points);
+    const lats = cluster.map((point) => point.lat);
+    const lngs = cluster.map((point) => point.lng);
     const minLa = Math.min(...lats);
     const maxLa = Math.max(...lats);
     const minLo = Math.min(...lngs);
@@ -289,10 +329,9 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   }
 
   private toSvg(lat: number, lng: number, frame: { minLa: number; maxLa: number; minLo: number; maxLo: number }): { x: number; y: number } {
-    return {
-      x: 28 + ((lng - frame.minLo) / Math.max(1e-6, frame.maxLo - frame.minLo)) * 544,
-      y: 28 + (1 - (lat - frame.minLa) / Math.max(1e-6, frame.maxLa - frame.minLa)) * 424,
-    };
+    const x = 28 + ((lng - frame.minLo) / Math.max(1e-6, frame.maxLo - frame.minLo)) * 544;
+    const y = 28 + (1 - (lat - frame.minLa) / Math.max(1e-6, frame.maxLa - frame.minLa)) * 424;
+    return { x: Math.min(584, Math.max(16, x)), y: Math.min(464, Math.max(16, y)) };
   }
 
   private draw(): void {
@@ -321,7 +360,6 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           this.cdr.markForCheck();
         };
         this.readyListener = maps.event?.addListenerOnce(this.map, 'tilesloaded', ready);
-        maps.event?.addListenerOnce(this.map, 'idle', ready);
         this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
       }
       const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []) + '#' + (this.highlightId || '') + '#' + (this.selectedId || '');
@@ -336,13 +374,13 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         return new maps.Polyline({
           map: this.map,
           path: [leg.from, leg.to],
-          strokeColor: leg.suggested ? '#047857' : '#6b7280',
+          strokeColor: leg.suggested ? '#166534' : '#6b7280',
           strokeWeight: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
           geodesic: true,
           visible: !waitForRoad || leg.mode === 'water',
           ...(leg.mode === 'water' ? {
             strokeOpacity: 0,
-            icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, strokeColor: leg.suggested ? '#0e7490' : '#6b7280', scale: leg.suggested ? 4 : 3 }, offset: '0', repeat: '14px' }],
+            icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, strokeColor: leg.suggested ? '#234c6a' : '#6b7280', scale: leg.suggested ? 4 : 3 }, offset: '0', repeat: '14px' }],
           } : {}),
         });
       });
@@ -357,7 +395,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           fontSize: '12px',
           fontWeight: '700',
         },
-        icon: { path: maps.SymbolPath?.CIRCLE ?? 0, scale: 0, labelOrigin: maps.Point ? new maps.Point(0, -22) : undefined },
+        icon: { path: maps.SymbolPath?.CIRCLE ?? 0, scale: 0, labelOrigin: maps.Point ? new maps.Point(0, -38) : undefined },
+        zIndex: 9999,
         clickable: false,
         visible: !waitForRoad || leg.mode === 'water',
       }); labelFor.set(leg.id, m); return m; });
@@ -469,7 +508,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           const mid = route.path[Math.floor(route.path.length / 2)];
           label.setPosition?.(mid);
           const cur = label.getLabel?.() || {};
-          label.setLabel?.({ ...cur, text: `${route.km} · ${route.mins} drive` });
+          label.setLabel?.({ ...cur, text: `~${route.mins} drive · ${route.km}` });
         }
       });
     });
@@ -480,7 +519,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     if (leg.mode !== 'water') return leg.title;
     const km = haversineKm(leg.from.lat, leg.from.lng, leg.to.lat, leg.to.lng);
     const d = km < 10 ? km.toFixed(1) : String(Math.round(km));
-    return km <= 30 ? `${d} km · by boat · ~${boatMinutes(km)} min` : `${d} km · by boat`;
+    return km <= 30 ? `Boat · ~${boatMinutes(km)} min · ${d} km straight` : `Boat · ${d} km straight`;
   }
 
   private fitPath(path: { lat: number; lng: number }[]): void {

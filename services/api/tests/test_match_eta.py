@@ -36,7 +36,7 @@ def test_oxygen_case_matches_the_kainakary_clinic():
     assert best.breakdown.distance_km < 2
     assert best.eta_minutes == _eta(best.breakdown.distance_km)
     assert best.eta_minutes < 15
-    assert all(p.breakdown.distance_km <= 15 for p in proposals)
+    assert all(p.breakdown.distance_km <= 25 for p in proposals)  # nothing beyond the 25 km offer limit
 
 
 def test_kuttanad_rescue_offers_a_nearby_boat():
@@ -58,13 +58,13 @@ def test_kuttanad_rescue_offers_a_nearby_boat():
     assert best.eta_minutes < 45
 
 
-def test_chalakudy_rescue_gets_the_local_boat():
+def test_thalavady_rescue_gets_the_local_boat():
     storage_service.load_seed_resources()
     req = StoredRequest(
-        id="req_chalakudy_rescue",
+        id="req_thalavady_rescue",
         type=IncidentType.RESCUE,
-        lat=10.303,
-        lng=76.335,
+        lat=9.362,
+        lng=76.518,
         people_count=2,
         urgency_score=70.0,
     )
@@ -102,7 +102,7 @@ def test_demo_teams_are_within_15_km_of_kuttanad_and_alappuzha():
     for team in resources:
         by_kind.setdefault(team["kind"], []).append(team)
         if team["id"] in {"RES-MED-04", "RES-MED-06", "RES-BOAT-05", "RES-BOAT-06"}:
-            continue  # Northern teams serve Chalakudy / Aluva sample cases.
+            continue  # Southern Kuttanad teams (Thalavady / Edathua) and the Alappuzha medical unit.
         for label, (lat, lng) in (("Kuttanad", kuttanad), ("Alappuzha", alappuzha)):
             km = haversine_distance(lat, lng, team["lat"], team["lng"])
             assert km <= 15, f"{team['id']} is {km:.1f} km from {label}"

@@ -16,7 +16,9 @@
     "home2": "Home",
     "nearby2": "Aas-paas",
     "status2": "Status",
-    "reportFab": "Report"
+    "reportFab": "Report",
+    "ask": "Desk se poochho",
+    "command": "Command"
   },
   "landing": {
     "title": "Relief Desk",
@@ -42,7 +44,7 @@
     "deskSub": "Relief Desk bikhre crisis messages ko ranked, de-duplicated cases mein badalta hai, jin par coordinators seconds mein action le sakte hain.",
     "coordCard": "Main coordinator hoon",
     "coordCardSub": "Live dashboard kholein",
-    "judgeLink": "Judge ya reviewer? Ek click mein demo coordinator kholein",
+    "judgeLink": "Judge? Ek click mein dekhiye Gemini 8 live flood reports kaise sort karta hai",
     "trustOffline": "Offline bhi chalta hai",
     "trustLang": "4 bhashayein",
     "trustArea": "Area-level public data",
@@ -57,7 +59,10 @@
     "composer": "Likhein ya mic dabayein",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
     "problem": "Kerala floods mein help requests bikhre aur duplicate aate hain, aur coordinator ko nahi pata pehle kisko bhejein.",
-    "does": "Relief Desk unhe ek queue mein rakhta hai, duplicates jodta hai, aur batata hai kisko pehle bhejein. Ek insaan har dispatch approve karta hai."
+    "does": "Relief Desk unhe ek queue mein rakhta hai, duplicates jodta hai, aur batata hai kisko pehle bhejein. Ek insaan har dispatch approve karta hai.",
+    "aiProof": "Har step asli Gemini prompt, jawab aur timing dikhata hai. Har dispatch ko ek insaan approve karta hai.",
+    "heroLine": "Floods mein coordinators kai bhashaon ki uljhi reports mein dab jaate hain. Relief Desk unhe padhta, jodta aur rank karta hai, aur sabse paas ki sahi team suggest karta hai — har dispatch insaan approve karta hai.",
+    "tryDesk": "Desk try karein"
   },
   "report": {
     "title": "Emergency Crisis Report",
@@ -102,7 +107,7 @@
     "saidElderly": "Hamare saath ek bujurg hain",
     "saidSick": "Yahan koi bimaar hai",
     "saidNone": "Bachche, bujurg ya bimaar koi nahi",
-    "autoPlace": "Chalakudy · apne aap pehchana"
+    "autoPlace": "Location abhi share nahi hui"
   },
   "confirm": {
     "title": "Humne Ye Samjha",
@@ -113,7 +118,7 @@
     "sendNow": "Abhi bhejein",
     "edit": "Badlein",
     "understood": "Samajh liya",
-    "aiSummary": "AI summary",
+    "aiSummary": "Summary",
     "nothingSent": "Jab tak aap Abhi bhejein nahi dabate, kuch nahi jaata.",
     "vulnerable": "Jinhe extra care chahiye",
     "child": "Baccha",
@@ -128,7 +133,10 @@
     "done": "Ho gaya",
     "review": "Jaanchein",
     "callOutline": "112 par call karein",
-    "change": "Badlein"
+    "change": "Badlein",
+    "yourWords": "Aapke shabd:",
+    "hoaxWarn": "Yeh forward ya spam message lagta hai. Tabhi bhejein jab aap sach mein wahin hon.",
+    "notStated": "Nahi bataya"
   },
   "incidentType": {
     "rescue": "Bachav",
@@ -147,13 +155,28 @@
     "unknown": "Pata nahi"
   },
   "queue": {
+    "nothingSent": "Abhi kuch nahi bheja. Approved cases yahan dikhenge.",
     "title": "Ranked Priority Queue",
     "critical": "Critical Urgency",
     "high": "High Urgency",
     "medium": "Medium Urgency",
     "low": "Low Urgency",
     "approve": "Dispatch Approve Karein",
-    "reject": "Reject"
+    "reject": "Reject",
+    "newPill": "{n} naye ↑",
+    "allCaughtUp": "Sab nipat gaya — 0 waiting.",
+    "showMap": "Map dikhayein",
+    "hideMap": "Map chhupayein",
+    "tip": "Tip: suggested team bhejne ke liye A, agle case ke liye N dabayein.",
+    "away": "~{m} min door",
+    "seats": "{n} seats",
+    "offline": "Aap offline hain. Connection wapas aane tak approvals rukenge.",
+    "viewFull": "Poori queue dekhein",
+    "showReport": "Report dikhayein",
+    "tabsLabel": "Queue ka view",
+    "tabSent": "Bheja",
+    "tabDone": "Done",
+    "tabWaiting": "Waiting"
   },
   "alerts": {
     "title": "Alerts",
@@ -186,7 +209,8 @@
     "sampleGap": "Namuna: Sansaadhan ki kami",
     "sampleBadge": "Namuna",
     "reasonConflict": "{place} mein \"{left}\" aur \"{right}\" alag baat",
-    "reasonStale": "{n} requests {mins} min se bina confirm ke hain, phir jaanchein"
+    "reasonStale": "{n} requests {mins} min se bina confirm ke hain, phir jaanchein",
+    "emptyTitle": "Sab theek hai"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -226,9 +250,11 @@
     "trust1": "Har dispatch ko insaan approve karta hai",
     "trust2": "Sirf synthetic data",
     "wrong": "Email ya password galat hai. Phir koshish karein.",
-    "required": "Zaroori"
+    "required": "Zaroori",
+    "demoDisabled": "Is server par demo mode band hai. Kripya coordinator credentials se sign in karein."
   },
   "demo": {
+    "runShort": "Demo chalao (8)",
     "phone": "Demo phone",
     "hide": "Phone chhupayein",
     "surgeButton": "⚡ 5 reports ka demo",
@@ -238,7 +264,34 @@
     "surgeFailed": "Surge mein errors; {n} reports bheji gayi.",
     "surgeUnavailable": "Surge available nahi ya chal raha hai. Thodi der baad try karein.",
     "scenarioFailed": "Scenario load nahi hua.",
-    "mergeNotice": "Reports {id} mein jodi gayi. Updated count aur evidence review karein."
+    "mergeNotice": "Reports {id} mein jodi gayi. Updated count aur evidence review karein.",
+    "run": "Live demo chalao (8 reports)",
+    "problem": "Flood reports aati hain. AI rank karta hai. Faisla aapka.",
+    "running": "Live demo chal raha hai…",
+    "received": "{n}/8 mili",
+    "joined": "{n} judi",
+    "flagged": "{n} flagged",
+    "critical": "{n} critical",
+    "waitingGemini": "Gemini ka intezaar · queue {n}",
+    "done": "Live demo khatam",
+    "recordedNotice": "Pichhle run ka recorded replay.",
+    "samplesLabel": "Aath sample reports",
+    "tryOwn": "Apni report try karo",
+    "tryOwnPlaceholder": "Kisi bhi bhasha mein flood report likho",
+    "tryOwnLimit": "Gemini ki free limit abhi poori hai; ek minute baad try karo.",
+    "brief": "Live counts se chhota brief",
+    "geminiCalls": "Gemini calls {n}",
+    "exampleMl": "Malayalam mein example",
+    "sendOwn": "Bhejo",
+    "now": "Abhi: {step}",
+    "stepIntake": "report padh raha hai",
+    "stepDedupe": "duplicate check kar raha hai",
+    "stepTriage": "urgency rate kar raha hai",
+    "stepMatching": "sabse paas ki team dhoondh raha hai",
+    "stepExplainer": "choice samjha raha hai",
+    "momentMerged": "Duplicate pakda gaya: nayi report purane case mein jodi gayi.",
+    "momentHoax": "Possible hoax flag hua, review ke liye roka gaya.",
+    "stepSelfCheck": "facts dobara check kar raha hai"
   },
   "settings": {
     "title": "Settings",
@@ -251,6 +304,8 @@
     "close": "Ho gaya"
   },
   "coord": {
+    "noPlaceGiven": "jagah nahi batayi",
+    "findingTeam": "Sabse paas ki team dhoondh rahe hain…",
     "cases": "Maamle",
     "home": "Home",
     "overview": "Summary",
@@ -338,8 +393,9 @@
     "tracePending": "Intezar",
     "traceComplete": "Ho gaya",
     "aiGemini": "Gemini",
-    "aiOffline": "Offline fallback",
-    "aiRecorded": "Recorded (Gemini)",
+    "aiPaused": "Gemini paused · abhi rules",
+    "aiOffline": "Rules mode",
+    "aiRecorded": "Recorded replay",
     "updateLocation": "Location badlein",
     "lat": "Uttar-dakshin",
     "lng": "Poorv-paschim",
@@ -347,7 +403,7 @@
     "savedLocation": "Location save ho gayi.",
     "kind": {
       "boat": "Naav",
-      "medical": "Ilaaj",
+      "medical": "Ambulance / medical",
       "food": "Khana",
       "shelter": "Ashray"
     },
@@ -396,7 +452,7 @@
     "possibleDuplicate": "Shayad same incident, check karo",
     "mergeReports": "Merge karo",
     "keepSeparate": "Alag rakho",
-    "youDecide": "Aapke approve ke bina kuch nahi bheja jata.",
+    "youDecide": "Aapki approval ke bina kuch nahi bheja jata.",
     "approve": "Approve karein aur bhejein",
     "change": "Badlein",
     "reject": "Mana karein",
@@ -485,7 +541,12 @@
     "referralStock": "Human-entered referral stock requirement",
     "mapClear": "Selection hatayein",
     "verify": "Verify karein",
-    "verifyHint": "Report saaf nahi hai. Priority kam nahi ki gayi. Details confirm karein."
+    "verifyHint": "Report saaf nahi hai. Priority kam nahi ki gayi. Details confirm karein.",
+    "reviewHoax": "Maine yeh flag dekh liya",
+    "capacityShort": "Team mein {need} logon ke liye sirf {left} seats hain — approve karne par confirm karna hoga.",
+    "aiChecking": "Check ho raha hai…",
+    "undone": "Dispatch undo ho gaya. Case wapas Waiting mein hai.",
+    "undoFailed": "Undo nahi ho paya. Team shayad case par kaam shuru kar chuki hai."
   },
   "tour": {
     "next": "Aage",
@@ -556,7 +617,8 @@
     "saved": "Is phone mein save hua taaki aap wapas aa sakein.",
     "share": "Link share karein",
     "copied": "Copy ho gaya",
-    "copyLink": "Link copy karein"
+    "copyLink": "Link copy karein",
+    "inQueue": "Aapki report coordinator ki queue mein hai."
   },
   "nearby": {
     "title2": "Aas-paas ke alerts",
@@ -573,8 +635,8 @@
     "bucket3": "Pichle 3 ghante",
     "card": {
       "alt_01": {
-        "title": "Kutte ka hamla · Anthikad, Thrissur",
-        "desc": "2 ghante mein 3 reports. Andhere ke baad Anthikad ki galiyon mein akele mat chalein.",
+        "title": "Doobi galiyaan · Ward 9, Kuttanad",
+        "desc": "Galiyon mein paani hai. Unchi jagah rahiye. Emergency mein 112 call karein.",
         "ago": "25 min pehle"
       },
       "alt_02": {
@@ -591,7 +653,7 @@
     "hazard": {
       "cell_1031_7633_w7": "Paani badh raha hai, Temple Road doobi hai",
       "cell_1011_7635_w4": "2-3 foot paani bhara hai",
-      "cell_1047_7613_w9": "Anthikad ki galiyon mein aakramak kutte",
+      "cell_1047_7613_w9": "Ward 9 ki galiyon mein baadh ka paani",
       "cell_0942_7641_w2": "Peene ke paani ki kami, community kitchen chal rahi hai"
     }
   },
@@ -612,7 +674,7 @@
     "date": "Run ki tarikh",
     "count": "Is split mein reports",
     "geminiNotMeasured": "Is run mein Gemini call nahi hua. API key set nahi thi.",
-    "geminiUnreachable": "Gemini ko call kiya par jawab nahi mila (daily quota ya outage), isliye is run mein Gemini score nahi hai.",
+    "geminiUnreachable": "Is saved run mein Gemini score nahi hai: us waqt Gemini ne jawab nahi diya (daily limit ya outage), isliye yahan sirf keyword baseline dikh rahi hai. Live demo Gemini use karta hai.",
     "geminiType": "Gemini, madad ka type",
     "geminiWard": "Gemini, sahi ilaqa",
     "keywordType": "Keyword baseline, madad ka type",
@@ -659,7 +721,20 @@
       "latency_p50_ms": "Yeh number batata hai yeh maap kitna achha hai. Doosri line simple tareeka hai.",
       "latency_p95_ms": "Yeh number batata hai yeh maap kitna achha hai. Doosri line simple tareeka hai.",
       "cost_per_1000_msgs_usd": "Yeh number batata hai yeh maap kitna achha hai. Doosri line simple tareeka hai."
-    }
+    },
+    "notRunTitle": "Accuracy test abhi nahi chala",
+    "notRunBody": "Abhi koi measured numbers nahi hain. Is page ko bharne ke liye labelled benchmark chalayein; yahan kuch bhi estimate nahi hai.",
+    "summary": "Synthetic labelled reports par {n} measured metrics",
+    "geminiMeasured": "Is run mein Gemini measure hua",
+    "geminiNotInRun": "Is run mein Gemini measure nahi hua (rules dikhaye)",
+    "runDetails": "Run details",
+    "lowerBetter": "kam behtar hai",
+    "higherBetter": "zyada behtar hai",
+    "geminiTile": "✨ Gemini {v}",
+    "runGemini": "Gemini ({model}) se naapa",
+    "runRules": "Sirf rules baseline (is run me Gemini nahi)",
+    "testN": "test set n = {n} messages",
+    "smallSet": "Chhota test set (n = {n}); guarantee nahi"
   },
   "home": {
     "title": "Hum kaise madad karein?",
@@ -678,7 +753,8 @@
     "removeShort": "Hatao",
     "remove": "Is phone se hatayein",
     "coordinatorBtn": "Main coordinator hoon",
-    "judge": "Judge ya reviewer? Demo coordinator kholein"
+    "judge": "Judge ya reviewer? Demo coordinator kholein",
+    "hero": "AI kisi bhi bhasha mein flood report padhta hai, duplicate check karta hai, urgency rate karta hai aur sabse paas ki free team dhoondhta hai. Approve aap karte ho."
   },
   "find": {
     "title": "Mera request dhundhein",
@@ -740,7 +816,10 @@
     "trail": "Raste ka nishan",
     "saved": "Update ho gaya",
     "missing": "Yeh team link nahi khula.",
-    "noGps": "Is phone ne location nahi bheji. Demo ki simulated movement chal sakti hai."
+    "noGps": "Is phone ne location nahi bheji. Demo ki simulated movement chal sakti hai.",
+    "etaWater": "Paani se ~{n} min",
+    "etaRoad": "Road se ~{n} min",
+    "straightLine": "Seedhi line ka andaaza, road band hone ka live data nahi"
   },
   "ux": {
     "viewTrace": "Ye kaise decide hua",
@@ -767,10 +846,11 @@
     "asked": "Agent se kya pucha gaya",
     "input": "Input",
     "raw": "Raw output",
+    "none": "Koi nahi",
     "tools": "Tools",
     "badgeGemini": "Gemini",
     "badgeRules": "Rules",
-    "badgeOffline": "Offline fallback",
+    "badgeOffline": "Gemini available nahi, built-in rules use hue",
     "badgeLocal": "Local test model (Antigravity)",
     "badgeTest": "Test model ({name})",
     "resetDemo": "Demo reset karo",
@@ -784,7 +864,7 @@
     "agentHello": "Namaste, aapko kya jaanna hai?",
     "deskTitle": "Desk se poochho",
     "deskHint": "Kisi bhi bhasha mein seedha poochho. Sirf padhna: kuch nahi badalta.",
-    "deskPlaceholder": "jaise: Aluva mein kaun se buzurg wale cases abhi bhi wait kar rahe hain?",
+    "deskPlaceholder": "jaise: Kainakary mein kaun se buzurg wale cases abhi bhi wait kar rahe hain?",
     "deskAsk": "Poochho",
     "deskAsking": "Dhoondh rahe hain…",
     "deskMatches": "{n} matching cases",
@@ -804,7 +884,7 @@
     "deskPeople": "{n} log",
     "noModel": "Rules (koi model nahi)",
     "ms": "{n} ms",
-    "badgeRecorded": "Recorded (Gemini)",
+    "badgeRecorded": "Recorded replay",
     "statusDone": "Ho gaya",
     "statusRunning": "Chal raha hai",
     "statusWaiting": "Intezar",
@@ -862,14 +942,17 @@
     "deskHowAnswered": "Maine kaise jawab diya · {n} steps",
     "agentScope": "Case assistant",
     "agentIntro": "Jagah, zaroorat, ya abhi bhi intezaar kar rahe logon ke requests khojein.",
-    "agentFootnote": "Jawab cases review karne mein madad karte hain. Dispatch ki manzoori case queue se dein."
+    "agentFootnote": "Jawab cases review karne mein madad karte hain. Dispatch ki manzoori case queue se dein.",
+    "textNotStored": "Is sample report ka text save nahi hai",
+    "firstReport": "Pehli report"
   },
   "flow": {
     "title": "AI ne kaise decide kiya",
-    "headline": "{n} AI steps",
+    "headline": "{n} steps",
     "forCase": "{id} · {title} ke liye",
     "parallel": "Ek saath",
     "details": "Details",
+    "stepDetails": "Step details",
     "hideDetails": "Details chhupao",
     "humanNote": "Approve karne tak kuch nahi bheja jata.",
     "intake": "Report samjhi",
@@ -877,13 +960,13 @@
     "urgency": "Zaroorat aanki",
     "matching": "Sabse paas ki team dhoondhi",
     "explain": "Reason likha",
-    "sentIntake": "{people} logon ke liye {need}, road cut off.",
+    "sentIntake": "{people} ke liye {need}.",
     "sentDedupeClear": "Pichhle ghante is jagah koi aur case nahi.",
     "sentDedupeHit": "{id} jaisa lagta hai (wahi jagah, {n} min apart).",
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} khali seat.",
     "sentExplain": "Panel par dikhne wala one-line reason likha.",
-    "fallbackBanner": "{n} AI steps ne offline fallback use kiya. Wajah Details mein dekhein. Python scoring aur matching available hain.",
+    "fallbackBanner": "{n} steps mein built-in rules chale. Wajah Details mein dekho. Distance aur team matching available hain.",
     "loading": "Kaam chal raha hai… step {k} / {n} · {t} s",
     "failed": "AI steps poore nahi hue. Team match nahi hai, isliye suggestion nahi. Retry karein ya khud team chunein.",
     "noTrace": "Is case ka AI record nahi",
@@ -898,10 +981,16 @@
     "fellBack": "Isliye wapas gaye",
     "modelLatency": "Model · latency",
     "waiting": "Wait",
-    "badgeTool": "Python tool",
-    "badgeCache": "Recorded (Gemini)",
+    "badgeTool": "Google Maps",
+    "badgeCache": "Recorded replay",
+    "badgeYou": "Aap",
+    "fallbackBuiltIn": "Gemini unavailable, built-in rules use kiye gaye",
+    "readingReport": "Yeh report padhi ja rahi hai…",
     "simulateOutage": "Rules fallback preview dekhein",
-    "simulatedOnly": "Sirf preview. Saved traces aur dispatch decisions nahi badalte."
+    "simulatedOnly": "Sirf preview. Saved traces aur dispatch decisions nahi badalte.",
+    "sentDedupeJoined": "Ek hi jagah ki {n} reports jodi gayi.",
+    "sentDedupeNoPlace": "{n} reports judi hain. Jagah nahi batayi gayi, isliye yeh same-place merge nahi hai.",
+    "badgeStraight": "Rules · seedhi doori"
   },
   "uiRef": {
     "activeQueue": "Active queue",
@@ -915,7 +1004,10 @@
   },
   "map": {
     "loading": "Sector map load ho raha hai…",
-    "routing": "Road route dhoondh rahe hain…"
+    "routing": "Road route dhoondh rahe hain…",
+    "zoom": "Map zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
   },
   "photo": {
     "add": "Photo jodein",
@@ -956,7 +1048,7 @@
     "photoReading": "Gemini photo padh raha hai...",
     "askPending": "Kitne pending cases hain?",
     "geminiLive": "Gemini live hai",
-    "rulesFallback": "Rules se fallback",
+    "rulesFallback": "Gemini available nahi, built-in rules use hue",
     "cached": "Cache se",
     "sitrepTitle": "Haalat report",
     "sitrepBusy": "Live counts se likh raha hai…",
@@ -986,6 +1078,368 @@
     "routeNote": "Rasta",
     "geminiChip": "✨Gemini chip",
     "tierImmediate": "Abhi Immediate",
-    "tierUrgent": "Jaldi Urgent"
+    "tierUrgent": "Jaldi Urgent",
+    "localTestAi": "Local test AI"
+  },
+  "band": {
+    "critical": "Critical",
+    "critical.tip": "Urgency 80+",
+    "urgent": "Urgent",
+    "urgent.tip": "Urgency 60–79",
+    "other": "Baaki"
+  },
+  "filter": {
+    "aiReview": "✨AI review suggest karta hai",
+    "aiReview.tip": "AI unsure ya flagged",
+    "critical": "Critical",
+    "critical.tip": "Abhi jaan ka khatra. 15 min mein bhejo.",
+    "urgent": "Urgent",
+    "urgent.tip": "Ek ghante mein madad chahiye."
+  },
+  "field": {
+    "need": "Zaroorat",
+    "people": "Log",
+    "danger": "Khatra",
+    "place": "Jagah"
+  },
+  "hazard": {
+    "water_rising": "Paani badh raha hai"
+  },
+  "why": {
+    "title": "Yeh team kyon",
+    "team": "Team",
+    "eta": "ETA",
+    "seats": "Seats",
+    "dist": "Doori",
+    "dist30": "Distance /30",
+    "cap25": "Capacity /25",
+    "urg25": "Urgency /25",
+    "vuln20": "Vulnerable /20",
+    "total": "Score",
+    "order": "Pehle ETA, phir seats, phir score",
+    "chosen": "Chuni gayi",
+    "dropped": "Hataayi: boat 25 km se door",
+    "rule1": "Sirf matching kind ki free teams",
+    "rule2": "25 km se door ki boats hata di jaati hain",
+    "rule3": "Score = doori 30 + capacity 25 + urgency 25 + vulnerable 20"
+  },
+  "stat": {
+    "busy": "{n} busy",
+    "notUpdated": "{n} update nahi",
+    "teamsFree": "{a}/{b} teams free",
+    "silent": "{n} area {h} ghante se chup · {place} · Check karo"
+  },
+  "sample": {
+    "hindi": "Hindi report",
+    "voice": "Voice note",
+    "photo": "Flood photo"
+  },
+  "stepper": {
+    "title": "AI ne kaise decide kiya",
+    "tapHint": "Evidence ke liye step dabao",
+    "read": "Padha",
+    "dedupe": "Dedupe",
+    "urgency": "Urgency",
+    "team": "Team",
+    "you": "Aap"
+  },
+  "step": {
+    "noModel": "Is step mein koi model nahi chala",
+    "evidence": "Evidence",
+    "modelOutput": "Model output",
+    "confidence": "Confidence",
+    "confHigh": "High",
+    "confMed": "Medium",
+    "confLow": "Low",
+    "parallel": "parallel",
+    "sameTime": "Ek hi time par: Duplicate check + Urgency rate",
+    "prev": "Pichhla",
+    "next": "Aage",
+    "result": {
+      "noDup": "Koi duplicate nahi"
+    },
+    "headlineIntake": "{place} par {people} ke liye {type}.",
+    "headlineJoined": "Is case mein {n} aur reports judi.",
+    "headlineUrgency": "Urgency {score}. {reason}",
+    "headlineMatch": "{team} {km} km door hai.",
+    "matchNoKm": "{team} sabse nazdeek ki free team hai.",
+    "noTeam": "Kaafi nazdeek koi free team nahi hai.",
+    "whyMatch": "{team} unhe le ja sakti hai, {km} km door.",
+    "why": "Kyun",
+    "showPrompt": "Prompt aur jawab dikhao",
+    "hidePrompt": "Prompt aur jawab chhupao",
+    "whyJoined": "{n} reports ek hi jagah aur logon ke baare mein hain, kam samay mein, isliye ek case hai.",
+    "whyJoinedNoPlace": "{n} reports ek saath rakhi gayi hain, lekin jagah nahi batayi gayi. Yeh same-place merge nahi hai.",
+    "whyDistinct": "Pichhle ek ghante mein is jagah ka koi aur open case nahi.",
+    "joinedN": "{n} jodi",
+    "ofN": "step {k} / {n}",
+    "inputs": "Use hui jaankari",
+    "maybeDup": "Shayad repeat",
+    "noFree": "Koi free team nahi"
+  },
+  "panel": {
+    "moreDetails": "Aur details"
+  },
+  "badge": {
+    "rules": "Rules",
+    "gemini": "Gemini",
+    "testModel": "Test model",
+    "recorded": "Recorded replay"
+  },
+  "ward": "Ward {n}",
+  "chip": {
+    "likelyHoax": "Roka gaya · shayad hoax: {reason}"
+  },
+  "card": {
+    "movedUp": "Upar laya gaya"
+  },
+  "selfCheck": {
+    "ok": "Doosra Gemini check: facts report se match karte hain",
+    "fixed": "Doosre Gemini check ne report quote karke {changes} theek kiya:",
+    "people": "log",
+    "place": "jagah",
+    "recorded": "Recorded replay"
+  },
+  "depth": {
+    "boatChosen": "Boat chuni gayi: report ke hisaab se paani {depth} hai.",
+    "groundChosen": "Ground team chuni gayi: report ke hisaab se paani sirf {depth} hai.",
+    "boatShallow": "Report ke hisaab se paani {depth} hai; paas mein sirf boat free hai.",
+    "groundDeep": "Report ke hisaab se paani {depth} hai; paas mein koi boat free nahi, bhejne se pehle check karein.",
+    "band": {
+      "none": "bhara nahi",
+      "ankle": "takhne tak",
+      "knee": "ghutne tak",
+      "waist": "kamar tak",
+      "chest": "chhati tak",
+      "roof": "chhat tak",
+      "floor": "pehli manzil tak"
+    },
+    "chip": "lagbhag {depth} · {src}",
+    "srcGemini": "✨ Report se Gemini ka andaaza",
+    "srcRecorded": "Recorded Gemini andaaza",
+    "srcOther": "report se andaaza"
+  },
+  "batch": {
+    "new": "naye (10 min)",
+    "merged": "merged",
+    "waiting": "waiting",
+    "dispatched": "bheje gaye",
+    "next": "Agla case",
+    "shortcuts": "Keys: A approve · N agla · U undo"
+  },
+  "sit": {
+    "title": "Situation",
+    "ratio": "{r} reports → duplicates jodne ke baad {c} cases",
+    "openCommand": "Command kholein",
+    "perMin": "reports/min (pichhle 10 min)",
+    "completed": "poore",
+    "merged": "duplicates jode",
+    "hoax": "hoax flag kiye",
+    "topAreas": "High-alert areas",
+    "allClear": "Sab nipat gaya: koi critical ya urgent case waiting nahi.",
+    "areaMeta": "{w} waiting · area mein {t} free teams",
+    "teams": "Type ke hisaab se teams",
+    "free": "free",
+    "busy": "busy",
+    "brief": "Situation brief",
+    "refresh": "Refresh",
+    "briefLoading": "Brief likha ja raha hai…",
+    "briefError": "Brief abhi available nahi.",
+    "forJudges": "Judges ke liye:",
+    "src": {
+      "gemini": "✨ Gemini live",
+      "recorded": "Recorded replay",
+      "local": "Local test AI",
+      "rules": "Rules"
+    },
+    "briefUnavailable": "Brief abhi nahi mila",
+    "notUpdated": "update nahi"
+  },
+  "steps": {
+    "gemini": "✨ Gemini ne 5 steps check kiye",
+    "recorded": "Gemini · recorded",
+    "rules": "Rules ne 5 steps check kiye",
+    "see": "Kaise, dekhein",
+    "hide": "Steps chhupayein",
+    "badgeRules": "Rules",
+    "badgeRecorded": "Gemini · recorded",
+    "short.intake": "Padha",
+    "short.dedupe": "Duplicate",
+    "short.urgency": "Urgency",
+    "short.maps": "Team",
+    "short.explain": "Samjhaya",
+    "short.you": "Aap",
+    "youShort": "Aap approve karein"
+  },
+  "keys": {
+    "title": "Keyboard shortcuts",
+    "a": "Suggested team ko approve karke bhejein",
+    "n": "Agla waiting case",
+    "u": "Aakhri send undo karein",
+    "jk": "Queue mein neeche / upar",
+    "search": "Cases search karein",
+    "help": "Ye sheet dikhayein"
+  },
+  "teams.goCommand": "Command par jaayein",
+  "teams.sub": "{a} free · {b} busy",
+  "people": {
+    "notStated": "Log: nahi bataya",
+    "one": "1 vyakti",
+    "many": "{n} log",
+    "provisional": "(pakka nahi)",
+    "none": "Koi phansa hua nahi bataya"
+  },
+  "hoax": {
+    "dismiss": "Hoax maan ke band karo",
+    "notHoax": "Hoax nahi hai",
+    "dismissed": "Hoax maan ke band kiya. Kuch nahi bheja gaya.",
+    "likely": "Shayad hoax",
+    "tipD": "Dismiss ke liye D dabayein",
+    "held": "Roka gaya · shayad hoax",
+    "notMatched": "Match nahi kiya"
+  },
+  "noTeam": {
+    "title": {
+      "boat": "{km} km ke andar koi free boat nahi",
+      "medical": "Paas mein koi free medical team nahi",
+      "food": "Paas mein koi free food team nahi",
+      "shelter": "Paas mein koi free shelter nahi",
+      "other": "Paas mein koi free team nahi"
+    },
+    "reason": {
+      "all_busy": "Is type ki saari {n} teams doosre cases par busy hain.",
+      "too_far": "Sabse paas ki free team ({team}) {km} km door hai (limit {limit} km).",
+      "too_small": "Akeli free team ({team}) mein {seats} seats hain; {need} logon ko madad chahiye.",
+      "none_of_kind": "Is area mein is type ki koi team nahi hai.",
+      "no_location": "Location abhi nahi hai, isliye team ki doori pata nahi. Reporter se landmark ya pin maangein.",
+      "deep_water": "Chhati tak paani: sirf boat pahunch sakti hai. Sabse paas ki free boat {team} {km} km door hai (limit {limit} km).",
+      "info_only": "Yeh report jaankari maangti hai, team nahi."
+    },
+    "stays": "Priority wahi rahegi. Case queue mein apni jagah par rahega.",
+    "yourOptions": "Aapke options",
+    "opt": {
+      "reserve": "{team} reserve karein: ~{free} min mein free, phir pahunchne mein ~{travel} min (kul ≈ {eta} min)",
+      "road": "Abhi road team bhejo jaanch ke liye: {team}, {km} km, lagbhag {eta} min. Ye paani mein rescue nahi kar sakti.",
+      "wider": "{limit} km se aage dhoondo: {team}, {km} km, lagbhag {eta} min",
+      "escalate": "District control room ko escalate karo",
+      "call112": "Abhi 112 call karein (ambulance / fire). Sabse paas ki boat bahut door hai.",
+      "share": "Area ko alert bhejein"
+    },
+    "go": {
+      "reserve": "Agli free team reserve karo",
+      "road": "Road team bhejo",
+      "wider": "Door wali team lo",
+      "escalate": "Escalate karo",
+      "call112": "Abhi 112 call karein",
+      "share": "Alert share karein"
+    },
+    "logged": {
+      "reserve": "Reserve ho gaya. Team free hote hi propose hogi. Kuch nahi bheja gaya.",
+      "road": "Road team ka choice log hua. Abhi kuch nahi bheja.",
+      "wider": "Door search ka choice log hua. Abhi kuch nahi bheja.",
+      "escalate": "District control room ko escalate kiya (log hua)."
+    },
+    "failed": "Choice save nahi hua. Dobara try karo.",
+    "footer": "Aapke approve karne tak kuch nahi bheja jaata. Samay seedhi doori ka andaaza hai.",
+    "tip": "Ek option chuniye, phir Enter dabaiye.",
+    "goTeam": {
+      "reserve": "{team} reserve karein",
+      "road": "{team} bhejein",
+      "wider": "{team} bhejein"
+    }
+  },
+  "dec": {
+    "depth": "Gehrai",
+    "selfCheck": "Self-check",
+    "aiIncomplete": "AI adhoora",
+    "aiIncompleteRules": "rules use hue:",
+    "notStated": "nahi bataya",
+    "notRun": "abhi nahi chala"
+  },
+  "disp": {
+    "onWay": "Team raste mein hai",
+    "sentAt": "{t} par bheja · aapne",
+    "markArrived": "Pahunchi mark karein"
+  },
+  "take": {
+    "warn": "{team} {ref} (urgency {u}) ke liye bhi best team hai, jo zyada zaroori hai.",
+    "next": "Tab us case ko {team} ({km} km) milegi.",
+    "noNext": "Tab us case ke liye koi free team nahi hogi.",
+    "anyway": "Phir bhi bhejein"
+  },
+  "reject": {
+    "which": "Is case ke liye {team} reject kar rahe hain. Kyon?"
+  },
+  "aiq": {
+    "working": "AI kaam par",
+    "ready": "Aapke liye taiyaar",
+    "flow": "Nayi report → AI kaam par → aapke liye taiyaar → aap manzoor karein",
+    "flowShort": "Nayi → AI kaam par → taiyaar → aap manzoor karein",
+    "inLine": "qataar mein {n}",
+    "reading": "{n} padh raha",
+    "readingLine": "{reading} padh raha · qataar mein {queued}",
+    "timeout": "Zyada samay laga · niyam lagaye",
+    "paused": "Gemini ruka · niyam",
+    "pausedBanner": "Gemini ruka hua hai · niyam chal rahe hain. Free limit lagbhag 10 call prat min hai.",
+    "notFinished": "AI poora nahi",
+    "unverified": "Jaanch baaki",
+    "checked": "Jaancha",
+    "lifeThreat": "Jaan ka khatra · qataar se pehle",
+    "slideHint": "Poore maamle taiyaar mein jaate hain",
+    "empty": "AI khaali hai. Nayi report pehle yahin dikhegi.",
+    "stepRead": "Padha",
+    "stepDuplicates": "Duplicate",
+    "stepUrgency": "Gambhirta",
+    "stepTeam": "Team",
+    "waiting": "intezaar",
+    "more": "+{n} aur qataar mein",
+    "engineGemini": "Gemini ne padha",
+    "engineRules": "Niyam",
+    "engineRechecked": "Gemini ne dobara jaancha",
+    "tookTooLong": "samay zyada laga",
+    "provenanceTimeout": "Niyam · Gemini ka samay khatam",
+    "approveLocked": "Manzoori · AI poora nahi",
+    "approveToast": "AI poora nahi. Chaaron kadam poore hon to manzoori khulegi.",
+    "footnote": "Manzoori tab khulegi jab AI ke 4 kadam poore hon (ya 45 second baad niyam). Har rawangi ek insaan manzoor karta hai.",
+    "stillWorking": "AI abhi is case par hai (kadam {step}/4: {name}). Jaanch baaki wale hisson ko abhi nahi dekha.",
+    "pausedNote": "Gemini ruka hai, isliye is case par niyam chal rahe hain.",
+    "workingBadge": "AI kaam par · {t}",
+    "justReady": "Abhi taiyaar",
+    "newReady": "↑ {n} naye taiyaar",
+    "readyAnnounce": "{ref} aapke liye taiyaar.",
+    "lifeAnnounce": "{place} par jaan ka khatra. 112 par call karein.",
+    "sendBoat": "Sabse nazdeeki naav abhi bhejein",
+    "callReporter": "Reporter ko call karein",
+    "call112": "112 par call (emergency)",
+    "noPhone": "Is report par phone number nahi hai.",
+    "noBoat": "Paas mein koi khaali naav nahi hai.",
+    "stillChecking": "AI abhi jaanch raha hai",
+    "youDecide": "AI ne jaancha · aap tay karein",
+    "waitingCount": "Pratiksha {ready} · AI par {n}",
+    "inAi": "AI par {n}",
+    "checking": "Jaanch ho rahi hai…",
+    "noneFound": "Koi nahi mila",
+    "joined": "{ref} se juda",
+    "beingRated": "Aanka ja raha hai…",
+    "notChosen": "Abhi team nahi chuni",
+    "what": "Kya",
+    "place": "Jagah",
+    "duplicates": "Duplicate",
+    "people": "Log",
+    "urgency": "Gambhirta",
+    "team": "Team",
+    "hoaxWord": "Ek shabd: yeh jhooth kyon hai?",
+    "hoaxWordPh": "shabd",
+    "markHoax": "Jhooth mark karein",
+    "nextReady": "Agla taiyaar case",
+    "stepOf": "Kadam {n}/4: {name}, {state}",
+    "stateDone": "poora",
+    "stateActive": "chal raha",
+    "statePending": "baaki",
+    "ordinal1": "qataar mein pehla",
+    "ordinal2": "qataar mein doosra",
+    "ordinal3": "qataar mein teesra",
+    "ordinalN": "qataar mein {n}vaan",
+    "diffLine": "{field}: {from} → {to}"
   }
 }

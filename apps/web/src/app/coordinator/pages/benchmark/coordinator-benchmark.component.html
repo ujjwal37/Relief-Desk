@@ -3,27 +3,66 @@
     <h1>{{ 'bench.title2' | rdTranslate }}</h1>
     @if (example()) { <span class="example">{{ 'ux.exampleData' | rdTranslate }}</span> }
     <p class="sub">{{ 'bench.sub' | rdTranslate }}</p>
+    @if (realRows().length) {
+      <p class="summary" data-testid="bench-summary">
+        {{ 'bench.summary' | rdTranslate:{ n: realRows().length } }}
+        @if (gemini(); as g) { · {{ (g.measured ? 'bench.geminiMeasured' : 'bench.geminiNotInRun') | rdTranslate }} }
+      </p>
+    }
+    <p class="run-line" data-testid="bench-run-line">
+      @if (gemini()?.measured) { {{ 'bench.runGemini' | rdTranslate:{ model: gemini()?.model || '' } }} } @else { {{ 'bench.runRules' | rdTranslate }} }
+      @if (testN()) { · {{ 'bench.testN' | rdTranslate:{ n: testN() } }} }
+      @if (gemini()?.date) { · {{ gemini()?.date }} }
+    </p>
+    @if (gemini(); as g) {
+      <details class="run-details">
+        <summary>{{ 'bench.runDetails' | rdTranslate }}</summary>
+        @if (subtitle()) { <p class="meta">{{ subtitle() }}</p> }
+        <div class="run-facts">
+          @if (g.model) { <p class="meta">{{ 'bench.model' | rdTranslate }} {{ g.model }}</p> }
+          @if (g.date) { <p class="meta">{{ 'bench.date' | rdTranslate }} {{ g.date }}</p> }
+          @if (g.n) { <p class="meta">{{ 'ux.labelled' | rdTranslate }} {{ g.n }}</p> }
+        </div>
+        @if (!g.measured) { <p class="not-run">{{ (g.reason === 'fallback' ? 'bench.geminiUnreachable' : 'bench.geminiNotMeasured') | rdTranslate }}</p> }
+        @if (g.measured) {
+          @if (g.type) { <p class="meta">{{ 'bench.geminiType' | rdTranslate }} {{ g.type }}</p> }
+          @if (g.ward) { <p class="meta">{{ 'bench.geminiWard' | rdTranslate }} {{ g.ward }}</p> }
+        }
+        @if (g.baseType) { <p class="meta">{{ 'bench.keywordType' | rdTranslate }} {{ g.baseType }}</p> }
+        @if (g.baseWard) { <p class="meta">{{ 'bench.keywordWard' | rdTranslate }} {{ g.baseWard }}</p> }
+      </details>
+    }
   </header>
 
   @if (error()) {
     <div class="error" role="alert">{{ error() }} <button type="button" (click)="reload()">{{ 'bench.retry' | rdTranslate }}</button></div>
   }
-  @if (!error() && rows().length === 0) { <div class="skel"><i></i><i></i></div> }
+  @if (!error() && rows().length === 0) { <div class="skel"><i></i><i></i><i></i></div> }
 
-  @if (cards().length) {
-    <div class="grid cards">
-      @for (row of cards(); track row.key) {
-        <article class="metric">
+  @if (rows().length && !realRows().length) {
+    <div class="not-run-card" data-testid="bench-not-run" role="status">
+      <h2>{{ 'bench.notRunTitle' | rdTranslate }}</h2>
+      <p>{{ 'bench.notRunBody' | rdTranslate }}</p>
+    </div>
+  }
+  @if (realRows().length) {
+    <div class="tiles">
+      @for (row of realRows(); track row.key) {
+        <article class="tile" [attr.title]="row.means | rdTranslate">
           <h2>{{ row.label | rdTranslate }}</h2>
-          <p class="means">{{ row.means | rdTranslate }}</p>
-          <p class="kpi">{{ row.relief || ('ux.notRecorded' | rdTranslate) }}</p>
+          <p class="big">{{ row.relief || '—' }}@if (row.unit && row.relief) {<small>{{ row.unit }}</small>}</p>
+          @if (extreme(row)) { <p class="caveat" data-testid="bench-caveat">{{ 'bench.smallSet' | rdTranslate:{ n: testN() || '?' } }}</p> }
+          <p class="dir" [class.low]="lowerBetter(row.key)">{{ (lowerBetter(row.key) ? 'bench.lowerBetter' : 'bench.higherBetter') | rdTranslate }}</p>
+          @if (geminiValue(row); as value) { <p class="gem">{{ 'bench.geminiTile' | rdTranslate:{ v: value } }}</p> }
+          @if (row.baseline) { <p class="base">{{ row.baselineName | rdTranslate }} {{ row.baseline }}</p> }
         </article>
       }
     </div>
   }
 
   @if (tableRows().length) {
-    <div class="table-wrap">
+    <details class="table-wrap">
+      <summary>{{ 'ux.wrongTitle' | rdTranslate }}</summary>
       <table class="cases">
         <thead>
           <tr>
@@ -46,6 +85,13 @@
           }
         </tbody>
       </table>
-    </div>
+    </details>
+  }
+
+  @if (marginText() || smallSample()) {
+    <section class="failures">
+      @if (marginText()) { <p>{{ marginText() }}</p> }
+      @if (smallSample()) { <p>{{ 'ux.smallSample' | rdTranslate }}</p> }
+    </section>
   }
 </div>

@@ -32,14 +32,13 @@ describe('AgentTraceDrawerComponent', () => {
     expect(text).toContain('Rated urgency');
     expect(text).toContain('Found the closest team');
     expect(text).toContain('Explained the choice');
-    expect(text).toContain('At the same time');
-    expect(fixture.nativeElement.querySelector('.run-badge')?.textContent).toContain('Rules');
+    expect(text).toContain('parallel');
+    expect(fixture.nativeElement.querySelector('.run-badge')?.textContent).toContain('Gemini unavailable, built-in rules used');
     expect(text).not.toContain('Offline fallback');
-    expect(text).toContain('Waiting');
-    expect(text).toContain('Rules');
-    expect(text).toContain('Python tool');
+    expect(text).not.toContain('ux.none');
+    expect(text).toContain('Google Maps');
     expect(text).not.toContain('gemini-3.8-flash');
-    expect(fixture.nativeElement.querySelectorAll('.details').length).toBe(3);
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="step-details-btn"]').length).toBe(5);
   });
 
   it('names a test provider honestly and never as Gemini', () => {
@@ -55,7 +54,7 @@ describe('AgentTraceDrawerComponent', () => {
     } as unknown as StoredRequest);
     local.detectChanges();
     expect(local.nativeElement.querySelector('.run-badge')?.textContent).toContain('Test model');
-    const intake = local.nativeElement.querySelector('app-trace-step')?.textContent as string;
+    const intake = local.nativeElement.querySelector('.alt-b-row')?.textContent as string;
     expect(intake).toContain('Test model');
     expect(intake).not.toContain('Gemini');
   });
@@ -84,6 +83,8 @@ describe('AgentTraceDrawerComponent', () => {
   });
 
   it('keeps a single step expanded', () => {
+    (fixture.nativeElement.querySelector('.btn-tech-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.details') as NodeListOf<HTMLButtonElement>;
     buttons[0].click();
     fixture.detectChanges();

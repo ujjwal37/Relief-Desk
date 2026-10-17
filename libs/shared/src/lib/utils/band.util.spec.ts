@@ -22,6 +22,8 @@ describe('band.util', () => {
   it('flags review cases', () => {
     expect(needsReview({ urgency_score: 50, flags: ['hoax_suspect'] })).toBeTrue();
     expect(needsReview({ urgency_score: 50, translation_confidence: 0.4 })).toBeTrue();
+    expect(needsReview({ urgency_score: 50, flags: ['synthetic'] })).toBeFalse();
+    expect(needsReview({ urgency_score: 50, flags: ['synthetic', 'hoax_suspect'] })).toBeTrue();
     expect(needsReview({ urgency_score: 50 })).toBeFalse();
   });
 });

@@ -60,28 +60,34 @@ export class LanguageService {
     }
   }
 
-  translate(key: string): string {
+  translate(key: string, params?: Record<string, any>): string {
     const lang = this.currentLang();
     const dict = DICTIONARIES[lang] || DICTIONARIES['en'];
-    const parts = key.split('.');
-    let val: any = dict;
-    for (const part of parts) {
-      if (val && typeof val === 'object' && part in val) {
-        val = val[part];
-      } else {
-        // Fallback to English
-        let fallbackVal: any = DICTIONARIES['en'];
-        for (const fbPart of parts) {
-          if (fallbackVal && typeof fallbackVal === 'object' && fbPart in fallbackVal) {
-            fallbackVal = fallbackVal[fbPart];
-          } else {
-            return key;
-          }
+    const resolve = (d: any, k: string): string | null => {
+      if (!d || typeof d !== 'object') return null;
+      if (k in d && typeof d[k] === 'string') return d[k];
+      const parts = k.split('.');
+      let val: any = d;
+      for (let i = 0; i < parts.length; i++) {
+        if (!val || typeof val !== 'object') return null;
+        const rest = parts.slice(i).join('.');
+        if (rest in val && typeof val[rest] === 'string') return val[rest];
+        const part = parts[i];
+        if (part in val) {
+          val = val[part];
+        } else {
+          return null;
         }
-        return typeof fallbackVal === 'string' ? fallbackVal : key;
+      }
+      return typeof val === 'string' ? val : null;
+    };
+    let text = resolve(dict, key) ?? resolve(DICTIONARIES['en'], key) ?? key;
+    if (params && typeof text === 'string') {
+      for (const [pk, pv] of Object.entries(params)) {
+        text = text.replaceAll(`{${pk}}`, String(pv));
       }
     }
-    return typeof val === 'string' ? val : key;
+    return text;
   }
 }
 
@@ -93,9 +99,9 @@ export class LanguageService {
 export class RdTranslatePipe implements PipeTransform {
   constructor(private langService: LanguageService) {}
 
-  transform(key: string): string {
+  transform(key: string, params?: Record<string, any>): string {
     // Read reactive signal to automatically re-trigger on language change
     this.langService.currentLang();
-    return this.langService.translate(key);
+    return this.langService.translate(key, params);
   }
 }

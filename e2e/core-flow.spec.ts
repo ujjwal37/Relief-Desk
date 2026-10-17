@@ -43,25 +43,24 @@ test('phone report is approved and the reporter sees help on the way', async ({ 
   await desk.getByRole('button', { name: 'How it decided' }).first().click();
   const trace = desk.getByRole('dialog', { name: 'How it decided' });
   await expect(trace).toBeVisible();
-  await expect(trace.getByText('Read the report', { exact: true })).toBeVisible();
+  await expect(trace.getByText('Understood the report', { exact: true })).toBeVisible();
   await openTechnical(trace);
   await expect(trace.getByText('Intake', { exact: true }).first()).toBeVisible();
   await expect(trace.getByText('Matching', { exact: true }).first()).toBeVisible();
   await desk.keyboard.press('Escape');
   await expect(trace).toBeHidden();
 
-  await expect(desk.locator('.facts').first()).toContainText(/\d+(\.\d+)? km/);
-  await expect(desk.locator('.facts').first()).toContainText(/min|No nearby team/);
-  const leg = desk.locator('.svgmap text.leg').first();
-  await expect(leg).toBeVisible();
-  await expect(leg).toContainText(/km/);
+  // The decision panel's best-team card carries the measured distance and travel time.
+  const best = desk.locator('.best-team-banner').first();
+  await expect(best).toContainText(/\d+(\.\d+)? km|No nearby team/);
+  await expect(best).toContainText(/min|No nearby team/);
   const approve = desk.getByRole('button', { name: 'Approve and send' });
   await expect(approve).toBeEnabled({ timeout: 20_000 });
   await approve.click();
   await expect(desk.locator('.toast')).toContainText('Dispatch approved');
 
-  await desk.getByRole('link', { name: 'Dispatched', exact: true }).click();
-  await expect(desk.getByRole('option', { name: new RegExp(marker) })).toBeVisible();
+  await desk.getByTestId('tab-dispatched').click();
+  await expect(desk.locator('.card-place-title, .card-line-mid').filter({ hasText: new RegExp(marker) }).first()).toBeVisible();
 
   await expect(phone.getByText('A team is on the way.')).toBeVisible({ timeout: 20_000 });
   await context.close();

@@ -9,6 +9,7 @@ export interface MetricRow {
   baseline: string;
   baselineName: string;
   pct: boolean;
+  unit?: string;
 }
 
 /** Strongest honest results first. Weaker scores stay on the page, lower down. */
@@ -46,6 +47,14 @@ export class CoordinatorBenchmarkComponent implements OnInit {
   private lang = inject(LanguageService);
 
   readonly rows = signal<MetricRow[]>([]);
+  readonly testN = signal<string>('');
+  /** 100% or 0% on a small labelled set is not a claim; it is shown with n and a caveat. */
+  extreme(row: MetricRow): boolean {
+    const v = Number(row.relief);
+    return row.pct && (v === 100 || v === 0);
+  }
+  /** Only metrics with at least one measured number. Empty cards are hidden, never padded. */
+  readonly realRows = computed(() => this.rows().filter((row) => !!(row.relief || row.baseline || this.geminiValue(row))));
   readonly cards = computed(() => this.rows().filter((row) => row.pct && row.relief).slice(0, 2));
   readonly tableRows = signal<{ caseId: string; aiUrgency: string; coordinator: string; aiTeam: string; result: string }[]>([]);
   readonly subtitle = signal('');
@@ -84,6 +93,11 @@ export class CoordinatorBenchmarkComponent implements OnInit {
     return Math.max(0, Math.min(100, n <= 1 ? n * 100 : n));
   }
 
+  /** Rates of mistakes, latency, cost and rank are better when lower. */
+  lowerBetter(key: string): boolean {
+    return /false|mistake|latency|cost|mean_rank/.test(key);
+  }
+
   geminiValue(row: MetricRow): string | null {
     const gemini = this.gemini();
     if (!gemini?.measured) return null;
@@ -120,8 +134,11 @@ export class CoordinatorBenchmarkComponent implements OnInit {
         baseline: this.format(baseline.value),
         baselineName: baseline.name,
         pct: /_pct$/.test(key),
+        unit: /_pct$/.test(key) ? '%' : /_ms$/.test(key) ? ' ms' : /_usd$/.test(key) ? ' USD' : /rank$/.test(key) ? '' : '',
       };
-    }));
+    }).filter((row) => !(row.key.startsWith('cost_') && (payload['gemini'] as Record<string, unknown> | undefined)?.['measured'] !== true)));
+    const n = payload['n'] ?? payload['test_size'] ?? payload['n_messages'] ?? (payload['gemini'] as Record<string, unknown> | undefined)?.['n'];
+    this.testN.set(n != null && n !== '' ? String(n) : '');
     const examples = (payload['failure_examples'] || []) as Array<Record<string, unknown>>;
     this.failures.set(examples.slice(0, 3).map((item) => {
       const reason = item['reason'] || item['category'] || '';

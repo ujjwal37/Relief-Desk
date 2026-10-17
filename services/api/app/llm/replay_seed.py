@@ -33,11 +33,35 @@ def attach_recorded_ai(storage) -> int:
     from app.llm import client as llm
 
     attached = 0
+    replay_traces = list(llm.REPLAY_DIR.glob("*.trace.json")) if llm.REPLAY_DIR.exists() else []
     for req in list(storage._requests.values()):
         if req.ai is not None and req.ai.provider in ("gemini", "cache"):
             continue
         key = llm.llm_client.cache_key(SYSTEM_INTAKE_PROMPT, seed_prompt(req.raw_text))
         path = llm.REPLAY_DIR / f"{key}.json"
+        trace_path = llm.REPLAY_DIR / f"{key}.trace.json"
+
+        # Fallback to matching by fingerprint or input summary if prompt hash changed
+        if not path.exists():
+            fp = trace_fingerprint(req)
+            matched_trace = None
+            for tp in replay_traces:
+                try:
+                    data = json.loads(tp.read_text(encoding="utf-8"))
+                    if data.get("fingerprint") == fp:
+                        matched_trace = tp
+                        break
+                    intake = (data.get("trace") or [{}])[0]
+                    if intake.get("input_summary") and intake["input_summary"] == req.raw_text:
+                        matched_trace = tp
+                        break
+                except (OSError, ValueError):
+                    continue
+            if matched_trace:
+                trace_path = matched_trace
+                base_name = matched_trace.name.replace(".trace.json", ".json")
+                path = matched_trace.parent / base_name
+
         if not path.exists():
             continue
         try:
@@ -46,16 +70,13 @@ def attach_recorded_ai(storage) -> int:
             continue
         if meta.get("provider", meta.get("source")) not in ("gemini", "cache"):
             continue
-        req.ai = AiCall(provider="cache", model=meta.get("model"), tokens=meta.get("tokens"), cached=True)
+        req.ai = AiCall(provider="cache", model=meta.get("model", "gemini-3.5-flash-lite"), tokens=meta.get("tokens"), cached=True)
         req.ai_source = "recorded"
-        trace_path = llm.REPLAY_DIR / f"{key}.trace.json"
         if trace_path.exists():
             try:
                 recording = json.loads(trace_path.read_text(encoding="utf-8"))
                 trace = recording.get("trace") or []
-                if recording.get("fingerprint") == trace_fingerprint(req) and len(trace) == 5 and all(
-                    row.get("provider") in ("gemini", "cache", "tool") for row in trace
-                ):
+                if len(trace) == 5 and all(row.get("provider") in ("gemini", "cache", "tool") for row in trace):
                     req.trace = [{**row, "provider": "cache" if row.get("provider") in ("gemini", "cache") else "tool",
                                   "recorded_at": recording.get("recorded_at")} for row in trace]
                     req.analysis = recording.get("analysis") or {}

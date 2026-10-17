@@ -7,11 +7,13 @@
       </a>
 
       <nav class="tabs" [class.wrap]="compactNav()" [attr.aria-label]="'ui.coordNav' | rdTranslate">
-        <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge" [class.on]="homeOn()">{{ 'coord.home' | rdTranslate }}</a>
-        <a class="wide-only" routerLink="/coordinator/overview" routerLinkActive="on">{{ 'coord.overview' | rdTranslate }} @if (ui.alerts().length) { <span class="count">{{ ui.alerts().length }}</span> }</a>
-        <a class="wide-only" routerLink="/coordinator/teams" routerLinkActive="on">{{ 'coord.teams' | rdTranslate }}</a>
-        <a routerLink="/coordinator/agent" routerLinkActive="on">{{ 'coord.agent' | rdTranslate }}</a>
-        <a class="wide-only" routerLink="/coordinator/benchmark" routerLinkActive="on">{{ 'coord.accuracy' | rdTranslate }}</a>
+        <a routerLink="/coordinator/situation" routerLinkActive="on" data-testid="nav-situation">{{ 'sit.title' | rdTranslate }}</a>
+        <a routerLink="/coordinator/command" [queryParams]="{ status: null }" queryParamsHandling="merge" [class.on]="homeOn()">{{ 'nav.command' | rdTranslate }}</a>
+        <a routerLink="/coordinator/teams" routerLinkActive="on">{{ 'coord.teams' | rdTranslate }}</a>
+        <a routerLink="/coordinator/alerts" routerLinkActive="on">{{ 'coord.alerts' | rdTranslate }}</a>
+        <button type="button" class="btn-ask-desk" data-tour="ask" (click)="toggleAskDesk()">
+          <span class="sparkle" aria-hidden="true">✨</span> {{ 'nav.ask' | rdTranslate }}
+        </button>
         <button type="button" class="more-tab" (click)="menuOpen.set(true)">{{ 'coord.more' | rdTranslate }}</button>
       </nav>
 
@@ -22,35 +24,24 @@
       </div>
 
       <div class="right">
-        <span class="ai-pill" data-testid="ai-health" [class.live]="aiHealth()?.label === 'Gemini live'" [class.off]="aiHealth()?.label !== 'Gemini live'" [attr.title]="aiHealth()?.model || ''">{{ aiHealth()?.label || ('xfactor.rulesFallback' | rdTranslate) }}</span>
-        <button type="button" class="tour-btn keep" data-testid="restart-tour" (click)="takeTour()">{{ 'xfactor.restartTour' | rdTranslate }}</button>
-        <button type="button" class="tour-btn keep" data-testid="sitrep-open" (click)="openSitrep()">{{ 'xfactor.sitrepButton' | rdTranslate }}</button>
-        <span class="live" data-testid="live-badge" [class.retry]="live.state() === 'reconnecting'" [class.off]="live.state() === 'offline'"><i></i>{{ liveLabel() | rdTranslate }}</span>
-        @if (demoAllowed()) {
-          <button type="button" class="surge-button" [disabled]="surgeBusy()" (click)="simulateSurge()">{{ (surgeBusy() ? 'demo.surgeRunning' : 'demo.surgeButton') | rdTranslate }}</button>
-        }
+        <span class="ai-pill" data-testid="ai-health" [class.live]="aiHealth()?.provider === 'gemini'" [class.off]="aiHealth()?.provider !== 'gemini'" [attr.title]="aiHealth()?.model || ''">{{ aiPillText() }}@if (geminiCalls() != null) { <span class="ai-calls" data-testid="gemini-calls"> · {{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }</span>
         <div class="menu-wrap">
-          <button type="button" class="avatar" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate">{{ initial() }}</button>
+          <button type="button" class="avatar more-btn" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate"><span class="more-word">{{ 'coord.more' | rdTranslate }} ▾</span><span class="burger" aria-hidden="true">☰</span></button>
           @if (menuOpen()) {
             <div class="menu-back" (click)="menuOpen.set(false)"></div>
             <div class="menu" role="menu">
               <p class="who">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</p>
-              <a class="item" routerLink="/coordinator/overview" (click)="menuOpen.set(false)">{{ 'coord.overview' | rdTranslate }}</a>
+              <a class="item m-only" routerLink="/coordinator/situation" (click)="menuOpen.set(false)">{{ 'sit.title' | rdTranslate }}</a>
+              <a class="item m-only" routerLink="/coordinator/command" (click)="menuOpen.set(false)">{{ 'nav.command' | rdTranslate }}</a>
               <a class="item" routerLink="/coordinator/teams" (click)="menuOpen.set(false)">{{ 'coord.teams' | rdTranslate }}</a>
               <a class="item" routerLink="/coordinator/alerts" (click)="menuOpen.set(false)">{{ 'coord.alerts' | rdTranslate }}
                 @if (ui.alerts().length) { <span class="count">{{ ui.alerts().length }}</span> }
               </a>
-              <a class="item" routerLink="/coordinator/benchmark" (click)="menuOpen.set(false)">{{ 'coord.accuracy' | rdTranslate }}</a>
+              <a class="item judges" routerLink="/coordinator/benchmark" (click)="menuOpen.set(false)"><small>{{ 'sit.forJudges' | rdTranslate }}</small> {{ 'coord.accuracy' | rdTranslate }}</a>
               <h3>{{ 'coord.scenario' | rdTranslate }}</h3>
               <div class="seg stack">
                 @for (pack of scenarioService.scenarios(); track pack.id) {
                   <button type="button" [class.on]="scenarioService.activeId() === pack.id" (click)="selectScenario(pack.id)">{{ pack.title }}</button>
-                }
-              </div>
-              <h3>{{ 'settings.theme' | rdTranslate }}</h3>
-              <div class="seg">
-                @for (t of themes; track t.m) {
-                  <button type="button" [class.on]="theme.mode() === t.m" [attr.aria-pressed]="theme.mode() === t.m" (click)="theme.setMode(t.m)">{{ t.k | rdTranslate }}</button>
                 }
               </div>
               <h3>{{ 'settings.language' | rdTranslate }}</h3>
@@ -80,16 +71,14 @@
       </div>
     </header>
 
-    <p class="safety-note" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
-    <p class="problem" data-tour="welcome">{{ 'xfactor.problemLine' | rdTranslate }}</p>
+    <div class="top-strip" data-tour="welcome">
+      <p class="safety-note" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
+      @if (guideOpen()) {
+        <p class="guide-inline" role="note"><span>{{ 'coord.guide' | rdTranslate }}</span><button type="button" (click)="dismissGuide()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
+      }
+    </div>
     @if (mergeNotice()) { <p class="surge-note" role="status">{{ mergeNotice() }}</p> }
     @if (surgeNotice()) { <p class="surge-note" role="status">{{ surgeNotice() }}</p> }
-    @if (guideOpen()) {
-      <p class="guide" role="note">
-        <span>{{ 'coord.guide' | rdTranslate }}</span>
-        <button type="button" (click)="dismissGuide()">{{ 'coord.guideDismiss' | rdTranslate }}</button>
-      </p>
-    }
 
     <main class="dashboard-body">
       <router-outlet></router-outlet>
@@ -104,5 +93,18 @@
   <app-tour (action)="onTourAction($event)" />
   @if (sitrepOpen()) {
     <app-sitrep-panel [report]="sitrep()" [busy]="sitrepBusy()" [error]="sitrepError()" (closed)="sitrepOpen.set(false)" />
+  }
+
+  @if (askDeskOpen()) {
+    <div class="scrim" (click)="askDeskOpen.set(false)"></div>
+    <aside class="ask-desk-panel" role="dialog" aria-modal="true" [attr.aria-label]="'nav.ask' | rdTranslate">
+      <header class="ask-drawer-head">
+        <h2><span class="sparkle" aria-hidden="true">✨</span> {{ 'nav.ask' | rdTranslate }}</h2>
+        <button type="button" class="close-btn" (click)="askDeskOpen.set(false)" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
+      </header>
+      <div class="ask-panel-body">
+        <app-ask-desk [fullPage]="false" (picked)="onDeskCasePicked($event)" />
+      </div>
+    </aside>
   }
 </div>

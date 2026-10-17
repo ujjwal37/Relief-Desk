@@ -58,11 +58,11 @@ def _run(run_id: str, actor: str, submit: Callable) -> None:
 
     # Fictional people/streets. The first pair shares one precise synthetic rooftop.
     lines = [
-        ("hi", "काल्पनिक रिपोर्ट। Chalakudy Cedar rooftop पर 4 लोग फंसे हैं। पानी बढ़ रहा है, नाव चाहिए।", 4, "rescue", 10.303, 76.335, "Chalakudy Cedar rooftop", {}),
-        ("en", "Synthetic. Same Chalakudy Cedar rooftop: now 7 people including 2 elderly are stranded; water rising, need a boat.", 7, "rescue", 10.303, 76.335, "Chalakudy Cedar rooftop", {"elderly": True}),
-        ("en", "Synthetic. 1 elderly disabled patient near St. Jude Varapuzha has oxygen running out. Medical transport needed, water rising.", 1, "medical", 10.07985, 76.27371, "St. Jude Varapuzha", {"elderly": True, "disabled": True, "medical_need": True}),
-        ("en", "Synthetic. 12 people need food packets at Chalakudy Cedar relief camp, no evacuation needed.", 12, "food", 10.304, 76.336, "Chalakudy Cedar relief camp", {}),
-        ("en", "Synthetic. 6 people need shelter at Chalakudy Cedar hall. Their home is submerged.", 6, "shelter", 10.305, 76.337, "Chalakudy Cedar hall", {}),
+        ("hi", "काल्पनिक रिपोर्ट। Kainakary jetty rooftop पर 4 लोग फंसे हैं। पानी बढ़ रहा है, नाव चाहिए।", 4, "rescue", 9.4712, 76.3925, "Kainakary jetty rooftop", {}),
+        ("en", "Same Kainakary jetty rooftop: now 7 people including 2 elderly are stranded; water rising, need a boat.", 7, "rescue", 9.4712, 76.3925, "Kainakary jetty rooftop", {"elderly": True}),
+        ("en", "1 elderly disabled patient near Pulincunnu church has oxygen running out. Medical transport needed, water rising.", 1, "medical", 9.4489, 76.4302, "Pulincunnu church", {"elderly": True, "disabled": True, "medical_need": True}),
+        ("en", "12 people need food packets at Champakulam relief camp, no evacuation needed.", 12, "food", 9.4118, 76.4105, "Champakulam relief camp", {}),
+        ("en", "6 people need shelter at Nedumudi community hall. Their home is submerged.", 6, "shelter", 9.4285, 76.3982, "Nedumudi community hall", {}),
     ]
     try:
         storage_service.record_audit(actor=actor, action="demo_surge_started", target=run_id, after={"synthetic": True})

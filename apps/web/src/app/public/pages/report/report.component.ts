@@ -45,7 +45,8 @@ const EMPTY_VULNERABLE: Record<string, boolean> = {
 };
 
 /** A chat turn that takes longer than this falls back to the form. */
-const CHAT_TURN_TIMEOUT_MS = 15000;
+// A full Gemini read of a long non-English message can take ~20 s; the 6 s 'taking longer' note covers the wait.
+const CHAT_TURN_TIMEOUT_MS = 45000;
 
 interface SpeechRec {
   lang: string;
@@ -75,6 +76,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   readonly sessionId = signal<string>(`sess_${Math.random().toString(36).substring(2, 9)}`);
   readonly mode = signal<'chat' | 'form'>('chat');
+  /** Sample buttons are demo tools: shown with ?demo=1 or after 'Try the desk', never to real reporters. */
+  readonly demoTools = typeof window !== 'undefined' && (new URLSearchParams(window.location.search).has('demo') || window.localStorage?.getItem('rd.demo') === '1');
   readonly userInput = signal<string>('');
   readonly isRecording = signal<boolean>(false);
   readonly voiceOpen = signal<boolean>(false);
@@ -98,7 +101,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     { key: 'landing.chipOther', text: 'Something else' },
   ];
   readonly isLoading = signal<boolean>(false);
-  readonly locationPin = signal<{ lat: number; lng: number }>({ lat: 9.498, lng: 76.339 });
+  readonly locationPin = signal<{ lat: number; lng: number } | null>(null);
   readonly locationText = signal<string>(AUTO_PLACE);
 
   readonly chatMessages = signal<ChatMessage[]>([]);
@@ -302,7 +305,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     return canonicalRequestJson({
       card,
       lang: this.langService.currentLang(),
-      locationPin: this.locationPin(),
+      locationPin: this.locationPin() ?? undefined,
       scenarioId: this.scenarioId(),
     });
   }
@@ -461,7 +464,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
         message: text,
         scenario_id: this.scenarioId(),
         language: this.langService.currentLang(),
-        location_pin: this.locationPin(),
+        location_pin: this.locationPin() ?? undefined,
       })
       .pipe(timeout(CHAT_TURN_TIMEOUT_MS))
       .subscribe({
@@ -501,7 +504,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   confirmAndSubmit(card: ConfirmationCardData): void {
-    if (this.isLoading() || this.submittedResult()) {
+    // Slow reply: the bubble says the reporter can send as is, so the card stays sendable.
+    if ((this.isLoading() && !this.slow()) || this.submittedResult()) {
       return;
     }
 
@@ -523,7 +527,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       raw_text: words,
       channel: this.mode() === 'form' ? 'form' : 'text',
       lang: this.langService.currentLang(),
-      location_pin: this.locationPin(),
+      location_pin: this.locationPin() ?? undefined,
       scenario_id: this.scenarioId(),
       structured: facts,
     };
@@ -570,7 +574,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private withSummary(card: ConfirmationCardData): ConfirmationCardData {
-    const count = card.people_count ?? 0;
+    // Unknown stays unknown: a missing count is 'not stated', never 0.
+    const count = card.people_count ?? this.langService.translate('people.notStated');
     const type = this.langService.translate(`incidentType.${card.incident_type}`);
     const vulns = Object.entries(card.vulnerable || {})
       .filter(([, on]) => on)
@@ -605,7 +610,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       raw_text: text,
       channel: 'text',
       lang: this.langService.currentLang(),
-      location_pin: this.locationPin(),
+      location_pin: this.locationPin() ?? undefined,
       scenario_id: this.scenarioId(),
     });
     this.noteQueued();

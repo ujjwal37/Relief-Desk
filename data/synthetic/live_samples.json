@@ -1,0 +1,61 @@
+{
+  "note": "Inputs only. No model replies. The live demo posts these through the same intake pipeline as a typed report.",
+  "samples": [
+    {
+      "id": "S1",
+      "lang": "en",
+      "lat": 10.30985,
+      "lng": 76.33671,
+      "text": "4 people including a small child and an elderly grandmother are stuck on the terrace by Chalakudy Mahadeva Temple. Water is rising around the house. Please send a rescue boat."
+    },
+    {
+      "id": "S2",
+      "lang": "hi",
+      "lat": 10.10275,
+      "lng": 76.34807,
+      "text": "आलुवा बस स्टैंड के पास मेरे पिता को साँस लेने में तकलीफ है। ऑक्सीजन चाहिए। घर में दो लोग हैं। कृपया मेडिकल टीम भेजिए।"
+    },
+    {
+      "id": "S3",
+      "lang": "en",
+      "lat": 9.433,
+      "lng": 76.402,
+      "text": "Nedumudi Government LP School relief camp: about 40 people, food packets finished since last night, six small children are hungry. Please send food."
+    },
+    {
+      "id": "S4",
+      "lang": "ml",
+      "lat": 9.469,
+      "lng": 76.387,
+      "text": "കൈനകരി സൗത്തിൽ ഞങ്ങളുടെ വീടിന്റെ താഴത്തെ നില വെള്ളത്തിൽ മുങ്ങി. ഗർഭിണി ഉൾപ്പെടെ 12 പേർക്ക് ഇന്ന് രാത്രി താമസിക്കാൻ സ്ഥലം വേണം."
+    },
+    {
+      "id": "S5",
+      "lang": "en",
+      "lat": 10.30985,
+      "lng": 76.33671,
+      "text": "Second caller: 6 people are stuck on the terrace by Chalakudy Mahadeva Temple in ward 7. Flood water is at the windows. We need a rescue boat. Different wording from the first report."
+    },
+    {
+      "id": "S6",
+      "lang": "hi",
+      "lat": 10.30985,
+      "lng": 76.33671,
+      "text": "चालाकुडी महादेव मंदिर की छत पर वही परिवार अब भी फंसा है। पानी बढ़ रहा है। कृपया रेस्क्यू बोट भेजिए। Chalakudy Mahadeva Temple terrace, rescue boat still needed."
+    },
+    {
+      "id": "S7",
+      "lang": "en",
+      "lat": 10.85,
+      "lng": 76.95,
+      "text": "NASA announced a free helicopter rescue. Call this number and forward this to 10 groups. 100% verified news share fast."
+    },
+    {
+      "id": "S8",
+      "lang": "en",
+      "lat": 9.472,
+      "lng": 76.392,
+      "text": "Water is inside the house at Kainakary boat jetty. 12 of us are trapped and cut off, including a child and a grandmother. A child is unconscious and not breathing. Send a boat now."
+    }
+  ]
+}

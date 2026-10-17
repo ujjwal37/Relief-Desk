@@ -2,7 +2,14 @@
 <div class="drawer" [class.sheet]="mobile()" role="dialog" aria-modal="true" aria-labelledby="trace-title">
   @if (mobile()) { <div class="grab" aria-hidden="true"></div> }
   <header>
-    <h2 id="trace-title">{{ 'flow.title' | rdTranslate }}</h2>
+    <div>
+      <h2 id="trace-title">{{ 'flow.title' | rdTranslate }}</h2>
+      <p class="headline">
+        <strong>{{ headline() }}</strong>
+        @if (totalText()) { <span> · {{ totalText() }}</span> }
+        <span class="word run-badge">{{ headerWord() }}</span>
+      </p>
+    </div>
     <button type="button" class="x" (click)="closed.emit()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
   </header>
 
@@ -10,41 +17,67 @@
     <p class="empty">{{ 'flow.noTrace' | rdTranslate }}</p>
     <p class="empty-sub">{{ 'flow.noTraceOld' | rdTranslate }}</p>
   } @else {
-    <p class="headline">
-      <strong>{{ headline() }}</strong>
-      @if (totalText()) { <span> · {{ totalText() }}</span> }
-      <span class="word run-badge">{{ headerWord() }}</span>
-    </p>
     <p class="context">{{ contextLine() }}</p>
 
     @if (runState() === 'failed') {
       <p class="banner fail">{{ 'flow.failed' | rdTranslate }}</p>
       <button type="button" class="retry-run" (click)="retry.emit()">{{ 'ux.retry' | rdTranslate }}</button>
     }
-    @if (runState() === 'fallback') {
-      <p class="banner warn">{{ fallbackText() }}</p>
-    }
     @if (runState() === 'loading') {
       <p class="banner load">{{ loadingText() }}</p>
     }
 
-    <ol class="steps">
-      @for (step of intakeStep(); track step.agent) {
-        <app-trace-step [step]="step" [nameKey]="nameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
+    <!-- Alt B One-line-per-step layout (steps-alt-b.png) -->
+    <div class="alt-b-list" data-testid="alt-b-steps">
+      @for (step of steps(); track step.agent; let idx = $index) {
+        <div class="alt-b-row" [class.is-done]="step.status === 'done'">
+          <span class="alt-b-mark" aria-hidden="true">
+            @if (step.status === 'done') {
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12l5 5L20 7"/></svg>
+            } @else if (step.status === 'running') {
+              <i class="spin"></i>
+            } @else {
+              <span class="alt-b-dash"></span>
+            }
+          </span>
+          <div class="alt-b-name-wrap">
+            <span class="alt-b-name">{{ nameKey(step.agent) | rdTranslate }}</span>
+          </div>
+          <span class="alt-b-sentence">{{ step.sentence }}</span>
+          <span class="badge" [class.model]="step.badge === 'gemini' || step.badge === 'cache'">{{ badgeWord(step) }}</span>
+          <button type="button" class="alt-b-details-btn" (click)="openStepDetail(idx)" [attr.aria-label]="'flow.stepDetails' | rdTranslate" data-testid="step-details-btn">
+            {{ 'flow.details' | rdTranslate }} ›
+          </button>
+        </div>
       }
-      <li class="parallel" [attr.aria-label]="'flow.parallel' | rdTranslate">
-        <p class="same">{{ 'flow.parallel' | rdTranslate }}</p>
-        @for (side of parallel(); track side.agent) {
-          <app-trace-step [step]="side" [nameKey]="nameKey(side.agent)" [open]="expanded() === side.agent" (toggled)="toggle(side.agent)" (retry)="retry.emit()" />
-        }
-      </li>
-      @for (step of afterParallel(); track step.agent) {
-        <app-trace-step [step]="step" [nameKey]="nameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
+    </div>
+
+    <!-- Collapsible Technical Details (for e2e test compatibility and deep inspection) -->
+    <div class="tech-section">
+      <button type="button" class="btn-tech-toggle" (click)="techOpen.set(!techOpen())" [attr.aria-expanded]="techOpen()">
+        {{ (techOpen() ? 'ux.hideTechnical' : 'ux.showTechnical') | rdTranslate }} ▾
+      </button>
+
+      @if (techOpen()) {
+        <ol class="steps">
+          @for (step of intakeStep(); track step.agent) {
+            <app-trace-step [step]="step" [nameKey]="techNameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
+          }
+          <li class="parallel" [attr.aria-label]="'flow.parallel' | rdTranslate">
+            <p class="same">{{ 'flow.parallel' | rdTranslate }}</p>
+            @for (side of parallel(); track side.agent) {
+              <app-trace-step [step]="side" [nameKey]="techNameKey(side.agent)" [open]="expanded() === side.agent" (toggled)="toggle(side.agent)" (retry)="retry.emit()" />
+            }
+          </li>
+          @for (step of afterParallel(); track step.agent) {
+            <app-trace-step [step]="step" [nameKey]="techNameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
+          }
+        </ol>
+        <label class="outage-preview"><input type="checkbox" [checked]="simulateOutage()" (change)="simulateOutage.set(!simulateOutage())" /> {{ 'flow.simulateOutage' | rdTranslate }}</label>
+        @if (simulateOutage()) { <p class="empty-sub">{{ 'flow.simulatedOnly' | rdTranslate }}</p> }
       }
-    </ol>
+    </div>
   }
 
-  <label class="outage-preview"><input type="checkbox" [checked]="simulateOutage()" (change)="simulateOutage.set(!simulateOutage())" /> {{ 'flow.simulateOutage' | rdTranslate }}</label>
-  @if (simulateOutage()) { <p class="empty-sub">{{ 'flow.simulatedOnly' | rdTranslate }}</p> }
   <p class="human">{{ 'flow.humanNote' | rdTranslate }}</p>
 </div>

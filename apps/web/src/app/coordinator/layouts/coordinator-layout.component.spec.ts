@@ -123,7 +123,7 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     const fixture = await setup(null, true);
     const pill = fixture.nativeElement.querySelector('[data-testid="ai-health"]') as HTMLElement;
     expect(pill).toBeTruthy();
-    expect(pill.textContent).toContain('Rules fallback');
+    expect(pill.textContent).toContain('Gemini unavailable, built-in rules used');
     expect(fixture.nativeElement.querySelector('[data-testid="restart-tour"]')).toBeTruthy();
   });
 

@@ -17,6 +17,7 @@ export interface TraceStepView {
   sentence?: string;
   linkId?: string | null;
   badge?: 'gemini' | 'rules' | 'test' | 'tool' | 'cache';
+  recordedAt?: string | null;
   hasDetails?: boolean;
 }
 
@@ -54,11 +55,13 @@ export class TraceStepComponent {
     if (step.badge === 'cache') return this.lang.translate('flow.badgeCache');
     if (step.badge === 'test') return this.lang.translate('flow.badgeTest');
     if (step.badge === 'gemini') return this.lang.translate('flow.badgeGemini');
-    if (step.badge === 'rules') return this.lang.translate('flow.badgeRules');
+    if (step.badge === 'rules' || step.provider === 'fallback' || step.status === 'fallback') {
+      return this.lang.translate('coord.aiOffline');
+    }
     const test = step.provider === 'openai_compat' || step.provider === 'antigravity-local';
     if (test) return this.lang.translate('flow.badgeTest');
     if (step.provider === 'gemini' && step.status === 'done') return this.lang.translate('flow.badgeGemini');
-    return this.lang.translate('flow.badgeRules');
+    return this.lang.translate('coord.aiOffline');
   }
 
   sentence(): string {
