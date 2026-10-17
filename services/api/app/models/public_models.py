@@ -46,6 +46,7 @@ class ReportStatusResponse(BaseModel):
     hero_subtitle: str
     eta_minutes: Optional[int] = None
     eta_display: str = "~18 min"
+    team_expected: bool = True
     delivery_status: str = "In progress"
     timeline: List[StatusTimelineStep]
     while_you_wait_tips: List[str] = Field(default_factory=list)

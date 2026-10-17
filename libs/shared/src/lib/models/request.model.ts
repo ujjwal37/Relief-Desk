@@ -380,6 +380,7 @@ export interface ReportStatusResponse {
   hero_subtitle: string;
   eta_minutes?: number | null;
   eta_display: string;
+  team_expected?: boolean;
   delivery_status: string;
   timeline: StatusTimelineStep[];
   while_you_wait_tips: string[];

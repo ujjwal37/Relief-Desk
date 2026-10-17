@@ -321,6 +321,13 @@ def get_report_status(
     fulfilled_state = "done" if fulfilled else "pending"
     assigned_at = req.updated_at if req and approved else None
     eta_minutes, eta_display = reporter_leg(req) if approved and not fulfilled else (None, "")
+    # An info-only report (closed as info, or typed info with no life threat) gets no team, so no arrival line.
+    from app.tools.scoring import _SEVERE_INJURY
+    req_type = getattr(req.type, "value", req.type) if req else None
+    team_expected = approved or not (
+        req_status == RequestStatus.INFO_CLOSED
+        or (req_type == "info" and not _SEVERE_INJURY.search((req.raw_text if req else "") or ""))
+    )
     hero_title = (
         "status.heroDone" if fulfilled
         else "coord.resStatus.on_scene" if arrived
@@ -372,6 +379,7 @@ def get_report_status(
         hero_subtitle=code,
         eta_minutes=eta_minutes,
         eta_display=eta_display,
+        team_expected=team_expected,
         delivery_status="status.delivered" if fulfilled else ("status.onway" if approved else "status.waiting"),
         timeline=timeline,
         while_you_wait_tips=tips_for_request(req),

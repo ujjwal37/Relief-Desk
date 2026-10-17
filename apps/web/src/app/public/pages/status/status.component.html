@@ -44,8 +44,10 @@
     </section>
 
     <section class="hero" aria-live="polite">
+      @if (data.team_expected !== false) {
       <p class="eta-cap">{{ 'status.eta' | rdTranslate }}</p>
-      <p class="eta">{{ data.eta_minutes != null ? data.eta_display : ('status.etaLater' | rdTranslate) }}</p>
+      <p class="eta" data-testid="status-eta">{{ data.eta_minutes != null ? data.eta_display : ('status.etaLater' | rdTranslate) }}</p>
+      }
       <p class="hero-title">{{ data.hero_title | rdTranslate }}</p>
       <p class="hero-sub">{{ data.public_code || data.hero_subtitle }}</p>
     </section>
