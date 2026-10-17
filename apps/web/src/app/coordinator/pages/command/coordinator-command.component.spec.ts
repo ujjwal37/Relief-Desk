@@ -355,8 +355,8 @@ describe('CoordinatorCommandComponent', () => {
       summary: '5 people needing rescue | at Gandhi School | Vulnerable: child | Hazard: water_rising',
       analysis_status: 'analysing',
     };
-    expect(component.getTranslationText(analysing)).toBe('Gemini is reading this report…');
-    expect(component.getTranslationText({ ...analysing, summary: null })).toBe('Gemini is reading this report…');
+    expect(component.getTranslationText(analysing)).toBe('Reading this report…');
+    expect(component.getTranslationText({ ...analysing, summary: null })).toBe('Reading this report…');
     expect(component.getTranslationText({ ...analysing, analysis_status: 'complete', summary: null, raw_text: 'Vulnerable flags: child (Urgency score: 44.7)' }))
       .toBe(analysing.place_text as string);
   });
@@ -385,7 +385,7 @@ describe('CoordinatorCommandComponent', () => {
   it('shows a slim queue card and a Send card with one Why line', () => {
     const card = fixture.nativeElement.querySelector('button.case-card-compact') as HTMLElement;
     expect(card.querySelector('.card-place-title')?.textContent).toContain('Ward 7');
-    expect(card.querySelector('[data-testid="ai-english"]')?.textContent).toContain('Water has entered');
+    expect(card.textContent).toContain('Water has entered');
     expect(card.textContent).toContain('Critical');
     const panel = fixture.nativeElement.querySelector('.decision-panel') as HTMLElement;
     expect(panel.textContent).toContain('Best team for this');
@@ -402,7 +402,7 @@ describe('CoordinatorCommandComponent', () => {
       summary: '1 person(s) needing other at Alappuzha',
       ai_translation: null,
     };
-    expect(component.caseTitle(reading)).toBe('Gemini is reading this report…');
+    expect(component.caseTitle(reading)).toBe('Reading this report…');
     expect(component.getTranslationText(reading)).not.toContain('person(s) needing');
     const dashed = { ...mockProposal, explanation: '5 boat free: — km' };
     expect(component.teamWhy(dashed)).toContain('km');
@@ -445,7 +445,7 @@ describe('CoordinatorCommandComponent', () => {
     component.selectRequest('INC-002');
     fixture.detectChanges();
     const offline = fixture.nativeElement.textContent as string;
-    expect(offline).toContain('Gemini unavailable, built-in rules used');
+    expect(offline).toContain('Rules checked');
     expect(offline).not.toContain('Offline fallback');
     rows[0] = {
       ...rows[0],
@@ -455,7 +455,7 @@ describe('CoordinatorCommandComponent', () => {
     component.requests.set(rows);
     component.selectRequest('INC-001');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent as string).toContain('Recorded (Gemini)');
+    expect(fixture.nativeElement.textContent as string).toContain('Recorded replay');
   });
 
   it('says there is no nearby team instead of an hours-long ETA', () => {
@@ -496,11 +496,9 @@ describe('CoordinatorCommandComponent', () => {
     expect(frame.maxLa).toBeGreaterThan(11.6);
     expect(frame.maxLa).toBeLessThan(20);
     const text = fixture.nativeElement.textContent as string;
+    // The schematic covers Alappuzha only; other districts are not drawn.
     expect(text).toContain('Alappuzha');
-    expect(text).toContain('Ernakulam');
-    expect(text).toContain('Thrissur');
-    expect(text).toContain('Wayanad');
-    expect(fixture.nativeElement.querySelectorAll('polygon.district').length).toBe(4);
+    expect(fixture.nativeElement.querySelectorAll('polygon.district').length).toBe(1);
     expect(fixture.nativeElement.querySelector('path[stroke="var(--map-water)"]')).toBeNull();
     const pins = component.svgPins().filter((pin) => pin.kind === 'req');
     expect(pins.map((pin) => pin.id).sort()).toEqual(['north', 'south']);
@@ -689,7 +687,8 @@ describe('CoordinatorCommandComponent', () => {
     expect(trace).toContain('Rated urgency');
     expect(trace).toContain('Found the closest team');
     expect(trace).toContain('Explained the choice');
-    expect(trace).toContain('Google Maps');
+    expect(trace).toContain('straight line');
+    expect(trace).not.toContain('coord.');
     component.closeTrace();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent as string).not.toContain('Nothing is dispatched until you approve');
