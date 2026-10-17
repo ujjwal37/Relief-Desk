@@ -1,6 +1,6 @@
-import { expect, test, type APIRequestContext } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { API } from './ports';
-import { openMoreDetails, openTechnical } from './desk-ui';
+import { openTechnical } from './desk-ui';
 import { resetDemo } from './reset-demo';
 
 const PIN = { lat: 8.11, lng: 77.21 };
@@ -48,32 +48,50 @@ test('three reworded reports become one case, and conflicting counts keep the hi
   await expect(row).toHaveCount(1, { timeout: 20_000 });
   await expect(merged.getByRole('button', { name: '3 reports', exact: true })).toBeVisible();
   await row.click();
-  await openMoreDetails(desk);
-  await expect(desk.getByTestId('report-quote')).toHaveCount(3);
-  await expect(desk.getByTestId('report-quote').nth(0)).toContainText('roof');
-  await expect(desk.getByTestId('report-quote').nth(1)).toContainText(place);
-  await desk.locator('.detail').getByRole('button', { name: 'How it decided' }).click();
-  const firstTrace = desk.getByRole('dialog');
-  await openTechnical(firstTrace);
-  await expect(firstTrace).toContainText('Similarity');
+  const quotes = await openMerge(desk, place);
+  await expect(quotes.locator('blockquote')).toHaveCount(3);
+  await expect(quotes).toContainText('roof');
+  await expect(quotes).toContainText(place);
+  await expect(quotes).toContainText('Similarity');
+  await desk.keyboard.press('Escape');
+  await desk.locator('.detail').getByRole('button', { name: 'How it decided' }).first().click();
+  const firstTrace = desk.getByRole('dialog', { name: 'How it decided' });
+  await expectDedupeRaw(firstTrace, 'Similarity');
   await desk.keyboard.press('Escape');
 
   const ranges = `Oakbend${Date.now().toString(36).replace(/[0-9]/g, 'y')}`;
   await submit(request, `At ${ranges} ghat, 2-3 people on the roof need a boat, send a rescue boat`, PIN, `e2e-rg-${ranges}-a`);
   await submit(request, `${ranges} ghat: 4-5 people stranded, send a rescue boat`, PIN, `e2e-rg-${ranges}-b`);
   const conflict = desk.getByRole('option', { name: new RegExp(ranges) });
+  const pill = desk.getByTestId('new-pill');
+  await expect(conflict.or(pill)).toBeVisible({ timeout: 20_000 });
+  if (await pill.isVisible()) await pill.click();
   await expect(conflict).toHaveCount(1, { timeout: 20_000 });
   await expect(conflict).toContainText('5');
   await conflict.click();
-  await openMoreDetails(desk);
-  await expect(desk.locator('.detail').getByTestId('counts-differ')).toContainText('Counts differ: 2-3 vs 4-5');
-  await expect(desk.locator('.detail').getByTestId('report-quote')).toHaveCount(2);
-  await expect(desk.locator('.detail')).toContainText('2-3 people');
-  await expect(desk.locator('.detail')).toContainText('4-5 people');
-  await desk.locator('.detail').getByRole('button', { name: 'How it decided' }).click();
-  const trace = desk.getByRole('dialog');
-  await openTechnical(trace);
-  await expect(trace).toContainText('Similarity');
+  await expect(desk.getByTestId('counts-differ')).toContainText('Counts differ: 2-3 vs 4-5');
+  const both = await openMerge(desk, ranges);
+  await expect(both.locator('blockquote')).toHaveCount(2);
+  await expect(both).toContainText('2-3 people');
+  await expect(both).toContainText('4-5 people');
+  await desk.keyboard.press('Escape');
+  await desk.locator('.detail').getByRole('button', { name: 'How it decided' }).first().click();
+  const trace = desk.getByRole('dialog', { name: 'How it decided' });
+  await expectDedupeRaw(trace, 'Similarity');
   await expect(trace).toContainText('Counts differ: 2-3 vs 4-5');
   await context.close();
 });
+
+async function openMerge(desk: Page, place: string) {
+  await desk.locator('.case-wrap').filter({ hasText: place }).getByRole('button', { name: /\d+ reports/ }).click();
+  const dialog = desk.getByRole('dialog', { name: 'Reports merged into this case' });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+async function expectDedupeRaw(trace: Locator, text: string): Promise<void> {
+  await openTechnical(trace);
+  const dedupe = trace.locator('app-trace-step').filter({ hasText: 'Duplicate check' });
+  await dedupe.getByRole('button', { name: /Show details/ }).click();
+  await expect(dedupe).toContainText(text);
+}

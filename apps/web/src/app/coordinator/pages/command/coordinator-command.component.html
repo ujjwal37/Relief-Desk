@@ -588,10 +588,12 @@
               }
             }
 
+            @if (req.count_note) {
+              <p class="count-note" data-testid="counts-differ">{{ req.count_note }}</p>
+            }
             @if (needsDupReview(req)) {
               <div class="dup-review" data-testid="dup-review">
                 <p>{{ dupAiLine(req) }}</p>
-                @if (req.count_note) { <p class="count-note" data-testid="counts-differ">{{ req.count_note }}</p> }
                 <button type="button" data-testid="merge-dup" (click)="confirmMerge(req)">{{ 'coord.mergeReports' | rdTranslate }}</button>
                 <button type="button" data-testid="keep-dup" (click)="keepSeparate(req)">{{ 'coord.keepSeparate' | rdTranslate }}</button>
               </div>

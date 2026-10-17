@@ -8,7 +8,7 @@ const SHOTS = path.resolve('docs/design/reviews/walkthrough-improvements');
 const AUTH = { Authorization: 'Bearer demo-coordinator-token' };
 
 async function login(page: Page) {
-  await page.addInitScript(() => { localStorage.setItem('rd_tour_done', '1'); localStorage.setItem('rd_guide_dismissed', '1'); localStorage.setItem('rd_theme', 'light'); });
+  await page.addInitScript(() => { localStorage.setItem('rd_tour_done', '1'); localStorage.setItem('rd_guide_dismissed', '1'); });
   await page.goto('/coordinator/login');
   await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await page.waitForURL(/coordinator\/command/);
@@ -38,7 +38,8 @@ test('recorded traces, nearby single line, fallback preview and Hindi screenshot
   await page.setViewportSize({ width: 1366, height: 768 });
   await login(page);
   await page.locator('[data-case-id="INC-008"] button.case').click();
-  await expect(page.locator('.send-card .facts').first()).toContainText(/1\.65 km/);
+  await expect(page.locator('.best-team-banner').first()).toContainText(/km/);
+  await expect(page.locator('.best-team-banner').first()).toContainText(/min/);
   await expect(page.locator('.svgmap text.leg')).toHaveCount(1);
   await expect(page.locator('.svgmap text.leg')).toHaveCSS('stroke', 'none');
   await expect(page.locator('.svgmap text.leg').first()).toContainText('about 5 min');
@@ -52,14 +53,15 @@ test('recorded traces, nearby single line, fallback preview and Hindi screenshot
   await expect(dialog.getByText('ux.none')).toHaveCount(0);
   await dialog.getByRole('button', { name: /Show technical details/ }).click();
   await expect(dialog.locator('app-trace-step .badge').filter({ hasText: 'Google Maps' })).toHaveCount(1);
-  await expect(dialog.locator('app-trace-step .badge').filter({ hasText: 'Gemini unavailable, built-in rules used' })).toHaveCount(4);
+  await expect(dialog.locator('app-trace-step .badge').filter({ hasText: 'Recorded (Gemini)' })).toHaveCount(4);
   await expect(dialog.locator('app-trace-step').nth(2)).not.toContainText('Vulnerable flags: Vulnerable flags:');
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.screenshot({ path: path.join(SHOTS, '1366-how-it-decided.png') });
   await dialog.getByRole('checkbox', { name: 'Preview rules fallback' }).check();
   await expect(dialog.getByText('Preview only.', { exact: false })).toBeVisible();
+  await expect(dialog.locator('app-trace-step .badge').filter({ hasText: 'Rules mode' })).toHaveCount(4);
   await dialog.getByRole('checkbox', { name: 'Preview rules fallback' }).uncheck();
-  await expect(dialog.locator('app-trace-step .badge').filter({ hasText: 'Gemini unavailable, built-in rules used' })).toHaveCount(4);
+  await expect(dialog.locator('app-trace-step .badge').filter({ hasText: 'Recorded (Gemini)' })).toHaveCount(4);
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.locator('[data-case-id="INC-001"] button.case').click();
@@ -71,7 +73,7 @@ test('recorded traces, nearby single line, fallback preview and Hindi screenshot
   await page.locator('.menu').getByRole('button', { name: 'Hindi', exact: true }).click();
   await page.keyboard.press('Escape');
   await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
-  await expect(page.locator('.send-card .facts').first()).not.toContainText('67.81');
+  await expect(page.locator('.best-team-banner').first()).not.toContainText('67.81');
   await page.screenshot({ path: path.join(SHOTS, 'coordinator-hindi.png') });
   await page.setViewportSize({ width: 390, height: 844 });
   await fits(page);
@@ -82,7 +84,8 @@ test('surge, medical stock scenario and arrival/completion status updates', asyn
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
   const page = await context.newPage();
   await login(page);
-  await page.getByRole('button', { name: /Simulate 5 reports/ }).click();
+  const started = await request.post(`${API}/api/demo/simulate-surge`, { headers: AUTH });
+  expect(started.ok(), await started.text()).toBeTruthy();
   await expect(page.locator('.surge-note').last()).toContainText('Submitted 5 synthetic reports', { timeout: 25000 });
   const state = await request.get(`${API}/api/demo/surge`, { headers: AUTH });
   expect((await state.json()).submitted).toBe(5);
@@ -93,8 +96,8 @@ test('surge, medical stock scenario and arrival/completion status updates', asyn
   await page.locator('.menu').getByRole('button', { name: 'Dog attack', exact: true }).click();
   await expect(page.locator('[data-case-id="DOG-001"]')).toBeVisible();
   await page.locator('[data-case-id="DOG-001"] button.case').click();
-  await expect(page.locator('.send-card .team').first()).toContainText('Riverbend Referral Unit');
-  await expect(page.locator('.recommendation-reason')).toContainText('RIG: 3 in stock');
+  await expect(page.locator('.best-team-banner .team-name').first()).toContainText('Riverbend Referral Unit');
+  await expect(page.getByTestId('team-why')).toContainText('RIG: 3 in stock');
   await page.screenshot({ path: path.join(SHOTS, 'referral-stock.png') });
 
   const submitted = await request.post(`${API}/api/reports`, { data: { text: 'Synthetic. 1 person needs food near Cedar ferry desk', location_pin: { lat: 9.44, lng: 76.40 }, structured: { incident_type: 'food', people_count: 1, place_text: 'Cedar ferry desk', hazard: 'none' } } });

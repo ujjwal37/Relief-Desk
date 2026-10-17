@@ -770,4 +770,20 @@ describe('CoordinatorCommandComponent', () => {
     (fixture.nativeElement.querySelector('[data-testid="keep-dup"]') as HTMLButtonElement).click();
     expect(apiClientSpy.keepSeparate).toHaveBeenCalledWith('INC-DUP');
   });
+
+  it('keeps a counts note visible after the reports have already merged', () => {
+    const merged: StoredRequest = {
+      ...mockRequests[0],
+      id: 'INC-MERGED',
+      people_count: 5,
+      merged_count: 2,
+      count_note: 'Counts differ: 2-3 vs 4-5',
+      dedupe_decision: 'duplicate',
+    } as StoredRequest;
+    component.applyQueue([merged], false);
+    component.selectRequest('INC-MERGED');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="counts-differ"]')?.textContent).toContain('Counts differ: 2-3 vs 4-5');
+    expect(fixture.nativeElement.querySelector('[data-testid="dup-review"]')).toBeNull();
+  });
 });
