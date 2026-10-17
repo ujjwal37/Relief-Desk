@@ -6,7 +6,16 @@ from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.llm.client import llm_client
 from app.llm.adk_runtime import ai_step
 from app.tools.gazetteer import gazetteer
-from app.tools.nlu_rules import extract_place, hazard_name, infer_incident_type, people_count, vulnerable_flags
+from app.agents.summary import guard_summary
+from app.tools.nlu_rules import (
+    count_is_stated,
+    extract_place,
+    hazard_name,
+    infer_incident_type,
+    people_count,
+    place_is_usable,
+    vulnerable_flags,
+)
 from app.tools.trust import hoax_score_for
 
 logger = logging.getLogger("relief_desk.intake_agent")
@@ -44,6 +53,8 @@ EXAMPLES (input -> "type", "secondary_needs"):
 - "ക്യാമ്പ് നിറഞ്ഞു, ഇനി ആളുകളെ എടുക്കില്ല" -> "info", []
 
 Set "water_depth" only from words in the report (for example "knee-deep" -> "knee", "water up to our chest" -> "chest", "on the roof" -> "roof") and copy those words into "water_depth_quote". If the report does not say, use "unknown" and null.
+
+"text_en" and "notes" must not add, upgrade, or rename a medical condition. Repeat only the condition words written in the report. If the report says "severe diabetic emergency", text_en must say "severe diabetic emergency" and must not say "insulin shock", "acute insulin shock", "ketoacidosis", "hypoglycemia", or any other condition that is not in the report. A negated line is not a request: "Nobody is stranded" is not a rescue. Do not read a URL host such as "bit.ly" as a place name. Leave people.count null when the report does not state a number. Never invent 0 or 1.
 
 Set "likely_hoax" true only for spam, a chain message, or a claim of free rescue that asks people to forward it. Then put one sentence in "hoax_reason". Otherwise likely_hoax is false and hoax_reason is null.
 
@@ -111,6 +122,22 @@ class ReportAnalysis(ExtractedRequest):
     water_depth_quote: Optional[str] = Field(default=None, max_length=300)
 
 
+def _parse_model_json(text_output: str, raw_text: str) -> ReportAnalysis:
+    """Parse one model JSON object and drop any condition the report did not state."""
+    clean_text = text_output.strip()
+    if clean_text.startswith("```json"):
+        clean_text = clean_text[7:]
+    elif clean_text.startswith("```"):
+        clean_text = clean_text[3:]
+    if clean_text.endswith("```"):
+        clean_text = clean_text[:-3]
+    clean_text = clean_text.strip()
+    parsed = json.loads(clean_text)
+    if isinstance(parsed, dict) and isinstance(parsed.get("text_en"), str):
+        parsed["text_en"] = guard_summary(raw_text, parsed["text_en"])
+    return ReportAnalysis(**parsed)
+
+
 def intake_user_prompt(raw_text: str, language_hint: Optional[str] = None) -> str:
     """The same user prompt submit and `make record-ai` hash."""
     user_prompt = f"<report>\n{raw_text.strip()}\n</report>"
@@ -134,18 +161,7 @@ class IntakeAgent:
         user_prompt = intake_user_prompt(raw_text, language_hint)
 
         def validate_json_schema(text_output: str) -> ReportAnalysis:
-            # Strip any extraneous code fences if model returned them
-            clean_text = text_output.strip()
-            if clean_text.startswith("```json"):
-                clean_text = clean_text[7:]
-            elif clean_text.startswith("```"):
-                clean_text = clean_text[3:]
-            if clean_text.endswith("```"):
-                clean_text = clean_text[:-3]
-            clean_text = clean_text.strip()
-
-            parsed = json.loads(clean_text)
-            return ReportAnalysis(**parsed)
+            return _parse_model_json(text_output, raw_text)
 
         model_ok = True
         try:
@@ -202,14 +218,7 @@ class IntakeAgent:
             max_tokens = None
 
         def validate_json_schema(text_output: str) -> ReportAnalysis:
-            clean_text = text_output.strip()
-            if clean_text.startswith("```json"):
-                clean_text = clean_text[7:]
-            elif clean_text.startswith("```"):
-                clean_text = clean_text[3:]
-            if clean_text.endswith("```"):
-                clean_text = clean_text[:-3]
-            return ReportAnalysis(**json.loads(clean_text.strip()))
+            return _parse_model_json(text_output, caption or raw_text)
 
         model_ok = True
         try:
@@ -251,13 +260,19 @@ TYPE_TRUST = 0.6
 def _repair_with_rules_core(extracted: ExtractedRequest, raw_text: str, model_ok: bool = False) -> ExtractedRequest:
     """Gemini's answer wins. Rules only fill what the model left empty or was unsure about."""
     place = extract_place(raw_text)
-    if place and (not model_ok or not extracted.place_text or extracted.confidence.place < TYPE_TRUST):
+    bad_place = not place_is_usable(extracted.place_text)
+    if place and (not model_ok or not extracted.place_text or bad_place or extracted.confidence.place < TYPE_TRUST):
         extracted.place_text = place
         extracted.confidence.place = max(extracted.confidence.place, 0.9)
+    elif bad_place:
+        extracted.place_text = None
     count = people_count(raw_text)
     if count is not None and (not model_ok or extracted.people.count is None or extracted.people.confidence < TYPE_TRUST):
         extracted.people.count = count
         extracted.people.confidence = max(extracted.people.confidence, 0.9)
+    # Unknown stays unknown. A model must not file "0 people" or "1 person" unless the report said so.
+    if extracted.people.count in (0, 1) and not count_is_stated(raw_text, extracted.people.count):
+        extracted.people.count = count if count not in (0, 1) else None
     flags = vulnerable_flags(raw_text)
     for name, present in flags.items():
         if present:
@@ -272,8 +287,11 @@ def _repair_with_rules_core(extracted: ExtractedRequest, raw_text: str, model_ok
             extracted.secondary_needs.append(IncidentType.FOOD)
         extracted.type = IncidentType.MEDICAL
     hazard = hazard_name(raw_text)
-    if hazard and extracted.hazard.value in ("none", "unknown"):
+    if hazard and (not model_ok or extracted.hazard.value in ("none", "unknown")):
         extracted.hazard = HazardType(hazard)
+    elif not model_ok and hazard is None and extracted.hazard in (HazardType.STRANDED, HazardType.WATER_RISING):
+        # The fallback marks every "stranded" as a hazard, including "nobody is stranded".
+        extracted.hazard = HazardType.NONE
     extracted.original_text = raw_text
     extracted.hoax_score = max(extracted.hoax_score, hoax_score_for(raw_text))
     if extracted.hoax_score >= 0.5:
