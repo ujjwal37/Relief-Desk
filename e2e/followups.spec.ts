@@ -103,7 +103,8 @@ test('step popup, case card, counts, alerts, and Gemini call counter', async ({ 
   await page.keyboard.press('Escape');
 
   await page.getByTestId('stepper-node-matching').click();
-  await expect(page.getByTestId('step-details').locator('.note')).toHaveText('Google Maps');
+  // Google Maps only when a Maps key was really used; otherwise the note says straight line.
+  await expect(page.getByTestId('step-details').locator('.note')).toHaveText(/^(Google Maps|Rules · straight line)$/);
   await page.keyboard.press('Escape');
   await page.getByTestId('stepper-node-approval').click();
   await expect(page.getByTestId('step-details').locator('.note')).toHaveText('You');

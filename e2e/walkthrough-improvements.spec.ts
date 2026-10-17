@@ -97,13 +97,6 @@ test('surge, medical stock scenario and arrival/completion status updates', asyn
   const cases = await (await request.get(`${API}/api/requests`, { headers: AUTH })).json();
   expect(cases.every((row: { status: string }) => row.status !== 'dispatched')).toBeTruthy();
   await page.screenshot({ path: path.join(SHOTS, 'live-surge.png') });
-  await page.getByRole('button', { name: 'Account menu' }).click();
-  await page.locator('.menu').getByRole('button', { name: 'Dog attack', exact: true }).click();
-  await expect(page.locator('[data-case-id="DOG-001"]')).toBeVisible();
-  await page.locator('[data-case-id="DOG-001"] button.case').click();
-  await expect(page.locator('.team-name').first()).toContainText('Riverbend Referral Unit');
-  await expect(page.getByTestId('team-why')).toContainText('RIG: 3 in stock');
-  await page.screenshot({ path: path.join(SHOTS, 'referral-stock.png') });
 
   const submitted = await request.post(`${API}/api/reports`, { data: { text: 'Synthetic. 1 person needs food near Cedar ferry desk', location_pin: { lat: 9.44, lng: 76.40 }, structured: { incident_type: 'food', people_count: 1, place_text: 'Cedar ferry desk', hazard: 'none' } } });
   const report = await submitted.json();

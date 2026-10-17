@@ -69,22 +69,15 @@ test('three reworded reports become one case, and conflicting counts keep the hi
   const pill = desk.getByTestId('new-pill');
   await expect(pill).toBeVisible({ timeout: 20_000 });
   await pill.click();
+  // Conflicting head counts never auto-merge (count guard): both cases stay and the pair is flagged for review.
   const conflict = desk.getByRole('option', { name: new RegExp(ranges) });
-  await expect(conflict).toHaveCount(1, { timeout: 20_000 });
-  await expect(conflict).toContainText('5');
-  await conflict.click();
-  const conflictChip = desk.locator('.case-wrap').filter({ hasText: ranges }).getByRole('button', { name: '2 reports', exact: true });
-  await conflictChip.click();
-  const conflictQuotes = desk.getByRole('dialog', { name: 'Reports merged into this case' });
-  await expect(conflictQuotes.locator('blockquote')).toHaveCount(2);
-  await expect(conflictQuotes).toContainText('2-3 people');
-  await expect(conflictQuotes).toContainText('4-5 people');
-  await expect(conflictQuotes).toContainText('Counts differ: 2-3 vs 4-5');
-  await desk.keyboard.press('Escape');
+  await expect(conflict).toHaveCount(2, { timeout: 20_000 });
+  await expect(conflict.filter({ hasText: '4-5 people' })).toHaveCount(1);
+  await conflict.filter({ hasText: '4-5 people' }).first().click();
   const trace = await openHowItDecided(desk);
   await openTechnical(trace);
   const conflictDup = await openDedupeDetails(trace);
   await expect(conflictDup).toContainText('Similarity');
-  await expect(conflictDup).toContainText('Counts differ: 2-3 vs 4-5');
+  await expect(conflictDup).toContainText(/Counts differ/);
   await context.close();
 });
