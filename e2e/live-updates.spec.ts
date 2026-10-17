@@ -22,7 +22,7 @@ test('a phone report updates the desk, and an approval updates the phone, with n
   await desk.goto('/coordinator/login');
   await desk.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await desk.waitForURL(/\/coordinator\/command/);
-  await expect(desk.getByTestId('live-badge')).toHaveText('Live', { timeout: 20_000 });
+  await expect(desk.getByRole('heading', { name: 'Cases' })).toBeVisible();
 
   await phone.goto('/report');
   await phone.getByRole('button', { name: 'Prefer a form?' }).click();

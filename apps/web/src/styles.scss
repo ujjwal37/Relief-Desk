@@ -389,7 +389,7 @@ body:has(.cmd) .top-strip{display:none}
 @media (max-width:1199px){
   .cmd .coordinator-grid,.cmd .coordinator-grid:has(.map-stepper-col),.cmd .coordinator-grid:has(.map-stepper-col.map-open){grid-template-columns:320px minmax(0,1fr) !important}
   .cmd .coordinator-grid>.map-stepper-col{display:none}
-  .cmd .coordinator-grid>.map-stepper-col.map-open{display:block;position:fixed;top:112px;right:16px;bottom:16px;width:420px;z-index:60;box-shadow:var(--e3);border-radius:12px;background:var(--surface)}
+  .cmd .coordinator-grid>.map-stepper-col.map-open{display:block;position:fixed;top:112px;right:16px;bottom:16px;width:min(420px,calc(100vw - 32px));z-index:60;box-shadow:var(--e3);border-radius:12px;background:var(--surface)}
 }
 @media (min-width:1200px){.cmd .map-toggle{display:none !important}}
 /* independent column scroll; sticky approve bar */

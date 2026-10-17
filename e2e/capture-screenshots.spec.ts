@@ -36,9 +36,10 @@ test('capture required screenshots at 1440x900', async ({ page, request }) => {
   await page.waitForURL(/\/coordinator\/command/);
   await expect(page.getByRole('heading', { name: 'Cases' })).toBeVisible();
 
-  // Explicitly ensure Dark mode
   const moreBtn = page.locator('.more-btn');
   await moreBtn.click();
+  await expect(page.getByRole('button', { name: 'Dark', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Light', exact: true })).toHaveCount(0);
   await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
   await noHorizontalOverflow(page);
   await shot(page, 'home-idle-dark-en.png');
@@ -71,7 +72,7 @@ test('capture required screenshots at 1440x900', async ({ page, request }) => {
   await hindiCase.click();
 
   // 4. Why this team modal
-  const whyBtn = page.getByRole('button', { name: /More details/i }).first();
+  const whyBtn = page.getByRole('button', { name: /Why this team/ }).first();
   await expect(whyBtn).toBeVisible();
   await whyBtn.click();
   const whyModal = page.locator('[data-testid="why-team-popup"]');
@@ -99,8 +100,9 @@ test('capture required screenshots at 1440x900', async ({ page, request }) => {
   await shot(page, 'teams-page.png');
 
   // 7. Home while a sample is processing
-  await page.locator('nav.tabs a').first().click();
+  await page.locator('nav.tabs').getByRole('link', { name: 'Command', exact: true }).click();
   await page.waitForURL(/\/coordinator\/command/);
+  await page.locator('details.live-own > summary').click();
   const hindiSampleBtn = page.getByTestId('sample-hindi');
   await hindiSampleBtn.click();
   await page.waitForTimeout(400);

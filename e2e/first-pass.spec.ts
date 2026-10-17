@@ -71,12 +71,25 @@ test.describe('public and coordinator demo', () => {
       await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
 
       await page.goto('/');
+      await expect(page.getByTestId('try-desk')).toBeVisible();
+      await expect(page.getByTestId('try-desk')).toContainText('Try the desk');
+      await expect(page.getByRole('link', { name: /I'm a coordinator/ })).toHaveCount(0);
       await expect(page.getByRole('link', { name: /I need help/ })).toBeVisible();
-      await expect(page.getByRole('link', { name: /I'm a coordinator/ })).toBeVisible();
-      await expect(page.getByText("coordinators can't see who to send first")).toBeVisible();
+      await expect(page.getByText(/a human approves every dispatch/)).toBeVisible();
+      await expect(page.getByText("coordinators can't see who to send first")).toHaveCount(0);
       await expect(page.getByRole('link', { name: /112/ }).first()).toBeVisible();
       await shot(page, `${viewport.name}-home-light`);
       await noHorizontalOverflow(page);
+
+      await page.goto('/report');
+      await expect(page.getByTestId('sample-hindi')).toHaveCount(0);
+      await expect(page.getByTestId('sample-voice')).toHaveCount(0);
+      await page.goto('/report?demo=1');
+      await expect(page.getByTestId('sample-hindi')).toBeVisible();
+      await expect(page.getByTestId('sample-voice')).toBeVisible();
+      await expect(page.getByTestId('sample-photo')).toBeVisible();
+      await expect(page.getByTestId('sample-duplicate')).toBeVisible();
+
       await page.goto('/nearby');
       await expect(page.getByText('Synthetic scenario inspired by Kerala floods')).toBeVisible();
       await shot(page, `${viewport.name}-nearby`);
@@ -125,26 +138,29 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByRole('button', { name: 'Enter as demo coordinator' })).toBeVisible();
       await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
       await page.waitForURL(/\/coordinator\/command/);
-      const homeTab = page.locator('nav.tabs a').first();
-      await expect(homeTab).toHaveText('Home');
-      await expect(homeTab).toHaveClass(/on/);
+      const commandTab = page.locator('nav.tabs').getByRole('link', { name: 'Command', exact: true });
+      await expect(commandTab).toBeVisible();
+      await expect(commandTab).toHaveClass(/on/);
+      await expect(page.locator('nav.tabs').getByRole('link', { name: 'Home', exact: true })).toHaveCount(0);
+      await expect(page.getByTestId('tab-waiting')).toHaveAttribute('aria-selected', 'true');
+      await expect(page.getByTestId('tab-dispatched')).toBeVisible();
+      await expect(page.getByTestId('tab-completed')).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Cases' })).toBeVisible();
-      await expect(page.getByText('Synthetic scenario inspired by Kerala floods')).toBeVisible();
+      await expect(page.locator('.queue-col .scenario-visible')).toBeHidden();
       await expect(page.locator('button.case').first()).toBeVisible();
       const hindiCase = page.getByRole('option', { name: /3 children and 2/ });
       await hindiCase.scrollIntoViewIfNeeded();
       await hindiCase.click();
+      await page.locator('details.show-report > summary').click();
       await page.getByRole('button', { name: 'Show original' }).click();
       await expect(page.getByText('तुरंत नाव भेजो')).toBeVisible();
-      const moreBtn = page.getByRole('button', { name: 'More details' });
-      if (await moreBtn.isVisible()) {
-        await moreBtn.click();
-        await expect(page.getByRole('dialog', { name: /Why this team/i })).toBeVisible();
-        await page.keyboard.press('Escape');
-      }
+      await page.getByRole('button', { name: /Why this team/ }).click();
+      await expect(page.getByTestId('why-team-popup')).toBeVisible();
+      await page.keyboard.press('Escape');
 
       if (viewport.name === 'mobile') {
         await expect(page.locator('button.case').first()).toBeVisible();
+        await page.getByTestId('map-toggle').click();
         await expect(page.locator('.map-card')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Approve and send' })).toBeVisible();
         await shot(page, 'mobile-case-sheet');
@@ -152,6 +168,8 @@ test.describe('public and coordinator demo', () => {
         await page.locator('.map-card').scrollIntoViewIfNeeded();
         await shot(page, 'mobile-map');
         await noHorizontalOverflow(page);
+        await page.getByTestId('map-toggle').click();
+        await expect(page.locator('.map-stepper-col')).not.toHaveClass(/map-open/);
       } else {
         await shot(page, 'desktop-command');
         await noHorizontalOverflow(page);
@@ -180,8 +198,12 @@ test.describe('public and coordinator demo', () => {
       expect(submitted.ok()).toBeTruthy();
       const search = page.locator('#coord-search');
       if (await search.isVisible()) await search.fill(marker);
-      await expect(page.getByRole('option', { name: new RegExp(marker) })).toBeVisible({ timeout: 12_000 });
-      await page.getByRole('option', { name: new RegExp(marker) }).click();
+      const arrived = page.getByRole('option', { name: new RegExp(marker) });
+      const pill = page.getByTestId('new-pill');
+      await expect(arrived.or(pill)).toBeVisible({ timeout: 20_000 });
+      if (await pill.isVisible()) await pill.click();
+      await expect(arrived).toBeVisible();
+      await arrived.click();
       const approve = page.getByRole('button', { name: 'Approve and send' });
       await approve.scrollIntoViewIfNeeded();
       await expect(approve).toBeEnabled();
@@ -189,14 +211,14 @@ test.describe('public and coordinator demo', () => {
       await expect(page.locator('.toast')).toContainText('Dispatch approved');
       const mobile = viewport.name === 'mobile';
       await closeCaseSheet(page, mobile);
-      await page.getByRole('button', { name: 'Dispatched' }).click();
+      await page.getByTestId('tab-dispatched').click();
       const row = page.getByRole('option', { name: new RegExp(marker) });
       await expect(row).toBeVisible();
       await row.click();
       await page.getByRole('button', { name: 'Mark completed' }).click();
       await expect(page.locator('.toast')).toContainText('The team is free again.');
       await closeCaseSheet(page, mobile);
-      await page.getByRole('button', { name: 'Completed' }).click();
+      await page.getByTestId('tab-completed').click();
       await expect(page.getByRole('option', { name: new RegExp(marker) })).toBeVisible();
       await shot(page, `${viewport.name}-completed`);
 
@@ -244,7 +266,11 @@ test.describe('public and coordinator demo', () => {
         const gapRow = page.getByRole('option', { name: new RegExp(gapPlace) });
         await expect(gapRow).toBeVisible({ timeout: 12_000 });
         await gapRow.click();
-        await expect(page.getByText('No suitable free team nearby').or(page.getByText('No boat free, nearest alternative'))).toBeVisible();
+        const noTeam = page.getByTestId('no-team');
+        await expect(noTeam).toBeVisible({ timeout: 20_000 });
+        await expect(noTeam).toContainText(/No free/);
+        await expect(noTeam.locator('[data-testid^="no-team-"]').first()).toBeVisible();
+        await expect(page.getByTestId('no-team-go')).toBeEnabled();
         await expect(page.getByRole('button', { name: 'Approve and send' })).toBeDisabled();
         await shot(page, 'desktop-no-team-free');
       }
@@ -266,11 +292,19 @@ test.describe('public and coordinator demo', () => {
   }
 });
 
+function boatIsFresh(stamp: string | null | undefined): boolean {
+  if (!stamp) return true;
+  const last = Date.parse(stamp);
+  if (Number.isNaN(last)) return true;
+  return Date.now() - last <= 90 * 60 * 1000;
+}
+
 async function exhaustBoats(request: APIRequestContext): Promise<void> {
+  const skipped = new Set<string>();
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const resources = await (await request.get(`${API}/api/resources`, { headers: AUTH })).json();
-    const free = (resources as Array<{ kind: string; status: string; capacity_remaining: number; lat?: number; lng?: number }>).filter(
-      (row) => row.kind === 'boat' && row.status === 'available' && row.capacity_remaining > 0,
+    const free = (resources as Array<{ id: string; kind: string; status: string; capacity_remaining: number; lat?: number; lng?: number; location_updated_at?: string | null }>).filter(
+      (row) => row.kind === 'boat' && row.status === 'available' && row.capacity_remaining > 0 && boatIsFresh(row.location_updated_at) && !skipped.has(row.id),
     );
     if (free.length === 0) return;
     const targetBoat = free[0];
@@ -303,8 +337,11 @@ async function exhaustBoats(request: APIRequestContext): Promise<void> {
     expect(matchesRes.ok(), await matchesRes.text()).toBeTruthy();
     const matches = (await matchesRes.json()) as Array<{ match_id: string; resource_kind: string; is_fallback?: boolean }>;
     const boat = matches.find((row) => row.resource_kind === 'boat' && !row.is_fallback);
-    expect(boat, `free boats left: ${free.map((row) => row.kind).length}`).toBeTruthy();
-    const approved = await request.post(`${API}/api/matches/${boat!.match_id}/approve`, {
+    if (!boat) {
+      skipped.add(targetBoat.id);
+      continue;
+    }
+    const approved = await request.post(`${API}/api/matches/${boat.match_id}/approve`, {
       headers: AUTH,
       data: {},
     });

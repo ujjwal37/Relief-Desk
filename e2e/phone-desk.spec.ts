@@ -46,12 +46,9 @@ test('a phone report reaches the desk, merges, and comes back approved', async (
   const statusUrl = phone.url();
   await shot(phone, 'phone-desk-sent');
 
+  await expect(desk.getByTestId('tab-waiting')).toHaveAttribute('aria-selected', 'true');
   const row = desk.getByRole('option', { name: new RegExp(tag) });
   await expect(row).toBeVisible({ timeout: 20_000 });
-  const strip = desk.getByTestId('just-reported');
-  await expect(strip).toBeVisible();
-  await expect(strip).toContainText(tag);
-  await expect(strip.getByText('New', { exact: true }).first()).toBeVisible();
   await row.click();
   await shot(desk, 'phone-desk-arrived');
 
@@ -140,12 +137,13 @@ test('a Hindi report uses Hindi labels, reaches the desk, and the status stays H
   await expect(row).toBeVisible({ timeout: 20_000 });
   await row.scrollIntoViewIfNeeded();
   await expect(row).toContainText('6');
-  await expect(row).toContainText(/Ward 12/);
+  await expect(row).toContainText(/वार्ड 12/);
   await row.click();
-  await desk.getByRole('button', { name: 'More details' }).click();
+  await desk.locator('details.show-report > summary').click();
   await desk.getByRole('button', { name: 'Show original' }).click();
-  await expect(desk.locator('p.quote')).toContainText('6 लोग फंसे');
-  await expect(desk.locator('p.quote')).toContainText(tag);
+  const original = desk.locator('.rep-orig .rep-text');
+  await expect(original).toContainText('6 लोग फंसे');
+  await expect(original).toContainText(tag);
 
   const approve = desk.getByRole('button', { name: 'Approve and send' });
   await expect(approve).toBeEnabled({ timeout: 20_000 });

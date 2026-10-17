@@ -27,40 +27,20 @@ async function login(page: Page): Promise<void> {
 test('step popup, case card, counts, alerts, and Gemini call counter', async ({ page }) => {
   await login(page);
 
-  await expect(page.getByTestId('gemini-calls')).toContainText(/Gemini calls \d+/);
+  await expect(page.getByTestId('ai-health')).toContainText('Rules mode');
+  await expect(page.getByTestId('gemini-calls')).toHaveCount(0);
   await expect(page.getByText('Offline fallback')).toHaveCount(0);
   await expect(page.getByText('ux.none')).toHaveCount(0);
 
-  const stats = await page.getByTestId('stats-line').innerText();
-  const freeOf = /(\d+)\/(\d+) teams free/.exec(stats);
-  const busy = /(\d+) busy/.exec(stats);
-  expect(freeOf, stats).toBeTruthy();
-  expect(busy, stats).toBeTruthy();
+  const batch = page.getByTestId('batch-counters');
+  await expect(batch).toContainText(/\d+\s+waiting/);
+  await expect(batch).toContainText(/\d+\s+dispatched/);
 
+  await page.locator('details.show-report > summary').click();
   const english = page.getByTestId('ai-english-full');
   await expect(english).toBeVisible();
   await expect(english).not.toContainText('person(s) needing');
-  const arrow = page.locator('.field-grid-arrow');
-  const overlap = await english.evaluate((node, arrowSel) => {
-    const text = node.getBoundingClientRect();
-    const box = node.closest('.report-comparison-box')?.getBoundingClientRect();
-    const mark = document.querySelector(arrowSel)?.getBoundingClientRect();
-    const style = getComputedStyle(node);
-    const arrowStyle = document.querySelector(arrowSel) ? getComputedStyle(document.querySelector(arrowSel) as Element) : null;
-    const clipped = node.scrollHeight > node.clientHeight + 2 || style.overflow === 'hidden';
-    const covers = !!mark && mark.top < text.bottom - 2 && mark.bottom > text.top + 2 && mark.left < text.right && mark.right > text.left;
-    return {
-      clipped,
-      covers,
-      arrowPosition: arrowStyle?.position || '',
-      textPastBox: !!box && text.bottom > box.bottom + 1,
-    };
-  }, '.field-grid-arrow');
-  expect(overlap.clipped).toBe(false);
-  expect(overlap.covers).toBe(false);
-  expect(overlap.textPastBox).toBe(false);
-  expect(overlap.arrowPosition).toBe('static');
-  await expect(arrow).toBeVisible();
+  await expect(page.locator('.field-grid-arrow')).toBeHidden();
   await page.locator('.decision-panel').screenshot({ path: path.join(SHOTS, 'case-card.png') });
 
   const options = page.getByRole('option');
@@ -74,7 +54,8 @@ test('step popup, case card, counts, alerts, and Gemini call counter', async ({ 
   await expect(why).not.toContainText('—');
   await expect(why).toContainText(/\d+(\.\d+)?\s*km/);
 
-  await expect(page.getByTestId('stepper-node-matching')).toContainText('Google Maps');
+  await expect(page.getByTestId('stepper-node-matching')).toContainText('Team');
+  await expect(page.getByTestId('stepper-node-matching')).toContainText('Rules');
   await expect(page.getByTestId('stepper-node-approval')).toContainText('You');
 
   await page.getByTestId('stepper-node-intake').click();
@@ -103,8 +84,15 @@ test('step popup, case card, counts, alerts, and Gemini call counter', async ({ 
   await page.getByRole('link', { name: 'Teams', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Teams' })).toBeVisible();
   const strip = page.locator('.strip');
-  await expect(strip).toContainText(`Free ${freeOf![1]}`);
-  await expect(strip).toContainText(`Busy ${busy![1]}`);
+  const freeBtn = strip.getByRole('button', { name: /^Free \d+$/ });
+  const busyBtn = strip.getByRole('button', { name: /^Busy \d+$/ });
+  await expect(freeBtn).toBeVisible();
+  await expect(busyBtn).toBeVisible();
+  const freeN = Number((await freeBtn.innerText()).match(/\d+/)?.[0]);
+  const busyN = Number((await busyBtn.innerText()).match(/\d+/)?.[0]);
+  expect(freeN).toBeGreaterThan(0);
+  expect(busyN).toBeGreaterThanOrEqual(0);
+  await expect(page.locator('.head-sub')).toHaveText(`${freeN} free · ${busyN} busy`);
   const row = page.getByTestId('team-row').first();
   await row.click();
   await expect(page.getByTestId('team-detail')).toBeVisible();

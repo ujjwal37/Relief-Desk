@@ -240,6 +240,7 @@ def case_merge(
     coordinator: CoordinatorUser = Depends(get_current_coordinator),
 ):
     """Quotes and dedupe evidence that are actually stored. Missing fields stay null."""
+    from app.api.public import public_code_for
     req = storage_service.get_request(case_id)
     if req is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Case '{case_id}' not found")
