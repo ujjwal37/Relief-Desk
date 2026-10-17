@@ -78,6 +78,15 @@ _READY = {
 }
 
 
+_LIFE_112 = {
+    "en": "This sounds life-threatening. Call 112 now. We are also alerting the nearest team.",
+    "hi": "यह जान का खतरा लगता है। अभी 112 पर कॉल करें। हम पास की टीम को भी बता रहे हैं।",
+    "hinglish": "Yeh jaan ka khatra lagta hai. Abhi 112 pe call karein. Hum paas ki team ko bhi bata rahe hain.",
+    "ml": "ഇത് ജീവന് ഭീഷണിയാണ്. ഇപ്പോൾ തന്നെ 112 വിളിക്കുക. അടുത്തുള്ള ടീമിനെയും ഞങ്ങൾ അറിയിക്കുന്നു.",
+    "manglish": "Ithu jeevanu bheeshaniyanu. Ippol thanne 112 vilikkuka. Aduthulla teaminem njangal ariyikkunnu.",
+}
+
+
 def injection_pattern(message: str) -> bool:
     return _INJECTION.search(message) is not None
 
@@ -384,6 +393,11 @@ class ChatIntakeAgent:
         else:
             line = pack_notice(scenario, lang)
             bot_msg = _READY.get(lang, _READY["en"])
+        from app.tools.case_queue import life_phrase
+        if not hoax_reason and life_phrase(full_text):
+            # A life threat in any language: call 112 now comes first, in the reporter's language.
+            line = scenario_registry.get_safety_line("call_112", lang=lang)
+            bot_msg = f"{_LIFE_112.get(lang, _LIFE_112['en'])} {bot_msg}".strip()
         card = ConfirmationCardData(
             incident_type=current.type.value,
             place_text=current.place_text or "",

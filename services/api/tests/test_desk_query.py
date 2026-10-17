@@ -78,3 +78,20 @@ def test_endpoint_is_read_only():
         assert {k: v.model_dump_json() for k, v in storage_service._requests.items()} == before
     finally:
         app.dependency_overrides.clear()
+
+
+def test_critical_question_counts_only_critical_even_if_the_model_drops_the_band(monkeypatch):
+    """QA r4: 'How many critical cases are waiting?' answered with every waiting case."""
+    from app.llm import client as llm
+
+    monkeypatch.setattr(llm.llm_client.guard, "failures", 0, raising=False)
+    rows = [
+        StoredRequest(id="K1", ward_id="ward_1", type="rescue", urgency_score=92),
+        StoredRequest(id="K2", ward_id="ward_2", type="medical", urgency_score=85),
+        StoredRequest(id="U1", ward_id="ward_2", type="food", urgency_score=65),
+        StoredRequest(id="W1", ward_id="ward_3", type="food", urgency_score=30),
+    ]
+    fake = lambda q, t: ({"bands": [], "waiting_only": True, "reason": "Waiting cases."}, 50)
+    out = dq.ask("How many critical cases are waiting?", rows, call=fake)
+    assert out["filters"]["bands"] == ["critical"]
+    assert sorted(c["id"] for c in out["cases"]) == ["K1", "K2"]

@@ -224,6 +224,7 @@ def test_five_reports_against_a_slow_local_model(monkeypatch, tmp_path):
         done = storage_service.get_request(body["request_id"])
         assert done is not None
         assert done.analysis_status == "complete"
-        assert done.ai is not None and done.ai.provider == "gemini", done.ai
+        # Timeout is final: a case past the cap keeps its rules result; the rest keep Gemini's.
+        assert done.ai is not None and (done.ai.provider == "gemini" or done.ai.fallback_reason == "timeout_45s"), done.ai
         assert done.translations.get("en")
     assert storage_service.get_request(bodies[0]["request_id"]).status.value == "dispatched"

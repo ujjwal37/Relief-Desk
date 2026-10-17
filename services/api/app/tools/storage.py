@@ -41,6 +41,10 @@ def active_seed_mode() -> str:
     return mode if mode in ("full", "small") else "small"
 
 
+
+# Aluva (ward_4) and Chalakudy (ward_7) seeds are not loaded: they confused the Kuttanad hero story.
+EXCLUDED_SEED_WARDS = frozenset({"ward_4", "ward_7"})
+
 class StorageService:
     def __init__(self):
         self._reports: Dict[str, StoredReport] = {}
@@ -623,6 +627,8 @@ class StorageService:
         for item in data.get("resources", []):
             if wanted is not None and item.get("id") not in wanted:
                 continue
+            if item.get("ward_id") in EXCLUDED_SEED_WARDS:
+                continue
             res = StoredResource(
                 id=item["id"],
                 event_id=item.get("event_id", data.get("event_id", "event_kerala_flood")),
@@ -762,6 +768,20 @@ class StorageService:
             before_req = req.model_dump()
             req.status = RequestStatus.DISPATCHED
             req.assigned_resource_id = match.resource_id
+            from app.agents.matching import eta_for_distance, travel_mode_for
+            sent = self._resources.get(match.resource_id)
+            km = round(float(match.breakdown.distance_km), 2) if match.breakdown else None
+            mode = travel_mode_for(sent) if sent else "road"
+            req.dispatch = {
+                "match_id": match.id,
+                "resource_id": match.resource_id,
+                "resource_name": sent.name if sent else None,
+                "resource_kind": getattr(getattr(sent, "kind", None), "value", None) if sent else None,
+                "distance_km": km,
+                "eta_minutes": eta_for_distance(km, mode) if km is not None else None,
+                "travel_mode": mode,
+                "approved_at": datetime.now(timezone.utc).isoformat(),
+            }
             req.reserved_people = people_needed
             req.updated_at = datetime.now(timezone.utc).isoformat()
             self._requests[req.id] = req
@@ -827,6 +847,7 @@ class StorageService:
                 before_req = req.model_dump()
                 req.status = RequestStatus.MATCHED
                 req.assigned_resource_id = None
+                req.dispatch = None
                 req.reserved_people = None
                 req.updated_at = match.updated_at
                 self._requests[req.id] = req
@@ -986,6 +1007,8 @@ class StorageService:
         wanted = set(only_ids) if only_ids is not None else None
         for item in data.get("incidents", []):
             if wanted is not None and item.get("id") not in wanted:
+                continue
+            if item.get("ward_id") in EXCLUDED_SEED_WARDS:
                 continue
             try:
                 vuln_data = item.get("vulnerable", {})

@@ -14,7 +14,7 @@ client = TestClient(app)
 
 def test_seeded_cases_are_inside_the_last_hour():
     rows = [row for row in storage_service.list_requests() if str(row.id).startswith("INC-")]
-    assert len(rows) >= 40
+    assert len(rows) >= 34  # Aluva and Chalakudy seeds dropped
     now = datetime.now(timezone.utc)
     for row in rows:
         created = datetime.fromisoformat(row.created_at)

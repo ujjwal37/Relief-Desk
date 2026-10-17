@@ -26,7 +26,7 @@ def test_dog_seeds_and_pack_filter():
     assert any(row["id"] == "dog_attack" for row in listed.json())
 
     dogs = [req for req in storage_service.list_requests() if req.id.startswith("DOG-")]
-    assert len(dogs) >= 4
+    assert len(dogs) >= 3  # the Aluva/Chalakudy dog seed is dropped
     assert all(req.pack_id == "dog_attack" for req in dogs)
 
     filtered = client.get("/api/requests?pack_id=dog_attack", headers=AUTH)

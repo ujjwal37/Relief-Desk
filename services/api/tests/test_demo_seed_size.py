@@ -40,10 +40,10 @@ def test_reset_returns_two_cases_and_full_reloads_the_pack():
         full = client.post("/api/demo/full", headers=AUTH)
         assert full.status_code == 200
         assert full.json()["seed"] == "full"
-        assert full.json()["incidents"] >= 40
+        assert full.json()["incidents"] >= 34  # Aluva and Chalakudy seeds dropped
         again = {row["id"] for row in client.get("/api/requests", headers=AUTH).json()}
         assert "INC-040" in again
-        assert len(again) >= 40
+        assert len(again) >= 34
 
         back = client.post("/api/demo/reset", headers=AUTH)
         assert back.json()["seed"] == "small"

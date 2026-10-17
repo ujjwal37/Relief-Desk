@@ -595,7 +595,7 @@ class LLMClient:
 
             def transport() -> str:
                 nonlocal used
-                config: Dict[str, Any] = {"system_instruction": system_instruction, "temperature": 0.1}
+                config: Dict[str, Any] = {"system_instruction": system_instruction, "temperature": 0.0, "seed": 7}  # deterministic for the demo
                 if json_output:
                     config["response_mime_type"] = "application/json"
                 cap = getattr(self._tls, "max_output_tokens", None)

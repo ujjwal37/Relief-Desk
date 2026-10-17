@@ -521,6 +521,38 @@ def _translation_for(report_text: str, analysis: ExtractedRequest, ai_usage) -> 
     return translation_service.translate_report(report_text, allow_model=False)
 
 
+def _keep_rules_after_timeout(late: StoredRequest, analysis, ai_usage, report_text: str, payload):
+    """Timeout is final. A late model reply never overwrites a case rules already finished.
+
+    What Gemini would have changed is kept only as a re-check diff (Gemini re-checked · X → Y).
+    """
+    from app.tools.case_queue import _diff
+
+    proposed = {
+        "people_count": getattr(getattr(analysis, "people", None), "count", None),
+        "place_text": getattr(analysis, "place_text", None),
+        "type": getattr(analysis, "type", None),
+    }
+    diff = _diff(late, {k: v for k, v in proposed.items() if v not in (None, "")})
+    late.ai_queue.recheck_diff = diff or None
+    if diff:
+        late.ai_queue.engine = "gemini_rechecked"
+    storage_service.save_request(late, actor="timeout_guard")
+    ruled = extract_with_rules(report_text)
+    _apply_card(ruled, payload, report_text)
+    for attr in ("text_en", "text_hi", "translation_confidence", "likely_hoax", "hoax_reason"):
+        if hasattr(analysis, attr) and hasattr(ruled, attr):
+            try:
+                setattr(ruled, attr, getattr(analysis, attr))
+            except Exception:
+                pass
+    usage = ai_usage.model_copy()
+    usage.provider = "fallback"
+    usage.cached = False
+    usage.fallback_reason = "timeout_45s"
+    return ruled, usage
+
+
 def _refine_with_model(
     payload: ReportSubmitRequest,
     req_id: str,
@@ -567,6 +599,10 @@ def _refine_with_model(
                  "openai_compat": "openai_compat"}.get(
         ai_usage.provider, "offline_fallback"
     )
+    late = storage_service.get_request(req_id)
+    if late is not None and late.ai_queue is not None and "timedOut" in (late.ai_queue.flags or []) and ai_usage.provider != "fallback":
+        analysis, ai_usage = _keep_rules_after_timeout(late, analysis, ai_usage, report_text, payload)
+        ai_source = "offline_fallback"
     model_reason = (getattr(analysis, "hoax_reason", None) or "").strip()
     if getattr(analysis, "likely_hoax", False) or model_reason:
         for flag in ("hoax", "likely_hoax"):
@@ -583,6 +619,8 @@ def _refine_with_model(
         raise RuntimeError("report disappeared before enrichment")
 
     before = (req_obj.type, req_obj.place_text, req_obj.ward_id)
+    from app.tools.case_queue import promote_life_threat
+    promote_life_threat(req_obj, trans_res.text_en)
     joined = (req_obj.merged_count or 1) > 1
     pin_lat, pin_lng, ward_id = _pin_for(payload, analysis, report_text)
     req_obj.type = analysis.type
@@ -682,7 +720,7 @@ def _trace_for(decision, count_note: Optional[str], merged: bool) -> str:
     elif getattr(decision, "review", False):
         head = "Possible duplicate, review"
     else:
-        head = "Distinct"
+        head = "New case: no open report matched it"
     parts = [head]
     if decision.similarity is not None or decision.distance_km is not None or decision.minutes_apart is not None:
         parts.append(confidence_phrase(decision.similarity, decision.distance_km, decision.minutes_apart))
@@ -732,6 +770,9 @@ def _apply_dedupe(req_obj: StoredRequest, decision, source_id: str = "") -> None
             target.dedupe_trace = line
             fresh.dedupe_trace = line
             fresh.merged_into = target.id
+            for code in (fresh.id, fresh.public_code, *fresh.alias_codes):
+                if code and code != target.id and code not in target.alias_codes:
+                    target.alias_codes.append(code)
             req_obj.merged_into = target.id
             req_obj.merged_count = target.merged_count
             storage_service.save_request(target, actor="dedupe_agent")

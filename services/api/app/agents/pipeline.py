@@ -4,6 +4,7 @@ Scoring and capacity stay in Python tools. The model may propose and explain.
 Without a Gemini key the same tools still finish the case, and the run is marked fallback.
 """
 import json
+import re
 import logging
 from concurrent.futures import ThreadPoolExecutor
 import threading
@@ -241,6 +242,42 @@ def _trace_step(
     }
 
 
+_SCORE_SENTENCE = re.compile(r"[^.!?\n]*\b(?:urgency|match|priority|total)\s+score\b[^.!?\n]*[.!?]?\s*", re.I)
+_SCORE_NUMBER = re.compile(r"\b(?:urgency|match|priority)\s+score\s*(?:of|is|:)?\s*\d+(?:\.\d+)?(?:\s*/\s*\d+)?", re.I)
+
+
+def fact_check_explanation(text: str, req: StoredRequest, free_teams: Optional[int] = None) -> str:
+    """Keep only claims the case data supports. No raw scores; no invented people or shortages."""
+    if not text:
+        return text
+    out = _SCORE_SENTENCE.sub("", text)
+    out = _SCORE_NUMBER.sub("", out)
+    v = req.vulnerable
+    sentences = re.split(r"(?<=[.!?])\s+", out.strip())
+    kept = []
+    for sentence in sentences:
+        low = sentence.lower()
+        if not v.elderly and re.search(r"\belderly|old (?:man|woman|people|person)|senior", low):
+            continue
+        if not v.child and re.search(r"\bchild|children|kids?\b|infant|baby", low):
+            continue
+        if not v.pregnant and "pregnan" in low:
+            continue
+        if free_teams and re.search(r"(?:all|every|no)\s+(?:\w+\s+)?teams?\s+(?:lack|have no|are full|is full|available)|no (?:free )?(?:seats|boats?) (?:left|available)", low):
+            continue
+        kept.append(sentence)
+    result = " ".join(s for s in kept if s.strip()).strip()
+    return result
+
+
+def life_threat_note(req: StoredRequest) -> str:
+    from app.tools.case_queue import life_phrase
+    phrase = life_phrase(req.raw_text) or life_phrase(req.ai_translation)
+    if not phrase:
+        return ""
+    return f"Life threat reported (\u201c{phrase}\u201d): call 112 as well as sending the nearest team."
+
+
 def _with_measured_km(text: str, km: Optional[float]) -> str:
     """Replace a blank distance. Never leave '— km' in a sentence a coordinator reads."""
     if not text or "—" not in text:
@@ -429,10 +466,14 @@ def finish(request_id: str) -> None:
     provider = ran.provider if ran else ("gemini" if llm_client.gemini_live() else "fallback")
     model = (ran.model if ran else None) or settings.GEMINI_MODEL
     summary = (req.raw_text or "")[:180]
+    tier_words = {"immediate": "Critical", "urgent": "Urgent"}.get(getattr(scored, "tier", ""), "Standard")
     explanation = strip_advice(
-        f"The urgency score is {scored.score}. "
+        f"{tier_words}: {scored.reason.split('(')[0].strip().rstrip('.')}. "
         f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch."
     )
+    life_note = life_threat_note(req)
+    if life_note:
+        explanation = f"{life_note} {explanation}"
     explanation = f"{explanation} This note is not medical or legal advice."
     from app.agents.review import language_review
     from app.agents.matching import matching_agent
@@ -491,6 +532,9 @@ def finish(request_id: str) -> None:
         explained = review("Explainer", explain_context, explanation)
     measured = _km_between(req, best)
     explained["text"] = _with_measured_km(explained.get("text") or "", measured)
+    explained["text"] = fact_check_explanation(explained["text"], req, capacity.get("available"))
+    if life_note and "112" not in explained["text"]:
+        explained["text"] = f"{life_note} {explained['text']}".strip()
     if explained.get("raw_output"):
         explained["raw_output"] = _with_measured_km(explained["raw_output"], measured)
 
