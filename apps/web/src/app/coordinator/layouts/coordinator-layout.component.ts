@@ -167,32 +167,31 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     }
   }
   openWeights(): void { this.menuOpen.set(false); this.ui.weightsOpen.set(true); }
-  takeTour(): void { this.menuOpen.set(false); this.router.navigateByUrl('/coordinator/command').then(() => setTimeout(() => this.ui.startTour(), 150)); }
+  takeTour(): void { this.menuOpen.set(false); this.router.navigateByUrl('/coordinator/command').then(() => this.startTourWhenReady(0)); }
   toggleAskDesk(): void { this.askDeskOpen.update((v) => !v); }
   onDeskCasePicked(caseId: string): void {
     this.askDeskOpen.set(false);
     this.router.navigate(['/coordinator/command'], { queryParams: { id: caseId }, queryParamsHandling: 'merge' });
   }
 
+  /** Once per browser session, right after the one-click demo login. Never for a normal login or a reload. */
   private maybeStartTour(): void {
     try {
       if (sessionStorage.getItem('rd_start_tour') !== '1') return;
       sessionStorage.removeItem('rd_start_tour');
-      if (this.ui.tourDone()) return;
+      if (sessionStorage.getItem('rd_tour_seen') === '1' || localStorage.getItem('rd_tour_v2_off') === '1') return;
+      sessionStorage.setItem('rd_tour_seen', '1');
     } catch {
       return;
     }
-    void this.router.navigateByUrl('/coordinator/command').then(() => setTimeout(() => this.ui.startTour(), 280));
+    void this.router.navigateByUrl('/coordinator/command').then(() => this.startTourWhenReady(0));
   }
 
-  onTourAction(kind: 'sample' | 'ask'): void {
-    if (kind === 'sample') {
-      this.sendSample('hindi');
-      this.ui.tourStep.update((step) => Math.min(5, step + 1));
-      return;
-    }
-    this.ui.finishTour();
-    void this.router.navigate(['/coordinator/agent'], { queryParams: { ask: 'pending' } });
+  /** Wait for the queue to render (up to about 6 s) so the steps have something to point at. */
+  private startTourWhenReady(tries: number): void {
+    const ready = !!document.querySelector('[data-testid="life-threat-card"], .case-wrap');
+    if (ready || tries > 20) { setTimeout(() => this.ui.startTour(), 200); return; }
+    setTimeout(() => this.startTourWhenReady(tries + 1), 300);
   }
 
   aiPillText(): string {

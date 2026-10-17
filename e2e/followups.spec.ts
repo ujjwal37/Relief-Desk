@@ -16,7 +16,7 @@ test.beforeEach(async ({ request }) => {
 
 async function login(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    localStorage.setItem('rd_tour_done', '1');
+    localStorage.setItem('rd_tour_v2_off', '1');
     localStorage.setItem('rd_guide_dismissed', '1');
   });
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -137,7 +137,7 @@ test('step popup, case card, counts, alerts, and Gemini call counter', async ({ 
 });
 
 test('demo login shows an error when demo mode is off', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await page.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   await page.route('**/api/health', (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -150,7 +150,7 @@ test('demo login shows an error when demo mode is off', async ({ page }) => {
 });
 
 test('demo login shows an error when the server returns 403', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await page.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   await page.route('**/api/auth/demo-login', (route) => route.fulfill({
     status: 403,
     contentType: 'application/json',

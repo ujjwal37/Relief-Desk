@@ -1,43 +1,46 @@
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, effect, inject, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { LanguageService, RdTranslatePipe } from '@rd/shared';
 import { CoordUiService } from '../services/coord-ui.service';
 
-interface Step { target: string; title: string; body: string; action?: 'sample' | 'ask'; }
-const STEPS: Step[] = [
-  { target: 'welcome', title: 'tour.s1t', body: 'tour.s1b' },
-  { target: 'sample', title: 'tour.s2t', body: 'tour.s2b', action: 'sample' },
-  { target: 'cases', title: 'tour.s3t', body: 'tour.s3b' },
-  { target: 'detail', title: 'tour.s4t', body: 'tour.s4b' },
-  { target: 'how', title: 'tour.s5t', body: 'tour.s5b' },
-  { target: 'actions', title: 'tour.s6t', body: 'tour.s6b', action: 'ask' },
+/** Each step points at something on the current Command screen. A step whose element is not on screen is skipped. */
+interface Step { target: string; title: string; body: string; }
+export const TOUR_STEPS: Step[] = [
+  { target: '[data-testid="life-threat-card"]', title: 'tour.s1t', body: 'tour.s1b' },
+  { target: 'app-ai-stepper', title: 'tour.s2t', body: 'tour.s2b' },
+  { target: '[data-tour="actions"]', title: 'tour.s3t', body: 'tour.s3b' },
+  { target: '[data-tour="dup"]', title: 'tour.s4t', body: 'tour.s4b' },
+  { target: '[data-tour="reporter"]', title: 'tour.s5t', body: 'tour.s5b' },
 ];
 
-/** Guided spotlight tour (driver.js-style, no extra CSS theme). Skip + 6 clickable steps. */
+export function tourAnchor(selector: string): HTMLElement | null {
+  const el = document.querySelector(selector) as HTMLElement | null;
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 ? el : null;
+}
+
+/** Short guided tour. Read-only: it never sends a report or approves anything. Skip and Esc always close it. */
 @Component({
   selector: 'app-tour',
   standalone: true,
   imports: [RdTranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (ui.tourOpen()) {
+    @if (ui.tourOpen() && current(); as step) {
       <div class="shade" (click)="skip()"></div>
-      <div class="spot" [style.top.px]="rect().top" [style.left.px]="rect().left" [style.width.px]="rect().width" [style.height.px]="rect().height"></div>
-      <div class="card" role="dialog" aria-modal="true" aria-live="polite" [attr.aria-label]="steps[ui.tourStep()].title | rdTranslate" #card tabindex="-1"
+      @if (rect(); as r) {
+        <div class="spot" [style.top.px]="r.top" [style.left.px]="r.left" [style.width.px]="r.width" [style.height.px]="r.height"></div>
+      }
+      <div class="card" role="dialog" aria-modal="true" data-testid="tour" [attr.aria-label]="step.title | rdTranslate" #card tabindex="-1"
         [style.top.px]="cardPos().top" [style.left.px]="cardPos().left">
-        <p class="step">{{ stepLabel() }}</p>
-        <h2>{{ steps[ui.tourStep()].title | rdTranslate }}</h2>
-        <p class="body">{{ steps[ui.tourStep()].body | rdTranslate }}</p>
-        @if (steps[ui.tourStep()].action === 'sample') {
-          <button type="button" class="act" data-testid="tour-sample" (click)="doAction('sample')">{{ 'xfactor.sampleHindi' | rdTranslate }}</button>
-        }
-        @if (steps[ui.tourStep()].action === 'ask') {
-          <button type="button" class="act" data-testid="tour-ask" (click)="doAction('ask')">{{ 'xfactor.askPending' | rdTranslate }}</button>
-        }
+        <p class="step" data-testid="tour-step">{{ stepLabel() }}</p>
+        <h2>{{ step.title | rdTranslate }}</h2>
+        <p class="body">{{ step.body | rdTranslate }}</p>
         <div class="foot">
-          <button type="button" class="skip" (click)="skip()">{{ 'coord.dismissTour' | rdTranslate }}</button>
-          <span class="dots" aria-hidden="true">@for (s of steps; track $index) { <i [class.on]="$index === ui.tourStep()"></i> }</span>
-          @if (ui.tourStep() > 0) { <button type="button" class="back" (click)="go(-1)">{{ 'tour.back' | rdTranslate }}</button> }
-          <button type="button" class="next" (click)="next()">{{ (last() ? 'tour.done' : 'tour.next') | rdTranslate }} @if (!last()) {→}</button>
+          <button type="button" class="skip" data-testid="tour-skip" (click)="skip()">{{ 'coord.dismissTour' | rdTranslate }}</button>
+          <span class="dots" aria-hidden="true">@for (s of steps(); track $index) { <i [class.on]="$index === index()"></i> }</span>
+          @if (index() > 0) { <button type="button" class="back" (click)="go(-1)">{{ 'tour.back' | rdTranslate }}</button> }
+          <button type="button" class="next" data-testid="tour-next" (click)="next()">{{ (last() ? 'tour.done' : 'tour.next') | rdTranslate }}</button>
         </div>
       </div>
     }
@@ -49,8 +52,7 @@ const STEPS: Step[] = [
     .step { margin:0 0 4px; font-size:13px; color:var(--text-2); font-weight:600; }
     h2 { margin:0 0 6px; font-size:18px; line-height:1.25; }
     .body { margin:0 0 14px; font-size:14px; line-height:1.45; color:var(--text-2); }
-    .act { width:100%; min-height:44px; margin:0 0 10px; border:1px solid var(--border); border-radius:10px; background:var(--brand-tint); color:var(--brand); font:600 14px var(--rd-font-family); cursor:pointer; }
-    .foot { display:flex; align-items:center; gap:8px; }
+        .foot { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
     .dots { display:inline-flex; gap:5px; flex:1; justify-content:center; } .dots i { width:7px; height:7px; border-radius:50%; background:var(--border); } .dots i.on { background:var(--brand); }
     button { min-height:44px; border-radius:10px; border:0; font:600 14px var(--rd-font-family); cursor:pointer; padding:0 14px; }
     .skip, .back { background:transparent; color:var(--text-2); } .next { background:var(--brand); color:var(--on-brand); }
@@ -59,43 +61,64 @@ const STEPS: Step[] = [
 })
 export class TourComponent {
   readonly ui = inject(CoordUiService);
-  readonly steps = STEPS;
-  readonly action = output<'sample' | 'ask'>();
   private lang = inject(LanguageService);
   private card = viewChild<ElementRef<HTMLElement>>('card');
-  readonly rect = signal({ top: 0, left: 0, width: 0, height: 0 });
+  /** Steps whose element is on screen when the tour opens. */
+  readonly steps = signal<Step[]>([]);
+  readonly index = computed(() => Math.min(this.ui.tourStep(), Math.max(0, this.steps().length - 1)));
+  readonly current = computed(() => this.steps()[this.index()] || null);
+  readonly rect = signal<{ top: number; left: number; width: number; height: number } | null>(null);
   readonly cardPos = signal({ top: 80, left: 80 });
 
   constructor() {
     effect(() => {
-      if (this.ui.tourOpen()) {
-        this.ui.tourStep();
-        setTimeout(() => { this.place(); this.card()?.nativeElement.focus(); }, 30);
-      }
+      if (!this.ui.tourOpen()) return;
+      this.ui.tourStep();
+      setTimeout(() => {
+        if (!this.steps().length) {
+          const live = TOUR_STEPS.filter((s) => tourAnchor(s.target));
+          if (!live.length) { this.ui.finishTour(); return; }
+          this.steps.set(live);
+        }
+        this.place(true);
+        this.card()?.nativeElement.focus();
+      }, 30);
     });
+    effect(() => { if (!this.ui.tourOpen()) this.steps.set([]); });
   }
 
-  last = () => this.ui.tourStep() === STEPS.length - 1;
+  last = () => this.index() >= this.steps().length - 1;
   stepLabel(): string {
-    return this.lang.translate('tour.step').replace('{a}', String(this.ui.tourStep() + 1)).replace('{b}', String(STEPS.length));
+    this.lang.currentLang();
+    return this.lang.translate('tour.step').replace('{a}', String(this.index() + 1)).replace('{b}', String(this.steps().length));
   }
-  go(d: number): void { this.ui.tourStep.update((s) => Math.min(STEPS.length - 1, Math.max(0, s + d))); }
+  go(d: number): void { this.ui.tourStep.set(Math.min(this.steps().length - 1, Math.max(0, this.index() + d))); }
   next(): void { this.last() ? this.skip() : this.go(1); }
   skip(): void { this.ui.finishTour(); }
-  doAction(kind: 'sample' | 'ask'): void { this.action.emit(kind); }
 
-  @HostListener('window:resize') place(): void {
-    if (!this.ui.tourOpen()) return;
-    const el = document.querySelector(`[data-tour="${STEPS[this.ui.tourStep()].target}"]`) as HTMLElement | null;
-    const r = el?.getBoundingClientRect();
+  @HostListener('window:resize') onResize(): void { this.place(false); }
+
+  place(scroll: boolean): void {
+    const step = this.current();
+    if (!this.ui.tourOpen() || !step) return;
+    let el = tourAnchor(step.target);
+    if (el && scroll) { el.scrollIntoView({ block: 'center', inline: 'nearest' }); el = tourAnchor(step.target); }
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const cw = Math.min(340, vw - 24), ch = 230;
+    if (!el) {
+      // The element left the screen (narrow layout, case closed): no spotlight, centred card.
+      this.rect.set(null);
+      this.cardPos.set({ top: Math.max(12, (vh - ch) / 2), left: Math.max(12, (vw - cw) / 2) });
+      return;
+    }
+    const r = el.getBoundingClientRect();
     const pad = 6;
-    const box = r ? { top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 } : { top: 12, left: 12, width: 0, height: 0 };
+    const box = { top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 };
     this.rect.set(box);
-    const cw = 340, ch = 260, vw = window.innerWidth, vh = window.innerHeight;
-    let left = box.left + box.width + 16;
-    if (left + cw > vw - 12) left = box.left - cw - 16;
-    if (left < 12) left = Math.max(12, Math.min(vw - cw - 12, box.left + 16));
-    const top = Math.max(12, Math.min(vh - ch - 12, box.top + 16));
+    let top = box.top + box.height + 12;
+    if (top + ch > vh - 12) top = box.top - ch - 12;
+    if (top < 12) top = Math.max(12, vh - ch - 12);
+    const left = Math.max(12, Math.min(vw - cw - 12, box.left));
     this.cardPos.set({ top, left });
   }
 

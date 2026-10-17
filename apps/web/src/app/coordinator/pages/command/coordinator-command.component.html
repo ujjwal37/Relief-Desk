@@ -204,6 +204,7 @@
               [class.moved-up]="isMovedUp(req)"
               [class.aiq-enter]="isJustReady(req)"
               [attr.data-case-id]="req.id"
+          [attr.data-tour]="needsDupReview(req) ? 'dup' : null"
             >
               <button
                 type="button"

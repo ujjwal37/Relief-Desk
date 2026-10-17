@@ -16,7 +16,7 @@ test('phone report is approved and the reporter sees help on the way', async ({ 
     geolocation: { latitude: 9.498, longitude: 76.339 },
     permissions: ['geolocation'],
   });
-  await context.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await context.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   const desk = await context.newPage();
   const phone = await context.newPage();
   const marker = `House 44 River Lane ${Date.now().toString().slice(-6)}`;

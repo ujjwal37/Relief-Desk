@@ -25,7 +25,7 @@ async function submit(request: APIRequestContext, text: string, pin: { lat: numb
 
 test('three reworded reports become one case, and conflicting counts keep the higher number', async ({ browser, request }) => {
   const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
-  await context.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await context.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   const desk = await context.newPage();
   await desk.goto('/coordinator/login');
   await desk.getByRole('button', { name: 'Enter as demo coordinator' }).click();

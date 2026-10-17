@@ -7,7 +7,7 @@ const CLOSED = new Set(['approved', 'dispatched', 'in_progress', 'completed', 'r
 
 async function login(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    localStorage.setItem('rd_tour_done', '1');
+    localStorage.setItem('rd_tour_v2_off', '1');
     localStorage.setItem('rd_guide_dismissed', '1');
     localStorage.removeItem('rd_theme');
   });

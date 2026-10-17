@@ -12,7 +12,7 @@ test.beforeAll(() => {
 
 async function login(page: Page) {
   await page.addInitScript(() => {
-    localStorage.setItem('rd_tour_done', '1');
+    localStorage.setItem('rd_tour_v2_off', '1');
     localStorage.setItem('rd_guide_dismissed', '1');
     localStorage.setItem('rd_theme', 'dark');
   });

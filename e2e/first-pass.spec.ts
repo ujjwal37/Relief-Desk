@@ -68,7 +68,7 @@ test.describe('public and coordinator demo', () => {
   for (const viewport of VIEWPORTS) {
     test(`${viewport.name} ${viewport.width}x${viewport.height}`, async ({ page, request }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+      await page.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
 
       await page.goto('/');
       await expect(page.getByRole('link', { name: /I need help/ })).toBeVisible();

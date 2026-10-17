@@ -26,7 +26,7 @@ async function noHorizontalOverflow(page: any): Promise<void> {
 test('capture required screenshots at 1440x900', async ({ page, request }) => {
   await resetDemo(request);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await page.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
 
   // Light theme only. Dark mode was removed, so these shots are the light desk.
   await page.goto('/coordinator/login');

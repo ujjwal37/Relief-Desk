@@ -14,8 +14,8 @@ test('a phone report updates the desk, and an approval updates the phone, with n
     geolocation: { latitude: 9.416, longitude: 76.411 },
     permissions: ['geolocation'],
   });
-  await deskContext.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
-  await phoneContext.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await deskContext.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
+  await phoneContext.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   const desk = await deskContext.newPage();
   const phone = await phoneContext.newPage();
 

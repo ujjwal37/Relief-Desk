@@ -16,7 +16,7 @@ test.beforeEach(async ({ request }) => {
 
 test('overview, teams, and agent at 1366', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
-  await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await page.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   await page.goto('/coordinator/login');
   await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await page.waitForURL(/\/coordinator\/command/);

@@ -127,13 +127,12 @@ def test_demo_teams_are_within_15_km_of_kuttanad_and_alappuzha():
         assert nearest <= 15, f"{incident['id']} {kind} is {nearest} km"
 
 
-def test_seed_inc008_has_a_nearby_medical_team():
+def test_every_seeded_team_is_inside_the_desk_area():
+    """A team 70 km away showed up on Teams as 'No nearby team'. Every loaded team must sit in the desk area."""
+    from app.tools.storage import DESK_CENTER
     storage_service.load_seed_resources()
-    data = yaml.safe_load(SEEDS.read_text(encoding="utf-8"))
-    row = next(item for item in data["incidents"] if item["id"] == "INC-008")
-    req = StoredRequest(id="INC008-test", type="medical", lat=row["lat"], lng=row["lng"], people_count=row["people"])
-    best = matching_agent.find_matches(req, save_to_storage=False)[0]
-    assert best.resource_id == "RES-MED-04"
-    assert 1.5 <= best.breakdown.distance_km <= 3.5
-    assert best.no_nearby is False
-    assert best.eta_minutes == _eta(best.breakdown.distance_km)
+    far = [(r.id, round(haversine_distance(DESK_CENTER[0], DESK_CENTER[1], r.lat, r.lng), 1))
+           for r in storage_service._resources.values()
+           if haversine_distance(DESK_CENTER[0], DESK_CENTER[1], r.lat, r.lng) > 20]
+    assert far == []
+

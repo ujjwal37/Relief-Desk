@@ -23,7 +23,7 @@ test('a phone report reaches the desk, merges, and comes back approved', async (
     geolocation: { latitude: 9.416, longitude: 76.411 },
     permissions: ['geolocation'],
   });
-  await context.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await context.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   const desk = await context.newPage();
   const phone = await context.newPage();
   await phone.setViewportSize({ width: 390, height: 844 });
@@ -92,7 +92,7 @@ test('a Hindi report uses Hindi labels, reaches the desk, and the status stays H
     geolocation: { latitude: 9.498, longitude: 76.339 },
     permissions: ['geolocation'],
   });
-  await context.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await context.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   const desk = await context.newPage();
   const phone = await context.newPage();
   await phone.setViewportSize({ width: 390, height: 844 });

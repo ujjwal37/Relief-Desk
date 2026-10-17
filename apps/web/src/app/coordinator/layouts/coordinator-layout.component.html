@@ -72,6 +72,7 @@
 
     <div class="top-strip" data-tour="welcome">
       <p class="safety-note" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
+      <a class="reporter-link" href="/report" target="_blank" rel="noopener" data-tour="reporter">{{ 'tour.reporterLink' | rdTranslate }}</a>
       @if (guideOpen()) {
         <p class="guide-inline" role="note"><span>{{ 'coord.guide' | rdTranslate }}</span><button type="button" (click)="dismissGuide()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
       }
@@ -89,7 +90,7 @@
       <iframe [attr.title]="'ui.publicReport' | rdTranslate" src="/report"></iframe>
     </aside>
   }
-  <app-tour (action)="onTourAction($event)" />
+  <app-tour />
   @if (sitrepOpen()) {
     <app-sitrep-panel [report]="sitrep()" [busy]="sitrepBusy()" [error]="sitrepError()" (closed)="sitrepOpen.set(false)" />
   }

@@ -8,7 +8,7 @@ const SHOTS = path.resolve('docs/design/reviews/walkthrough-improvements');
 const AUTH = { Authorization: 'Bearer demo-coordinator-token' };
 
 async function login(page: Page) {
-  await page.addInitScript(() => { localStorage.setItem('rd_tour_done', '1'); localStorage.setItem('rd_guide_dismissed', '1'); localStorage.setItem('rd_theme', 'light'); });
+  await page.addInitScript(() => { localStorage.setItem('rd_tour_v2_off', '1'); localStorage.setItem('rd_guide_dismissed', '1'); localStorage.setItem('rd_theme', 'light'); });
   await page.goto('/coordinator/login');
   await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await page.waitForURL(/coordinator\/command/);

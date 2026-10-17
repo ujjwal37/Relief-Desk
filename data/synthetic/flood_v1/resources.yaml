@@ -149,12 +149,12 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-MED-04
-  name: Varapuzha Relief Clinic
-  name_hi: वराप्पुषा राहत चिकित्सालय
+  name: Alappuzha Relief Clinic
+  name_hi: अलप्पुझा राहत चिकित्सालय
   kind: medical
-  ward_id: ward_5
-  lat: 10.070
-  lng: 76.285
+  ward_id: ward_3
+  lat: 9.498
+  lng: 76.339
   capacity_total: 12
   capacity_remaining: 12
   status: available

@@ -55,7 +55,7 @@ async function clickCoordLink(page: Page, name: string): Promise<void> {
 }
 
 async function login(page: Page): Promise<void> {
-  await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
+  await page.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   await page.goto('/coordinator/login');
   await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await page.waitForURL(/\/coordinator\/command/);
