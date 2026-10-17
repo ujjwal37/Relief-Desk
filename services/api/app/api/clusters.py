@@ -244,6 +244,7 @@ def case_merge(
     if req is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Case '{case_id}' not found")
     cluster = storage_service.get_cluster(req.cluster_id) if req.cluster_id else None
+    from app.api.public import public_code_for
     reports = []
     if req.report_quotes:
         for quote in req.report_quotes:

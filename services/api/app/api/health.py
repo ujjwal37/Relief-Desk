@@ -36,7 +36,7 @@ def ai_health():
     except Exception:
         pass
     local_base = (urlparse(base).hostname or "") in ("127.0.0.1", "localhost", "0.0.0.0")
-    if ag.antigravity_enabled() or local_base:
+    if ag.antigravity_enabled() or (local_base and llm_client.gemini_live()):
         # Local test mode (off by default, never production): calls go to the local CLI, not Gemini.
         provider, model, label = "antigravity-local", "local", "Local test AI"
     elif oc.enabled():
