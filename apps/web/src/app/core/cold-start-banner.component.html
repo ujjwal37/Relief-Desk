@@ -1,0 +1,11 @@
+@if (cold.phase() === 'waking') {
+  <div class="cold-banner" role="status" aria-live="polite" aria-atomic="true" aria-busy="true">
+    <span class="pulse" aria-hidden="true"></span>
+    <p>{{ 'coldStart.waking' | rdTranslate }}</p>
+  </div>
+} @else if (cold.phase() === 'failed') {
+  <div class="cold-banner is-failed" role="alert">
+    <p>{{ 'coldStart.failed' | rdTranslate }}</p>
+    <button type="button" (click)="retry()">{{ 'coldStart.retry' | rdTranslate }}</button>
+  </div>
+}

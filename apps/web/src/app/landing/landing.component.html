@@ -36,6 +36,7 @@
       </div>
 
       <p class="trust-line">{{ 'landing.trustOffline' | rdTranslate }} · {{ 'landing.trustLang' | rdTranslate }}</p>
+      <p class="cold-note desk">{{ 'coldStart.freeTier' | rdTranslate }}</p>
     </section>
 
     <aside class="right" aria-hidden="true">
@@ -60,7 +61,8 @@
   <footer class="foot">
     <p class="coord-link">{{ 'landing.coordFooter' | rdTranslate }}
       <a routerLink="/coordinator/login">{{ 'landing.signIn' | rdTranslate }}</a> ·
-      <a href="#" (click)="openDemo($event)">{{ 'landing.judgeDemo' | rdTranslate }}</a></p>
+      <a href="#" (click)="openDemo($event)">{{ 'landing.judgeDemo' | rdTranslate }}</a>
+      <span class="cold-note">{{ 'coldStart.freeTier' | rdTranslate }}</span></p>
     <rd-quiet-footer />
     <p class="cup">{{ 'landing.cup' | rdTranslate }}</p>
   </footer>

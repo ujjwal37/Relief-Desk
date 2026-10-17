@@ -5,6 +5,12 @@
     "offlineNotice": "Aap offline hain. Reconnect hone par report automatically sync ho jayegi.",
     "quiet": "Turant khatre mein ho to 112 par call karein. Yeh prototype hai, emergency service nahi."
   },
+  "coldStart": {
+    "waking": "Demo server jaag raha hai. Pehli load par kuch seconds lag sakte hain.",
+    "failed": "Demo server ne jawab nahi diya. Connection check karke phir try karein.",
+    "retry": "Phir try karein",
+    "freeTier": "Free-tier demo: pehli load mein kuch seconds lag sakte hain."
+  },
   "nav": {
     "home": "Home",
     "report": "Madad Report Karein",
