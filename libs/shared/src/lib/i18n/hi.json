@@ -304,6 +304,7 @@
     "close": "हो गया"
   },
   "coord": {
+    "noPlaceGiven": "जगह नहीं बताई",
     "findingTeam": "सबसे पास की टीम ढूँढ रहे हैं…",
     "cases": "मामले",
     "home": "होम",
@@ -1253,17 +1254,17 @@
   },
   "steps": {
     "gemini": "✨ Gemini ने 5 चरण जाँचे",
-    "recorded": "रिकॉर्डेड (Gemini) · 5 चरण",
+    "recorded": "Gemini · रिकॉर्डेड",
     "rules": "नियमों ने 5 चरण जाँचे",
     "see": "कैसे, देखें",
     "hide": "चरण छिपाएँ",
     "badgeRules": "नियम",
-    "badgeRecorded": "रिकॉर्ड किया हुआ",
-    "short.intake": "रिपोर्ट पढ़ी",
+    "badgeRecorded": "Gemini · रिकॉर्डेड",
+    "short.intake": "पढ़ा",
     "short.dedupe": "डुप्लिकेट",
-    "short.urgency": "तात्कालिकता",
+    "short.urgency": "गंभीरता",
     "short.maps": "टीम",
-    "short.explain": "समझाया",
+    "short.explain": "कारण",
     "short.you": "आप",
     "youShort": "आप मंज़ूर करें"
   },

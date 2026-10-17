@@ -574,6 +574,16 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.langService.currentLang();
     return legTitle(this.travel(prop), (key) => this.langService.translate(key));
   }
+  /** Engine for the steps chip, from what each model step actually ran on (not the case-level source). */
+  stepsEngine(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' | 'test' {
+    if (this.testWord(req)) return 'test';
+    const steps = ((req.trace || []) as any[]).filter((s) => s && s.agent !== 'Matching' && s.provider !== 'tool');
+    if (!steps.length) return this.aiKind(req);
+    const recorded = (s: any) => s.provider === 'cache' || s.provider === 'replay' || s.cached === true || s.badge === 'replay';
+    if (steps.some((s) => s.provider === 'gemini' && !recorded(s))) return 'gemini';
+    if (steps.every(recorded)) return 'recorded';
+    return 'fallback';
+  }
   aiKind(req: StoredRequest): 'gemini' | 'recorded' | 'fallback' | 'test' {
     if (this.testWord(req)) return 'test';
     if (req.ai?.provider === 'cache' || req.ai?.cached || req.ai_source === 'recorded') return 'recorded';
@@ -895,7 +905,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** One line for the collapsed AI steps. Gemini only when Gemini really ran; total time only from the real trace. */
   stepsSummary(req: StoredRequest): { text: string; gemini: boolean } {
     this.langService.currentLang();
-    const kind = this.aiKind(req);
+    const kind = this.stepsEngine(req);
     const secs = this.parallelSeconds(req);
     const key = kind === 'gemini' ? 'steps.gemini' : kind === 'recorded' ? 'steps.recorded' : 'steps.rules';
     let text = this.langService.translate(key);
@@ -2270,7 +2280,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       }
       return this.placeName(req.ward_id);
     }
-    return req.place_text || '—';
+    return req.place_text || this.langService.translate('coord.noPlaceGiven');
   }
 
   originalLangName(req: StoredRequest): string {

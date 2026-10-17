@@ -304,6 +304,7 @@
     "close": "Ho gaya"
   },
   "coord": {
+    "noPlaceGiven": "jagah nahi batayi",
     "findingTeam": "Sabse paas ki team dhoondh rahe hain…",
     "cases": "Maamle",
     "home": "Home",
@@ -1253,15 +1254,15 @@
   },
   "steps": {
     "gemini": "✨ Gemini ne 5 steps check kiye",
-    "recorded": "Recorded (Gemini) · 5 steps",
+    "recorded": "Gemini · recorded",
     "rules": "Rules ne 5 steps check kiye",
     "see": "Kaise, dekhein",
     "hide": "Steps chhupayein",
     "badgeRules": "Rules",
-    "badgeRecorded": "Recorded replay",
-    "short.intake": "Read",
-    "short.dedupe": "Duplicates check",
-    "short.urgency": "Urgency rating",
+    "badgeRecorded": "Gemini · recorded",
+    "short.intake": "Padha",
+    "short.dedupe": "Duplicate",
+    "short.urgency": "Urgency",
     "short.maps": "Team",
     "short.explain": "Samjhaya",
     "short.you": "Aap",
