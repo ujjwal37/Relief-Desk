@@ -884,6 +884,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (this.helpOpen()) { this.helpOpen.set(false); return; }
       if (this.traceRequestId()) { this.closeTrace(); return; }
       if (this.sheetOpen()) { this.closeSheet(); return; }
+      // Another layer (step popup, why-team, merged reports, Ask drawer) owns this Escape.
+      if (e.defaultPrevented || document.querySelector('[role="dialog"], [data-testid="step-details"], .cdk-overlay-pane')) return;
       if (this.selectedRequestId()) { this.selectedRequestId.set(''); return; }
       return;
     }
