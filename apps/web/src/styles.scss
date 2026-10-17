@@ -554,3 +554,32 @@ app-ai-stepper .node-title, app-ai-stepper .node-result { white-space: normal !i
 /* Tab pills: the count never squeezes the label; the label switches to its short form first. */
 .cmd .queue-tabs .qtab { overflow: hidden; }
 :lang(ml) .cmd .queue-tabs .qtab { font-size: 12px; letter-spacing: -0.01em; }
+
+/* Design r3 (2026-10-17) */
+/* A. Queue tabs: Malayalam "Sent" fits at 1280 */
+.cmd .queue-tabs{gap:4px !important;padding:3px !important}
+.cmd .queue-tabs .qtab{padding:0 6px !important;gap:4px !important}
+.cmd .queue-tabs .qtab b{flex:none;min-width:18px !important;padding:0 5px}
+:lang(ml) .cmd .queue-tabs .qtab{font-size:12px;letter-spacing:0}
+/* P0-3. Sub-bar stays on one row */
+.cmd .live-demo-top{display:flex;flex-wrap:nowrap;gap:8px;white-space:nowrap;align-items:center}
+.cmd .live-demo-top > *{flex:none}
+.cmd .live-demo-top .live-demo-problem{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.cmd .live-demo-progress{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cmd .run-short{display:none}
+@media (max-width:1359px){
+  .cmd .live-demo-progress{display:none}
+  .cmd .run-long{display:none}
+  .cmd .run-short{display:inline}
+}
+/* P1-7. Merged popup scrolls; Undo stays visible */
+app-merged-chip .pop{max-height:calc(100vh - 120px);overflow:auto}
+app-merged-chip .pop .undo{position:sticky;bottom:0;z-index:1}
+/* P1-1. Decision card on white */
+.cmd .decision-block{background:var(--surface,#fff);border:1px solid var(--line,#ddd1c8);border-radius:12px}
+/* P0-1. Team loading state (never the old grey no-team box) */
+.cmd .team-finding{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line,#ddd1c8);border-radius:12px;background:var(--surface,#fff)}
+.cmd .team-finding .tf-bar{display:block;height:10px;border-radius:5px;background:var(--surface-2,#efe9e3);animation:tfPulse 1.2s ease-in-out infinite}
+.cmd .team-finding .tf-bar.short{width:60%}
+.cmd .team-finding p{margin:4px 0 0;font:600 13px/1.4 var(--rd-font-family);color:var(--muted)}
+@keyframes tfPulse{50%{opacity:.45}}

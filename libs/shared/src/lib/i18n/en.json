@@ -155,6 +155,7 @@
     "unknown": "Unknown"
   },
   "queue": {
+    "nothingSent": "Nothing sent yet. Approved cases appear here.",
     "title": "Ranked Priority Queue",
     "critical": "Critical Urgency",
     "high": "High Urgency",
@@ -253,6 +254,7 @@
     "demoDisabled": "Demo mode is disabled on this server. Please sign in with coordinator credentials."
   },
   "demo": {
+    "runShort": "Run demo (8)",
     "phone": "Demo phone",
     "hide": "Hide phone",
     "surgeButton": "⚡ Simulate 5 reports",
@@ -302,6 +304,7 @@
     "close": "Done"
   },
   "coord": {
+    "findingTeam": "Finding the closest team…",
     "cases": "Cases",
     "home": "Home",
     "overview": "Overview",
@@ -1343,6 +1346,8 @@
   "dec": {
     "depth": "Depth",
     "selfCheck": "Self-check",
+    "aiIncomplete": "AI incomplete",
+    "aiIncompleteRules": "rules used for",
     "notStated": "not stated",
     "notRun": "not run yet"
   },

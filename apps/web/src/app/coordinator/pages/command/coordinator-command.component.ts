@@ -1610,6 +1610,16 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Steps that fell back to rules while other steps of the same case used Gemini (partial fallback). */
+  aiIncomplete(req: any): string | null {
+    const steps: any[] = Array.isArray(req?.trace) ? req.trace : [];
+    const isGemini = (s: any) => s?.provider === 'gemini';
+    const isRules = (s: any) => s?.provider === 'fallback' || s?.status === 'fallback';
+    if (!steps.some(isGemini)) return null;
+    const missed = steps.filter(isRules).map((s) => String(s.agent || ''));
+    return missed.length ? missed.join(', ') : null;
+  }
+
   /** 'about chest-deep · Gemini estimate from text', only when the model gave a quoted depth. */
   depthChip(req: StoredRequest): string | null {
     const d = req.water_depth;

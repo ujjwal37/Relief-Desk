@@ -261,7 +261,7 @@ export interface StepStatusInfo {
       flex: 1;
       min-width: 0;
       cursor: pointer;
-      padding: 0 4px;
+      padding: 0 2px;
       font-family: inherit;
     }
     .node-indicator {
@@ -330,13 +330,30 @@ export interface StepStatusInfo {
     .node-title {
       min-width: 0;
       max-width: 100%;
-      font-size: 11.5px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--text, #e8f0ec);
-      line-height: 1.25;
+      line-height: 1.3;
       white-space: normal;
-      overflow-wrap: anywhere;
-      hyphens: auto;
+      word-break: normal;
+      overflow-wrap: break-word;
+      hyphens: none;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.6em;
+    }
+    .node-result { hyphens: none; word-break: keep-all; }
+    @media (max-width: 1359px) { .node-title { font-size: 12.5px; } }
+    /* Narrow case column (390): one line per step, stacked. */
+    @media (max-width: 560px) {
+      .stepper-nodes { flex-direction: column; gap: 6px; }
+      .stepper-nodes .line { display: none; }
+      .step-node { flex-direction: row; align-items: center; text-align: left; gap: 8px; width: 100%; }
+      .node-indicator { margin-bottom: 0; }
+      .node-title-wrap { justify-content: flex-start; }
+      .node-title { min-height: 0; -webkit-line-clamp: 1; }
     }
     .tag-parallel {
       font-size: 9px;

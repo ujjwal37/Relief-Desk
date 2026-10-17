@@ -534,6 +534,14 @@ class LLMClient:
 
         try:
             return once()
+        except TimeoutError as exc:
+            if "Gemini timed out" in str(exc):
+                raise
+            # Only our own queue budget ran out: back off briefly and try once more before rules.
+            logger.info("Gemini queue busy; retrying once after a short backoff.")
+            self.guard.sleep(3.0)
+            self._tls.network_attempts = max(0, getattr(self._tls, "network_attempts", 1) - 1)
+            return once()
         except Exception as exc:
             if not _is_transient(exc):
                 raise

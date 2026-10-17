@@ -155,6 +155,7 @@
     "unknown": "Pata nahi"
   },
   "queue": {
+    "nothingSent": "Abhi kuch nahi bheja. Approved cases yahan dikhenge.",
     "title": "Ranked Priority Queue",
     "critical": "Critical Urgency",
     "high": "High Urgency",
@@ -253,6 +254,7 @@
     "demoDisabled": "Is server par demo mode band hai. Kripya coordinator credentials se sign in karein."
   },
   "demo": {
+    "runShort": "Demo chalao (8)",
     "phone": "Demo phone",
     "hide": "Phone chhupayein",
     "surgeButton": "⚡ 5 reports ka demo",
@@ -302,6 +304,7 @@
     "close": "Ho gaya"
   },
   "coord": {
+    "findingTeam": "Sabse paas ki team dhoondh rahe hain…",
     "cases": "Maamle",
     "home": "Home",
     "overview": "Summary",
@@ -1343,6 +1346,8 @@
   "dec": {
     "depth": "Gehrai",
     "selfCheck": "Self-check",
+    "aiIncomplete": "AI adhoora",
+    "aiIncompleteRules": "rules use hue:",
     "notStated": "nahi bataya",
     "notRun": "abhi nahi chala"
   },

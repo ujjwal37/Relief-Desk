@@ -39,7 +39,9 @@
       <div class="live-demo-top">
         <p class="live-demo-problem">{{ 'home.hero' | rdTranslate }}</p>
         <button type="button" class="live-demo-go" data-testid="run-live-demo" (click)="startLiveDemo()" [disabled]="liveDemo()?.running">
-          {{ (liveDemo()?.running ? 'demo.running' : 'demo.run') | rdTranslate }}
+          @if (liveDemo()?.running) { {{ 'demo.running' | rdTranslate }} } @else {
+            <span class="run-long">{{ 'demo.run' | rdTranslate }}</span><span class="run-short">{{ 'demo.runShort' | rdTranslate }}</span>
+          }
         </button>
         @if (geminiCalls() != null) { <span class="gem-calls" data-testid="gem-calls-chip">{{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }
       </div>
@@ -234,8 +236,14 @@
           }
         } @empty {
           <p class="empty" data-testid="filter-empty">
-            {{ (counts().dispatched + counts().completed > 0 && !filteredRequests().length && bandFilter() === 'all' ? 'queue.allCaughtUp' : 'coord.noFilterMatch') | rdTranslate }}
-            <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button>
+            @if (queueTab() === 'dispatched' && bandFilter() === 'all') {
+              {{ 'queue.nothingSent' | rdTranslate }}
+            } @else {
+              {{ (counts().dispatched + counts().completed > 0 && !filteredRequests().length && bandFilter() === 'all' ? 'queue.allCaughtUp' : 'coord.noFilterMatch') | rdTranslate }}
+            }
+            @if (bandFilter() !== 'all') {
+              <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button>
+            }
           </p>
         }
       </div>
@@ -409,6 +417,9 @@
             </div>
             @if (!isHoax(req)) {
               <dl class="dec-facts" data-testid="dec-facts">
+                @if (aiIncomplete(req); as miss) {
+                  <div><dt>{{ 'dec.aiIncomplete' | rdTranslate }}</dt><dd class="flag" data-testid="dec-ai-incomplete">{{ 'dec.aiIncompleteRules' | rdTranslate }} {{ miss }}</dd></div>
+                }
                 <div><dt>{{ 'dec.depth' | rdTranslate }}</dt><dd data-testid="dec-depth-row">@if (depthChip(req); as dc) { {{ dc }} <q class="dec-quote">{{ req.water_depth?.quote }}</q> } @else { {{ 'dec.notStated' | rdTranslate }} }</dd></div>
                 @if (req.self_check && selfCheckLine($any(req.self_check)); as sc) {
                   <div><dt>{{ 'dec.selfCheck' | rdTranslate }}</dt><dd data-testid="dec-selfcheck-row" [class.flag]="req.self_check?.verdict && req.self_check?.verdict !== 'pass'">{{ sc }}</dd></div>
@@ -581,8 +592,9 @@
                   <p class="nt-foot">{{ 'noTeam.footer' | rdTranslate }}</p>
                 </section>
               } @else {
-                <div class="best-team-banner no-team">
-                  <p>{{ 'coord.noTeamNow' | rdTranslate }}</p>
+                <div class="team-finding" data-testid="team-finding" role="status" aria-live="polite">
+                  <span class="tf-bar"></span><span class="tf-bar"></span><span class="tf-bar short"></span>
+                  <p>{{ 'coord.findingTeam' | rdTranslate }}</p>
                 </div>
               }
             }
