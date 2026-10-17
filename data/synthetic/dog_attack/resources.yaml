@@ -3,8 +3,8 @@ scenario_pack: dog_attack
 event_id: event_kerala_flood
 resources:
   - id: DOG-MED-01
-    name: Cedar Primary Clinic (synthetic)
-    name_hi: सीडर प्राथमिक चिकित्सालय (काल्पनिक)
+    name: Champakulam Community Health Centre
+    name_hi: चंपक्कुलम सामुदायिक स्वास्थ्य केंद्र
     kind: medical
     ward_id: ward_2
     lat: 9.432
@@ -14,8 +14,8 @@ resources:
     supplies: {arv: 10, rig: 0}
     synthetic: true
   - id: DOG-MED-02
-    name: Riverbend Referral Unit (synthetic)
-    name_hi: रिवरबेंड रेफरल यूनिट (काल्पनिक)
+    name: Kainakary Primary Health Centre
+    name_hi: कैनकरी प्राथमिक स्वास्थ्य केंद्र
     kind: medical
     ward_id: ward_2
     lat: 9.459

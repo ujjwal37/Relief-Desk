@@ -28,6 +28,19 @@ logger = logging.getLogger("relief_desk.storage")
 # DEMO_SEED=full loads every incident in the flood pack. Reset always returns here.
 SMALL_CASE_IDS = ("INC-001", "INC-002")
 SMALL_TEAM_IDS = ("RES-BOAT-01", "RES-MED-02", "RES-FOOD-03", "RES-SHELTER-02")
+# The full demo is a Kuttanad desk: these flood cases plus the DEMO-1xx cases. All teams load.
+FULL_CASE_IDS = ("INC-001", "INC-002", "INC-003", "INC-007", "INC-011", "INC-013", "INC-024", "INC-031")
+# The desk's area. Seeds outside it never load (the matching radius only limits teams, not cases).
+DESK_CENTER = (9.44, 76.40)
+DESK_AREA_KM = 15.0
+
+
+def in_desk_area(lat, lng) -> bool:
+    """True when a seeded point is inside the Kuttanad desk area. A point with no coordinates passes."""
+    if lat is None or lng is None:
+        return True
+    from app.tools.geo import haversine_distance as haversine_km
+    return haversine_km(DESK_CENTER[0], DESK_CENTER[1], float(lat), float(lng)) <= DESK_AREA_KM
 
 
 def active_seed_mode() -> str:
@@ -1010,6 +1023,8 @@ class StorageService:
                 continue
             if item.get("ward_id") in EXCLUDED_SEED_WARDS:
                 continue
+            if not in_desk_area(item.get("lat"), item.get("lng")):
+                continue
             try:
                 vuln_data = item.get("vulnerable", {})
                 vuln = VulnerableFlags(
@@ -1129,15 +1144,9 @@ class StorageService:
         from app.tools.ratelimit import rate_limiter
         rate_limiter.reset()
         if mode == "full":
-            resources = self.load_seed_resources()
-            incidents = self.load_seed_incidents()
-            packs = self.load_scenario_pack_seeds()
+            resources, incidents = self._load_kuttanad_desk()
+            packs = 0
             demo = None
-            if settings.DEMO_MODE:
-                from app.tools.demo_seed import load_demo_pack
-                demo = load_demo_pack(self)
-                from app.tools.demo_cases import load_demo_cases
-                load_demo_cases(self)
         else:
             resources = self.load_seed_resources(only_ids=SMALL_TEAM_IDS)
             incidents = self.load_seed_incidents(only_ids=SMALL_CASE_IDS)
@@ -1164,6 +1173,29 @@ class StorageService:
         except Exception:
             pass
         return {"resources": resources, "incidents": incidents, "scenario_packs": packs, "demo": demo, "seed": mode}
+
+    def _load_kuttanad_desk(self) -> tuple:
+        """Every team (counts unchanged) and a readable Kuttanad queue: FULL_CASE_IDS plus the demo cases."""
+        resources = self.load_seed_resources()
+        self.load_scenario_pack_resources()
+        incidents = self.load_seed_incidents(only_ids=FULL_CASE_IDS)
+        if settings.DEMO_MODE:
+            from app.tools.demo_cases import load_demo_cases
+            incidents += load_demo_cases(self)
+        return len(self._resources), incidents
+
+    def load_scenario_pack_resources(self) -> int:
+        """Teams from every scenario pack, without the pack's cases."""
+        import os
+        from app.tools.scenario_loader import scenario_registry
+
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
+        loaded = 0
+        for scenario in scenario_registry.list_scenarios():
+            resource_path = os.path.join(base_dir, "data", "synthetic", scenario.id, "resources.yaml")
+            if os.path.exists(resource_path):
+                loaded += self.load_seed_resources(resource_path) or 0
+        return loaded
 
     def load_missing_scenario(self, pack_id: str) -> None:
         """Append missing seed rows; switching views never replenishes used stock."""
@@ -1206,6 +1238,8 @@ def _attach_recorded(storage) -> None:
         attach_recorded_ai(storage)
     except Exception as exc:  # recordings are optional
         logger.warning("Could not attach recorded Gemini readings: %s", exc)
+    from app.tools.case_queue import mark_seed_life_threats
+    mark_seed_life_threats(storage._requests.values())
 
 
 def _seed_place(item: dict) -> Optional[str]:
@@ -1234,13 +1268,8 @@ storage_service = StorageService()
 # Auto-load seed resources and incidents
 try:
     if active_seed_mode() == "full":
-        storage_service.load_seed_resources()
-        storage_service.load_seed_incidents()
-        storage_service.load_scenario_pack_seeds()
+        storage_service._load_kuttanad_desk()
         _attach_recorded(storage_service)
-        if settings.DEMO_MODE:
-            from app.tools.demo_seed import load_demo_pack
-            load_demo_pack(storage_service)
     else:
         storage_service.load_seed_resources(only_ids=SMALL_TEAM_IDS)
         storage_service.load_seed_incidents(only_ids=SMALL_CASE_IDS)

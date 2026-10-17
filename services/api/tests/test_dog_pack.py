@@ -25,8 +25,9 @@ def test_dog_seeds_and_pack_filter():
     assert listed.status_code == 200
     assert any(row["id"] == "dog_attack" for row in listed.json())
 
+    storage_service.load_missing_scenario("dog_attack")  # packs load on request, not in the default desk
     dogs = [req for req in storage_service.list_requests() if req.id.startswith("DOG-")]
-    assert len(dogs) >= 3  # the Aluva/Chalakudy dog seed is dropped
+    assert len(dogs) >= 1  # seeds outside the Kuttanad desk area (Mala, Kothamangalam) are dropped
     assert all(req.pack_id == "dog_attack" for req in dogs)
 
     filtered = client.get("/api/requests?pack_id=dog_attack", headers=AUTH)

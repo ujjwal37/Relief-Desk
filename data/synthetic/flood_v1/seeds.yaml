@@ -821,7 +821,7 @@ incidents:
   landmark_id: LM-06
   lat: 9.422
   lng: 76.411
-  people: 4
+  people: 1
   vulnerable:
     child: false
     elderly: false
@@ -933,7 +933,7 @@ incidents:
   lng: 76.40371
   people: 5
   vulnerable:
-    child: true
+    child: false
     elderly: false
     disabled: false
     pregnant: false
@@ -1036,7 +1036,7 @@ incidents:
   lng: 76.41671
   people: 18
   vulnerable:
-    child: true
+    child: false
     elderly: false
     disabled: false
     pregnant: false
@@ -1092,8 +1092,8 @@ incidents:
   lng: 76.39571
   people: 22
   vulnerable:
-    child: true
-    elderly: true
+    child: false
+    elderly: false
     disabled: false
     pregnant: false
     medical_need: false
@@ -1387,7 +1387,7 @@ incidents:
   people: 20
   vulnerable:
     child: false
-    elderly: true
+    elderly: false
     disabled: false
     pregnant: false
     medical_need: false
@@ -1566,7 +1566,7 @@ incidents:
   lng: 76.39353
   people: 15
   vulnerable:
-    child: true
+    child: false
     elderly: false
     disabled: false
     pregnant: false

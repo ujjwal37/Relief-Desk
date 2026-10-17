@@ -40,10 +40,11 @@ def test_reset_returns_two_cases_and_full_reloads_the_pack():
         full = client.post("/api/demo/full", headers=AUTH)
         assert full.status_code == 200
         assert full.json()["seed"] == "full"
-        assert full.json()["incidents"] >= 34  # Aluva and Chalakudy seeds dropped
+        # The full demo is a readable Kuttanad desk: the chosen flood cases plus the demo cases.
+        from app.tools.storage import FULL_CASE_IDS
         again = {row["id"] for row in client.get("/api/requests", headers=AUTH).json()}
-        assert "INC-040" in again
-        assert len(again) >= 34
+        assert again == set(FULL_CASE_IDS) | demo_ids
+        assert "INC-040" not in again
 
         back = client.post("/api/demo/reset", headers=AUTH)
         assert back.json()["seed"] == "small"

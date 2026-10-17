@@ -90,9 +90,9 @@ def build_demo_reports() -> List[Dict[str, Any]]:
         "lat": 9.430,
         "lng": 76.398,
         "lang": "en",
-        "people": 5,
+        "people": 8,
         "type": "rescue",
-        "text": "Nedumudi jetty now has 5 people and the water is still rising. Earlier there were 3. Synthetic update.",
+        "text": "Nedumudi jetty: still 8 people on the roof, 3 children and 2 elderly, and the water is still rising. Synthetic update.",
         "source_id": "demo_update_01",
         "flags": ["update"],
         "duplicate_of": "INC-001",
@@ -156,7 +156,6 @@ def load_demo_pack(storage) -> Dict[str, Any]:
     hero = storage.get_request("INC-001")
     if hero is not None:
         hero.update_count = max(hero.update_count, 1)
-        hero.people_count = 5
         if "update" not in hero.flags:
             hero.flags.append("update")
         storage._requests[hero.id] = hero

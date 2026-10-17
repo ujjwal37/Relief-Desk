@@ -63,6 +63,7 @@ def test_surge_submits_five_spaced_reports_with_real_updates_and_no_dispatch(mon
 
 def test_referral_stock_excludes_closer_clinic_and_is_not_restored_as_team_capacity():
     storage_service.load_full_scenario()
+    storage_service.load_missing_scenario('dog_attack')
     req = storage_service.get_request('DOG-001')
     assert req.required_supplies == {'rig': 1}
     proposals = matching_agent.find_matches(req)

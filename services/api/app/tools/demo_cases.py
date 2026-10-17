@@ -38,7 +38,7 @@ DEMO_CASES: List[Dict[str, Any]] = [
     },
     {
         "id": "DEMO-102", "minutes": 15, "type": "medical", "ward_id": "ward_1", "lat": 9.472, "lng": 76.392,
-        "people": 1, "hazard": "stranded", "vulnerable": {"medical_need": True, "elderly": True},
+        "people": 1, "hazard": "stranded", "vulnerable": {"medical_need": True},
         "place": "Kainakary north, near the boat jetty",
         "en": "My father is on oxygen and the cylinder has about 3 hours left. House near Kainakary jetty is surrounded by water.",
         "hi": "मेरे पिता ऑक्सीजन पर हैं और सिलेंडर में लगभग 3 घंटे बचे हैं। कैनकरी जेट्टी के पास घर पानी से घिरा है।",
@@ -79,6 +79,16 @@ DEMO_CASES: List[Dict[str, Any]] = [
         "raw": "en",
     },
     {
+        # Malayalam life threat: the lane must fire on the original script, not only on a translation.
+        "id": "DEMO-109", "minutes": 2, "type": "medical", "ward_id": "ward_1", "lat": 9.474, "lng": 76.385,
+        "people": 1, "hazard": "water_rising", "vulnerable": {"medical_need": True},
+        "place": "Kainakary panchayat office",
+        "en": "My father is not breathing, water all around the house near Kainakary panchayat office. Come fast.",
+        "hi": "मेरे पिता सांस नहीं ले रहे, कैनकरी पंचायत ऑफिस के पास घर के चारों ओर पानी है। जल्दी आइए।",
+        "raw": "ml",
+        "ml": "അച്ഛൻ ശ്വസിക്കുന്നില്ല, കൈനകരി പഞ്ചായത്ത് ഓഫീസിന് അടുത്ത് വീടിന് ചുറ്റും വെള്ളം. വേഗം വരൂ.",
+    },
+    {
         "id": "DEMO-106", "minutes": 110, "type": "info", "ward_id": "ward_2", "lat": 9.414, "lng": 76.415,
         "people": None, "hazard": "none", "vulnerable": {},
         "place": "Champakulam - Alappuzha road",
@@ -115,8 +125,12 @@ def load_demo_cases(storage) -> int:
     now = datetime.now(timezone.utc)
     added = 0
 
+    from app.tools.storage import in_desk_area
+
     for row in DEMO_CASES:
         if storage.get_request(row["id"]) is not None:
+            continue
+        if not in_desk_area(row.get("lat"), row.get("lng")):
             continue
         stamp = (now - timedelta(minutes=row["minutes"])).isoformat()
         raw = row.get(row["raw"]) or row["en"]
@@ -158,6 +172,8 @@ def load_demo_cases(storage) -> int:
         req = storage.get_request(row["id"])
         if req is not None and not req.trace:
             ensure_trace(req)
+    from app.tools.case_queue import mark_seed_life_threats
+    mark_seed_life_threats(storage._requests.values())
     return added
 
 

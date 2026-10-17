@@ -118,6 +118,34 @@ def promote_life_threat(req: StoredRequest, text: str | None) -> bool:
     return True
 
 
+def mark_seed_life_threats(cases: Iterable[StoredRequest]) -> list[str]:
+    """Seeded and reloaded cases go through the same keyword lane as live intake."""
+    hit: list[str] = []
+    for req in cases:
+        status = getattr(req.status, "value", req.status)
+        if status in ("dispatched", "completed", "cancelled"):
+            continue
+        text = " ".join(x for x in (req.raw_text, req.ai_translation) if x)
+        phrase = life_phrase(req.raw_text) or life_phrase(req.ai_translation)
+        if not phrase:
+            continue
+        if req.ai_queue is None:
+            req.ai_queue = AiQueueState(
+                status="ready",
+                steps={step: "done" for step in STEPS},
+                engine="rules",
+                flags=["lifeThreat"],
+                life_phrase=phrase,
+            )
+            req.ai_queue.life_pick = life_pick_kind(req, text)
+        elif "lifeThreat" not in (req.ai_queue.flags or []):
+            req.ai_queue.flags = list(req.ai_queue.flags or []) + ["lifeThreat"]
+            req.ai_queue.life_phrase = req.ai_queue.life_phrase or phrase
+            req.ai_queue.life_pick = life_pick_kind(req, text)
+        hit.append(req.id)
+    return hit
+
+
 def is_life_threat(req: StoredRequest) -> bool:
     queue = req.ai_queue
     return bool(queue and "lifeThreat" in (queue.flags or []))
