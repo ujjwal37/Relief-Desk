@@ -10,13 +10,13 @@ describe('map markers', () => {
     expect(teamTone({ status: 'available', assigned_request_id: 'INC-1', location_updated_at: '' })).toBe('busy');
     expect(teamTone({ status: 'available', location_updated_at: '' })).toBe('stale');
     const free = markerDataUrl({ marker: 'team', vehicle: 'boat', tone: 'free' }) || '';
-    expect(decodeURIComponent(free)).toContain('#047857');
+    expect(decodeURIComponent(free)).toContain('#166534');
     expect(decodeURIComponent(free)).toContain('M2 14.5');
     const faded = markerDataUrl({ marker: 'team', vehicle: 'medical', tone: 'stale' }) || '';
     expect(decodeURIComponent(faded)).toContain('fill-opacity="0.4"');
     expect(decodeURIComponent(faded)).toContain('#6b7280');
     const urgent = markerDataUrl({ marker: 'case', tone: 'critical' }) || '';
-    expect(decodeURIComponent(urgent)).toContain('#dc2626');
+    expect(decodeURIComponent(urgent)).toContain('#b91c1c');
   });
 
   it('uses the same kilometre and minute phrase as the case card', () => {

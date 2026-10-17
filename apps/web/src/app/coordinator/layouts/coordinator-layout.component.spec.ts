@@ -49,9 +49,9 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     localStorage.removeItem('rd_tour_done');
     const fixture = await setup(null, true);
     expect(fixture.nativeElement.textContent).toContain('1 A report arrives');
-    (fixture.nativeElement.querySelector('.guide button') as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelector('.guide-inline button') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.guide')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.guide-inline')).toBeNull();
     expect(localStorage.getItem('rd_guide_dismissed')).toBe('1');
     localStorage.setItem('rd_tour_done', '1');
   });
@@ -88,10 +88,10 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     expect(header.getBoundingClientRect().width).toBe(390); // Media-query geometry is covered by Playwright at a real 390px viewport.
     expect(getComputedStyle(nav).overflow).not.toBe('auto');
     const labels = Array.from(nav.querySelectorAll('a:not(.wide-only), button')).map((el) => (el.textContent || '').trim());
-    expect(labels.some((label) => label.includes('Home'))).toBeTrue();
+    expect(labels.some((label) => label.includes('Command'))).toBeTrue();
     expect(labels.some((label) => label === 'Cases')).toBeFalse();
     expect(labels.some((label) => label === 'Dispatched')).toBeFalse();
-    expect(labels.some((label) => label.includes('Agent'))).toBeTrue();
+    expect(labels.some((label) => label.includes('Ask'))).toBeTrue();
     expect(labels.join(' ')).not.toContain('Overview');
     expect(labels.join(' ')).not.toContain('Accuracy report');
     (fixture.nativeElement.querySelector('.avatar') as HTMLButtonElement).click();
@@ -100,10 +100,10 @@ describe('CoordinatorLayoutComponent demo phone', () => {
       ((link as HTMLElement).textContent || '').includes('Accuracy report'),
     ) as HTMLElement;
     expect(accuracy).toBeTruthy();
-    const overview = Array.from(fixture.nativeElement.querySelectorAll('.menu a')).find((link) =>
-      ((link as HTMLElement).textContent || '').includes('Overview'),
+    const teams = Array.from(fixture.nativeElement.querySelectorAll('.menu a')).find((link) =>
+      ((link as HTMLElement).textContent || '').includes('Teams'),
     ) as HTMLElement;
-    expect(overview).toBeTruthy();
+    expect(teams).toBeTruthy();
   });
 
   it('opens Home when the top search box is used from another tab', async () => {
@@ -123,8 +123,8 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     const fixture = await setup(null, true);
     const pill = fixture.nativeElement.querySelector('[data-testid="ai-health"]') as HTMLElement;
     expect(pill).toBeTruthy();
-    expect(pill.textContent).toContain('Gemini unavailable, built-in rules used');
-    expect(fixture.nativeElement.querySelector('[data-testid="restart-tour"]')).toBeTruthy();
+    expect(pill.textContent).toContain('Rules mode');
+    expect(pill.textContent).not.toContain('Gemini live');
   });
 
   it('hides the phone frame when demo mode is off', async () => {

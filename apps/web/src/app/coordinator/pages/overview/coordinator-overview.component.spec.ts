@@ -56,7 +56,7 @@ describe('CoordinatorOverviewComponent map filters', () => {
     expect(legend()).toContain('Needs help now');
     expect(legend()).toContain('Help soon');
     expect(legend()).toContain('Boat');
-    expect(legend()).toContain('Medical');
+    expect(legend()).toContain('Ambulance / medical');
     expect(legend()).not.toContain('Shelter');
 
     component.urgency.set('critical');
@@ -72,7 +72,7 @@ describe('CoordinatorOverviewComponent map filters', () => {
     expect(component.mapPins().map((pin) => pin.id).sort()).toEqual(['boat', 'now']);
     expect(provider().pins.map((pin) => pin.id).sort()).toEqual(['boat', 'now']);
     expect(legend()).toContain('Boat');
-    expect(legend()).not.toContain('Medical');
+    expect(legend()).not.toContain('Ambulance / medical');
     expect(provider().pins.find((pin) => pin.id === 'boat')?.vehicle).toBe('boat');
     expect(provider().pins.find((pin) => pin.id === 'now')?.tone).toBe('critical');
   });
@@ -82,7 +82,8 @@ describe('CoordinatorOverviewComponent map filters', () => {
     spyOn(router, 'navigate').and.resolveTo(true);
     component.openReported('now');
     expect(TestBed.inject(CoordUiService).selectedCaseId()).toBe('now');
-    expect(router.navigate).toHaveBeenCalledWith(['/coordinator/command'], { queryParams: { case: 'now' } });
+    // The overview focuses the case on its own map now; it no longer jumps to Command.
+    expect(component.focusId()).toBe('now');
   });
 
   it('fits the open case and its top teams when a case is selected', () => {
@@ -102,7 +103,7 @@ describe('CoordinatorOverviewComponent map filters', () => {
       eta_minutes: 4,
       overcommit_warning: false,
     } as MatchProposal]));
-    TestBed.inject(CoordUiService).selectedCaseId.set('now');
+    component.focusCase('now');
     fixture.detectChanges();
     const provider = fixture.debugElement.query(By.css('rd-map-provider')).componentInstance as MapProviderComponent;
     expect(provider.fitAll).toBeFalse();

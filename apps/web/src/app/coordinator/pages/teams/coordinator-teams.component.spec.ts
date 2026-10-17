@@ -117,7 +117,7 @@ describe('CoordinatorTeamsComponent', () => {
     expect(provider.pins.find((pin) => pin.id === 'near')?.tone).toBe('critical');
     const legend = (fixture.nativeElement.querySelector('.legend') as HTMLElement).textContent || '';
     expect(legend).toContain('Boat');
-    expect(legend).toContain('Medical');
+    expect(legend).toContain('Ambulance / medical');
     (fixture.nativeElement.querySelector('button.row') as HTMLButtonElement).dispatchEvent(new Event('mouseenter'));
     fixture.detectChanges();
     expect(provider.highlightId).toBe('b1');

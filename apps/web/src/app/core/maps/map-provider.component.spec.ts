@@ -127,7 +127,7 @@ describe('MapProviderComponent', () => {
     expect(extended.some((point) => point.lat === 9.43 && point.lng === 76.398)).toBeTrue();
     expect(created.some((opts) => (opts['label'] as { text?: string } | undefined)?.text === '0.7 km · about 2 min')).toBeTrue();
     const line = created.find((opts) => opts['strokeWeight'] != null);
-    expect(line?.['strokeColor']).toBe('#047857');
+    expect(line?.['strokeColor']).toBe('#166534');
     expect(line?.['strokeWeight']).toBe(4);
     provider.highlightId = 'RES-BOAT-01';
     provider.pins = [{ id: 'RES-BOAT-01', lat: 9.43, lng: 76.398, title: 'Boat', marker: 'team', vehicle: 'boat', tone: 'free' }];
@@ -135,7 +135,7 @@ describe('MapProviderComponent', () => {
     const hot = created.filter((opts) => opts['strokeWeight'] != null).pop();
     expect(hot?.['strokeWeight']).toBe(6);
     const icon = created.map((opts) => opts['icon'] as { url?: string } | undefined).find((row) => row?.url);
-    expect(decodeURIComponent(icon?.url || '')).toContain('#047857');
+    expect(decodeURIComponent(icon?.url || '')).toContain('#166534');
     expect(decodeURIComponent(icon?.url || '')).toContain('M2 14.5');
     delete (window as unknown as { google?: unknown }).google;
   });
@@ -191,7 +191,7 @@ describe('MapProviderComponent', () => {
     fixture.detectChanges();
     const lines = [...fixture.nativeElement.querySelectorAll('.rd-schematic line')] as SVGLineElement[];
     expect(lines.length).toBe(2);
-    expect(lines[0].getAttribute('stroke')).toBe('#047857');
+    expect(lines[0].getAttribute('stroke')).toBe('#166534');
     expect(lines[1].getAttribute('stroke')).toBe('#6b7280');
     expect(fixture.nativeElement.textContent).toContain('1 km');
     expect(fixture.nativeElement.querySelector('svg:not(.rd-schematic)')).toBeNull();

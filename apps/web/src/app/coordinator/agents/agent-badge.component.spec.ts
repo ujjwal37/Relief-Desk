@@ -22,7 +22,7 @@ describe('AgentBadgeComponent', () => {
 
     fixture.componentRef.setInput('source', 'replay');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Recorded (Gemini)');
+    expect(fixture.nativeElement.textContent).toContain('Recorded replay');
     expect(fixture.nativeElement.querySelector('.replay')).not.toBeNull();
   });
 });

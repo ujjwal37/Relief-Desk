@@ -32,7 +32,7 @@ describe('MergedChipComponent', () => {
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Reports merged into this case');
-    expect(text).toContain('Not recorded');
+    expect(text).toContain('Text not stored');
     expect(text).toContain('duplicate');
     expect(text).toContain('Undo merge');
     expect(api.getMerge).toHaveBeenCalledWith('INC-001');

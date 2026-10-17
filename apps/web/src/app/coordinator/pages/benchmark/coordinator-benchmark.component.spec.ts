@@ -49,7 +49,8 @@ describe('CoordinatorBenchmarkComponent', () => {
     const cmp = fixture.componentInstance;
     expect(cmp.rows().find((row) => row.key === 'duplicate_recall_pct')?.relief).toBe('11.1');
     expect(cmp.rows().find((row) => row.key === 'critical_case_mean_rank')?.relief).toBe('10.5');
-    expect(cmp.rows().find((row) => row.key === 'cost_per_1000_msgs_usd')?.relief).toBe('$0.0467');
+    // Cost is only shown when Gemini was actually measured; this fixture has measured: false.
+    expect(cmp.rows().find((row) => row.key === 'cost_per_1000_msgs_usd')).toBeUndefined();
     expect(cmp.subtitle()).toContain('seed 42');
     expect(cmp.gemini()).toEqual(jasmine.objectContaining({ model: 'gemini-3.8-flash', measured: false, n: '168', baseType: '16.3' }));
     expect(text).not.toContain('Example data');

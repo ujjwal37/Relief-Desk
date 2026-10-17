@@ -52,7 +52,7 @@ describe('StepDetailDialogComponent', () => {
     expect(root.querySelector('.chips')?.textContent).toContain('12');
     expect(root.querySelector('.chips')?.textContent).toContain('Water rising');
     expect(root.querySelector('.chips')?.textContent).not.toContain('ux.none');
-    expect(root.querySelector('.why')?.textContent).toContain('Why');
+    expect(root.querySelector('.why')?.textContent).toContain('Inputs used');
     expect(root.querySelector('.note')?.textContent).toBe('Gemini gemini-3.5-flash-lite · 17.2 s');
     expect(root.querySelector('[data-testid="prompt-and-response"]')).toBeNull();
     (root.querySelector('[data-testid="show-prompt"]') as HTMLButtonElement).click();
@@ -107,8 +107,11 @@ describe('StepDetailDialogComponent', () => {
     });
     expect(fixture.nativeElement.querySelector('.headline')?.textContent).toContain('2.4 km');
     expect(fixture.nativeElement.textContent).not.toContain('—');
-    (fixture.nativeElement.querySelector('[data-testid="show-prompt"]') as HTMLButtonElement).click();
+    // With no prompt there is nothing to reveal; the no-model line shows directly.
+    const reveal = fixture.nativeElement.querySelector('[data-testid="show-prompt"]') as HTMLButtonElement | null;
+    reveal?.click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('No model ran for this step');
+    expect(fixture.nativeElement.textContent).toContain('Rules mode');
+    expect(fixture.nativeElement.querySelector('[data-testid="prompt-and-response"]')).toBeNull();
   });
 });

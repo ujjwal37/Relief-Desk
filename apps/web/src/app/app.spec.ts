@@ -34,7 +34,10 @@ describe('App & Routing Shell', () => {
 
   it('coordinatorAuthGuard should allow access when coordinator is signed in', async () => {
     const authService = TestBed.inject(AuthService);
-    await authService.login(DEMO_COORDINATOR_EMAIL, DEMO_COORDINATOR_PASSWORD);
+    // Sign-in talks to the API; stub the response a real demo login returns.
+    spyOn(window, 'fetch').and.resolveTo(new Response(JSON.stringify({ token: 'jwt', email: DEMO_COORDINATOR_EMAIL, role: 'coordinator' }), { status: 200 }));
+    const signedIn = await authService.login(DEMO_COORDINATOR_EMAIL, DEMO_COORDINATOR_PASSWORD);
+    expect(signedIn.success).toBeTrue();
 
     const result = TestBed.runInInjectionContext(() =>
       coordinatorAuthGuard({} as any, { url: '/coordinator/command' } as any)

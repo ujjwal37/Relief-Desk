@@ -25,6 +25,8 @@ describe('AgentTraceDrawerComponent', () => {
   });
 
   it('lists five agents, the parallel group, and the offline badge', () => {
+    (fixture.nativeElement.querySelector('.btn-tech-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
     expect(text).toContain('Understood the report');
@@ -32,8 +34,8 @@ describe('AgentTraceDrawerComponent', () => {
     expect(text).toContain('Rated urgency');
     expect(text).toContain('Found the closest team');
     expect(text).toContain('Explained the choice');
-    expect(text).toContain('parallel');
-    expect(fixture.nativeElement.querySelector('.run-badge')?.textContent).toContain('Gemini unavailable, built-in rules used');
+    expect(text).toContain('At the same time');
+    expect(fixture.nativeElement.querySelector('.run-badge')?.textContent).toContain('Rules mode');
     expect(text).not.toContain('Offline fallback');
     expect(text).not.toContain('ux.none');
     expect(text).toContain('Google Maps');
@@ -73,6 +75,7 @@ describe('AgentTraceDrawerComponent', () => {
 
   it('previews fallback without mutating saved provenance', () => {
     const original = JSON.stringify(REQUEST);
+    fixture.componentInstance.techOpen.set(true);
     fixture.componentInstance.simulateOutage.set(true);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Preview only');
