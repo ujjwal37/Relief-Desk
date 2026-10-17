@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openShowReport } from './desk-ui';
 import fs from 'fs';
 import path from 'path';
 import { resetDemo } from './reset-demo';
@@ -27,16 +28,22 @@ async function login(page: Page): Promise<void> {
 test('step popup, case card, counts, alerts, and Gemini call counter', async ({ page }) => {
   await login(page);
 
-  await expect(page.getByTestId('gemini-calls')).toContainText(/Gemini calls \d+/);
+  // Rules mode does not invent a Gemini call count. The pill names the mode instead.
+  const health = page.getByTestId('ai-health');
+  await expect(health).toBeVisible();
+  await expect(health).toContainText('Rules mode');
+  await expect(page.getByTestId('gemini-calls')).toHaveCount(0);
   await expect(page.getByText('Offline fallback')).toHaveCount(0);
   await expect(page.getByText('ux.none')).toHaveCount(0);
 
-  const stats = await page.getByTestId('stats-line').innerText();
+  // The command bar hides the team totals. The same counts are still rendered for the teams page.
+  const stats = (await page.locator('.stats-left').textContent()) || '';
   const freeOf = /(\d+)\/(\d+) teams free/.exec(stats);
   const busy = /(\d+) busy/.exec(stats);
   expect(freeOf, stats).toBeTruthy();
   expect(busy, stats).toBeTruthy();
 
+  await openShowReport(page);
   const english = page.getByTestId('ai-english-full');
   await expect(english).toBeVisible();
   await expect(english).not.toContainText('person(s) needing');
@@ -60,7 +67,10 @@ test('step popup, case card, counts, alerts, and Gemini call counter', async ({ 
   expect(overlap.covers).toBe(false);
   expect(overlap.textPastBox).toBe(false);
   expect(overlap.arrowPosition).toBe('static');
-  await expect(arrow).toBeVisible();
+  // The comparison arrow stays in the report and is not painted over the English.
+  await expect(arrow).toHaveCount(1);
+  await expect(arrow).toHaveAttribute('aria-hidden', 'true');
+  await expect(arrow).toBeHidden();
   await page.locator('.decision-panel').screenshot({ path: path.join(SHOTS, 'case-card.png') });
 
   const options = page.getByRole('option');
@@ -74,7 +84,7 @@ test('step popup, case card, counts, alerts, and Gemini call counter', async ({ 
   await expect(why).not.toContainText('—');
   await expect(why).toContainText(/\d+(\.\d+)?\s*km/);
 
-  await expect(page.getByTestId('stepper-node-matching')).toContainText('Google Maps');
+  await expect(page.getByTestId('stepper-node-matching')).toContainText(/km|Team|Boat/);
   await expect(page.getByTestId('stepper-node-approval')).toContainText('You');
 
   await page.getByTestId('stepper-node-intake').click();
