@@ -1,3 +1,4 @@
+import { projectBase, inKuttanad } from '../../../core/maps/kuttanad-base';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -348,9 +349,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** Schematic district outlines in lat/lng, south to north, around the seeded wards. */
   private readonly districtRings: { id: string; ring: [number, number][] }[] = [
     { id: 'alappuzha', ring: [[9.34, 76.30], [9.34, 76.55], [9.70, 76.52], [9.72, 76.31]] },
-    { id: 'ernakulam', ring: [[9.90, 76.18], [9.95, 76.72], [10.28, 76.70], [10.22, 76.16]] },
-    { id: 'thrissur', ring: [[10.15, 76.02], [10.18, 76.48], [10.62, 76.42], [10.58, 76.02]] },
-    { id: 'wayanad', ring: [[11.42, 75.95], [11.46, 76.28], [11.78, 76.24], [11.74, 75.96]] },
   ];
   /** Open cases, or the selected case plus its candidate teams so the line is on screen. */
   readonly mapFrame = computed(() => {
@@ -386,6 +384,17 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       x: 36 + ((lng - frame.minLo) / Math.max(1e-6, frame.maxLo - frame.minLo)) * 528,
       y: 28 + (1 - (lat - frame.minLa) / Math.max(1e-6, frame.maxLa - frame.minLa)) * 424,
     };
+  }
+  readonly mapBase = computed(() => projectBase((lat, lng) => this.project(lat, lng)));
+  /** Map footer names the area of the selected case, not a fixed district. */
+  mapAreaLabel(): string {
+    this.langService.currentLang();
+    const req = this.selectedRequest();
+    if (req && inKuttanad(req.lat, req.lng)) {
+      const ward = this.getWardText(req);
+      return ward && ward !== '—' ? `${ward}, Kuttanad · Alappuzha` : 'Kuttanad · Alappuzha';
+    }
+    return req?.place_text ? req.place_text : 'Kuttanad · Alappuzha';
   }
   readonly mapDistricts = computed(() =>
     this.districtRings.map((district) => {

@@ -719,7 +719,11 @@
     "runDetails": "रन विवरण",
     "lowerBetter": "कम बेहतर है",
     "higherBetter": "अधिक बेहतर है",
-    "geminiTile": "✨ जेमिनी {v}"
+    "geminiTile": "✨ जेमिनी {v}",
+    "runGemini": "Gemini ({model}) से मापा",
+    "runRules": "केवल नियम आधार (इस रन में Gemini नहीं)",
+    "testN": "टेस्ट सेट n = {n} संदेश",
+    "smallSet": "छोटा टेस्ट सेट (n = {n}); गारंटी नहीं"
   },
   "home": {
     "title": "हम कैसे मदद करें?",

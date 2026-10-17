@@ -328,6 +328,11 @@
         >
           <svg [attr.viewBox]="mapViewBox()" class="svgmap" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="'ui.map' | rdTranslate">
             <rect width="600" height="480" fill="var(--map-bg)"/>
+            @if (mapBase(); as mb) {
+            @for (w of mb.water; track $index) { <polygon class="kb-water" [attr.points]="w"/> }
+            @for (w of mb.wards; track w.id) { <polygon class="kb-ward" [attr.points]="w.points"/><text class="kb-wlabel" [attr.x]="w.lx" [attr.y]="w.ly" text-anchor="middle">{{ w.name }}</text> }
+            @for (r of mb.rivers; track $index) { <polyline class="kb-river" [attr.points]="r"/> }
+            }
             @for (d of mapDistricts(); track d.id) {
               <polygon class="district" [attr.points]="d.points"></polygon>
               <text class="dlabel" [attr.x]="d.lx" [attr.y]="d.ly" text-anchor="middle">{{ ('coord.district.' + d.id) | rdTranslate }}</text>
@@ -372,7 +377,7 @@
 
         <!-- Bottom Left Stylised map watermark -->
         <div class="map-status-overlay">
-          <span>{{ 'coord.district.ernakulam' | rdTranslate }} · {{ selectedRequest()?.id }}</span>
+          <span>{{ mapAreaLabel() }}@if (selectedRequest(); as sr) { · {{ shortId(sr.id, sr.public_code) }} }</span>
         </div>
       </div>
 
@@ -597,7 +602,7 @@
         <!-- 6. Pinned Footer Actions -->
         <footer class="decision-pinned-footer" data-tour="actions">
           @if (tipOpen()) {
-            <p class="key-tip" role="note" data-testid="key-tip">{{ 'queue.tip' | rdTranslate }} <button type="button" (click)="dismissTip()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
+            <p class="key-tip" role="note" data-testid="key-tip">{{ (selectedRequest() && isHoax(selectedRequest()!) && !hoaxOverride() ? 'hoax.tipD' : 'queue.tip') | rdTranslate }} <button type="button" (click)="dismissTip()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
           }
           <p class="you-decide-msg">{{ 'coord.youDecide' | rdTranslate }}</p>
 
@@ -663,7 +668,7 @@
             </div>
           } @else if (isHoax(req) && !hoaxOverride()) {
             <div class="footer-buttons-row hoax-actions">
-              <button type="button" class="btn-approve btn-dismiss-hoax" data-testid="dismiss-hoax" [disabled]="offline() || approving()" (click)="dismissHoax(req)">{{ 'hoax.dismiss' | rdTranslate }}</button>
+              <button type="button" class="btn-approve btn-dismiss-hoax" data-testid="dismiss-hoax" [disabled]="offline() || approving()" (click)="dismissHoax(req)">{{ 'hoax.dismiss' | rdTranslate }} <kbd>D</kbd></button>
               <button type="button" class="btn-sec btn-not-hoax" data-testid="not-hoax" (click)="hoaxOverride.set(true)">{{ 'hoax.notHoax' | rdTranslate }}</button>
               <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
             </div>

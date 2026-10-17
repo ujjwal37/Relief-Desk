@@ -457,3 +457,18 @@ body:has(.cmd) .top-strip{display:none}
 .cmd .dec-facts dd { margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cmd .dec-facts dd.flag { color:#a35c00; font-weight:600; }
 .cmd .dec-depth { display:none; }
+
+/* Offline Kuttanad base map (lake, rivers, panchayat outlines) */
+.kb-water { fill:#cfe0ea; stroke:#a9c6d6; stroke-width:1; }
+.kb-river { fill:none; stroke:#a9c6d6; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; }
+.kb-ward { fill:#f1ece2; stroke:#c9bfae; stroke-width:1; stroke-dasharray:4 3; }
+.kb-wlabel { font:600 11px system-ui, sans-serif; fill:#7b7466; letter-spacing:.02em; pointer-events:none; }
+
+/* 1200-1439: action bar stays one row; ? is a 36px icon; room under the decision for the tip bar */
+@media (min-width:1200px) and (max-width:1439px) {
+  .cmd .decision-pinned-footer .footer-buttons-row { flex-wrap:nowrap !important; gap:8px !important; }
+  .cmd .decision-pinned-footer .footer-buttons-row > button { white-space:nowrap; min-width:0; }
+  .cmd .decision-pinned-footer .btn-help { width:36px !important; height:36px !important; min-width:36px !important; padding:0 !important; flex:none !important; border-radius:50% !important; }
+  .cmd .decision-pinned-footer .btn-reject, .cmd .decision-pinned-footer .btn-change { padding-inline:10px !important; }
+}
+.cmd .decision-scroll-content { padding-bottom:132px !important; }

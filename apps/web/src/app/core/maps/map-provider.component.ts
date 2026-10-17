@@ -1,3 +1,4 @@
+import { projectBase } from './kuttanad-base';
 import { RdTranslatePipe } from '@rd/shared';
 import { CommonModule } from '@angular/common';
 import { PINE_SAND_MAP_STYLE } from './pine-sand-map-style';
@@ -77,6 +78,11 @@ export interface MapLeg {
       @if (builtin()) {
         <svg class="rd-schematic" viewBox="0 0 600 480" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Relief map">
           <rect width="600" height="480" fill="var(--map-bg, #efeae0)"/>
+          @if (schematicBase(); as sb) {
+            @for (w of sb.water; track $index) { <polygon class="kb-water" [attr.points]="w"/> }
+            @for (w of sb.wards; track w.id) { <polygon class="kb-ward" [attr.points]="w.points"/><text class="kb-wlabel" [attr.x]="w.lx" [attr.y]="w.ly" text-anchor="middle">{{ w.name }}</text> }
+            @for (r of sb.rivers; track $index) { <polyline class="kb-river" [attr.points]="r"/> }
+          }
           @for (leg of schematicLegs(); track leg.id) {
             <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.stroke" [attr.stroke-width]="leg.width" [attr.stroke-dasharray]="leg.dash" stroke-linecap="round"/>
             @if (leg.title) {
@@ -291,6 +297,14 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         width: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
       };
     });
+  }
+
+  schematicBase() {
+    const f = this.schematicFrame();
+    return projectBase((lat, lng) => ({
+      x: 28 + ((lng - f.minLo) / Math.max(1e-6, f.maxLo - f.minLo)) * 544,
+      y: 28 + (1 - (lat - f.minLa) / Math.max(1e-6, f.maxLa - f.minLa)) * 424,
+    }));
   }
 
   private schematicFrame(): { minLa: number; maxLa: number; minLo: number; maxLo: number } {

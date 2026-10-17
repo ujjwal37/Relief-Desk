@@ -719,7 +719,11 @@
     "runDetails": "Run details",
     "lowerBetter": "kam behtar hai",
     "higherBetter": "zyada behtar hai",
-    "geminiTile": "✨ Gemini {v}"
+    "geminiTile": "✨ Gemini {v}",
+    "runGemini": "Gemini ({model}) se naapa",
+    "runRules": "Sirf rules baseline (is run me Gemini nahi)",
+    "testN": "test set n = {n} messages",
+    "smallSet": "Chhota test set (n = {n}); guarantee nahi"
   },
   "home": {
     "title": "Hum kaise madad karein?",

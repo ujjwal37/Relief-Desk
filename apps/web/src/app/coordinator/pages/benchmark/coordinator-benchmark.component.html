@@ -9,6 +9,11 @@
         @if (gemini(); as g) { · {{ (g.measured ? 'bench.geminiMeasured' : 'bench.geminiNotInRun') | rdTranslate }} }
       </p>
     }
+    <p class="run-line" data-testid="bench-run-line">
+      @if (gemini()?.measured) { {{ 'bench.runGemini' | rdTranslate:{ model: gemini()?.model || '' } }} } @else { {{ 'bench.runRules' | rdTranslate }} }
+      @if (testN()) { · {{ 'bench.testN' | rdTranslate:{ n: testN() } }} }
+      @if (gemini()?.date) { · {{ gemini()?.date }} }
+    </p>
     @if (gemini(); as g) {
       <details class="run-details">
         <summary>{{ 'bench.runDetails' | rdTranslate }}</summary>
@@ -45,7 +50,8 @@
       @for (row of realRows(); track row.key) {
         <article class="tile" [attr.title]="row.means | rdTranslate">
           <h2>{{ row.label | rdTranslate }}</h2>
-          <p class="big">{{ row.relief || '—' }}@if (row.pct && row.relief) {<small>%</small>}</p>
+          <p class="big">{{ row.relief || '—' }}@if (row.unit && row.relief) {<small>{{ row.unit }}</small>}</p>
+          @if (extreme(row)) { <p class="caveat" data-testid="bench-caveat">{{ 'bench.smallSet' | rdTranslate:{ n: testN() || '?' } }}</p> }
           <p class="dir" [class.low]="lowerBetter(row.key)">{{ (lowerBetter(row.key) ? 'bench.lowerBetter' : 'bench.higherBetter') | rdTranslate }}</p>
           @if (geminiValue(row); as value) { <p class="gem">{{ 'bench.geminiTile' | rdTranslate:{ v: value } }}</p> }
           @if (row.baseline) { <p class="base">{{ row.baselineName | rdTranslate }} {{ row.baseline }}</p> }

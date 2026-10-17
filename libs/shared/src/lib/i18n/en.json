@@ -719,7 +719,11 @@
     "runDetails": "Run details",
     "lowerBetter": "lower is better",
     "higherBetter": "higher is better",
-    "geminiTile": "✨ Gemini {v}"
+    "geminiTile": "✨ Gemini {v}",
+    "runGemini": "Measured with Gemini ({model})",
+    "runRules": "Rules-only baseline (Gemini not in this run)",
+    "testN": "test set n = {n} messages",
+    "smallSet": "Small test set (n = {n}); not a guarantee"
   },
   "home": {
     "title": "How can we help?",

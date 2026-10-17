@@ -719,7 +719,11 @@
     "runDetails": "റൺ വിവരങ്ങൾ",
     "lowerBetter": "കുറവാണ് നല്ലത്",
     "higherBetter": "കൂടുതലാണ് നല്ലത്",
-    "geminiTile": "✨ Gemini {v}"
+    "geminiTile": "✨ Gemini {v}",
+    "runGemini": "Gemini ({model}) ഉപയോഗിച്ച് അളന്നു",
+    "runRules": "റൂൾസ് മാത്രം അടിസ്ഥാനം (ഈ റണ്ണിൽ Gemini ഇല്ല)",
+    "testN": "ടെസ്റ്റ് സെറ്റ് n = {n} സന്ദേശങ്ങൾ",
+    "smallSet": "ചെറിയ ടെസ്റ്റ് സെറ്റ് (n = {n}); ഉറപ്പല്ല"
   },
   "home": {
     "title": "ഞങ്ങൾക്ക് എങ്ങനെ സഹായിക്കാം?",
