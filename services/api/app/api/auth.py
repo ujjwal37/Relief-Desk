@@ -12,7 +12,6 @@ logger = logging.getLogger("relief_desk.auth")
 router = APIRouter(prefix="/api", tags=["auth"])
 
 DEMO_COORDINATOR_EMAIL = "demo-coordinator@reliefdesk.internal"
-DEMO_COORDINATOR_PASSWORD = "KeralaRelief2026!"
 DEMO_COORDINATOR_TOKEN = "demo-coordinator-token"
 
 
@@ -35,6 +34,16 @@ class LoginResponse(BaseModel):
     display_name: str
 
 
+def _signing_key() -> str:
+    secret = (settings.JWT_SECRET or "").strip()
+    if not secret:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="JWT_SECRET is not configured",
+        )
+    return secret
+
+
 def create_coordinator_token(email: str = DEMO_COORDINATOR_EMAIL) -> str:
     payload = {
         "sub": email,
@@ -43,7 +52,7 @@ def create_coordinator_token(email: str = DEMO_COORDINATOR_EMAIL) -> str:
         "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=12),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
-    return jwt.encode(payload, settings.JWT_SECRET, algorithm="HS256")
+    return jwt.encode(payload, _signing_key(), algorithm="HS256")
 
 
 def is_production() -> bool:
@@ -60,22 +69,24 @@ def verify_coordinator_token(token: str) -> CoordinatorUser:
             display_name="Kerala Emergency Coordinator",
         )
 
-    # 2. Check signed JWT
-    try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
-        if payload.get("role") != "coordinator":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Forbidden: User lacks coordinator role claim",
+    # 2. Check signed JWT. An empty key must not verify anything.
+    secret = (settings.JWT_SECRET or "").strip()
+    if secret:
+        try:
+            payload = jwt.decode(token, secret, algorithms=["HS256"])
+            if payload.get("role") != "coordinator":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Forbidden: User lacks coordinator role claim",
+                )
+            return CoordinatorUser(
+                uid=payload.get("sub", "coordinator-user"),
+                email=payload.get("email", DEMO_COORDINATOR_EMAIL),
+                role=payload.get("role", "coordinator"),
+                display_name="Verified Coordinator",
             )
-        return CoordinatorUser(
-            uid=payload.get("sub", "coordinator-user"),
-            email=payload.get("email", DEMO_COORDINATOR_EMAIL),
-            role=payload.get("role", "coordinator"),
-            display_name="Verified Coordinator",
-        )
-    except jwt.PyJWTError:
-        pass
+        except jwt.PyJWTError:
+            pass
 
     # 3. Check Firebase Admin if initialized
     try:
@@ -129,10 +140,9 @@ def _password_ok(password: str) -> bool:
     import hmac
 
     configured = (settings.COORDINATOR_PASSWORD or "").strip()
-    if configured and hmac.compare_digest(password, configured):
-        return True
-    # The repo's demo password is public, so it only works outside production.
-    return not is_production() and hmac.compare_digest(password, DEMO_COORDINATOR_PASSWORD)
+    if not configured:
+        return False
+    return hmac.compare_digest(password, configured)
 
 
 def _demo_session() -> "LoginResponse":

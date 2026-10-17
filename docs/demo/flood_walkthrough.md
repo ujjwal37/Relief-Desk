@@ -19,4 +19,4 @@ The command sets `DEMO_MODE=true` and `GEMINI_ENABLED=false` before the API load
 | 2:15 | Hoax row still in the list. Public nearby map is area cells only. | Flagged, not deleted. Public sees areas, not people. |
 | 2:35 | Numbers from `bench/results/latest.json`. Call 112. | Measured on synthetic data; decision support, not dispatch. |
 
-Presenter login, if the coordinator screen asks: `demo-coordinator@reliefdesk.internal` / `KeralaRelief2026!`.
+Presenter login: open `/coordinator/login` and choose **Enter as demo coordinator** (one-click). The API needs `DEMO_MODE=true` and `JWT_SECRET`.

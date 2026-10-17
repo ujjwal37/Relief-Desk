@@ -48,10 +48,10 @@ class Settings(BaseSettings):
     OPENAI_COMPAT_LABEL: str = ""
     DEMO_MODE: bool = True
     # "production" on Cloud Run. Locally it stays "development", where the fixed demo token
-    # and the demo password still work for dev and tests.
+    # still works for dev and tests. The password form reads COORDINATOR_PASSWORD only.
     ENV: str = "development"
-    # Optional password for the coordinator form in production. Empty means only the
-    # one-click demo login (DEMO_MODE) can sign in there.
+    # Optional. POST /api/auth/login compares this value. Empty disables the password form.
+    # One-click POST /api/auth/demo-login does not read it.
     COORDINATOR_PASSWORD: str = ""
     # small: two cases and a few teams. full: the flood pack (benchmark and record_ai read the files directly).
     DEMO_SEED: str = "small"
@@ -69,7 +69,9 @@ class Settings(BaseSettings):
     # App security & throttling
     API_CORS_ORIGINS: List[str] = ["http://localhost:4200", "http://localhost:8000"]
     SALT_PHONE_HASH: str = "synthetic-salt"
-    JWT_SECRET: str = "relief-desk-coordinator-secret-2026"
+    # Signs coordinator JWTs. No source default. Set JWT_SECRET in the environment,
+    # or on Cloud Run mount Secret Manager secret jwt-secret. Empty disables signing.
+    JWT_SECRET: str = ""
     FIREBASE_AUTH_EMULATOR_HOST: Optional[str] = None
     RATE_LIMIT_REPORTS_PER_HOUR: int = 10
     DEFAULT_LANG: str = "en"

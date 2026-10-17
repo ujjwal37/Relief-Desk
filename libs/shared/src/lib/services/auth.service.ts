@@ -8,7 +8,7 @@ export interface UserSession {
 }
 
 export const DEMO_COORDINATOR_EMAIL = 'demo-coordinator@reliefdesk.internal';
-export const DEMO_COORDINATOR_PASSWORD = 'KeralaRelief2026!';
+/** Public sentinel. Stored sessions that still carry this token are dropped. Production refuses it. */
 export const DEMO_COORDINATOR_TOKEN = 'demo-coordinator-token';
 
 @Injectable({

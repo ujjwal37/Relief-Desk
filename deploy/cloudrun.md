@@ -43,12 +43,13 @@ npx firebase-tools projects:addfirebase "$PROJECT_ID"
 
 The process reads environment variables. It does not call the Secret Manager API. Mount the secrets as env vars. Values stay in your shell and in Secret Manager. They do not go in git, in `deploy/cloudrun.env.yaml`, or in the image.
 
-The three mounts:
+The mounts:
 
 | Env var | Secret id | Why |
 |---|---|---|
 | `GEMINI_API_KEY` | `gemini-api-key` | Intake, dedupe judge, embeddings, explainer. `replace-me` keeps the deterministic fallback. |
-| `JWT_SECRET` | `jwt-secret` | Signs coordinator JWTs (`POST /api/auth/login`). The source default is a demo constant. Mount a new value before the site is public. |
+| `JWT_SECRET` | `jwt-secret` | Signs coordinator JWTs, including one-click `POST /api/auth/demo-login`. There is no source default. If this secret is missing, demo login returns 503. Mount it before deploying the revision that removed the default. Use a new random value. Do not reuse `relief-desk-coordinator-secret-2026` (it is in git history). |
+| `COORDINATOR_PASSWORD` | `coordinator-password` | Optional. Only `POST /api/auth/login` reads it. The judge button calls `/api/auth/demo-login` and does not need this secret. |
 | `GOOGLE_MAPS_API_KEY` | `google-maps-api-key` | Returned to the browser by `GET /api/config/maps`. Restrict it to the Hosting origins. `replace-me` keeps the SVG map. |
 
 `SALT_PHONE_HASH` is a placeholder (`replace-me`) in the env file. To use a private salt, delete that line from `deploy/cloudrun.env.yaml` and add `SALT_PHONE_HASH=salt-phone-hash:latest` to `--set-secrets`.
@@ -71,6 +72,8 @@ create_secret() {
 create_secret gemini-api-key
 create_secret jwt-secret
 create_secret google-maps-api-key
+# Optional. Skip this if judges only use the one-click button.
+# create_secret coordinator-password
 ```
 
 If a secret already exists, add a version instead of `secrets create`:
@@ -90,6 +93,11 @@ for SECRET in gemini-api-key jwt-secret google-maps-api-key; do
     --member="serviceAccount:${RUNTIME_SA}" \
     --role="roles/secretmanager.secretAccessor"
 done
+
+# If you created coordinator-password, grant the same role on that secret too:
+# gcloud secrets add-iam-policy-binding coordinator-password \
+#   --member="serviceAccount:${RUNTIME_SA}" \
+#   --role="roles/secretmanager.secretAccessor"
 ```
 
 ## 2. API container
@@ -237,7 +245,11 @@ The CLI prints `Hosting URL: https://PROJECT_ID.web.app` (and usually `https://P
 
 Maps key referrers, if you mounted a real browser key: `https://PROJECT_ID.web.app/*` and `https://PROJECT_ID.firebaseapp.com/*`, plus localhost. Until `GOOGLE_MAPS_API_KEY` is a real key, the map stays the built-in SVG.
 
-Coordinator login on the hosted site is the synthetic account already in the README (`demo-coordinator@reliefdesk.internal`). `POST /api/auth/login` checks that password and signs a JWT with `JWT_SECRET`. The API also accepts the committed synthetic bearer `demo-coordinator-token` (`services/api/app/api/auth.py`). That token is the demo login, and mounting `JWT_SECRET` does not turn it off. `python scripts/seed.py` writes the same synthetic credentials locally and, only when `FIREBASE_AUTH_EMULATOR_HOST` is set, also talks to the Auth emulator. Leave that variable empty on Cloud Run.
+Judges sign in with **Enter as demo coordinator** on `/coordinator/login`. That calls `POST /api/auth/demo-login`. The handler checks `DEMO_MODE` (set in `deploy/cloudrun.env.yaml`) and returns a JWT signed with `JWT_SECRET`. It does not read a password. Before this revision is deployed, Secret Manager secret **`jwt-secret`** must be mounted as `JWT_SECRET` (already on the `--set-secrets` line). There is no code default. If the running service was still on the old source default, add a new version of `jwt-secret` with a new random value and redeploy. Do not reuse `relief-desk-coordinator-secret-2026`.
+
+The email/password form calls `POST /api/auth/login` and succeeds only when `COORDINATOR_PASSWORD` matches. That variable is optional for the demo. To enable the form, create secret id **`coordinator-password`** and add `COORDINATOR_PASSWORD=coordinator-password:latest` to `--set-secrets`. Leave it unset and the form stays closed. The one-click button still works.
+
+`ENV=production` refuses the old bearer `demo-coordinator-token`. `python scripts/seed.py` is local only. Leave `FIREBASE_AUTH_EMULATOR_HOST` empty on Cloud Run.
 
 Smoke from a network that is not your laptop:
 
