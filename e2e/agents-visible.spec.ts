@@ -128,7 +128,7 @@ test.describe('agents visible', () => {
         const menu = page.locator('button.avatar');
         const closeMenu = () => page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
         await menu.click();
-        await expect(page.locator('.menu').getByRole('button', { name: 'Hinglish' })).toHaveCount(0);
+        await expect(page.locator('.menu').getByRole('button', { name: 'Hinglish' })).toBeVisible();
         await expect(page.locator('.menu').getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
         await page.locator('.menu').getByRole('button', { name: 'Hindi' }).click();
         await closeMenu();
