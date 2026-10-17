@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from app.agents.matching import (
     BOAT_KMH, BOAT_MAX_KM, LAND_KMH, _PRIMARY, _finish_minutes, offer_limit_km,
-    travel_mode_for, water_access_case,
+    travel_mode_for, water_access_case, _stale,
 )
 from app.models.firestore_models import ResourceStatus, StoredRequest, StoredResource
 from app.tools.geo import haversine_distance
@@ -42,7 +42,7 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
     from app.models.firestore_models import ResourceKind
     deep = deep_water(req)
     kinds = [ResourceKind.BOAT] if deep else (_PRIMARY.get(req.type, []) or [ResourceKind.BOAT])
-    right = [r for r in resources if r.kind in kinds]
+    right = [r for r in resources if r.kind in kinds and not _stale(r)]
     free = [r for r in right if r.status == ResourceStatus.AVAILABLE and (r.capacity_remaining or 0) > 0]
     busy = [r for r in right if r.status != ResourceStatus.AVAILABLE]
     need = req.people_count or 0
@@ -80,7 +80,7 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
     useful = {"medical": {"medical"}, "rescue": {"medical"}, "shelter": {"shelter"}, "food": {"food"}}.get(
         getattr(req.type, "value", req.type), set())
     others = [r for r in resources if r.kind not in kinds and r.kind.value in useful and r.status == ResourceStatus.AVAILABLE
-              and travel_mode_for(r) != "water" and (r.capacity_remaining or 0) > 0]
+              and travel_mode_for(r) != "water" and (r.capacity_remaining or 0) > 0 and not _stale(r)]
     # A jetty or ghat needs a boat. A road ambulance is not offered as if it could reach them.
     if others and not water_access_case(req) and not deep:
         best = min(others, key=lambda r: _km(req, r) if _km(req, r) is not None else 1e9)
@@ -90,7 +90,9 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
     wider = None
     if far:
         res, km = far[0]
-        wider = {"team_id": res.id, "team": res.name, "km": km, "eta_min": _eta(km, res)}
+        eta = _eta(km, res)
+        if km is not None and km <= 25.0 and (eta is None or eta <= 120):
+            wider = {"team_id": res.id, "team": res.name, "km": km, "eta_min": eta}
 
     return {"request_id": req.id, "reason": reason, "detail": detail, "limit_km": limit,
             "kind": kinds[0].value if kinds else None,

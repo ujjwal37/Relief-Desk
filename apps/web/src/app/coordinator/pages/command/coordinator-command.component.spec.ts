@@ -794,4 +794,26 @@ describe('CoordinatorCommandComponent', () => {
     expect(component.canCloseInfo(mockRequests[0])).toBeFalse();
     expect(component.canCloseInfo({ ...mockRequests[0], status: 'info_closed' })).toBeFalse();
   });
+
+  it('prefers Escalate when no near team is available and excludes distant wider options', () => {
+    const noTeamData = {
+      request_id: 'INC-001',
+      reason: 'too_far',
+      limit_km: 15,
+      options: {
+        wider: { team: 'Raft Alpha', km: 91, eta_min: 547 },
+        escalate: { available: true },
+      },
+    };
+    const keys = component.noTeamOptionKeys(noTeamData as any);
+    expect(keys).not.toContain('wider');
+    expect(keys).toContain('escalate');
+    expect(component.noTeamKey(noTeamData as any)).toBe('escalate');
+  });
+
+  it('does not render header Received counters or sparkle emoji in hero banner', () => {
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="demo-progress"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.hero-sparkle')).toBeNull();
+  });
 });

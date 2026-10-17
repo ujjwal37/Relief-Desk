@@ -37,7 +37,7 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
-      command: `npx ng serve web --port ${WEB_PORT} --host 127.0.0.1`,
+      command: `npx ng serve web --configuration e2e --port ${WEB_PORT} --host 127.0.0.1`,
       env: {
         RD_API_TARGET: API,
       },

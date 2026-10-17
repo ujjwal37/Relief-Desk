@@ -342,11 +342,14 @@ export class StepDetailDialogComponent {
     return this.oneScore(this.withKmRaw(text));
   }
 
-  /** The urgency step shows the case's current score (re-scored after merges), the same number as the card. */
+  /** The urgency and explainer steps show the case's current score (re-scored after merges), the same number as the card. */
   private oneScore(text: string): string {
-    if (this.data.stepIndex !== 2 || !text) return text;
-    const now = Math.round(this.data.request?.urgency_score || 0);
-    return text.replace(/((?:score|urgency)["']?\s*[:=]?\s*)(\d+(?:\.\d+)?)/gi, (_m, pre) => `${pre}${now}`);
+    if (!text) return text;
+    const now = urgencyNumber(this.data.request);
+    if (this.data.stepIndex === 2 || this.data.stepIndex === 4) {
+      return text.replace(/((?:urgency\s+score|urgency|score)["']?\s*(?:is|of|[:=])?\s*)(\d+(?:\.\d+)?)/gi, (_m, pre) => `${pre}${now}`);
+    }
+    return text;
   }
 
   private withKmRaw(text: string): string {

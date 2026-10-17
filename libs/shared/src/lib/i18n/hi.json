@@ -546,6 +546,7 @@
     "needHelpNow": "{n} को अभी मदद चाहिए",
     "overviewLine": "{n} को अभी मदद चाहिए · {t} में से {f} टीमें खाली",
     "onCaseKm": "{id} पर · {d} किमी दूर",
+    "bestFor": "{id} के लिए सर्वोत्तम",
     "legendGroup": "समूह",
     "stepSent": "भेजा",
     "stepAccepted": "स्वीकार",
@@ -1095,7 +1096,7 @@
     "stepApproval": "मंज़ूरी",
     "awaitingHuman": "इंसान का इंतज़ार",
     "routeNote": "रास्ता",
-    "geminiChip": "✨जेमिनी",
+    "geminiChip": "जेमिनी",
     "tierImmediate": "तत्काल",
     "tierUrgent": "अत्यावश्यक",
     "localTestAi": "लोकल टेस्ट AI"
@@ -1108,7 +1109,7 @@
     "other": "अन्य"
   },
   "filter": {
-    "aiReview": "✨AI समीक्षा सुझाता है",
+    "aiReview": "AI समीक्षा सुझाता है",
     "aiReview.tip": "AI को भरोसा नहीं या चिह्नित",
     "critical": "गंभीर",
     "critical.tip": "अभी जान का ख़तरा। 15 मिनट में भेजें।",
@@ -1237,7 +1238,7 @@
       "floor": "पहली मंज़िल तक"
     },
     "chip": "लगभग {depth} · {src}",
-    "srcGemini": "✨ रिपोर्ट से Gemini का अनुमान",
+    "srcGemini": "रिपोर्ट से Gemini का अनुमान",
     "srcRecorded": "रिकॉर्डेड Gemini अनुमान",
     "srcOther": "रिपोर्ट से अनुमान"
   },
@@ -1269,7 +1270,7 @@
     "briefError": "सारांश अभी उपलब्ध नहीं।",
     "forJudges": "जजों के लिए:",
     "src": {
-      "gemini": "✨ Gemini लाइव",
+      "gemini": "Gemini लाइव",
       "recorded": "रिकॉर्ड किया हुआ",
       "local": "लोकल टेस्ट AI",
       "rules": "नियम"
@@ -1278,7 +1279,7 @@
     "notUpdated": "अपडेट नहीं"
   },
   "steps": {
-    "gemini": "✨ Gemini ने 4 चरण जाँचे",
+    "gemini": "Gemini ने 4 चरण जाँचे",
     "recorded": "Gemini · रिकॉर्डेड",
     "rules": "नियमों ने 4 चरण जाँचे",
     "see": "कैसे, देखें",

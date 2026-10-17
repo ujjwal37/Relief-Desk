@@ -1344,18 +1344,27 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return t('noTeam.reason.' + n.reason).replace('{n}', String(d.busy ?? '')).replace('{km}', String(d.km ?? '')).replace('{limit}', String(d.limit ?? n.limit_km)).replace('{seats}', String(d.seats ?? '')).replace('{need}', String(d.need ?? '')).replace('{team}', d.team || '');
   }
   noTeamOptionKeys(n: NoTeamOptions): string[] {
-    const opts = n.options as Record<string, unknown>;
+    const opts = n.options as Record<string, { team?: string; km?: number | null; eta_min?: number | null } | null>;
     if (n.reason === 'info_only') return ['share'];
-    return ['call112', 'reserve', 'road', 'wider', 'escalate'].filter((k) => k === 'escalate' || !!opts[k]);
+    const widerOpt = opts?.['wider'];
+    const widerTooFar = widerOpt && (Number(widerOpt.km) > 25 || Number(widerOpt.eta_min) > 120);
+    return ['call112', 'reserve', 'road', 'wider', 'escalate'].filter((k) => {
+      if (k === 'wider' && widerTooFar) return false;
+      return k === 'escalate' || !!opts?.[k];
+    });
   }
   noTeamLine(n: NoTeamOptions, k: string): string {
     const t = (key: string) => this.langService.translate(key);
     const o = (n.options as unknown as Record<string, { team?: string; km?: number | null; eta_min?: number | null; free_in_min?: number } | null>)[k];
     return t('noTeam.opt.' + k).replace('{team}', o?.team || '').replace('{km}', o?.km != null ? String(o.km) : '?').replace('{eta}', o?.eta_min != null ? String(o.eta_min) : '?').replace('{free}', o?.free_in_min != null ? String(o.free_in_min) : '?').replace('{limit}', String(n.limit_km)).replace('{travel}', o?.eta_min != null && o?.free_in_min != null ? String(Math.max(0, o.eta_min - o.free_in_min)) : '?');
   }
-  /** The selected option, or the first one, so the primary button is never a disabled grey Approve. */
+  /** The selected option, or preferred escalate when no near team, so the primary button is never a disabled grey Approve. */
   noTeamKey(nt: NoTeamOptions): string {
-    return this.noTeamPick() || this.noTeamOptionKeys(nt)[0] || 'escalate';
+    if (this.noTeamPick()) return this.noTeamPick()!;
+    const keys = this.noTeamOptionKeys(nt);
+    if (keys.includes('call112')) return 'call112';
+    if (keys.includes('escalate')) return 'escalate';
+    return keys[0] || 'escalate';
   }
   noTeamGoLabel(nt: NoTeamOptions): string {
     this.langService.currentLang();
@@ -1425,7 +1434,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         const pi = picked ? proposals.findIndex((p) => p.match_id === picked) : -1;
         if (pi >= 0) { this.matchIdx.set(pi); this.choseTeam.set(true); }
         if (!proposals.length) {
-          this.apiClient.getNoTeam(requestId).subscribe({ next: (n) => { if (this.selectedRequestId() === requestId) { this.noTeam.set(n); this.noTeamPick.set(this.noTeamOptionKeys(n)[0] || null); } }, error: () => this.noTeam.set(null) });
+          this.apiClient.getNoTeam(requestId).subscribe({ next: (n) => { if (this.selectedRequestId() === requestId) { this.noTeam.set(n); this.noTeamPick.set(this.noTeamKey(n)); } }, error: () => this.noTeam.set(null) });
         }
       },
       error: (err) => {

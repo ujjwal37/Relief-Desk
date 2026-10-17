@@ -949,7 +949,7 @@ incidents:
   - lang: hinglish
     text: Nedumudi Bridge ke neeche 5 log pillar pakad ke khade hain, paani bohot fast hai please save them.
   - lang: en
-    text: 5 people trapped on Nedumudi Bridge bridge pillars, flood current violent, urgent motorized rescue
+    text: 5 people trapped on Nedumudi Bridge pillars, flood current violent, urgent motorized rescue
       boat.
 - id: INC-008
   type: medical
@@ -1031,9 +1031,9 @@ incidents:
 - id: INC-011
   type: food
   ward_id: ward_2
-  landmark_id: LM-07
-  lat: 9.41785
-  lng: 76.41671
+  landmark_id: LM-09
+  lat: 9.41115
+  lng: 76.40747
   people: 18
   vulnerable:
     child: false
@@ -1100,17 +1100,17 @@ incidents:
   hazard: stranded
   urgency_band: high
   reported_at: '2026-10-12T10:15:00Z'
-  description: Kachha houses inundated in Kainakary, 22 displaced residents sheltered in Mata Mandir veranda
+  description: Kachha houses inundated in Kainakary, 22 displaced residents sheltered in Kainakary Bhagavathy Temple veranda
     with rising flood waters.
   sample_reports:
   - lang: hi
-    text: Mata Mandir के बरामदे में 22 बेघर लोग बैठे हैं, मंदिर के आंगन में भी पानी आने लगा है,
+    text: Kainakary Bhagavathy Temple के बरामदे में 22 बेघर लोग बैठे हैं, मंदिर के आंगन में भी पानी आने लगा है,
       शेल्टर शिफ्ट करें।
   - lang: hinglish
-    text: Mata Mandir veranda me 22 log temporary sharan liye hain, courtyard me pani badh raha hai
+    text: Kainakary Bhagavathy Temple veranda me 22 log temporary sharan liye hain, courtyard me pani badh raha hai
       evacuation chahiye.
   - lang: en
-    text: 22 displaced flood victims sheltered in Mata Mandir veranda, compound starting to flood, need
+    text: 22 displaced flood victims sheltered in Kainakary Bhagavathy Temple veranda, compound starting to flood, need
       shelter transfer.
 - id: INC-014
   type: rescue

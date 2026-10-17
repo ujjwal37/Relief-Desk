@@ -546,6 +546,7 @@
     "needHelpNow": "{n} need help now",
     "overviewLine": "{n} need help now · {f} of {t} teams free",
     "onCaseKm": "On {id} · {d} km away",
+    "bestFor": "Best for {id}",
     "legendGroup": "Group",
     "stepSent": "Sent",
     "stepAccepted": "Accepted",
@@ -1095,7 +1096,7 @@
     "stepApproval": "Approval",
     "awaitingHuman": "Awaiting human",
     "routeNote": "Route",
-    "geminiChip": "✨Gemini",
+    "geminiChip": "Gemini",
     "tierImmediate": "Immediate",
     "tierUrgent": "Urgent",
     "localTestAi": "Local test AI"
@@ -1108,7 +1109,7 @@
     "other": "Other"
   },
   "filter": {
-    "aiReview": "✨AI suggests review",
+    "aiReview": "AI suggests review",
     "aiReview.tip": "AI unsure or flagged",
     "critical": "Critical",
     "critical.tip": "Life at risk now. Aim to dispatch within 15 min.",
@@ -1237,7 +1238,7 @@
       "floor": "up to the first floor"
     },
     "chip": "about {depth} · {src}",
-    "srcGemini": "✨ Gemini estimate from the report",
+    "srcGemini": "Gemini estimate from the report",
     "srcRecorded": "Recorded Gemini estimate",
     "srcOther": "estimate from the report"
   },
@@ -1269,7 +1270,7 @@
     "briefError": "Brief unavailable right now.",
     "forJudges": "For judges:",
     "src": {
-      "gemini": "✨ Gemini live",
+      "gemini": "Gemini live",
       "recorded": "Recorded replay",
       "local": "Local test AI",
       "rules": "Rules"
@@ -1278,7 +1279,7 @@
     "notUpdated": "not updated"
   },
   "steps": {
-    "gemini": "✨ Gemini checked 4 steps",
+    "gemini": "Gemini checked 4 steps",
     "recorded": "Gemini · recorded",
     "rules": "Rules checked 4 steps",
     "see": "See how",

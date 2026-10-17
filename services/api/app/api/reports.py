@@ -403,20 +403,22 @@ def _link_report(
 
 
 def _reporter_summary(raw_report: StoredReport, req_obj: StoredRequest) -> str:
-    """What the reporter sees after sending: a short summary in their language, not their own transcript.
-
-    Information and hoax reports keep the faithful text, because there is no need to summarise.
-    """
-    fallback = req_obj.ai_translation or req_obj.summary or ""
+    """What the reporter sees after sending: a clean one-line summary in their language."""
     if req_obj.hoax_reason or "hoax" in (req_obj.flags or []):
-        return fallback
+        return (req_obj.ai_translation or req_obj.summary or "").splitlines()[0].strip()
     try:
         from app.agents.chat_intake import _slot_summary
 
         short = _slot_summary(req_obj.type, req_obj.people_count, req_obj.place_text, raw_report.lang or "en")
+        if short:
+            return short
     except Exception:
-        short = ""
-    return short or fallback
+        pass
+    fallback = req_obj.ai_translation or req_obj.summary or ""
+    if fallback:
+        from app.agents.summary import short_faithful_summary
+        return short_faithful_summary(fallback)
+    return ""
 
 
 def _response_for(

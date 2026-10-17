@@ -7,6 +7,7 @@ import { CoordUiService } from '../../core/services/coord-ui.service';
 import { LiveEventsService } from '../../core/live-events.service';
 import { TourComponent } from '../../core/components/tour.component';
 import { SitrepPanelComponent } from '../agents/sitrep-panel.component';
+import { environment } from '../../../environments/environment';
 import { AskDeskComponent } from '../agents/ask-desk.component';
 
 @Component({
@@ -26,6 +27,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
+  readonly demoTools = signal(environment.DEMO_TOOLS);
   readonly demoAllowed = signal(false);
   /** Accuracy is listed only when it has real Gemini-vs-rules numbers. Rules-only runs stay off the nav. */
   readonly accuracyMeasured = signal(false);

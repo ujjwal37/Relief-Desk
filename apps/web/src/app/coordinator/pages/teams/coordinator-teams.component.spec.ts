@@ -73,16 +73,14 @@ describe('CoordinatorTeamsComponent', () => {
     expect(cmp.filtered().map((team) => team.id)).toEqual(['s1']);
   });
 
-  it('measures distance to the nearest open case with the case-card ETA', () => {
+  it('shows Best for RD-xxxx label on teams rows for the nearest open case', () => {
     const cmp = fixture.componentInstance;
     cmp.requests.set([
-      { id: 'near', lat: 10.3, lng: 76.2, status: 'new' } as StoredRequest,
+      { id: 'near', public_code: 'RD-2135', lat: 10.3, lng: 76.2, status: 'new' } as StoredRequest,
       { id: 'done', lat: 12, lng: 76.2, status: 'completed' } as StoredRequest,
     ]);
     fixture.detectChanges();
-    expect(cmp.leg(rows[2])).toBe('near · 1.11 km · about 3 min');
-    expect(cmp.leg(rows[1])).toContain('No nearby team');
-    expect(cmp.leg(rows[1])).toContain('km');
+    expect(cmp.leg(rows[2])).toBe('Best for RD-2135');
   });
 
   it('draws the top three legs for the selected case and highlights the hovered row', () => {

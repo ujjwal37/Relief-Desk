@@ -546,6 +546,7 @@
     "needHelpNow": "{n} ko abhi help chahiye",
     "overviewLine": "{n} ko abhi help chahiye · {t} mein se {f} teams free",
     "onCaseKm": "{id} par · {d} km door",
+    "bestFor": "{id} ke liye sabse sahi",
     "legendGroup": "Group",
     "stepSent": "Bheja",
     "stepAccepted": "Accept",
@@ -1095,7 +1096,7 @@
     "stepApproval": "Approval wait",
     "awaitingHuman": "Human ka wait",
     "routeNote": "Rasta",
-    "geminiChip": "✨Gemini chip",
+    "geminiChip": "Gemini chip",
     "tierImmediate": "Abhi Immediate",
     "tierUrgent": "Jaldi Urgent",
     "localTestAi": "Local test AI"
@@ -1108,7 +1109,7 @@
     "other": "Baaki"
   },
   "filter": {
-    "aiReview": "✨AI review suggest karta hai",
+    "aiReview": "AI review suggest karta hai",
     "aiReview.tip": "AI unsure ya flagged",
     "critical": "Bahut zaroori",
     "critical.tip": "Abhi jaan ka khatra. 15 min mein bhejo.",
@@ -1237,7 +1238,7 @@
       "floor": "pehli manzil tak"
     },
     "chip": "lagbhag {depth} · {src}",
-    "srcGemini": "✨ Report se Gemini ka andaaza",
+    "srcGemini": "Report se Gemini ka andaaza",
     "srcRecorded": "Recorded Gemini andaaza",
     "srcOther": "report se andaaza"
   },
@@ -1269,7 +1270,7 @@
     "briefError": "Brief abhi available nahi.",
     "forJudges": "Judges ke liye:",
     "src": {
-      "gemini": "✨ Gemini live",
+      "gemini": "Gemini live",
       "recorded": "Recorded replay",
       "local": "Local test AI",
       "rules": "Rules"
@@ -1278,7 +1279,7 @@
     "notUpdated": "update nahi"
   },
   "steps": {
-    "gemini": "✨ Gemini ne 4 steps check kiye",
+    "gemini": "Gemini ne 4 steps check kiye",
     "recorded": "Gemini · recorded",
     "rules": "Rules ne 4 steps check kiye",
     "see": "Kaise, dekhein",

@@ -28,8 +28,8 @@ test('live demo runs eight reports and opens a human step popup', async ({ page,
   await page.locator('.more-btn').click();
   await page.getByTestId('menu-live-demo').click();
   await page.waitForURL(/\/coordinator\/command/);
-  await expect(page.getByTestId('demo-progress')).toContainText('Received 8/8', { timeout: 120000 });
-  await expect(page.getByTestId('demo-progress')).toContainText('Live demo finished');
+  // The header progress counters were removed; the run state comes from the API.
+  await expect.poll(async () => (await (await request.get(`${API}/api/demo/live-run`, { headers: AUTH })).json()).status, { timeout: 120000 }).toBe('done');
 
   const state = await (await request.get(`${API}/api/demo/live-run`, { headers: AUTH })).json();
   expect(state.received).toBe(8);

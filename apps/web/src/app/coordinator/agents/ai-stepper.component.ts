@@ -402,7 +402,7 @@ export class AiStepperComponent {
     if (step.cached || step.provider === 'cache') return { text: this.lang.translate('steps.badgeRecorded'), gemini: false };
     if (step.provider === 'gemini') {
       const t = typeof step.latency_ms === 'number' && step.latency_ms > 0 ? ` ${(step.latency_ms / 1000).toFixed(1)}s` : '';
-      return { text: '✨ Gemini' + t, gemini: true };
+      return { text: 'Gemini' + t, gemini: true };
     }
     return { text: this.lang.translate('steps.badgeRules'), gemini: false };
   }

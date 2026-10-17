@@ -546,6 +546,7 @@
     "needHelpNow": "{n} need help now",
     "overviewLine": "{n} need help now · {f} of {t} teams free",
     "onCaseKm": "On {id} · {d} km away",
+    "bestFor": "{id}-ന് ഏറ്റവും അനുയോജ്യം",
     "legendGroup": "Group",
     "stepSent": "Sent",
     "stepAccepted": "Accepted",
@@ -1095,7 +1096,7 @@
     "stepApproval": "Approval",
     "awaitingHuman": "Awaiting human",
     "routeNote": "Route",
-    "geminiChip": "✨Gemini",
+    "geminiChip": "Gemini",
     "tierImmediate": "Immediate",
     "tierUrgent": "Urgent",
     "localTestAi": "ലോക്കൽ ടെസ്റ്റ് AI"
@@ -1108,7 +1109,7 @@
     "other": "Other"
   },
   "filter": {
-    "aiReview": "✨AI suggests review",
+    "aiReview": "AI suggests review",
     "aiReview.tip": "AI unsure or flagged",
     "critical": "Critical",
     "critical.tip": "Life at risk now. Aim to dispatch within 15 min.",
@@ -1237,7 +1238,7 @@
       "floor": "ഒന്നാം നില വരെ"
     },
     "chip": "ഏകദേശം {depth} · {src}",
-    "srcGemini": "✨ റിപ്പോർട്ടിൽ നിന്ന് Gemini കണക്ക്",
+    "srcGemini": "റിപ്പോർട്ടിൽ നിന്ന് Gemini കണക്ക്",
     "srcRecorded": "റെക്കോർഡ് ചെയ്ത Gemini കണക്ക്",
     "srcOther": "റിപ്പോർട്ടിൽ നിന്നുള്ള കണക്ക്"
   },
@@ -1269,7 +1270,7 @@
     "briefError": "സംഗ്രഹം ഇപ്പോൾ ലഭ്യമല്ല.",
     "forJudges": "ജഡ്ജിമാർക്ക്:",
     "src": {
-      "gemini": "✨ Gemini ലൈവ്",
+      "gemini": "Gemini ലൈവ്",
       "recorded": "റെക്കോർഡ് ചെയ്തത്",
       "local": "ലോക്കൽ ടെസ്റ്റ് AI",
       "rules": "നിയമങ്ങൾ"
@@ -1278,7 +1279,7 @@
     "notUpdated": "പുതുക്കിയിട്ടില്ല"
   },
   "steps": {
-    "gemini": "✨ Gemini 4 ഘട്ടങ്ങൾ പരിശോധിച്ചു",
+    "gemini": "Gemini 4 ഘട്ടങ്ങൾ പരിശോധിച്ചു",
     "recorded": "Gemini · റെക്കോർഡ്",
     "rules": "നിയമങ്ങൾ 4 ഘട്ടങ്ങൾ പരിശോധിച്ചു",
     "see": "എങ്ങനെ എന്ന് കാണുക",

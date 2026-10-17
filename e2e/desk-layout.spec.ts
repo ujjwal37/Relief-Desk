@@ -115,7 +115,7 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   }
   const legs = await page.locator('.list .leg').allTextContents();
   expect(legs.length).toBeGreaterThan(2);
-  expect(legs.some((leg) => /km/.test(leg))).toBeTruthy();
+  expect(legs.some((leg) => /Best for RD-|km/.test(leg))).toBeTruthy();
   await page.screenshot({ path: path.join(SHOTS, '1366-teams.png'), fullPage: false });
 
   await page.goto('/coordinator/agent');

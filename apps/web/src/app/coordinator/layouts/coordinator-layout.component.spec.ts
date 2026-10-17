@@ -132,4 +132,22 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     const fixture = await setup(null, true);
     expect(fixture.nativeElement.querySelector('.demo-phone')).toBeNull();
   });
+
+  it('hides the demo tools menu when demoTools is false', async () => {
+    const fixture = await setup(null, true);
+    (fixture.nativeElement.querySelector('.avatar') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.demoTools()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('[data-testid="menu-live-demo"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Demo tools');
+  });
+
+  it('shows the demo tools menu when demoTools is true', async () => {
+    const fixture = await setup(null, true);
+    fixture.componentInstance.demoTools.set(true);
+    (fixture.nativeElement.querySelector('.avatar') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="menu-live-demo"]')).toBeTruthy();
+  });
 });
+

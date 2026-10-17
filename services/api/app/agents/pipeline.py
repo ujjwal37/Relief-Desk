@@ -734,8 +734,9 @@ def ensure_trace(req: StoredRequest) -> None:
     elif best:
         explanation = f"{best.resource_name} has {best.capacity_remaining} free seats. Total match score is {best.score}."
     else:
+        score_val = round(scored.score)
         explanation = strip_advice(
-            f"The urgency score is {scored.score}. "
+            f"The urgency score is {score_val}. "
             f"{capacity['available']} {kind} teams are free. A coordinator approves any dispatch."
         )
     explanation = f"{explanation} This note is not medical or legal advice."

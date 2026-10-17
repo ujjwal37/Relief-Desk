@@ -74,14 +74,14 @@ _QUICK_REPLY = re.compile(
 
 
 def short_faithful_summary(report_text: str) -> str:
-    """One short line from what the citizen reported. Quick replies are not the summary."""
+    """One short line from what the citizen reported. Never concatenate multi-turn inputs."""
     lines = [line.strip() for line in (report_text or "").splitlines() if line.strip()]
     kept = [line for line in lines if not _QUICK_REPLY.match(line) and not _BARE_REPLY.match(line)]
-    text = " ".join(kept or lines)
-    text = " ".join(text.split())
-    if not text:
+    primary = kept[0] if kept else (lines[0] if lines else "")
+    primary = " ".join(primary.split())
+    if not primary:
         return ""
-    parts = re.split(r"(?<=[.!?।])\s+", text)
+    parts = re.split(r"(?<=[.!?।])\s+", primary)
     summary = parts[0]
     if len(summary) < 40 and len(parts) > 1:
         summary = " ".join(parts[:2])

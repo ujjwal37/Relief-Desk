@@ -155,7 +155,7 @@ export class CoordinatorTeamsComponent implements OnInit {
     // Name the case the distance is to, so it is never read as the distance to a different case.
     const near = this.nearestCase(team);
     const title = legTitle(quote, (key) => this.lang.translate(key));
-    return near ? `${near.public_code || near.id} · ${title}` : title;
+    return near ? this.lang.translate('coord.bestFor').replace('{id}', near.public_code || near.id) : title;
   }
 
   private nearestCase(team: StoredResource): StoredRequest | null {

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RdTranslatePipe } from '@rd/shared';
 
-/** ✨Gemini mark on an AI-filled field. Confidence is a title/hover only. */
+/** Gemini mark on an AI-filled field. Confidence is a title/hover only. */
 @Component({
   selector: 'app-gemini-chip',
   standalone: true,

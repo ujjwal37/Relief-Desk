@@ -30,21 +30,6 @@
   <!-- Slim Stats Line -->
   <div class="slim-stats-bar" data-testid="stats-line">
     <p class="safety-inline" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
-      @if (liveDemo(); as live) {
-        @if (live.status !== 'idle') {
-          <p class="live-demo-progress" aria-live="polite" data-testid="demo-progress">
-            {{ 'demo.received' | rdTranslate:{ n: live.received } }}
-            · {{ 'demo.joined' | rdTranslate:{ n: live.joined } }}
-            · {{ 'demo.flagged' | rdTranslate:{ n: live.flagged } }}
-            · {{ 'demo.critical' | rdTranslate:{ n: live.critical } }}
-            @if (live.status === 'waiting' || (live.queue_position || 0) > 0) {
-              · {{ 'demo.waitingGemini' | rdTranslate:{ n: live.queue_position || 0 } }}
-            }
-            @if (live.running && liveStepKey(); as stepKey) { · <span data-testid="demo-now">{{ 'demo.now' | rdTranslate:{ step: (stepKey | rdTranslate) } }}</span> }
-            @if (live.status === 'done') { · {{ 'demo.done' | rdTranslate }} }
-          </p>
-        }
-      }
     <div class="stats-left">
       <span class="stat-pill stat-free">
         {{ 'stat.teamsFree' | rdTranslate:{ a: teamsFree().free, b: teamsFree().total } }}
@@ -75,7 +60,6 @@
   <!-- AI Hero Banner (One line) -->
 @if (narrow()) {
     <div class="hero-line" data-testid="hero-line">
-    <span class="hero-sparkle" aria-hidden="true">✨</span>
     <span class="hero-text">{{ 'home.hero' | rdTranslate }}</span>
   </div>
   }
