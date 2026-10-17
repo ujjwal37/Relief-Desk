@@ -363,3 +363,10 @@ body:has(.cmd) .top-strip{display:none}
 .cmd .queue-tabs .qtab b{font-weight:800;margin-left:2px}
 .cmd .queue-tabs .qtab.on{background:var(--brand);color:var(--on-brand)}
 .cmd .queue-tabs .qtab:focus-visible{outline:2px solid var(--focus,#e3d3b0);outline-offset:1px}
+
+/* round 6 */
+.cmd .slim-stats-bar .live-demo-go{min-height:38px;padding:0 18px;font-size:14px;font-weight:800;border-radius:10px;background:var(--brand);color:var(--on-brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 25%,transparent)}
+.cmd .slim-stats-bar .gem-calls{font-size:12px;font-weight:700;color:var(--gemini,#a78bfa);white-space:nowrap}
+.cmd .queue-title-row .scenario-visible{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
+.cmd .case-steps .step-node:last-child .node-result{-webkit-line-clamp:4 !important}
+.cmd .queue-tabs .qtab::first-letter{text-transform:uppercase}

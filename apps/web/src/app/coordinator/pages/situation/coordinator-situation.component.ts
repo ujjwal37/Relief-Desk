@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { timeout } from 'rxjs';
 import { ApiClientService, LanguageService, RdTranslatePipe, SitrepResponse, StoredRequest, urgencyBand } from '@rd/shared';
 import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
 import { teamTone } from '../../../core/maps/map-markers';
@@ -51,9 +52,9 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
               @if (brief(); as b) { <span class="badge" [class.gemini]="briefSource() === 'gemini'">{{ briefBadge() }}</span> }
               <button type="button" class="ghost" [disabled]="briefBusy() || !canRefresh()" (click)="loadBrief(true)">{{ 'sit.refresh' | rdTranslate }}</button>
             </div>
-            @if (briefBusy() || (!brief() && !briefError())) { <div class="brief-skel" role="status" [attr.aria-label]="'sit.briefLoading' | rdTranslate"><i></i><i></i><i></i></div> }
+            @if (briefBusy() && !brief()) { <div class="brief-skel" role="status" [attr.aria-label]="'sit.briefLoading' | rdTranslate"><i></i><i></i><i></i></div> }
             @else if (brief(); as b) { <p class="brief-text">{{ b.brief }}</p> }
-            @else if (briefError()) { <p class="empty">{{ 'sit.briefError' | rdTranslate }}</p> }
+            @else if (briefError()) { <p class="empty" data-testid="brief-unavailable">{{ 'sit.briefUnavailable' | rdTranslate }} · <button type="button" class="ghost" (click)="loadBrief(false)">{{ 'bench.retry' | rdTranslate }}</button></p> }
           </section>
           <section class="panel">
             <h2>{{ 'sit.topAreas' | rdTranslate }}</h2>
@@ -146,6 +147,7 @@ export class CoordinatorSituationComponent implements OnInit {
   readonly briefBusy = signal(false);
   readonly briefError = signal(false);
   private lastBriefAt = 0;
+  private rechecked = false;
   private readonly now = signal(Date.now());
 
   private open(r: StoredRequest): boolean {
@@ -235,8 +237,12 @@ export class CoordinatorSituationComponent implements OnInit {
     if (this.briefBusy() || (force && !this.canRefresh())) return;
     this.briefBusy.set(true);
     this.briefError.set(false);
-    this.api.generateSitrep().subscribe({
-      next: (res) => { this.brief.set(res); this.lastBriefAt = Date.now(); this.now.set(Date.now()); this.briefBusy.set(false); },
+    this.api.generateSitrep().pipe(timeout(20000)).subscribe({
+      next: (res) => {
+        this.brief.set(res); this.lastBriefAt = Date.now(); this.now.set(Date.now()); this.briefBusy.set(false);
+        // Rules summary shown now; the AI draft is being written. Pick it up once, without a click.
+        if (res.ai?.fallback_reason === 'sitrep_warming' && !this.rechecked) { this.rechecked = true; setTimeout(() => this.loadBrief(false), 25000); }
+      },
       error: () => { this.briefError.set(true); this.briefBusy.set(false); },
     });
   }

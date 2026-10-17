@@ -288,6 +288,48 @@ def generate_sitrep() -> SitrepResponse:
     return result
 
 
+_warming = threading.Event()
+
+
+def _warm_in_background() -> None:
+    try:
+        generate_sitrep()
+    except Exception:
+        logger.info("SITREP background draft failed")
+    finally:
+        _warming.clear()
+
+
+def generate_sitrep_fast() -> SitrepResponse:
+    """Never keep the coordinator waiting on a slow model call.
+
+    A cached AI brief for the current counts is returned at once. Otherwise the honest
+    rules summary (built only from the live counts) comes back immediately, labelled as
+    rules, while the AI draft is written in the background for the next refresh.
+    """
+    counts = collect_counts()
+    key = hashlib.sha256(json.dumps(counts.model_dump(), sort_keys=True).encode()).hexdigest()
+    with _cache_lock:
+        hit = _cache.get(key)
+        if hit and (time.monotonic() - _last_at) < CACHE_SECONDS:
+            return hit.model_copy(update={"cached": True})
+    if not _warming.is_set():
+        _warming.set()
+        threading.Thread(target=_warm_in_background, daemon=True).start()
+    drafted = _template_brief(counts)
+    return SitrepResponse(
+        brief=drafted.brief,
+        counts=counts,
+        drafts=SitrepDrafts(
+            sms_en=drafted.sms_en, sms_hi=drafted.sms_hi, sms_ml=drafted.sms_ml,
+            whatsapp_en=drafted.whatsapp_en, whatsapp_hi=drafted.whatsapp_hi, whatsapp_ml=drafted.whatsapp_ml,
+        ),
+        ai=AiCall(provider="fallback", fallback_reason="sitrep_warming"),
+        cached=False,
+        send=False,
+    )
+
+
 def prewarm_sitrep() -> None:
     """Fill the 120s cache so the first SITREP click is not an 18s Gemini wait."""
     try:

@@ -65,3 +65,21 @@ h1 { margin:8px 0 8px; font-size:28px; line-height:1.1; font-weight: 600; letter
 .try-desk:focus-visible{outline:3px solid var(--focus,#047857);outline-offset:3px}
 .cards{grid-template-columns:1fr !important}
 .trust-line{font-size:13px;color:var(--muted);margin-top:12px}
+
+.desk-preview{width:440px;border-radius:16px;background:#0f2a24;color:#e8efe9;box-shadow:0 24px 60px rgba(15,42,36,.35);overflow:hidden;font-size:12px}
+.dp-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #22443b}
+.dp-head b{font-size:14px}
+.dp-gem{color:#a78bfa;font-weight:600}
+.dp-body{display:grid;grid-template-columns:150px 1fr;gap:10px;padding:12px}
+.dp-queue{display:flex;flex-direction:column;gap:6px}
+.dp-card{display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:8px;background:#163a32;border:1px solid #22443b}
+.dp-card.on{border-color:#e3d3b0}
+.dp-card .crit{color:#f87171;font-weight:700;font-size:11px}
+.dp-card .urg{color:#fbbf24;font-weight:700;font-size:11px}
+.dp-case{display:flex;flex-direction:column;gap:10px;padding:10px;border-radius:10px;background:#163a32}
+.dp-steps{display:flex;justify-content:space-between;align-items:center;position:relative;padding:6px 2px}
+.dp-steps::before{content:'';position:absolute;left:8px;right:8px;top:50%;height:2px;background:#3d6b5f}
+.dp-steps i{position:relative;width:18px;height:18px;border-radius:50%;background:#e3d3b0}
+.dp-steps i.you{background:#0f2a24;border:2px solid #e3d3b0}
+.dp-team{padding:8px;border-radius:8px;border:1px solid #22443b;font-weight:600}
+.dp-approve{padding:10px;border-radius:10px;background:#e3d3b0;color:#1a1408;font-weight:800;text-align:center;font-size:13px}

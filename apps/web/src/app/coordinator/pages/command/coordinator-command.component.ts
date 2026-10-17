@@ -412,7 +412,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
   readonly selectedPin = computed(() => this.svgPins().find((p) => p.id === this.selectedRequest()?.id));
   /** Selected case plus its candidate teams stay bright. Everything else fades. */
+  /** Fallback map: nudge team squares off case circles and each other so nothing hides. */
   readonly drawnPins = computed(() => {
+    const placed: { x: number; y: number }[] = [];
+    return this.drawnPinsRaw().map((pin) => {
+      if (pin.kind !== 'req') { return pin; }
+      placed.push({ x: pin.x, y: pin.y });
+      return pin;
+    }).map((pin) => {
+      if (pin.kind === 'req') return pin;
+      let { x, y } = pin; let k = 0;
+      while (k < 6 && placed.some((p) => Math.hypot(p.x - x, p.y - y) < 24)) { k++; const a = (k * Math.PI) / 3; x = pin.x + Math.cos(a) * 26; y = pin.y + Math.sin(a) * 26; }
+      placed.push({ x, y });
+      return { ...pin, x, y };
+    });
+  });
+  readonly drawnPinsRaw = computed(() => {
     const focus = this.selectedRequest();
     const teamIds = new Set(this.candidateMatches().map((row) => row.resource_id));
     const suggested = this.activeProposal()?.resource_id;

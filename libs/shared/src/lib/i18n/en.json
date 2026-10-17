@@ -1219,7 +1219,8 @@
       "recorded": "Recorded (Gemini)",
       "local": "Local test AI",
       "rules": "Rules"
-    }
+    },
+    "briefUnavailable": "Brief unavailable"
   },
   "steps": {
     "gemini": "✨ Gemini checked 5 steps",
