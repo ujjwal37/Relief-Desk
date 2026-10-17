@@ -223,7 +223,7 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
                 id=f"spike-{ward}",
                 kind="spike",
                 title="Report spike",
-                reason=f"{ward}: {len(stamps)} new cases in {SPIKE_WINDOW_MIN} min (usual {usual:.1f} per {SPIKE_WINDOW_MIN} min)",
+                reason=f"{_WARD_NAMES.get(ward, ward)}: {len(stamps)} new cases in {SPIKE_WINDOW_MIN} min (usual {usual:.1f} per {SPIKE_WINDOW_MIN} min)",
                 ward_id=ward,
                 severity="critical",
                 detected_at=first,
@@ -287,6 +287,8 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
         alert.age_label = age_label_for(alert.detected_at, now)
     return alerts
 
+
+_WARD_NAMES = {"ward_1": "Kainakary", "ward_2": "Champakulam", "ward_3": "Nedumudi"}
 
 # Sample scenario wards are named after real Kuttanad panchayats, never a case or a far district.
 _SAMPLE_WARDS = {"Ward 4": ("ward_2", "Champakulam"), "Ward 5": ("ward_1", "Kainakary"), "Ward 7": ("ward_3", "Nedumudi")}

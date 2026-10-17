@@ -104,13 +104,14 @@ class MatchingAgent:
                 continue
             scored_candidates.append((res, breakdown, False))
         # Medical case cut off by water: a boat is the only way in, so rescue boats are offered too.
-        if request.type == IncidentType.MEDICAL and needs_water_access(request):
+        if request.type == IncidentType.MEDICAL and (needs_water_access(request) or deep_water(request)):
             as_rescue = request.model_copy(update={"type": IncidentType.RESCUE})
             for res in resources:
                 if travel_mode_for(res) != "water":
                     continue
                 breakdown = scoring_engine.compute_match_score(as_rescue, res, fallback_ok=False)
-                if breakdown is not None:
+                # Boats for a medical case only when they are close; a far boat is a no-team option instead.
+                if breakdown is not None and breakdown.distance_km <= 10:
                     scored_candidates.append((res, breakdown, False))
 
         # No suitable free team: offer nothing rather than a busy team or the wrong kind of team.

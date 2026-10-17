@@ -17,8 +17,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-BOAT-02
-  name: Ernakulam Rescue Boat
-  name_hi: एर्नाकुलम बचाव नाव
+  name: Kainakary Rescue Boat
+  name_hi: कैनकरी रेस्क्यू बोट
   kind: boat
   ward_id: ward_2
   lat: 9.455
@@ -29,8 +29,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-BOAT-03
-  name: Thrissur Flood Raft
-  name_hi: त्रिशूर बाढ़ राफ्ट
+  name: Kavalam Flood Raft
+  name_hi: कावलम फ्लड राफ्ट
   kind: boat
   ward_id: ward_1
   lat: 9.49
@@ -53,24 +53,24 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-BOAT-05
-  name: Chalakudy River Rescue Boat
-  name_hi: चालाकुडी नदी बचाव नाव
+  name: Thalavady Rescue Boat
+  name_hi: तलवडी रेस्क्यू बोट
   kind: boat
-  ward_id: ward_7
-  lat: 10.308
-  lng: 76.334
+  ward_id: ward_3
+  lat: 9.36
+  lng: 76.52
   capacity_total: 8
   capacity_remaining: 8
   status: available
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-BOAT-06
-  name: Aluva Ferry Rescue Boat
-  name_hi: आलुवा फेरी बचाव नाव
+  name: Edathua Ferry Rescue Boat
+  name_hi: एडतुआ फेरी रेस्क्यू बोट
   kind: boat
-  ward_id: ward_4
-  lat: 10.104
-  lng: 76.349
+  ward_id: ward_2
+  lat: 9.365
+  lng: 76.475
   capacity_total: 8
   capacity_remaining: 8
   status: available
@@ -221,12 +221,12 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-MED-06
-  name: Aluva Mobile Medical Van
-  name_hi: आलुवा मोबाइल मेडिकल वैन
+  name: Edathua Mobile Medical Van
+  name_hi: एडतुआ मोबाइल मेडिकल वैन
   kind: medical
-  ward_id: ward_4
-  lat: 10.103
-  lng: 76.348
+  ward_id: ward_2
+  lat: 9.366
+  lng: 76.476
   capacity_total: 8
   capacity_remaining: 8
   status: available

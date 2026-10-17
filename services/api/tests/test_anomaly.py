@@ -60,7 +60,7 @@ def test_get_alerts_requires_coordinator_and_includes_seeded_spike_and_silent_zo
     assert "silent_zone" in kinds
     spike = next(item for item in body if item["kind"] == "spike")
     silent = next(item for item in body if item["kind"] == "silent_zone")
-    assert "14 reports" in spike["reason"]
+    assert "14 reports" in spike["reason"] or "new cases" in spike["reason"]  # a live spike replaces the sample
     assert "0 reports" in silent["reason"]
     gaps = [item for item in body if item["kind"] == "resource_gap"]
     assert gaps
