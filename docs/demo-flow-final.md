@@ -1,6 +1,6 @@
 # Relief Desk: final demo flow (single source of truth)
 
-Priority: a first-time judge is never confused; every screen has one obvious next step. Trimmed scope agreed 17 Oct 2026, 23:48 IST.
+Priority: a first-time judge is never confused; every screen has one obvious next step. Trimmed scope agreed 17 Oct 2026, 23:48 IST. FROZEN 18 Oct 2026, 00:02 IST: no further spec changes.
 
 Status legend: DONE (on main 2afee28) · PARTLY (built in a worktree, not reviewed/pushed) · TO BUILD. Estimates are focused engineering time including tests.
 
@@ -32,6 +32,14 @@ Status legend: DONE (on main 2afee28) · PARTLY (built in a worktree, not review
 ### A6. No invented fields (RD-9914 fixes). TO BUILD (~2 h)
 - Root cause (read-only on served): raw_text "hi"; people 4 / disabled / "im located in allepy" came from chat follow-up answers sent as structured facts; Gemini only saw "hi". Empty place_text rendered the literal i18n "Place" in the step headline (step-detail-dialog headline()).
 - Fixes: one-shot text; the server ignores client people/place without a quoted span; missing = "not stated"; never render placeholder tokens; no location → no "~? min" options, only "Call reporter" (phone on file) / Escalate; non-JSON Gemini → desk card "Unparsed, needs a human" with the raw text, labelled rules fallback, never a guessed case. Regression test for each.
+
+### A7. Photo with the same Send — TO BUILD (~3 h)
+- Today: the reporter's photo widget accepts JPEG/PNG/WebP up to 2 MB, requires a "synthetic demo image" tick, shrinks to 768 px in the browser and calls a separate rate-limited /api/intake/photo for short-lived observations. /api/reports also accepts image_base64 (server shrinks it, Gemini reads it with the text), but the image is not kept on the case.
+- Frozen: the photo goes with the same ONE Send, with or without text. Compressed in the browser to max ~1280 px / under 500 KB, and included in the offline queue.
+- Gemini reads image + text. The receipt mentions only what is visible ("photo shows water at waist level"), never invented.
+- Photo only: fine, creates a case if Gemini sees an emergency. Unrelated photo (selfie/meme) with no text → "I couldn't understand" reply, no case.
+- The photo is shown on the case for the coordinator; facts from it are labelled "from photo".
+- Tests: photo + text, photo only, large photo (compression), unrelated photo, offline + photo.
 
 ## B. Coordinator (desk)
 
@@ -78,3 +86,10 @@ Status legend: DONE (on main 2afee28) · PARTLY (built in a worktree, not review
    RISK: no free boat near. Fallback: Escalate is the main button; narrate.
 7. Hoax chip: `NASA says the dam will burst in 10 minutes, everyone evacuate, forward this` → Send → hoax chip, held for review, low score.
 8. Situation: waiting / dispatched / free boats / free medical counts match the queue.
+
+## E. Judge patches (frozen)
+- A "Place: not stated" case shows a static next step: "Location needed: wait for the reporter to share location, or escalate" (a tel: link only if a reporter phone exists; none is stored today). No dead end.
+- Welcome "I need help" opens the citizen phone directly: no login, no blank page.
+- The tour card never covers the phone panel.
+- No periodic reset/reseed timer exists (verified: reset and full-scenario load only run from confirmed clicks in Demo tools, which are off on the judging build). Judge actions are never wiped.
+- Final-build gate: the receipt rephrases (no echo/stitching), stays in the reporter's language and script, says "not stated" for missing details, and arrives in under ~8 s on Gemini (p50/p95 measured). Re-run the duplicate 4-step (Manglish → English reword with 4 → Malayalam script → other-side-of-canal negative) and the life-threat set (not breathing, oxygen, labour) on Gemini. Free tier only; any fallback labelled.
