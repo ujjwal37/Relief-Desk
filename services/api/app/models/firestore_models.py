@@ -110,6 +110,8 @@ class StoredRequest(BaseModel):
     people_count: Optional[int] = None
     # Reporter-facing reference (RD-1234) for the first report, so both sides quote the same id.
     public_code: Optional[str] = None
+    # Ids and reporter codes of cases folded into this one, so search finds the desk case by any of them.
+    alias_codes: List[str] = Field(default_factory=list)
     # The citizen's own words for the count, such as "2-3" or "4".
     people_span: Optional[str] = None
     count_spans: List[str] = Field(default_factory=list)
@@ -148,6 +150,8 @@ class StoredRequest(BaseModel):
     water_depth: Optional[Dict[str, Any]] = None
     update_count: int = 0
     assigned_resource_id: Optional[str] = None
+    # Frozen at Approve: the team actually sent, its distance and ETA. Title and explainer read this.
+    dispatch: Optional[Dict[str, Any]] = None
     reserved_people: Optional[int] = None
     version: int = 1
     synthetic: bool = True

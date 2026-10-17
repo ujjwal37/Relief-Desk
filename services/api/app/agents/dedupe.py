@@ -57,12 +57,22 @@ def trigram_similarity(left: str, right: str) -> float:
 
 
 def confidence_phrase(similarity: Optional[float], distance_km: Optional[float], minutes: Optional[float]) -> str:
-    """Similarity plus how far apart the two reports are in space and time."""
-    sim = "—" if similarity is None else f"{float(similarity):.2f}"
-    # No coordinates is not evidence the reports share a place.
-    dist = "place not stated" if distance_km is None else f"{float(distance_km):.2f} km"
-    clock = "—" if minutes is None else f"{int(round(float(minutes)))} min"
-    return f"Similarity {sim} · {dist} · {clock}"
+    """The match evidence in plain words: place, time and wording. No raw scores."""
+    parts = []
+    if distance_km is None:
+        parts.append("Place not stated")
+    elif float(distance_km) <= 0.3:
+        parts.append(f"Same landmark ({float(distance_km):.2f} km)")
+    else:
+        parts.append(f"{float(distance_km):.1f} km apart")
+    if minutes is not None:
+        parts.append(f"{int(round(float(minutes)))} min apart")
+    if similarity is not None and float(similarity) >= 0.6:
+        parts.append("very similar wording")
+    elif similarity is not None and float(similarity) >= 0.3:
+        parts.append("similar wording")
+    return "Match evidence: " + " + ".join(parts)
+
 
 SYSTEM_DEDUPE_PROMPT = """You are a crisis report deduplication and triage agent for Relief Desk.
 Your task is to compare a new crisis request against a list of pre-filtered candidate requests from the same area.

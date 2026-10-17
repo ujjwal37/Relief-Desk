@@ -223,14 +223,16 @@ class MatchingAgent:
         return proposals
 
 
+# One response radius for every need: offer, quote an ETA and explain "no team" with the same number.
+RESPONSE_RADIUS_KM = 15.0
 # Quote a minute ETA only inside this radius. Farther than this, say there is no nearby team.
-NEARBY_KM = 30.0
+NEARBY_KM = RESPONSE_RADIUS_KM
 # A team inside this radius is close enough to prefer over a farther cluster.
 PRACTICAL_KM = 40.0
 # Rescue boats farther than this are not offered; the card then says no suitable team nearby.
-BOAT_MAX_KM = 25.0
+BOAT_MAX_KM = RESPONSE_RADIUS_KM
 # Medical teams use their own radius. It is not applied to rescue.
-MEDICAL_MAX_KM = 25.0
+MEDICAL_MAX_KM = RESPONSE_RADIUS_KM
 # Kept so older callers still import a single offer cap. Per-need limits are offer_limit_km.
 MAX_OFFER_KM = MEDICAL_MAX_KM
 
@@ -319,8 +321,8 @@ def offer_limit_km(request) -> float:
     """Medical stays at 25 km (10 km in deep water). Rescue is not capped by the medical radius."""
     kind = getattr(getattr(request, "type", None), "value", getattr(request, "type", None))
     if kind == "medical":
-        return 10.0 if deep_water(request) else MEDICAL_MAX_KM
-    return NEARBY_KM
+        return RESPONSE_RADIUS_KM
+    return RESPONSE_RADIUS_KM
 
 
 def water_access_case(request) -> bool:

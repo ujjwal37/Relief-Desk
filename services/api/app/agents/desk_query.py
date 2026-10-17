@@ -418,6 +418,15 @@ def ask(question: str, requests: Iterable[Any], call=None) -> Dict[str, Any]:
     filters, ai = gemini_filters(question, call=call)
     if filters is None:
         filters = rule_filters(question)
+    else:
+        # A model reply can miss a word the question plainly says ("critical"). The rules words are a floor.
+        ruled = rule_filters(question)
+        for key in ("bands", "types", "vulnerable"):
+            for value in ruled.get(key) or []:
+                if value not in (filters.get(key) or []):
+                    filters[key] = list(filters.get(key) or []) + [value]
+        if ruled.get("waiting_only") and not filters.get("statuses"):
+            filters["waiting_only"] = True
     t_parse = int((time.monotonic() - started) * 1000)
     t1 = time.monotonic()
     hits, total = run_filters(list(requests), filters)

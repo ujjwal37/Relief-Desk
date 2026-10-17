@@ -60,7 +60,7 @@ def test_three_reworded_reports_merge_into_one_case():
     assert len(quotes) == 3
     assert all(any(piece in quote for quote in quotes) for piece in ("roof", "rescue boat", "Still stranded"))
     dedupe = next(step["output"] for step in cards[0]["trace"] if step["agent"] == "Dedupe")
-    assert "Similarity" in dedupe
+    assert "Match evidence" in dedupe
     assert "km" in dedupe
 
 
@@ -128,7 +128,7 @@ def test_a_weak_match_is_a_suggestion_until_the_coordinator_decides():
     assert suggestion["possible_duplicate"]["confidence"] >= REVIEW_CONFIDENCE
     dedupe = next(step["output"] for step in suggestion["trace"] if step["agent"] == "Dedupe")
     assert "Possible duplicate, review" in dedupe
-    assert "Similarity" in dedupe
+    assert "Match evidence" in dedupe
 
     kept = client.post(f"/api/requests/{suggestion['id']}/keep-separate", headers=AUTH)
     assert kept.status_code == 200, kept.text

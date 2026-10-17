@@ -20,7 +20,7 @@ import { LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, SupportedLang } fro
       >
         {{ opt.nativeName }}
       </button>
-      <details class="more">
+      <details class="more" *ngIf="more.length">
         <summary class="lang-chip">{{ 'settings.moreLangs' | rdTranslate }}</summary>
         <div class="more-menu">
           <button

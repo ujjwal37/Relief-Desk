@@ -28,6 +28,10 @@ function flattenKeys(obj, prefix = '') {
 // Proper names, an example address, and a numeric scale may match English.
 const HI_SAME_AS_EN = new Set(['landing.cup', 'auth.emailPlaceholder', 'ux.scale']);
 
+// Hinglish keeps English loanwords and proper nouns (Gemini, Password, team names); any new key must be translated.
+const HINGLISH_SAME_AS_EN = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'hinglish-same-as-en.json'), 'utf-8')));
+// Malayalam is no longer a UI language: only key parity is checked (reports in Malayalam still use these strings).
+
 let hasError = false;
 
 // Load base (English) keys
@@ -54,20 +58,21 @@ for (const lang of LANGUAGES) {
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   const flat = flatten(data);
   const keys = new Set(Object.keys(flat));
-  if (lang === 'hi') {
+  if (lang === 'hi' || lang === 'hinglish') {
+    const allowed = lang === 'hi' ? HI_SAME_AS_EN : HINGLISH_SAME_AS_EN;
     const fallback = [];
     for (const key of enKeys) {
       const value = flat[key];
       if (typeof value !== 'string') continue;
       if (value === key) fallback.push(`${key} is the key itself`);
-      else if (value === enFlat[key] && !HI_SAME_AS_EN.has(key)) fallback.push(`${key} still matches English`);
+      else if (value === enFlat[key] && !allowed.has(key)) fallback.push(`${key} still matches English`);
     }
     if (fallback.length > 0) {
-      console.error(`\n[FAIL] hi.json has ${fallback.length} untranslated strings:`);
+      console.error(`\n[FAIL] ${lang}.json has ${fallback.length} untranslated strings:`);
       fallback.forEach((row) => console.error(`  - ${row}`));
       hasError = true;
     } else {
-      console.log('[PASS] hi.json values are translated (no fallback keys).');
+      console.log(`[PASS] ${lang}.json values are translated (no fallback keys).`);
     }
   }
 

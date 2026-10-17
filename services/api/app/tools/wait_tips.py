@@ -32,10 +32,19 @@ def wait_tips_for(incident_type: Optional[str]) -> list[str]:
     return list(DEFAULT)
 
 
+LIFE = "status.tipLife112"
+
+
 def tips_for_request(req) -> list[str]:
-    """Classified type once analysis is done. The picked type until then."""
+    """Classified type once analysis is done. The picked type until then.
+    A life threat in the reporter's words puts 'Call 112 now' first."""
     if req is None:
         return wait_tips_for(None)
+    from app.tools.case_queue import life_phrase
+    if life_phrase(getattr(req, "raw_text", None)) or life_phrase(getattr(req, "ai_translation", None)):
+        kind = getattr(req, "type", None)
+        value = getattr(kind, "value", kind)
+        return [LIFE] + wait_tips_for(value if isinstance(value, str) else None)[:2]
     picked = getattr(req, "picked_type", None)
     if getattr(req, "analysis_status", "") == "analysing" and picked:
         return wait_tips_for(picked)

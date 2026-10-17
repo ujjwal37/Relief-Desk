@@ -24,9 +24,11 @@ import { LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, Su
               {{ l.nativeName }}
             </button>
           }
+          @if (moreLangs.length) {
           <button type="button" class="opt more" data-testid="lang-more" [attr.aria-expanded]="moreOpen()" (click)="moreOpen.set(!moreOpen())">
             {{ 'settings.moreLangs' | rdTranslate }}
           </button>
+          }
           @if (moreOpen()) {
             @for (l of moreLangs; track l.code) {
               <button type="button" class="opt" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="setLang(l.code)">

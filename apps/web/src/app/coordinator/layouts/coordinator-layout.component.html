@@ -50,7 +50,9 @@
                   <button type="button" [class.on]="lang.currentLang() === l.code" [attr.aria-pressed]="lang.currentLang() === l.code" [attr.aria-label]="l.label" (click)="lang.setLanguage(l.code)">{{ l.nativeName }}</button>
                 }
               </div>
+              @if (moreLangs.length) {
               <button type="button" class="item" data-testid="lang-more" [attr.aria-expanded]="langMore()" (click)="langMore.set(!langMore())">{{ 'settings.moreLangs' | rdTranslate }}</button>
+              }
               @if (langMore()) {
                 <div class="seg two">
                   @for (l of moreLangs; track l.code) {

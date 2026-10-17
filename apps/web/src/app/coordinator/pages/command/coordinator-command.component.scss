@@ -390,6 +390,9 @@ button {
     display: block;
   }
 
+  .done-card { margin: 8px 0; padding: 12px; border-radius: 10px; background: var(--okt, #dcfce7); color: var(--ok, #166534); font-weight: 600; }
+  .no-team-card.info-only { background: var(--s2, #f1f5f9) !important; border-color: var(--border, #d6dde4) !important; }
+  .dec-score-skeleton { display: inline-block; width: 28px; height: 28px; border-radius: 6px; background: var(--s2, #eef1f4); }
   .svgmap {
     width: 100%;
     height: 100%;
@@ -1407,6 +1410,11 @@ app-ai-stepper {
 .aiq-life-title { display: block; margin: 2px 0; padding: 0; border: 0; background: transparent; font: inherit; font-size: 15px; font-weight: 600; color: var(--text); text-align: left; cursor: pointer; }
 .aiq-life-quote { margin: 4px 0; padding: 6px 8px; background: #fff; border: 1px solid #f3c4c4; border-radius: 6px; font-size: 13px; line-height: 1.4; }
 .aiq-life-phrase, .aiq-life-meta { margin: 0; font-size: 12px; color: var(--muted); }
+.aiq-life-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.aiq-life .kw { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 10px; font: 600 11px/1 inherit; font-size: 11px; font-weight: 600; color: var(--sev-crit, #b91c1c); background: #fff; border: 1px solid #f3c4c4; }
+.aiq-checked { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 10px; font-size: 11px; font-weight: 600; color: var(--ok, #166534); background: var(--okt, #dcfce7); }
+.aiq-life .b112 { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border: 1.5px solid var(--sev-crit, #b91c1c); color: var(--sev-crit, #b91c1c); background: #fff; border-radius: 8px; font-size: 14px; font-weight: 700; text-decoration: none; }
+.life-tag { margin-left: 6px; font-size: 11px; font-weight: 700; color: var(--sev-crit, #b91c1c); white-space: nowrap; }
 .aiq-life-actions, .footer-buttons-row.aiq-life-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .aiq-unverified { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 10px; background: var(--sev-high-t); color: var(--sev-high); font-size: 11px; font-weight: 600; }
 .aiq-work-badge { display: inline-flex; margin-top: 6px; padding: 2px 8px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); font-size: 12px; font-weight: 600; }

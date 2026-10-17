@@ -48,7 +48,7 @@ export interface StepStatusInfo {
             </span>
           </div>
           <span class="node-title">{{ 'steps.short.intake' | rdTranslate }}</span>
-          <span class="node-result">{{ intakeResult() }}</span>
+          <span class="node-result step-result">{{ intakeResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(0).gemini">{{ stepBadge(0).text }}</span>
         </button>
 
@@ -79,7 +79,7 @@ export interface StepStatusInfo {
           <div class="node-title-wrap">
             <span class="node-title">{{ 'steps.short.dedupe' | rdTranslate }}</span>
           </div>
-          <span class="node-result">{{ dedupeResult() }}</span>
+          <span class="node-result step-result">{{ dedupeResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(1).gemini">{{ stepBadge(1).text }}</span>
         </button>
 
@@ -110,7 +110,7 @@ export interface StepStatusInfo {
           <div class="node-title-wrap">
             <span class="node-title">{{ 'steps.short.urgency' | rdTranslate }}</span>
           </div>
-          <span class="node-result">{{ urgencyResult() }}</span>
+          <span class="node-result step-result">{{ urgencyResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(2).gemini">{{ stepBadge(2).text }}</span>
         </button>
 
@@ -140,7 +140,7 @@ export interface StepStatusInfo {
             </span>
           </div>
           <span class="node-title">{{ 'steps.short.maps' | rdTranslate }}</span>
-          <span class="node-result">{{ matchingResult() }}</span>
+          <span class="node-result step-result">{{ matchingResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(3).gemini">{{ stepBadge(3).text }}</span>
         </button>
 
@@ -169,7 +169,7 @@ export interface StepStatusInfo {
             </span>
           </div>
           <span class="node-title">{{ 'steps.short.explain' | rdTranslate }}</span>
-          <span class="node-result">{{ explainResult() }}</span>
+          <span class="node-result step-result">{{ explainResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(4).gemini">{{ stepBadge(4).text }}</span>
         </button>
 
@@ -192,7 +192,7 @@ export interface StepStatusInfo {
             </span>
           </div>
           <span class="node-title">{{ 'steps.short.you' | rdTranslate }}</span>
-          <span class="node-result">{{ youResult() }}</span>
+          <span class="node-result step-result">{{ youResult() }}</span>
         </button>
       </div>
 
@@ -373,7 +373,12 @@ export interface StepStatusInfo {
       max-width: 100%;
       overflow: hidden;
       white-space: normal;
-      overflow-wrap: anywhere;
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 1.3;
+      overflow-wrap: normal;
+      word-break: keep-all;
+      hyphens: none;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -434,6 +439,7 @@ export class AiStepperComponent {
     const req = this.request();
     if (!req) return '—';
     const t = (k: string) => this.lang.translate(k);
+    if (req.type === 'info') return t('step.result.info');
     const need = req.type ? t(`incidentType.${req.type}`) : t('incidentType.rescue');
     return `${need} · ${peopleText(req.people_count, t)}`;
   });
@@ -450,7 +456,7 @@ export class AiStepperComponent {
     if (req.possible_duplicate) {
       return this.lang.translate('step.maybeDup');
     }
-    return this.lang.translate('step.result.noDup');
+    return this.lang.translate('step.result.none');
   });
 
   readonly urgencyResult = computed<string>(() => {
@@ -500,6 +506,6 @@ export class AiStepperComponent {
   readonly explainResult = computed<string>(() => {
     const req = this.request();
     if (!req) return '—';
-    return this.lang.translate('why.order');
+    return this.lang.translate('step.result.nearest');
   });
 }

@@ -7,6 +7,7 @@ only when the caller passes a client and the circuit is closed.
 from __future__ import annotations
 
 import logging
+import re
 import time
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional, Protocol
@@ -20,22 +21,38 @@ CAP_S = 45
 READ_SLOTS = 2
 RECHECK_GAP_S = 6.0  # about 10 cases a minute
 
-# Longer phrases first. The matched words are what the card shows.
-_PHRASES = (
-    "not breathing",
-    "heart attack",
-    "bleeding a lot",
-    "trapped under",
-    "unconscious",
-    "drowning",
-    "saans nahi",
-    "सांस नहीं",
-    "साँस नहीं",
-    "shwasam illa",
-    "bodham illa",
-    "ശ്വാസം ഇല്ല",
-    "ബോധം ഇല്ല",
-)
+# Life-threat pre-filter. Each pattern returns the words exactly as written (original script),
+# which is what the card shows. English, Hindi, Hinglish, Malayalam and Manglish, several verb forms.
+_NEG_ML = r"(?:\s*ഇല്ല|ില്ല|ുന്നില്ല)"
+_LIFE_PATTERNS = [
+    # English
+    r"\b(?:not|isn'?t|stopped|stop|no longer|can'?t|cannot|unable to|difficulty|trouble)\s+breath(?:ing|e)\b",
+    r"\bno pulse\b", r"\bunconscious\b", r"\bunresponsive\b", r"\bnot responding\b", r"\bpassed out\b", r"\bfainted\b",
+    r"\bdrown(?:ing|ed|s)?\b", r"\bheart attack\b", r"\bchest pain\b",
+    r"\b(?:bleeding (?:a lot|heavily|badly|profusely|non ?stop)|heavy bleeding|severe bleeding|lot of blood|losing blood)\b",
+    r"\btrapped under\b", r"\b(?:child|kid|baby|boy|girl|son|daughter)\b[^.]{0,20}\b(?:in|into|under) (?:the )?(?:water|flood)\b",
+    r"\bswept away\b",
+    # Hindi (Devanagari)
+    r"सा[ंँ]?स\s*(?:नहीं|नही|नहि|नहीँ|रुक|बंद|नहीं\s*ले)", r"बेहोश", r"(?:बच्चा|बच्ची|बेटा|बेटी|आदमी|औरत|कोई|पिताजी|पापा|मां|माँ|दादा|दादी)[^।.]{0,15}डूब\s*(?:रहा|रही|रहे|गया|गई|गयी|गए)",
+    r"(?:सीने|छाती)\s*में\s*दर्द", r"(?:बहुत|ज़्यादा|ज्यादा)\s*खून", r"खून\s*बह", r"(?:बच्चा|बच्ची|बेटा|बेटी)[^।.]{0,15}पानी\s*में",
+    # Hinglish
+    r"\bsaa?n?s\s*(?:nahi|nahin|nai|ruk|band|nhi)\b", r"\bbehosh\b", r"\b(?:bachcha|bacha|bachchi|beta|beti|aadmi|koi|papa|maa|dada|dadi)\b[^.]{0,15}\bdoo?b\s*(?:raha|rahi|rahe|gaya|gayi|gaye)\b",
+    r"\b(?:seene|chhati|chati)\s*m(?:e|ei|ein|en)\s*dard\b", r"\bbahut\s*khoon\b", r"\bkhoon\s*beh",
+    r"\b(?:bachcha|bacha|bachchi|beta|beti)\b[^.]{0,15}\bpaani\s*m(?:e|ein|en)\b",
+    # Malayalam
+    r"(?:ശ്വാസ|ശ്വസി)[^\s.,!?]*(?:\s+[^\s.,!?]+)?" + _NEG_ML, r"ശ്വാസം\s*കിട്ടുന്നില്ല",
+    r"ബോധ[^\s.,!?]*(?:\s*ഇല്ല|ില്ല|\s*കെട്ടു|ംകെട്ടു|ം\s*പോയി|ക്ഷയം)", r"അനക്ക[^\s.,!?]*(?:\s*ഇല്ല|ില്ല)",
+    r"(?:കുട്ടി|കുഞ്ഞ്|ആൾ|അച്ഛൻ|അമ്മ|മോൻ|മോൾ|ചേട്ടൻ)[^.]{0,15}മുങ്ങ[^\s.,!?]*", r"മുങ്ങിത്താഴ[^\s.,!?]*", r"നെഞ്ച്?\s*വേദന|നെഞ്ചുവേദന", r"(?:ഒരുപാട്|ധാരാളം|കുറേ)\s*(?:ചോര|രക്തം)", r"(?:ചോര|രക്തം)\s*(?:പോകുന്നു|വരുന്നു|ഒഴുകുന്നു)", r"രക്തസ്രാവം",
+    r"(?:കുട്ടി|കുഞ്ഞ്|മോൻ|മോൾ)[^.]{0,15}വെള്ളത്തിൽ",
+    # Manglish
+    r"\b(?:sh|s)waa?sam\s*(?:illa|kittunnilla)\b", r"\b(?:sh|s)wasamilla\b", r"\b(?:sh|s)wasikkunnilla\b", r"\bshwaasam\s*illa\b",
+    r"\bbodham\s*(?:illa|kettu|poyi)\b", r"\bbodhamilla\b", r"\banakkam\s*illa\b", r"\banakkamilla\b",
+    r"\b(?:kutti|kunju|achan|amma|mon|mol|chettan)\b[^.]{0,15}\bmung(?:i|unnu)\w*", r"\bmungi\s*thazhunnu\b", r"\bnenju\s*vedana\b", r"\bchora\s*(?:pokunnu|varunnu)\b",
+    r"\b(?:kutti|kunju|mon|mol)\b[^.]{0,15}\bvellathil\b",
+]
+_LIFE_RE = [re.compile(p, re.IGNORECASE) for p in _LIFE_PATTERNS]
+# "not breathing well yesterday, now ok": a recovered past state is not a life threat.
+_RECOVERED = re.compile(r"\b(?:now (?:ok|okay|fine|better|breathing)|is fine now|recovered)\b|ഇപ്പോൾ\s*കുഴപ്പമില്ല|अब ठीक", re.IGNORECASE)
 
 
 class ReviewClient(Protocol):
@@ -62,11 +79,27 @@ def life_phrase(text: str | None) -> Optional[str]:
     """The keyword pre-filter. Returns the matched words, or None."""
     if not text:
         return None
-    hay = text.lower()
-    for phrase in _PHRASES:
-        if phrase.lower() in hay:
-            return phrase
+    if _RECOVERED.search(text):
+        return None
+    for pattern in _LIFE_RE:
+        hit = pattern.search(text)
+        if hit:
+            return hit.group(0).strip()
     return None
+
+
+def promote_life_threat(req: StoredRequest, text: str | None) -> bool:
+    """Second path: the model's English translation hits a trigger the original words missed."""
+    queue = req.ai_queue
+    if queue is None or "lifeThreat" in (queue.flags or []):
+        return False
+    phrase = life_phrase(text)
+    if not phrase:
+        return False
+    queue.flags = list(queue.flags or []) + ["lifeThreat"]
+    if not queue.life_phrase:
+        queue.life_phrase = phrase
+    return True
 
 
 def is_life_threat(req: StoredRequest) -> bool:

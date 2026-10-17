@@ -29,21 +29,23 @@ def _eta(km: Optional[float], res: StoredResource) -> Optional[int]:
 
 def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict:
     from app.tools.scoring import _SEVERE_INJURY
-    life_threat = bool(_SEVERE_INJURY.search(req.raw_text or ""))
-    if getattr(req.type, "value", req.type) == "info" and not life_threat:
+    from app.tools.case_queue import life_phrase
+    life_threat = bool(_SEVERE_INJURY.search(req.raw_text or "")) or bool(
+        life_phrase(req.raw_text) or life_phrase(req.ai_translation))
+    # "Information only" must follow type AND urgency: an Urgent/Critical case always needs a team.
+    serious = life_threat or float(req.urgency_score or 0) >= 60
+    if getattr(req.type, "value", req.type) == "info" and not serious:
         return {"request_id": req.id, "reason": "info_only", "detail": {}, "limit_km": BOAT_MAX_KM, "kind": None,
                 "options": {"reserve": None, "road": None, "wider": None, "escalate": None, "share": {"available": True}}}
     from app.agents.matching import deep_water
     from app.models.firestore_models import ResourceKind
     deep = deep_water(req)
-    kinds = [ResourceKind.BOAT] if deep else _PRIMARY.get(req.type, [])
+    kinds = [ResourceKind.BOAT] if deep else (_PRIMARY.get(req.type, []) or [ResourceKind.BOAT])
     right = [r for r in resources if r.kind in kinds]
     free = [r for r in right if r.status == ResourceStatus.AVAILABLE and (r.capacity_remaining or 0) > 0]
     busy = [r for r in right if r.status != ResourceStatus.AVAILABLE]
     need = req.people_count or 0
     limit = offer_limit_km(req)
-    if deep and getattr(req.type, "value", req.type) == "medical":
-        limit = 10.0  # the matcher only sends a boat to a medical emergency when it is this close
 
     reason, detail = "none_of_kind", {}
     if req.lat is None or req.lng is None:
@@ -98,4 +100,4 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
 def _life_threat(req: StoredRequest) -> bool:
     from app.agents.intake import _LIFE_THREAT
     kind = getattr(req.type, "value", req.type)
-    return kind == "medical" or bool(_LIFE_THREAT.search(req.raw_text or ""))
+    return kind == "medical" or bool(_LIFE_THREAT.search(req.raw_text or ""))

@@ -957,15 +957,40 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   readonly queueSplitOn = computed(() => {
     if (this.queueTab() !== 'waiting') return false;
-    return this.aiWorkingRows().length > 0 || this.queueRows().some((req) => isLifeThreat(req));
+    return this.aiWorkingRows().length > 0 || this.queueRows().some((req) => this.lifePinned(req));
+  });
+
+  /** One Ready number for the Waiting tab pill, the Ready header and the sub-bar chip. */
+  readonly readyCount = computed(() => {
+    const now = this.queueClock();
+    return this.scopedRequests().filter((r) => this.isWaiting(r) && !inWorkingStrip(r, now, this.timeoutAt(r))).length;
+  });
+  /** Waiting cases the AI is still working on. The tab names them only while there are some. */
+  readonly aiCount = computed(() => {
+    const now = this.queueClock();
+    return this.scopedRequests().filter((r) => this.isWaiting(r) && inWorkingStrip(r, now, this.timeoutAt(r))).length;
   });
 
   readonly displayRows = computed(() => {
     if (!this.queueSplitOn()) return this.queueRows();
     const parked = new Set(this.parkedReady());
     const ready = this.queueRows().filter((req) => !inWorkingStrip(req, this.queueClock(), this.timeoutAt(req)) && !parked.has(req.id));
-    return sortReady(ready);
+    // A handled life-threat card un-pins and drops into the normal order with a small tag.
+    const pinned = sortReady(ready.filter((req) => this.lifePinned(req)));
+    const rest = ready.filter((req) => !this.lifePinned(req)).sort((a, b) =>
+      (b.urgency_score - a.urgency_score) || ((Date.parse(b.created_at || '') || 0) - (Date.parse(a.created_at || '') || 0)));
+    return [...pinned, ...rest];
   });
+
+  /** Life-threat cases someone already acted on (send, call, approve). */
+  readonly lifeHandled = signal<ReadonlySet<string>>(new Set());
+  markLifeHandled(id: string): void {
+    if (this.lifeHandled().has(id)) return;
+    const next = new Set(this.lifeHandled()); next.add(id); this.lifeHandled.set(next);
+  }
+  lifePinned(req: StoredRequest): boolean {
+    return isLifeThreat(req) && !this.lifeHandled().has(req.id) && !this.isDispatched(req) && !this.isCompleted(req);
+  }
 
   readonly stripShown = computed(() => {
     const rows = this.aiWorkingRows();
@@ -986,7 +1011,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const all = this.filteredRequests();
     const live = [...all.filter((r) => !this.isHoax(r)), ...all.filter((r) => this.isHoax(r))];
     const order = this.frozenOrder();
-    if (!order || this.liveDemo()?.running) return live;
+    if (!order || this.liveDemo()?.running || this.queueTab() !== 'waiting') return live;
     const byId = new Map(live.map((r) => [r.id, r] as const));
     return order.map((id) => byId.get(id)).filter((r): r is StoredRequest => !!r);
   });
@@ -1783,8 +1808,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       const team = this.resources().find((res) => res.id === prop.resource_id);
       const need = this.requests().find((row) => row.id === prop.request_id)?.people_count || 0;
       if (team && need > (team.capacity_remaining ?? need)) {
-        this.pendingMatch = prop;
-        this.isOvercommitModalOpen.set(true);
+        this.openOvercommit(prop);
         return;
       }
     }
@@ -1832,8 +1856,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
           return;
         }
         if (err.status === 400 && err.error?.detail?.includes('Overcommit')) {
-          this.pendingMatch = prop;
-          this.isOvercommitModalOpen.set(true);
+          this.openOvercommit(prop);
         } else {
           this.actionToast.set({
             text: `Approval error: ${err.error?.detail || err.message}`,
@@ -1879,7 +1902,18 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   }
 
+  private overcommitOpenedAt = 0;
+
+  /** Over capacity always asks first. */
+  private openOvercommit(prop: MatchProposal): void {
+    this.pendingMatch = prop;
+    this.overcommitOpenedAt = Date.now();
+    this.isOvercommitModalOpen.set(true);
+  }
+
   confirmOvercommit(): void {
+    // The second click of a double-click on Approve must not land on "Send anyway".
+    if (Date.now() - this.overcommitOpenedAt < 600) return;
     if (this.pendingMatch) {
       const match = this.pendingMatch;
       this.isOvercommitModalOpen.set(false);
@@ -2087,7 +2121,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
 
   caseTitle(req: StoredRequest): string {
-    if (this.waitingForReading(req)) return this.langService.translate('flow.readingReport');
+    // Opened early: the place when known, else a neutral "New report · RD-xxxx".
+    if (this.waitingForReading(req)) return req.place_text || this.langService.translate('aiq.newReport', { ref: this.shortId(req.id, req.public_code) });
     return req.place_text || this.getTranslationText(req);
   }
 
@@ -2128,12 +2163,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
           }
         }
       }
-    }
-    if (droppedTeams.length === 0) {
-      droppedTeams.push(
-        { name: 'Aluva Ferry Rescue Boat', distanceKm: 76.6, reasonKey: 'why.dropped' },
-        { name: 'Chalakudy River Rescue Boat', distanceKm: 99.3, reasonKey: 'why.dropped' }
-      );
     }
 
     this.dialog.open(WhyThisTeamDialogComponent, {
@@ -2444,6 +2473,41 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       return haversineKm(req.lat, req.lng, team.lat, team.lng);
     }
     return null;
+  }
+
+  /** Dispatched: the sentence names the team actually sent, with its own distance. */
+  /** "~4 min · 0.7 km" from the frozen dispatch record. */
+  dispatchSubline(req: StoredRequest): string {
+    const d = req.dispatch;
+    if (!d) return '';
+    const parts: string[] = [];
+    if (d.eta_minutes != null) parts.push(`~${d.eta_minutes} min`);
+    if (d.distance_km != null) parts.push(`${Number(d.distance_km).toFixed(1)} km`);
+    return parts.join(' · ');
+  }
+
+  sentWhy(req: StoredRequest, prop: MatchProposal): string {
+    const d = req.dispatch;
+    if (d?.resource_name) {
+      return d.distance_km != null
+        ? this.langService.translate('disp.sentTeamKm', { team: d.resource_name, km: Number(d.distance_km).toFixed(1) })
+        : this.langService.translate('disp.sentTeam', { team: d.resource_name });
+    }
+    const team = this.assignedTeam(req);
+    if (!team || team.name === prop.resource_name) return this.teamWhy(prop);
+    let km: number | null = null;
+    if (team.lat != null && team.lng != null && req.lat != null && req.lng != null) {
+      const rad = (d: number) => (d * Math.PI) / 180;
+      const dLat = rad(req.lat - team.lat), dLng = rad(req.lng - team.lng);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(team.lat)) * Math.cos(rad(req.lat)) * Math.sin(dLng / 2) ** 2;
+      km = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+    return km == null
+      ? this.langService.translate('disp.sentTeam', { team: team.name })
+      : this.langService.translate('disp.sentTeamKm', { team: team.name, km: km.toFixed(1) });
+  }
+  doneTime(req: StoredRequest): string {
+    return req.updated_at ? new Date(req.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
   }
 
   teamWhy(prop: MatchProposal): string {

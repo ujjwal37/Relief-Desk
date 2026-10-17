@@ -281,9 +281,6 @@ test.describe('public and coordinator demo', () => {
       await page.getByRole('button', { name: 'Settings' }).click();
       await expect(page.getByRole('button', { name: 'Dark', exact: true })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
-      await expect(page.getByRole('button', { name: 'Hinglish' })).toHaveCount(0);
-      await page.getByTestId('lang-more').click();
-      await expect(page.getByRole('button', { name: 'Malayalam' })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Hinglish' })).toBeVisible();
       await page.getByRole('button', { name: 'Hindi' }).click();
       await page.getByRole('button', { name: 'हो गया' }).click();
@@ -295,13 +292,15 @@ test.describe('public and coordinator demo', () => {
 });
 
 async function exhaustBoats(request: APIRequestContext): Promise<void> {
-  for (let attempt = 0; attempt < 12; attempt += 1) {
+  const skipped = new Set<string>();
+  for (let attempt = 0; attempt < 30; attempt += 1) {
     const resources = await (await request.get(`${API}/api/resources`, { headers: AUTH })).json();
     const free = (resources as Array<{ kind: string; status: string; capacity_remaining: number; lat?: number; lng?: number }>).filter(
       (row) => row.kind === 'boat' && row.status === 'available' && row.capacity_remaining > 0,
     );
-    if (free.length === 0) return;
-    const targetBoat = free[0];
+    const left = free.filter((row: any) => !skipped.has(row.id));
+    if (left.length === 0) return;
+    const targetBoat: any = left[0];
     const lat = targetBoat.lat != null ? targetBoat.lat + 0.005 : 9.42;
     const lng = targetBoat.lng != null ? targetBoat.lng + 0.005 : 76.41;
     const marker = `E2EEX${attempt}${Date.now().toString().slice(-5)}`;
@@ -332,7 +331,7 @@ async function exhaustBoats(request: APIRequestContext): Promise<void> {
     const matches = (await matchesRes.json()) as Array<{ match_id: string; resource_kind: string; is_fallback?: boolean }>;
     const boat = matches.find((row) => row.resource_kind === 'boat' && !row.is_fallback);
     // A remaining boat that matching will not offer for a rooftop rescue cannot fill the gap case.
-    if (!boat) return;
+    if (!boat) { skipped.add(targetBoat.id); continue; }
     // Approve stays locked until the AI steps finish (or the 45 s rules cap lands).
     let approved = await request.post(`${API}/api/matches/${boat!.match_id}/approve`, { headers: AUTH, data: {} });
     for (let tries = 0; tries < 30 && approved.status() === 409; tries++) {

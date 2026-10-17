@@ -222,7 +222,21 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   /** BCP-47 locale for the mic and the text box. English and Hindi are the primary pair. */
+  /** Speech language picked in the voice sheet (Malayalam reports work without a Malayalam UI). */
+  readonly voiceLocale = signal<string | null>(null);
+  pickVoiceLocale(locale: string): void {
+    this.voiceLocale.set(locale);
+    if (this.recognition) {
+      try { this.recognition.stop(); } catch { /* ignore */ }
+      this.recognition = null;
+      this.transcript.set('');
+      if (!this.startRecognition()) this.playSampleUtterance();
+    }
+  }
+
   inputLocale(): string {
+    const picked = this.voiceLocale();
+    if (picked) return picked;
     const lang = this.langService.currentLang();
     if (lang === 'hi' || lang === 'hinglish') return 'hi-IN';
     if (lang === 'ml') return 'ml-IN';

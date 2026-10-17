@@ -44,7 +44,10 @@ WAIT_TAU_MIN = 180.0
 _IN_WATER = re.compile(
     r"in the water|into the water|water (?:is )?(?:inside|entering|coming in|in the house|in our house)|"
     r"(?:neck|chest|waist)[- ]deep|swept away|drowning|being carried|"
-    r"\u092a\u093e\u0928\u0940 \u0918\u0930 \u092e\u0947\u0902|doob|ghar mein paani|andar paani",
+    r"\u092a\u093e\u0928\u0940 \u0918\u0930 \u092e\u0947\u0902|doob|ghar mein paani|andar paani|"
+    # Same depth words in the reporter's own language, so ML/HI reports score like English.
+    r"നെഞ്ചോളം|കഴുത്തോളം|അരയോളം|nenjolam|kazhutholam|arayolam|"
+    r"\u091b\u093e\u0924\u0940 \u0924\u0915|\u0917\u0932\u0947 \u0924\u0915|\u0915\u092e\u0930 \u0924\u0915|chhati tak|gale tak|kamar tak",
     re.I,
 )
 _TRAPPED = re.compile(r"trapped|stuck|can'?t get out|cannot get out|unable to (?:leave|get out|move)|phanse|phas", re.I)
@@ -80,6 +83,20 @@ _LONG = re.compile(r"since yesterday|since last night|(?:1[2-9]|[2-9]\d) hours|\
 _ISOLATED = re.compile(r"cut off|isolated|no road|road (?:washed|blocked|gone)|bridge (?:collapsed|gone|washed)|unreachable|no access|no way out", re.I)
 
 
+_NATIVE_WATER = re.compile(r"വെള്ളം|vellam|पानी|paani|pani|water", re.I)
+
+
+def _reported_text(req: StoredRequest, fallback: str = "") -> str:
+    """What the reporter said. A model translation counts only when the original also mentions water,
+    so a hazard like 'people in the water' is never invented by a summary."""
+    raw = getattr(req, "raw_text", None)
+    if raw is None:
+        return fallback
+    if _NATIVE_WATER.search(raw):
+        return " ".join([raw, getattr(req, "ai_translation", None) or "", *list((getattr(req, "translations", None) or {}).values())])
+    return raw
+
+
 def _text_of(req: StoredRequest) -> str:
     parts = [req.raw_text or "", req.summary or "", req.ai_translation or "", req.place_text or ""]
     parts += list((req.translations or {}).values())
@@ -99,7 +116,12 @@ class ScoringEngine:
     def tier_for(self, req: StoredRequest, text: str, wait_minutes: float) -> Tuple[str, str]:
         """Triage first (SALT/START style): fixed categories by obvious life threat."""
         v = req.vulnerable
-        in_water = bool(_IN_WATER.search(text))
+        # Rules floor: a life-threat phrase in the reporter's words is always the top tier.
+        from app.tools.case_queue import life_phrase
+        phrase = life_phrase(getattr(req, "raw_text", None)) or life_phrase(getattr(req, "ai_translation", None))
+        if phrase:
+            return "immediate", f"life threat reported: \u201c{phrase}\u201d"
+        in_water = bool(_IN_WATER.search(_reported_text(req, text)))
         if in_water:
             return "immediate", "people are in the water or water is entering the home"
         if req.hazard == HazardType.WATER_RISING and _TRAPPED.search(text):
@@ -173,8 +195,8 @@ class ScoringEngine:
         # Score as one person when unknown, but never claim a count the report did not give.
         reasons_parts.append("people not stated" if not req.people_count else f"{count} person{'s' if count != 1 else ''}")
 
-        # Hazard.
-        in_water = bool(_IN_WATER.search(text))
+        # Hazard. "In the water" only from what the reporter said.
+        in_water = bool(_IN_WATER.search(_reported_text(req, text)))
         hazard_map = {
             HazardType.WATER_RISING: (0.9, "water rising"),
             HazardType.INJURY: (0.85, "injury"),
@@ -260,7 +282,7 @@ class ScoringEngine:
             reason_text += " Flagged as possible hoax or spam, so capped at 40."
         if verify:
             reason_text += " Please verify: the report is unclear, so priority was kept, not lowered."
-        reason_text += f" (Urgency score: {final_score})"
+        # The score number stays in the breakdown (technical details), not in the sentence a coordinator reads.
 
         return UrgencyScoreResult(
             score=final_score,

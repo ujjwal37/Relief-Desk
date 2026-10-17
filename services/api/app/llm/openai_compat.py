@@ -138,7 +138,7 @@ def chat_json(system: str, user: str, timeout_s: Optional[float] = None,
     body: Dict[str, Any] = {
         "model": model(),
         "messages": _messages(system, user),
-        "temperature": 0.1,
+        "temperature": 0.0,
         "max_tokens": 1500,
     }
     if _json_mode_ok is not False:

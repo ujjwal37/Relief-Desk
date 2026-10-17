@@ -402,7 +402,7 @@ describe('CoordinatorCommandComponent', () => {
       summary: '1 person(s) needing other at Alappuzha',
       ai_translation: null,
     };
-    expect(component.caseTitle(reading)).toBe('Reading this report…');
+    expect(component.caseTitle(reading)).toBe('Alappuzha'); // the place, while the AI reads
     expect(component.getTranslationText(reading)).not.toContain('person(s) needing');
     const dashed = { ...mockProposal, explanation: '5 boat free: — km' };
     expect(component.teamWhy(dashed)).toContain('km');
