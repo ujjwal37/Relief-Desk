@@ -574,7 +574,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   private withSummary(card: ConfirmationCardData): ConfirmationCardData {
-    const count = card.people_count ?? 0;
+    // Unknown stays unknown: a missing count is 'not stated', never 0.
+    const count = card.people_count ?? this.langService.translate('people.notStated');
     const type = this.langService.translate(`incidentType.${card.incident_type}`);
     const vulns = Object.entries(card.vulnerable || {})
       .filter(([, on]) => on)
