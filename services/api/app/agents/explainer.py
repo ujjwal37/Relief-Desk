@@ -22,11 +22,13 @@ class ExplainerAgent:
         resource: StoredResource,
         breakdown: MatchBreakdown,
     ) -> Explanation:
-        people = request.people_count if request.people_count else 1
+        # The live score is shown next to this text; repeating it here goes stale as wait time grows.
+        people = request.people_count
+        who_en = f"{people} {'person' if people == 1 else 'people'}" if people else "the people reported (count not stated)"
         text_en = (
             f"{resource.name} is {breakdown.distance_km} km away"
-            f"{' by water (boat, straight line)' if getattr(resource.kind, 'value', resource.kind) == 'boat' else ''} with {resource.capacity_remaining} capacity "
-            f"to assist {people} people. Total match score is {breakdown.total_score} based on proximity and urgency."
+            f"{' by water (boat, straight line)' if getattr(resource.kind, 'value', resource.kind) == 'boat' else ''} with {resource.capacity_remaining} seats "
+            f"to assist {who_en}."
         )
 
         from app.tools.inventory import inventory_note
@@ -36,8 +38,8 @@ class ExplainerAgent:
 
         res_name_hi = resource.name_hi or resource.name
         text_hi = (
-            f"{res_name_hi} {breakdown.distance_km} किमी दूर है और {people} लोगों की सहायता के लिए उपलब्ध है। "
-            f"कुल मिलान स्कोर {breakdown.total_score} है।"
+            f"{res_name_hi} {breakdown.distance_km} किमी दूर है और "
+            f"{(str(people) + ' लोगों') if people else 'बताए गए लोगों'} की सहायता के लिए उपलब्ध है।"
         )
 
         return Explanation(text_en=text_en, text_hi=text_hi)

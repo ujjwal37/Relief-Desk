@@ -77,7 +77,7 @@ def test_approve_and_reject_match_api():
     # 1. Approve match
     approve_resp = client.post(
         f"/api/matches/{match_id}/approve",
-        json={"allow_overcommit": False},
+        json={"allow_overcommit": False, "confirm_take": True},
         headers=AUTH_HEADERS,
     )
     assert approve_resp.status_code == 200

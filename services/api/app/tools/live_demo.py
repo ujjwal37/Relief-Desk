@@ -148,6 +148,15 @@ def start(submit: Callable[[Dict[str, Any]], Any]) -> Dict[str, Any]:
     with _lock:
         if _state["running"] and _thread is not None and _thread.is_alive():
             return dict(_state)
+        # Idempotent: a finished run whose cases are still on the desk is not run again,
+        # so every visit to "Try the desk" does not add 8 more reports. A demo reset clears them.
+        if _state.get("status") == "done" and _state.get("case_ids"):
+            try:
+                from app.tools.storage import storage_service
+                if any(storage_service.get_request(cid) for cid in _state["case_ids"]):
+                    return dict(_state)
+            except Exception:  # pragma: no cover - fall through to a fresh run
+                pass
         _state.update({
             "running": True,
             "status": "running",

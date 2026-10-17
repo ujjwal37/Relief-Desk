@@ -562,6 +562,9 @@ def _refine_with_model(
     req_obj.hazard = analysis.hazard
     from app.agents.depth import validate_depth
     depth = validate_depth(getattr(analysis, "water_depth", None), getattr(analysis, "water_depth_quote", None), citizen_text or report_text, ai_source)
+    if not depth or depth.get("band") == "unknown":
+        from app.agents.depth import depth_from_text
+        depth = depth_from_text(citizen_text or report_text) or depth
     if depth is not None or not joined:
         req_obj.water_depth = depth
     flags = set(flags)
@@ -646,7 +649,7 @@ def _demo_hindi_target_id(exclude_id: str) -> Optional[str]:
     for row in storage_service.list_requests():
         if row.id == exclude_id or row.merged_into:
             continue
-        if row.id in hindi_ids or "चालाकुडी" in (row.raw_text or ""):
+        if row.id in hindi_ids or "पुलिंकुन्नु" in (row.raw_text or ""):
             return row.id
     return None
 

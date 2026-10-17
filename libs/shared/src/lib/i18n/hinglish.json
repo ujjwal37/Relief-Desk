@@ -118,7 +118,7 @@
     "sendNow": "Abhi bhejein",
     "edit": "Badlein",
     "understood": "Samajh liya",
-    "aiSummary": "AI summary",
+    "aiSummary": "Summary",
     "nothingSent": "Jab tak aap Abhi bhejein nahi dabate, kuch nahi jaata.",
     "vulnerable": "Jinhe extra care chahiye",
     "child": "Baccha",
@@ -133,7 +133,10 @@
     "done": "Ho gaya",
     "review": "Jaanchein",
     "callOutline": "112 par call karein",
-    "change": "Badlein"
+    "change": "Badlein",
+    "yourWords": "Aapke shabd:",
+    "hoaxWarn": "Yeh forward ya spam message lagta hai. Tabhi bhejein jab aap sach mein wahin hon.",
+    "notStated": "Nahi bataya"
   },
   "incidentType": {
     "rescue": "Bachav",
@@ -170,8 +173,9 @@
     "viewFull": "Poori queue dekhein",
     "showReport": "Report dikhayein",
     "tabsLabel": "Queue ka view",
-    "tabSent": "Sent",
-    "tabDone": "Done"
+    "tabSent": "Bheja",
+    "tabDone": "Done",
+    "tabWaiting": "Waiting"
   },
   "alerts": {
     "title": "Alerts",
@@ -268,7 +272,7 @@
     "critical": "{n} critical",
     "waitingGemini": "Gemini ka intezaar · queue {n}",
     "done": "Live demo khatam",
-    "recordedNotice": "Pehle chale Gemini ka recording dubara dikha rahe hain.",
+    "recordedNotice": "Pichhle run ka recorded replay.",
     "samplesLabel": "Aath sample reports",
     "tryOwn": "Apni report try karo",
     "tryOwnPlaceholder": "Kisi bhi bhasha mein flood report likho",
@@ -386,7 +390,7 @@
     "traceComplete": "Ho gaya",
     "aiGemini": "Gemini",
     "aiOffline": "Rules mode",
-    "aiRecorded": "Recorded (Gemini)",
+    "aiRecorded": "Recorded replay",
     "updateLocation": "Location badlein",
     "lat": "Uttar-dakshin",
     "lng": "Poorv-paschim",
@@ -443,7 +447,7 @@
     "possibleDuplicate": "Shayad same incident, check karo",
     "mergeReports": "Merge karo",
     "keepSeparate": "Alag rakho",
-    "youDecide": "Aapke approve ke bina kuch nahi bheja jata.",
+    "youDecide": "Aapki approval ke bina kuch nahi bheja jata.",
     "approve": "Approve karein aur bhejein",
     "change": "Badlein",
     "reject": "Mana karein",
@@ -875,7 +879,7 @@
     "deskPeople": "{n} log",
     "noModel": "Rules (koi model nahi)",
     "ms": "{n} ms",
-    "badgeRecorded": "Recorded (Gemini)",
+    "badgeRecorded": "Recorded replay",
     "statusDone": "Ho gaya",
     "statusRunning": "Chal raha hai",
     "statusWaiting": "Intezar",
@@ -934,11 +938,12 @@
     "agentScope": "Case assistant",
     "agentIntro": "Jagah, zaroorat, ya abhi bhi intezaar kar rahe logon ke requests khojein.",
     "agentFootnote": "Jawab cases review karne mein madad karte hain. Dispatch ki manzoori case queue se dein.",
-    "textNotStored": "Is sample report ka text save nahi hai"
+    "textNotStored": "Is sample report ka text save nahi hai",
+    "firstReport": "Pehli report"
   },
   "flow": {
     "title": "AI ne kaise decide kiya",
-    "headline": "{n} AI steps",
+    "headline": "{n} steps",
     "forCase": "{id} · {title} ke liye",
     "parallel": "Ek saath",
     "details": "Details",
@@ -972,12 +977,14 @@
     "modelLatency": "Model · latency",
     "waiting": "Wait",
     "badgeTool": "Google Maps",
-    "badgeCache": "Recorded (Gemini)",
+    "badgeCache": "Recorded replay",
     "badgeYou": "Aap",
     "fallbackBuiltIn": "Gemini unavailable, built-in rules use kiye gaye",
-    "readingReport": "Gemini ye report padh raha hai…",
+    "readingReport": "Yeh report padhi ja rahi hai…",
     "simulateOutage": "Rules fallback preview dekhein",
-    "simulatedOnly": "Sirf preview. Saved traces aur dispatch decisions nahi badalte."
+    "simulatedOnly": "Sirf preview. Saved traces aur dispatch decisions nahi badalte.",
+    "sentDedupeJoined": "Ek hi jagah ki {n} reports jodi gayi.",
+    "badgeStraight": "Rules · seedhi doori"
   },
   "uiRef": {
     "activeQueue": "Active queue",
@@ -1156,7 +1163,12 @@
     "showPrompt": "Prompt aur jawab dikhao",
     "hidePrompt": "Prompt aur jawab chhupao",
     "whyJoined": "{n} reports ek hi jagah aur logon ke baare mein hain, kam samay mein, isliye ek case hai.",
-    "whyDistinct": "Pichhle ek ghante mein is jagah ka koi aur open case nahi."
+    "whyDistinct": "Pichhle ek ghante mein is jagah ka koi aur open case nahi.",
+    "joinedN": "{n} jodi",
+    "ofN": "step {k} / {n}",
+    "inputs": "Use hui jaankari",
+    "maybeDup": "Shayad repeat",
+    "noFree": "Koi free team nahi"
   },
   "panel": {
     "moreDetails": "Aur details"
@@ -1165,7 +1177,7 @@
     "rules": "Rules",
     "gemini": "Gemini",
     "testModel": "Test model",
-    "recorded": "Recorded (Gemini)"
+    "recorded": "Recorded replay"
   },
   "ward": "Ward {n}",
   "chip": {
@@ -1179,7 +1191,7 @@
     "fixed": "Doosre Gemini check ne report quote karke {changes} theek kiya:",
     "people": "log",
     "place": "jagah",
-    "recorded": "Recorded (Gemini)"
+    "recorded": "Recorded replay"
   },
   "depth": {
     "boatChosen": "Boat chuni gayi: report ke hisaab se paani {depth} hai.",
@@ -1228,11 +1240,12 @@
     "forJudges": "Judges ke liye:",
     "src": {
       "gemini": "✨ Gemini live",
-      "recorded": "Recorded (Gemini)",
+      "recorded": "Recorded replay",
       "local": "Local test AI",
       "rules": "Rules"
     },
-    "briefUnavailable": "Brief abhi nahi mila"
+    "briefUnavailable": "Brief abhi nahi mila",
+    "notUpdated": "update nahi"
   },
   "steps": {
     "gemini": "✨ Gemini ne 5 steps check kiye",
@@ -1241,13 +1254,14 @@
     "see": "Kaise, dekhein",
     "hide": "Steps chhupayein",
     "badgeRules": "Rules",
-    "badgeRecorded": "Recorded (Gemini)",
+    "badgeRecorded": "Recorded replay",
     "short.intake": "Read",
     "short.dedupe": "Duplicates check",
     "short.urgency": "Urgency rating",
     "short.maps": "Team",
     "short.explain": "Samjhaya",
-    "short.you": "Aap"
+    "short.you": "Aap",
+    "youShort": "Aap approve karein"
   },
   "keys": {
     "title": "Keyboard shortcuts",
@@ -1294,7 +1308,7 @@
     "stays": "Priority wahi rahegi. Case queue mein apni jagah par rahega.",
     "yourOptions": "Aapke options",
     "opt": {
-      "reserve": "Agli free team reserve karo: {team}, lagbhag {free} min mein free, lagbhag {eta} min mein pahunchegi",
+      "reserve": "{team} reserve karein: ~{free} min mein free, phir pahunchne mein ~{travel} min (kul ≈ {eta} min)",
       "road": "Abhi road team bhejo jaanch ke liye: {team}, {km} km, lagbhag {eta} min. Ye paani mein rescue nahi kar sakti.",
       "wider": "{limit} km se aage dhoondo: {team}, {km} km, lagbhag {eta} min",
       "escalate": "District control room ko escalate karo",
@@ -1306,7 +1320,7 @@
       "road": "Road team bhejo",
       "wider": "Door wali team lo",
       "escalate": "Escalate karo",
-      "call112": "112 call karein",
+      "call112": "Abhi 112 call karein",
       "share": "Alert share karein"
     },
     "logged": {
@@ -1316,12 +1330,32 @@
       "escalate": "District control room ko escalate kiya (log hua)."
     },
     "failed": "Choice save nahi hua. Dobara try karo.",
-    "footer": "Aapke approve karne tak kuch nahi bheja jaata. Samay seedhi doori ka andaaza hai."
+    "footer": "Aapke approve karne tak kuch nahi bheja jaata. Samay seedhi doori ka andaaza hai.",
+    "tip": "Ek option chuniye, phir Enter dabaiye.",
+    "goTeam": {
+      "reserve": "{team} reserve karein",
+      "road": "{team} bhejein",
+      "wider": "{team} bhejein"
+    }
   },
   "dec": {
     "depth": "Gehrai",
     "selfCheck": "Self-check",
     "notStated": "nahi bataya",
     "notRun": "abhi nahi chala"
+  },
+  "disp": {
+    "onWay": "Team raste mein hai",
+    "sentAt": "{t} par bheja · aapne",
+    "markArrived": "Pahunchi mark karein"
+  },
+  "take": {
+    "warn": "{team} {ref} (urgency {u}) ke liye bhi best team hai, jo zyada zaroori hai.",
+    "next": "Tab us case ko {team} ({km} km) milegi.",
+    "noNext": "Tab us case ke liye koi free team nahi hogi.",
+    "anyway": "Phir bhi bhejein"
+  },
+  "reject": {
+    "which": "Is case ke liye {team} reject kar rahe hain. Kyon?"
   }
 }

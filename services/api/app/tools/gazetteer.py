@@ -171,4 +171,32 @@ class Gazetteer:
         return None
 
 
+def ward_for_point(lat: Optional[float], lng: Optional[float], max_km: float = 4.0) -> Optional[str]:
+    """Ward of a point: the nearest ward centre within ``max_km``, else None (outside mapped wards).
+
+    The area label must come from where the case is, not from a default ward.
+    """
+    if lat is None or lng is None:
+        return None
+    import math
+    best, best_km = None, max_km
+    for wid, w in gazetteer.wards.items():
+        if w.get("lat") is None or w.get("lng") is None:
+            continue
+        dlat = math.radians(float(w["lat"]) - lat)
+        dlng = math.radians(float(w["lng"]) - lng)
+        h = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat)) * math.cos(math.radians(float(w["lat"]))) * math.sin(dlng / 2) ** 2
+        km = 2 * 6371 * math.asin(math.sqrt(h))
+        if km <= best_km:
+            best, best_km = wid, km
+    return best
+
+
+def landmark_name(landmark_id: Optional[str]) -> Optional[str]:
+    for lm in gazetteer.landmarks:
+        if lm.get("id") == landmark_id:
+            return lm.get("name")
+    return None
+
+
 gazetteer = Gazetteer()

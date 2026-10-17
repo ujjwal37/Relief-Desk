@@ -294,11 +294,13 @@ def hazard_name(text: str) -> Optional[str]:
     lower = text.lower()
     if any(w in lower or w in text for w in _RECEDED):
         return None
-    if any(w in lower for w in ("paani", "pani", "पानी", "water rising", "water", "बाढ़", "flood")):
-        if any(w in lower for w in ("bhar", "badh", "rising", "भर", "बढ़", "flood", "बाढ़", "फंस")):
+    if any(w in lower or w in text for w in ("paani", "pani", "पानी", "water rising", "water", "बाढ़", "flood", "vellam", "വെള്ളം")):
+        if any(w in lower or w in text for w in ("bhar", "badh", "rising", "भर", "बढ़", "flood", "बाढ़", "फंस",
+                                              "koodunnu", "kooduka", "kerunnu", "keruka", "uyarunnu", "pongunnu",
+                                              "കൂടുന്നു", "കയറുന്നു", "ഉയരുന്നു", "പൊങ്ങുന്നു")):
             return "water_rising"
-        if "paani" in lower or "pani" in lower or "पानी" in text:
+        if "paani" in lower or "pani" in lower or "पानी" in text or "vellam" in lower or "വെള്ളം" in text:
             return "water_rising"
-    if any(w in lower for w in ("stranded", "trapped", "फंसे", "फंस", "chhat", "chat par", "boat")):
+    if any(w in lower for w in ("stranded", "trapped", "फंसे", "फंस", "chhat", "chat par", "boat", "kudungi", "kudunghi", "കുടുങ്ങി")):
         return "stranded"
     return None

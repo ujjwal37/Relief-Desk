@@ -13,6 +13,9 @@ const BRIEF_MIN_GAP_MS = 3 * 60 * 1000;
 interface Area { ward: string; label: string; critical: number; urgent: number; waiting: number; freeTeams: number; }
 
 /** Situation: where it is worst, what is waiting, which teams are free. Every number comes from the desk data. */
+/** Areas are grouped and named by ward, never by a case title. */
+const WARD_NAME: Record<string, string> = { ward_1: 'Kainakary', ward_2: 'Champakulam', ward_3: 'Nedumudi' };
+
 @Component({
   selector: 'app-coordinator-situation',
   standalone: true,
@@ -77,7 +80,7 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
             <h2>{{ 'sit.teams' | rdTranslate }}</h2>
             <ul class="kinds">
               @for (k of teamKinds(); track k.kind) {
-                <li><span>{{ ('coord.kind.' + k.kind) | rdTranslate }}</span><span><i class="dot free"></i>{{ k.free }} {{ 'sit.free' | rdTranslate }} · <i class="dot busy"></i>{{ k.busy }} {{ 'sit.busy' | rdTranslate }}</span></li>
+                <li><span>{{ ('coord.kind.' + k.kind) | rdTranslate }}</span><span><i class="dot free"></i>{{ k.free }} {{ 'sit.free' | rdTranslate }} · <i class="dot busy"></i>{{ k.busy }} {{ 'sit.busy' | rdTranslate }}@if (k.stale) { · <i class="dot stale"></i>{{ k.stale }} {{ 'sit.notUpdated' | rdTranslate }} }</span></li>
               }
             </ul>
           </section>
@@ -92,6 +95,7 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
     h1 { margin:0; font-size:24px; font-weight:600; color:var(--text); }
     h2 { margin:0 0 10px; font-size:14px; font-weight:600; color:var(--text); }
     .lead { margin:4px 0 0; color:var(--text-2); font-size:14px; font-variant-numeric:tabular-nums; }
+    .dot.stale { background: var(--muted, #8a8a8a); }
     .primary { border:0; border-radius:var(--r2); padding:10px 18px; font:inherit; font-weight:600; background:var(--brand); color:var(--on-brand); cursor:pointer; }
     .primary:hover { filter:brightness(1.08); }
     .ghost { margin-left:auto; border:1px solid var(--border-2, var(--border)); background:var(--card); color:var(--text); border-radius:var(--r1); padding:4px 10px; font:inherit; font-size:12px; cursor:pointer; }
@@ -197,17 +201,19 @@ export class CoordinatorSituationComponent implements OnInit {
     const out = [...map.values()].map((a) => {
       const top = [...a.names.entries()].sort((x, y) => y[1] - x[1])[0]?.[0];
       const free = teams.filter((t) => t.ward_id === a.ward && teamTone(t) === 'free').length;
-      return { ward: a.ward, label: top ? `${top} · ${a.ward.replace(/^ward_?/i, 'Ward ')}` : a.ward, critical: a.critical, urgent: a.urgent, waiting: a.waiting, freeTeams: free };
+      return { ward: a.ward, label: WARD_NAME[a.ward] || top || a.ward.replace(/^ward_?/i, 'Ward '), critical: a.critical, urgent: a.urgent, waiting: a.waiting, freeTeams: free };
     });
     return out.filter((a) => a.critical + a.urgent > 0).sort((x, y) => y.critical - x.critical || y.urgent - x.urgent || y.waiting - x.waiting).slice(0, 5);
   });
 
   readonly teamKinds = computed(() => {
-    const by = new Map<string, { kind: string; free: number; busy: number }>();
+    // Same buckets as the Teams page (teamTone): free, busy, not updated.
+    const by = new Map<string, { kind: string; free: number; busy: number; stale: number }>();
     for (const t of this.desk.resources()) {
       const k = String(t.kind);
-      const row = by.get(k) || { kind: k, free: 0, busy: 0 };
-      if (teamTone(t) === 'free') row.free++; else row.busy++;
+      const row = by.get(k) || { kind: k, free: 0, busy: 0, stale: 0 };
+      const tone = teamTone(t);
+      if (tone === 'free') row.free++; else if (tone === 'busy') row.busy++; else row.stale++;
       by.set(k, row);
     }
     return [...by.values()];

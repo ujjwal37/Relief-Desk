@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { peopleText } from '../../core/people-text';
 import { LanguageService, MatchProposal, RdTranslatePipe, StoredRequest } from '@rd/shared';
+import { STEP_COUNT, bandKey, joinedCount, urgencyNumber } from '../case-facts';
 
 export interface StepStatusInfo {
   agent: 'Intake' | 'Dedupe' | 'Triage' | 'Matching' | 'Explainer';
@@ -16,7 +17,7 @@ export interface StepStatusInfo {
     <div class="stepper-card">
       <header class="stepper-head">
         <div class="head-left">
-          <span class="step-count-title">{{ 'flow.headline' | rdTranslate:{ n: 6 } }}</span>
+          <span class="step-count-title">{{ 'flow.headline' | rdTranslate:{ n: stepCount } }}</span>
           <span class="run-badge">{{ runBadge() }}</span>
         </div>
         <button type="button" class="how-decided-btn" (click)="howDecided.emit()">
@@ -77,7 +78,6 @@ export interface StepStatusInfo {
           </div>
           <div class="node-title-wrap">
             <span class="node-title">{{ 'steps.short.dedupe' | rdTranslate }}</span>
-            <span class="tag-parallel">{{ 'step.parallel' | rdTranslate }}</span>
           </div>
           <span class="node-result">{{ dedupeResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(1).gemini">{{ stepBadge(1).text }}</span>
@@ -109,7 +109,6 @@ export interface StepStatusInfo {
           </div>
           <div class="node-title-wrap">
             <span class="node-title">{{ 'steps.short.urgency' | rdTranslate }}</span>
-            <span class="tag-parallel">{{ 'step.parallel' | rdTranslate }}</span>
           </div>
           <span class="node-result">{{ urgencyResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(2).gemini">{{ stepBadge(2).text }}</span>
@@ -123,6 +122,7 @@ export interface StepStatusInfo {
           type="button"
           class="step-node"
           data-testid="stepper-node-matching"
+          [class.amber]="noFree()"
           [class.done]="nodeStatus(3) === 'done'"
           [class.working]="nodeStatus(3) === 'working'"
           [class.failed]="nodeStatus(3) === 'failed'"
@@ -192,7 +192,7 @@ export interface StepStatusInfo {
             </span>
           </div>
           <span class="node-title">{{ 'steps.short.you' | rdTranslate }}</span>
-          <span class="node-result">{{ 'coord.youDecide' | rdTranslate }}</span>
+          <span class="node-result">{{ youResult() }}</span>
         </button>
       </div>
 
@@ -342,6 +342,8 @@ export interface StepStatusInfo {
       border: 1px dashed var(--border, #3d5849);
       color: var(--muted, #9bb0a5);
     }
+    .step-node.amber .node-indicator { background: #fdf3e2; border-color: var(--urg, #a35c00); color: var(--urg, #a35c00); }
+    .step-node.amber .node-result { color: var(--urg, #a35c00); font-weight: 600; }
     .node-result {
       font-size: 11px;
       color: var(--muted, #9bb0a5);
@@ -412,14 +414,17 @@ export class AiStepperComponent {
     return `${need} · ${peopleText(req.people_count, t)}`;
   });
 
+  readonly stepCount = STEP_COUNT;
+
   readonly dedupeResult = computed<string>(() => {
     const req = this.request();
     if (!req) return '—';
-    if ((req.merged_count || 1) > 1) {
-      return `${req.merged_count} joined`;
+    this.lang.currentLang();
+    if (joinedCount(req) > 1) {
+      return this.lang.translate('step.joinedN').replace('{n}', String(joinedCount(req)));
     }
     if (req.possible_duplicate) {
-      return `Maybe #${req.possible_duplicate.target_id}`;
+      return this.lang.translate('step.maybeDup');
     }
     return this.lang.translate('step.result.noDup');
   });
@@ -428,17 +433,20 @@ export class AiStepperComponent {
     const req = this.request();
     if (!req) return '—';
     if (this.hoax(req)) return this.lang.translate('hoax.held');
-    const score = Math.round(req.urgency_score);
-    const band = score >= 80 ? this.lang.translate('band.critical') : this.lang.translate('band.urgent');
-    return `${score} · ${band}`;
+    const score = urgencyNumber(req);
+    return `${score} · ${this.lang.translate(bandKey(req.urgency_score))}`;
   });
 
   readonly matchingResult = computed<string>(() => {
     const r0 = this.request();
     if (r0 && this.hoax(r0)) return this.lang.translate('hoax.notMatched');
     const prop = this.activeProposal();
-    if (!prop) return '—';
-    const kind = prop.resource_kind === 'boat' ? 'Boat' : 'Team';
+    if (!prop) {
+      this.lang.currentLang();
+      return r0 && r0.type !== 'info' && r0.status !== 'completed' ? this.lang.translate('step.noFree') : '—';
+    }
+    this.lang.currentLang();
+    const kind = this.lang.translate(prop.resource_kind === 'boat' ? 'coord.kind.boat' : 'stepper.team');
     const km = prop.breakdown?.distance_km;
     if (km == null || Number.isNaN(Number(km))) return kind;
     return `${kind} · ${km} km`;
@@ -447,6 +455,23 @@ export class AiStepperComponent {
   private hoax(req: { hoax_reason?: string | null; flags?: string[] | null }): boolean {
     return !!req.hoax_reason || !!req.flags?.some((f) => f === 'hoax' || f === 'likely_hoax');
   }
+
+  readonly youResult = computed<string>(() => {
+    const req = this.request();
+    this.lang.currentLang();
+    const sent = ['approved', 'dispatched', 'in_progress', 'en_route', 'on_scene'].includes(String(req?.status || ''));
+    if (sent && req?.updated_at) {
+      const hm = new Date(req.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return this.lang.translate('disp.sentAt').replace('{t}', hm);
+    }
+    if (String(req?.status || '') === 'completed') return this.lang.translate('coord.filterCompleted');
+    return this.lang.translate('steps.youShort');
+  });
+
+  readonly noFree = computed<boolean>(() => {
+    const r0 = this.request();
+    return !!r0 && !this.activeProposal() && r0.type !== 'info' && !this.hoax(r0) && r0.status !== 'completed';
+  });
 
   readonly explainResult = computed<string>(() => {
     const req = this.request();

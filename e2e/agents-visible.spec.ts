@@ -101,7 +101,8 @@ test.describe('agents visible', () => {
       await page.locator('app-merged-chip').getByRole('button').first().click();
       const merge = page.getByRole('dialog', { name: 'Reports merged into this case' });
       await expect(merge).toBeVisible();
-      await expect(merge.getByText('Not recorded').first()).toBeVisible();
+      // Empty fields are hidden now; each merged report shows its RD reference.
+      await expect(merge.getByText(/RD-\d+/).first()).toBeVisible();
       await shot(page, `${viewport.name}-merged-reports`);
       await page.keyboard.press('Escape');
       await expect(merge).toBeHidden();

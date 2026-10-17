@@ -1012,10 +1012,11 @@ class StorageService:
                     id=item["id"],
                     pack_id=item.get("pack_id") or pack_id,
                     type=IncidentType(item.get("type", "rescue")),
-                    place_text=item.get("description", ""),
-                    ward_id=item.get("ward_id"),
-                    lat=float(item.get("lat", 10.50)),
-                    lng=float(item.get("lng", 76.30)),
+                    # Place is the named spot only (landmark), never the whole description.
+                    place_text=_seed_place(item),
+                    ward_id=_seed_ward(item),
+                    lat=(float(item["lat"]) if item.get("lat") is not None else None),
+                    lng=(float(item["lng"]) if item.get("lng") is not None else None),
                     people_count=(int(item["people"]) if item.get("people") else None),
                     vulnerable=vuln,
                     hazard=HazardType(item.get("hazard", "unknown")),
@@ -1046,23 +1047,15 @@ class StorageService:
                 req.urgency_score = urg_res.score
                 req.urgency_reason = urg_res.reason
 
-                # Hero demo case: INC-001 has merged duplicates and update
-                if req.id == "INC-001":
-                    req.merged_count = 3
-                    req.update_count = 1
-                    cluster_id = f"cl_seed_{req.id}"
-                    req.cluster_id = cluster_id
-                    cluster = StoredCluster(
-                        id=cluster_id,
-                        request_ids=[req.id, "INC-001-dup1", "INC-001-dup2"],
-                        evidence=[
-                            "3 reports, same lane, within 9 min",
-                            "Update: now 8 people, urgency raised",
-                        ],
-                        merged_by="dedupe_agent",
-                    )
-                    self._clusters[cluster.id] = cluster
-
+                # No invented merges: INC-001 stands alone until a real duplicate report joins it.
+                if req.people_count is None and _re.search(r"\b(?:my |an |a |one )?(?:elderly )?(?:father|mother|grandmother|grandfather|patient|son|daughter|husband|wife|man|woman|person)\b", _txt):
+                    req.people_count = 1
+                    if "count_provisional" not in req.flags:
+                        req.flags.append("count_provisional")
+                from app.api.public import public_code_for as _pc
+                req.public_code = req.public_code or _pc(req.id)
+                _u = scoring_engine.compute_urgency(req)
+                req.urgency_score, req.urgency_reason = _u.score, _u.reason
                 self._requests[req.id] = req
                 count += 1
             except Exception as e:
@@ -1227,3 +1220,23 @@ def simulate_demo_checkins(resources, now=None):
         res.simulated = True
         changed += 1
     return changed
+
+
+def _seed_place(item: dict) -> Optional[str]:
+    """Short place for a seeded case: its landmark name, else a 'near X' span, else None."""
+    import re as _re
+    from app.tools.gazetteer import landmark_name
+    name = landmark_name(item.get("landmark_id"))
+    if name:
+        return name
+    m = _re.search(r"\b(?:near|at|in)\s+((?:[A-Z][\w'-]+\s?){1,4})", item.get("description") or "")
+    return m.group(1).strip() if m else None
+
+
+def _seed_ward(item: dict) -> Optional[str]:
+    """Ward from the case's coordinates; falls back to the seed ward only when there are none."""
+    from app.tools.gazetteer import ward_for_point
+    lat, lng = item.get("lat"), item.get("lng")
+    if lat is not None and lng is not None:
+        return ward_for_point(float(lat), float(lng))
+    return item.get("ward_id")

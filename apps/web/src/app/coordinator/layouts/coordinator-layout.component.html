@@ -26,11 +26,13 @@
       <div class="right">
         <span class="ai-pill" data-testid="ai-health" [class.live]="aiHealth()?.provider === 'gemini'" [class.off]="aiHealth()?.provider !== 'gemini'" [attr.title]="aiHealth()?.model || ''">{{ aiPillText() }}@if (geminiCalls() != null) { <span class="ai-calls" data-testid="gemini-calls"> · {{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }</span>
         <div class="menu-wrap">
-          <button type="button" class="avatar more-btn" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate">{{ 'coord.more' | rdTranslate }} ▾</button>
+          <button type="button" class="avatar more-btn" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate"><span class="more-word">{{ 'coord.more' | rdTranslate }} ▾</span><span class="burger" aria-hidden="true">☰</span></button>
           @if (menuOpen()) {
             <div class="menu-back" (click)="menuOpen.set(false)"></div>
             <div class="menu" role="menu">
               <p class="who">{{ authService.currentUser()?.email || 'demo-coordinator@reliefdesk.internal' }}</p>
+              <a class="item m-only" routerLink="/coordinator/situation" (click)="menuOpen.set(false)">{{ 'sit.title' | rdTranslate }}</a>
+              <a class="item m-only" routerLink="/coordinator/command" (click)="menuOpen.set(false)">{{ 'nav.command' | rdTranslate }}</a>
               <a class="item" routerLink="/coordinator/teams" (click)="menuOpen.set(false)">{{ 'coord.teams' | rdTranslate }}</a>
               <a class="item" routerLink="/coordinator/alerts" (click)="menuOpen.set(false)">{{ 'coord.alerts' | rdTranslate }}
                 @if (ui.alerts().length) { <span class="count">{{ ui.alerts().length }}</span> }

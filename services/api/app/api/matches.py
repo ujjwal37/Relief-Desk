@@ -13,6 +13,41 @@ router = APIRouter(prefix="/api", tags=["Matches & Dispatch"])
 
 class ApproveMatchRequest(BaseModel):
     allow_overcommit: bool = False
+    confirm_take: bool = False  # kept for older clients; the warning is shown before Approve
+    check_take: bool = False  # opt-in: refuse with 409 when a more urgent case loses its best team
+
+
+def _would_take_from(match: StoredMatch) -> Optional[dict]:
+    """A more urgent waiting case whose best team is this one. None when nobody loses out."""
+    req = storage_service.get_request(match.request_id)
+    if req is None:
+        return None
+    from app.models.firestore_models import RequestStatus
+    from app.api.public import public_code_for
+    waiting = {RequestStatus.NEW, RequestStatus.NEEDS_RECHECK, RequestStatus.MATCHED}
+    for other in sorted(storage_service.list_requests(), key=lambda r: -(r.urgency_score or 0)):
+        if other.id == req.id or other.merged_into or other.status not in waiting:
+            continue
+        if (other.urgency_score or 0) <= (req.urgency_score or 0):
+            break
+        if other.hoax_reason or {"hoax", "likely_hoax"} & set(other.flags or []):
+            continue
+        try:
+            props = matching_agent.find_matches(other, top_n=2, save_to_storage=False)
+        except Exception:
+            continue
+        if not props or props[0].resource_id != match.resource_id:
+            continue
+        nxt = props[1] if len(props) > 1 else None
+        return {
+            "case_id": other.id,
+            "case_ref": other.public_code or public_code_for(other.report_ids[0] if other.report_ids else other.id),
+            "case_urgency": round(other.urgency_score or 0),
+            "team": props[0].resource_name,
+            "next_team": nxt.resource_name if nxt else None,
+            "next_km": nxt.breakdown.distance_km if nxt else None,
+        }
+    return None
 
 
 class RejectMatchRequest(BaseModel):
@@ -41,6 +76,14 @@ def get_request_matches(
         )
 
     proposals = matching_agent.find_matches(req, top_n=top_n)
+    # Warn, never block: mark a team that a more urgent waiting case would also get first.
+    for prop in proposals:
+        stored = storage_service._matches.get(prop.match_id)
+        if stored is not None:
+            try:
+                prop.takes_from = _would_take_from(stored)
+            except Exception:  # pragma: no cover - a warning must never break the list
+                prop.takes_from = None
     return proposals
 
 
@@ -54,6 +97,11 @@ def approve_match(
     payload: ApproveMatchRequest = ApproveMatchRequest(),
     user: CoordinatorUser = Depends(get_current_coordinator),
 ):
+    match = storage_service._matches.get(id)
+    if match is not None and payload.check_take and not payload.confirm_take and match.state.value == "proposed":
+        taken = _would_take_from(match)
+        if taken:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "takes_best_team", **taken})
     try:
         coordinator_id = user.email
         approved_match = storage_service.approve_match(

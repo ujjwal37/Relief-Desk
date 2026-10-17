@@ -92,7 +92,7 @@ test('step popup, case card, counts, alerts, and Gemini call counter', async ({ 
   await expect(step).toBeVisible();
   await expect(step.locator('.headline')).not.toHaveText('');
   await expect(step.locator('.chips li').first()).toBeVisible();
-  await expect(step.locator('.why')).toContainText('Why');
+  await expect(step.locator('.why').first()).toContainText(/Why|Inputs used/);
   await expect(step.locator('.note')).not.toContainText('Offline fallback');
   await expect(step.locator('.note')).not.toContainText('ux.none');
   await step.getByTestId('show-prompt').click();

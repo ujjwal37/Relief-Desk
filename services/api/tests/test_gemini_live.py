@@ -202,7 +202,7 @@ def test_explainer_uses_gemini_when_live_and_the_template_in_demo(live_gemini, m
         cached.unlink()
     offline = explainer_agent.explain(request, resource, breakdown)
     assert calls["n"] == 1
-    assert "Total match score" in offline.text_en
+    assert "km away" in offline.text_en and "Total match score" not in offline.text_en
 
 
 def test_dedupe_accepts_a_real_candidate_and_ignores_a_bogus_id(live_gemini, monkeypatch):

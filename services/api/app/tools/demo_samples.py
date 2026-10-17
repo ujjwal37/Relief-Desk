@@ -6,23 +6,23 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 HINDI_TEXT = (
-    "नमस्ते, हम वार्ड 7 में चालाकुडी महादेव मंदिर के पास छत पर फंसे हैं। "
+    "नमस्ते, हम पुलिंकुन्नु मंदिर के पास छत पर फंसे हैं। "
     "पानी कमर तक आ गया है, घर में 4 लोग हैं, एक छोटा बच्चा और बुजुर्ग दादी हैं। कृपया जल्दी नाव भेजिए।"
 )
 VOICE_TEXT = (
-    "नमस्ते, आलुवा बस स्टैंड के पास मेरी दादी बीमार हैं। "
+    "नमस्ते, कावालम जेट्टी के पास मेरी दादी बीमार हैं। "
     "उनकी दवा खत्म हो गई है। घर में दो लोग हैं। कृपया मेडिकल टीम भेजिए।"
 )
 DUP_TEXT = (
-    "Second caller: 6 people are stuck on the terrace by Chalakudy temple in ward 7. "
+    "Second caller: 6 people are stuck on the terrace by Pulinkunnu temple. "
     "Flood water is at the windows. We need a rescue boat. Different wording from the first report."
 )
 PHOTO_CAPTION = (
     "Synthetic flood photo near a Kerala house: water at window level, two people on the roof. "
     "Need a boat. This is a demo image."
 )
-CHALAKUDY = {"lat": 10.30985, "lng": 76.33671}
-ALUVA = {"lat": 10.10275, "lng": 76.34807}
+CHALAKUDY = {"lat": 9.4549, "lng": 76.4272}  # Pulinkunnu, Kuttanad (name kept for imports)
+ALUVA = {"lat": 9.4834, "lng": 76.4560}  # Kavalam, Kuttanad
 
 
 def _data_root() -> Path:

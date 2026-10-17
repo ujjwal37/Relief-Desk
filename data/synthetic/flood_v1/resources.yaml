@@ -77,8 +77,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-SHELTER-01
-  name: Meppadi Government High School Relief Camp
-  name_hi: मॉडल टाउन राजकीय उच्च विद्यालय राहत शिविर
+  name: Mankombu Government High School Relief Camp
+  name_hi: मंकोम्बु राजकीय उच्च विद्यालय राहत शिविर
   kind: shelter
   ward_id: ward_1
   lat: 9.505
@@ -90,7 +90,7 @@ resources:
   event_id: event_kerala_flood
 - id: RES-SHELTER-02
   name: Kainakary Community Relief Centre
-  name_hi: संगम विहार सामुदायिक राहत केंद्र
+  name_hi: कैनकरी सामुदायिक राहत केंद्र
   kind: shelter
   ward_id: ward_1
   lat: 9.474
@@ -101,8 +101,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-SHELTER-03
-  name: Kothamangalam Indoor Sports Complex Relief Shelter
-  name_hi: सिविल लाइन्स इंडोर स्पोर्ट्स कॉम्प्लेक्स आश्रय स्थल
+  name: Kuttanad Indoor Stadium Relief Shelter (Pulincunnoo)
+  name_hi: कुट्टनाड इंडोर स्टेडियम आश्रय स्थल
   kind: shelter
   ward_id: ward_2
   lat: 9.46
@@ -113,8 +113,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-MED-01
-  name: Taluk Hospital Kothamangalam
-  name_hi: तालुक अस्पताल कोथमंगलम
+  name: Taluk Hospital Kuttanad (Pulincunnoo)
+  name_hi: तालुक अस्पताल कुट्टनाड
   kind: medical
   ward_id: ward_1
   lat: 9.485
@@ -137,8 +137,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-MED-03
-  name: Mala Relief Clinic
-  name_hi: माला राहत चिकित्सालय
+  name: Kainakary Relief Clinic
+  name_hi: कैनकरी राहत चिकित्सालय
   kind: medical
   ward_id: ward_3
   lat: 9.44
@@ -161,8 +161,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-FOOD-01
-  name: Aluva Central Ration & Food Packet Hub
-  name_hi: आलुवा केंद्रीय राशन व खाद्य पैकेट हब
+  name: Champakulam Central Ration & Food Packet Hub
+  name_hi: चंपक्कुलम केंद्रीय राशन व खाद्य पैकेट हब
   kind: food
   ward_id: ward_3
   lat: 9.468
@@ -173,8 +173,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-FOOD-02
-  name: Thrissur Community Kitchen
-  name_hi: त्रिशूर सामुदायिक रसोई
+  name: Mankombu Community Kitchen
+  name_hi: मंकोम्बु सामुदायिक रसोई
   kind: food
   ward_id: ward_1
   lat: 9.5
@@ -197,8 +197,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-FOOD-04
-  name: Kalpetta Community Kitchen
-  name_hi: कल्पेट्टा सामुदायिक रसोई
+  name: Nedumudi Community Kitchen
+  name_hi: नेदुमुडी सामुदायिक रसोई
   kind: food
   ward_id: ward_2
   lat: 9.452
@@ -209,8 +209,8 @@ resources:
   synthetic: true
   event_id: event_kerala_flood
 - id: RES-MED-05
-  name: Vythiri Relief Clinic
-  name_hi: व्यथिरी राहत चिकित्सालय
+  name: Kavalam Relief Clinic
+  name_hi: कावलम राहत चिकित्सालय
   kind: medical
   ward_id: ward_1
   lat: 9.492

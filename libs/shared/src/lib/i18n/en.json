@@ -118,7 +118,7 @@
     "sendNow": "Send now",
     "edit": "Edit",
     "understood": "Understood",
-    "aiSummary": "AI summary",
+    "aiSummary": "Summary",
     "nothingSent": "Nothing is sent until you tap Send now.",
     "vulnerable": "Who needs extra care",
     "child": "Child",
@@ -133,7 +133,10 @@
     "done": "Done",
     "review": "Review",
     "callOutline": "Call 112",
-    "change": "Change"
+    "change": "Change",
+    "yourWords": "Your words:",
+    "hoaxWarn": "This looks like a forwarded or spam message. Send only if you are really at this place.",
+    "notStated": "Not stated"
   },
   "incidentType": {
     "rescue": "Rescue",
@@ -171,7 +174,8 @@
     "showReport": "Show report",
     "tabsLabel": "Queue view",
     "tabSent": "Sent",
-    "tabDone": "Done"
+    "tabDone": "Done",
+    "tabWaiting": "Waiting"
   },
   "alerts": {
     "title": "Alerts",
@@ -268,7 +272,7 @@
     "critical": "Critical {n}",
     "waitingGemini": "Waiting for Gemini · queue {n}",
     "done": "Live demo finished",
-    "recordedNotice": "Recorded (Gemini) replay of an earlier run.",
+    "recordedNotice": "Recorded replay of an earlier run.",
     "samplesLabel": "Eight sample reports",
     "tryOwn": "Try your own report",
     "tryOwnPlaceholder": "Type a flood report in any language",
@@ -386,7 +390,7 @@
     "traceComplete": "Done",
     "aiGemini": "Gemini",
     "aiOffline": "Rules mode",
-    "aiRecorded": "Recorded (Gemini)",
+    "aiRecorded": "Recorded replay",
     "updateLocation": "Update location",
     "lat": "Latitude",
     "lng": "Longitude",
@@ -875,7 +879,7 @@
     "deskPeople": "{n} people",
     "noModel": "Rules (no model)",
     "ms": "{n} ms",
-    "badgeRecorded": "Recorded (Gemini)",
+    "badgeRecorded": "Recorded replay",
     "statusDone": "Done",
     "statusRunning": "Running",
     "statusWaiting": "Waiting",
@@ -934,11 +938,12 @@
     "agentScope": "Case assistant",
     "agentIntro": "Find requests by place, need, or who is still waiting.",
     "agentFootnote": "Answers help you review cases. Approve dispatches from the case queue.",
-    "textNotStored": "Text not stored for this sample report"
+    "textNotStored": "Text not stored for this sample report",
+    "firstReport": "First report"
   },
   "flow": {
     "title": "How it decided",
-    "headline": "{n} AI steps",
+    "headline": "{n} steps",
     "forCase": "For {id} · {title}",
     "parallel": "At the same time",
     "details": "Details",
@@ -972,12 +977,14 @@
     "modelLatency": "Model · latency",
     "waiting": "Waiting",
     "badgeTool": "Google Maps",
-    "badgeCache": "Recorded (Gemini)",
+    "badgeCache": "Recorded replay",
     "badgeYou": "You",
     "fallbackBuiltIn": "Gemini unavailable, built-in rules used",
-    "readingReport": "Gemini is reading this report…",
+    "readingReport": "Reading this report…",
     "simulateOutage": "Preview rules fallback",
-    "simulatedOnly": "Preview only. Stored traces and dispatch decisions are unchanged."
+    "simulatedOnly": "Preview only. Stored traces and dispatch decisions are unchanged.",
+    "sentDedupeJoined": "Joined {n} reports about the same place.",
+    "badgeStraight": "Rules · straight line"
   },
   "uiRef": {
     "activeQueue": "Active queue",
@@ -1156,7 +1163,12 @@
     "showPrompt": "Show prompt and response",
     "hidePrompt": "Hide prompt and response",
     "whyJoined": "{n} reports describe the same place and people, close in time, so they are one case.",
-    "whyDistinct": "No other open case at this place in the last hour."
+    "whyDistinct": "No other open case at this place in the last hour.",
+    "joinedN": "{n} joined",
+    "ofN": "step {k} of {n}",
+    "inputs": "Inputs used",
+    "maybeDup": "Maybe a repeat",
+    "noFree": "No free team"
   },
   "panel": {
     "moreDetails": "More details"
@@ -1165,7 +1177,7 @@
     "rules": "Rules",
     "gemini": "Gemini",
     "testModel": "Test model",
-    "recorded": "Recorded (Gemini)"
+    "recorded": "Recorded replay"
   },
   "ward": "Ward {n}",
   "chip": {
@@ -1179,7 +1191,7 @@
     "fixed": "Second Gemini pass corrected {changes}, quoting the report:",
     "people": "people",
     "place": "place",
-    "recorded": "Recorded (Gemini)"
+    "recorded": "Recorded replay"
   },
   "depth": {
     "boatChosen": "Boat chosen: report says water is {depth}.",
@@ -1228,11 +1240,12 @@
     "forJudges": "For judges:",
     "src": {
       "gemini": "✨ Gemini live",
-      "recorded": "Recorded (Gemini)",
+      "recorded": "Recorded replay",
       "local": "Local test AI",
       "rules": "Rules"
     },
-    "briefUnavailable": "Brief unavailable"
+    "briefUnavailable": "Brief unavailable",
+    "notUpdated": "not updated"
   },
   "steps": {
     "gemini": "✨ Gemini checked 5 steps",
@@ -1241,13 +1254,14 @@
     "see": "See how",
     "hide": "Hide steps",
     "badgeRules": "Rules",
-    "badgeRecorded": "Recorded (Gemini)",
+    "badgeRecorded": "Recorded replay",
     "short.intake": "Read",
     "short.dedupe": "Duplicates",
     "short.urgency": "Urgency",
     "short.maps": "Team",
     "short.explain": "Explained",
-    "short.you": "You"
+    "short.you": "You",
+    "youShort": "You approve"
   },
   "keys": {
     "title": "Keyboard shortcuts",
@@ -1294,7 +1308,7 @@
     "stays": "Priority stays. The case keeps its place in the queue.",
     "yourOptions": "Your options",
     "opt": {
-      "reserve": "Reserve the next free team: {team}, free in about {free} min, arrives in about {eta} min",
+      "reserve": "Reserve {team}: free in ~{free} min, then ~{travel} min to reach (≈ {eta} min total)",
       "road": "Send a road team now to check and guide: {team}, {km} km, about {eta} min. It cannot do water rescue.",
       "wider": "Search beyond {limit} km: {team}, {km} km, about {eta} min",
       "escalate": "Escalate to the district control room",
@@ -1306,7 +1320,7 @@
       "road": "Send road team",
       "wider": "Use the farther team",
       "escalate": "Escalate",
-      "call112": "Call 112",
+      "call112": "Call 112 now",
       "share": "Share as alert"
     },
     "logged": {
@@ -1316,12 +1330,32 @@
       "escalate": "Escalated to the district control room (logged)."
     },
     "failed": "Could not save that choice. Try again.",
-    "footer": "Nothing is sent until you approve. Times are straight-line estimates."
+    "footer": "Nothing is sent until you approve. Times are straight-line estimates.",
+    "tip": "Pick an option, then press Enter.",
+    "goTeam": {
+      "reserve": "Reserve {team}",
+      "road": "Send {team}",
+      "wider": "Send {team}"
+    }
   },
   "dec": {
     "depth": "Depth",
     "selfCheck": "Self-check",
     "notStated": "not stated",
     "notRun": "not run yet"
+  },
+  "disp": {
+    "onWay": "Team on the way",
+    "sentAt": "Sent {t} · by you",
+    "markArrived": "Mark arrived"
+  },
+  "take": {
+    "warn": "{team} is also the best team for {ref} (urgency {u}), which is more urgent.",
+    "next": "That case would get {team} ({km} km) instead.",
+    "noNext": "That case would have no free team.",
+    "anyway": "Send anyway"
+  },
+  "reject": {
+    "which": "Rejecting {team} for this case. Why?"
   }
 }

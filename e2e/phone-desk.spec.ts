@@ -145,7 +145,8 @@ test('a Hindi report uses Hindi labels, reaches the desk, and the status stays H
   await row.scrollIntoViewIfNeeded();
   await expect(row).toContainText('6');
   await row.click();
-  await expect(desk.locator('.decision-panel')).toContainText('Ward 12');
+  // The pin is outside the mapped wards, so the area is the reporter's own words.
+  await expect(desk.locator('.decision-panel')).toContainText(/Ward 12|वार्ड 12/);
   await desk.locator('details.show-report > summary').click();
   await expect(desk.locator('.rep-orig')).toContainText('6 लोग फंसे');
   await expect(desk.locator('.rep-orig')).toContainText(tag);

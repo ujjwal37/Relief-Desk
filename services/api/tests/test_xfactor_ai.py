@@ -66,7 +66,7 @@ def test_sample_catalog_and_hindi_sample_enter_intake():
     assert created["request_id"]
     stored = storage_service.get_request(created["request_id"])
     assert stored is not None
-    assert stored.raw_text and "चालाकुडी" in stored.raw_text
+    assert stored.raw_text and "पुलिंकुन्नु" in stored.raw_text
 
 
 def test_multimodal_photo_falls_back_when_gemini_is_off(monkeypatch):

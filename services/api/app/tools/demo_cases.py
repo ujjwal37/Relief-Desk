@@ -71,7 +71,7 @@ DEMO_CASES: List[Dict[str, Any]] = [
     {
         # No-team demo: a life threat in deep water where no boat is within reach. The desk must not
         # invent a team; the coordinator gets the no-team options (Call 112, road team, wider search).
-        "id": "DEMO-108", "minutes": 3, "type": "medical", "ward_id": "ward_3", "lat": 9.318, "lng": 76.383,
+        "id": "DEMO-108", "minutes": 3, "type": "medical", "ward_id": None, "lat": 9.318, "lng": 76.383,
         "people": 1, "hazard": "water_rising", "vulnerable": {"child": True, "medical_need": True},
         "place": "Thottappally spillway, south of Kuttanad",
         "en": "My son is not breathing properly, water is chest deep around our house near Thottappally spillway. Please help.",
@@ -89,7 +89,7 @@ DEMO_CASES: List[Dict[str, Any]] = [
     },
     {
         # A forwarded spam message, so the hoax flag is visible in every demo.
-        "id": "DEMO-107", "minutes": 6, "type": "info", "ward_id": "ward_3", "lat": 9.431, "lng": 76.401,
+        "id": "DEMO-107", "minutes": 6, "type": "info", "ward_id": None, "lat": None, "lng": None,
         "people": None, "hazard": "none", "vulnerable": {},
         "place": None,
         "en": "NASA announced a free helicopter rescue. Call this number and forward this to 10 groups. 100% verified news share fast.",

@@ -136,9 +136,9 @@
           <p class="scenario-visible">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
         </div>
         <div class="queue-tabs" role="tablist" [attr.aria-label]="'queue.tabsLabel' | rdTranslate" (keydown)="onQueueTabKey($event)">
-          <button type="button" role="tab" class="qtab" data-testid="tab-waiting" [class.on]="queueTab() === 'waiting'" [attr.aria-selected]="queueTab() === 'waiting'" [attr.tabindex]="queueTab() === 'waiting' ? 0 : -1" (click)="setQueueTab('waiting')">{{ 'batch.waiting' | rdTranslate }} <b>{{ batch().waiting }}</b></button>
-          <button type="button" role="tab" class="qtab" data-testid="tab-dispatched" [class.on]="queueTab() === 'dispatched'" [attr.aria-selected]="queueTab() === 'dispatched'" [attr.tabindex]="queueTab() === 'dispatched' ? 0 : -1" (click)="setQueueTab('dispatched')" [attr.aria-label]="'coord.filterDispatched' | rdTranslate"><span class="ql-full">{{ 'coord.filterDispatched' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabSent' | rdTranslate }}</span> <b>{{ counts().dispatched }}</b></button>
-          <button type="button" role="tab" class="qtab" data-testid="tab-completed" [class.on]="queueTab() === 'completed'" [attr.aria-selected]="queueTab() === 'completed'" [attr.tabindex]="queueTab() === 'completed' ? 0 : -1" (click)="setQueueTab('completed')" [attr.aria-label]="'coord.filterCompleted' | rdTranslate"><span class="ql-full">{{ 'coord.filterCompleted' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabDone' | rdTranslate }}</span> <b>{{ counts().completed }}</b></button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-waiting" [class.on]="queueTab() === 'waiting'" [attr.aria-selected]="queueTab() === 'waiting'" [attr.tabindex]="queueTab() === 'waiting' ? 0 : -1" (click)="setQueueTab('waiting')" [attr.aria-label]="'batch.waiting' | rdTranslate"><span class="ql-full">{{ 'batch.waiting' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabWaiting' | rdTranslate }}</span> <b class="seg-pill">{{ batch().waiting }}</b></button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-dispatched" [class.on]="queueTab() === 'dispatched'" [attr.aria-selected]="queueTab() === 'dispatched'" [attr.tabindex]="queueTab() === 'dispatched' ? 0 : -1" (click)="setQueueTab('dispatched')" [attr.aria-label]="'coord.filterDispatched' | rdTranslate"><span class="ql-full">{{ 'coord.filterDispatched' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabSent' | rdTranslate }}</span> <b class="seg-pill">{{ counts().dispatched }}</b></button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-completed" [class.on]="queueTab() === 'completed'" [attr.aria-selected]="queueTab() === 'completed'" [attr.tabindex]="queueTab() === 'completed' ? 0 : -1" (click)="setQueueTab('completed')" [attr.aria-label]="'coord.filterCompleted' | rdTranslate"><span class="ql-full">{{ 'coord.filterCompleted' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabDone' | rdTranslate }}</span> <b class="seg-pill">{{ counts().completed }}</b></button>
         </div>
       </div>
 
@@ -407,13 +407,12 @@
                 {{ Math.round(req.urgency_score) }}
               </span>
             </div>
-            @if (depthChip(req); as dc) {
-              <p class="dec-depth" data-testid="depth-chip">{{ dc }}</p>
-            }
             @if (!isHoax(req)) {
               <dl class="dec-facts" data-testid="dec-facts">
-                <div><dt>{{ 'dec.depth' | rdTranslate }}</dt><dd data-testid="dec-depth-row">{{ depthChip(req) || ('dec.notStated' | rdTranslate) }}</dd></div>
-                <div><dt>{{ 'dec.selfCheck' | rdTranslate }}</dt><dd data-testid="dec-selfcheck-row" [class.flag]="req.self_check?.verdict && req.self_check?.verdict !== 'pass'">{{ (req.self_check && selfCheckLine($any(req.self_check))) || ('dec.notRun' | rdTranslate) }}</dd></div>
+                <div><dt>{{ 'dec.depth' | rdTranslate }}</dt><dd data-testid="dec-depth-row">@if (depthChip(req); as dc) { {{ dc }} <q class="dec-quote">{{ req.water_depth?.quote }}</q> } @else { {{ 'dec.notStated' | rdTranslate }} }</dd></div>
+                @if (req.self_check && selfCheckLine($any(req.self_check)); as sc) {
+                  <div><dt>{{ 'dec.selfCheck' | rdTranslate }}</dt><dd data-testid="dec-selfcheck-row" [class.flag]="req.self_check?.verdict && req.self_check?.verdict !== 'pass'">{{ sc }}</dd></div>
+                }
               </dl>
             }
             <p class="dec-case-sub">
@@ -579,7 +578,6 @@
                       </label>
                     }
                   </fieldset>
-                  <button type="button" class="btn-approve nt-go" data-testid="no-team-go" [disabled]="!noTeamPick() || !!noTeamDone()" (click)="chooseNoTeam(req)">{{ ('noTeam.go.' + (noTeamPick() || 'escalate')) | rdTranslate }}</button>
                   <p class="nt-foot">{{ 'noTeam.footer' | rdTranslate }}</p>
                 </section>
               } @else {
@@ -603,9 +601,22 @@
         <!-- 6. Pinned Footer Actions -->
         <footer class="decision-pinned-footer" data-tour="actions">
           @if (tipOpen()) {
-            <p class="key-tip" role="note" data-testid="key-tip">{{ (selectedRequest() && isHoax(selectedRequest()!) && !hoaxOverride() ? 'hoax.tipD' : 'queue.tip') | rdTranslate }} <button type="button" (click)="dismissTip()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
+            <p class="key-tip" role="note" data-testid="key-tip">{{ tipKey() | rdTranslate }} <button type="button" (click)="dismissTip()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
           }
-          <p class="you-decide-msg">{{ 'coord.youDecide' | rdTranslate }}</p>
+          @if (!isDispatched(req) && !isCompleted(req)) {
+            <p class="you-decide-msg">{{ 'coord.youDecide' | rdTranslate }}</p>
+          }
+          @if (takeNotice(); as tw) {
+            <div class="take-warn" role="alert" data-testid="take-warning">
+              <p>⚠ {{ takeWarnText(tw) }}</p>
+              @if (takeWarn()) {
+              <div class="take-btns">
+                <button type="button" class="btn-quiet" (click)="takeWarn.set(null)">{{ 'ui.cancel' | rdTranslate }}</button>
+                <button type="button" class="btn-sec" data-testid="take-anyway" (click)="approveAnyway()">{{ 'take.anyway' | rdTranslate }}</button>
+              </div>
+              }
+            </div>
+          }
 
           @if (changeOpen()) {
             <div class="chooser chooser-panel" role="listbox" [attr.aria-label]="'coord.chooseTeam' | rdTranslate">
@@ -627,6 +638,7 @@
 
           @if (rejectOpen() && activeProposal(); as rejectProp) {
             <div class="reject-inline reject-panel">
+              <p class="reject-team" data-testid="reject-team">{{ 'reject.which' | rdTranslate:{ team: rejectProp.resource_name } }}</p>
               <div class="reject-picks">
                 @for (key of rejectReasons; track key) {
                   <button type="button" [class.on]="rejectReasonText === (key | rdTranslate)" (click)="pickRejectReason(key)">
@@ -644,7 +656,7 @@
                 <button type="button" class="btn-quiet" (click)="closeRejectModal(); rejectOpen.set(false)">
                   {{ 'ui.cancel' | rdTranslate }}
                 </button>
-                <button type="button" class="btn-sec" (click)="confirmReject()">
+                <button type="button" class="btn-approve btn-reject-go" (click)="confirmReject()">
                   {{ 'ui.rjGo' | rdTranslate }}
                 </button>
               </div>
@@ -654,6 +666,7 @@
             <p class="completed-banner-note">{{ 'coord.completedNote' | rdTranslate }}</p>
           } @else if (isDispatched(req)) {
             <div class="dispatched-actions-row">
+              <p class="on-way-title" data-testid="team-on-way">{{ 'disp.onWay' | rdTranslate }}@if (sentLine(req); as sl) { <span> · {{ sl }}</span> }</p>
               <ol class="dispatch-steps">
                 <li [class.on]="dispatchStep(req) >= 0">{{ 'coord.stepSent' | rdTranslate }}</li>
                 <li [class.on]="dispatchStep(req) >= 1">{{ 'coord.stepAccepted' | rdTranslate }}</li>
@@ -662,7 +675,7 @@
               </ol>
               <div class="btns">
                 @if (req.status !== 'in_progress') {
-                  <button type="button" class="btn-sec" (click)="markArrived(req)">{{ 'coord.markArrived' | rdTranslate }}</button>
+                  <button type="button" class="btn-sec btn-arrived" (click)="markArrived(req)">{{ 'disp.markArrived' | rdTranslate }}</button>
                 }
                 <button type="button" class="btn-approve" (click)="markCompleted(req)">{{ 'coord.markCompleted' | rdTranslate }}</button>
               </div>
@@ -678,20 +691,25 @@
               <button
                 type="button"
                 class="btn-approve"
-                [disabled]="needsDupReview(req) || offline() || approving() || hoaxBlocked(req) || waitingForReading(req)"
+                [hidden]="rejectOpen()"
+                [disabled]="rejectOpen() || needsDupReview(req) || offline() || approving() || hoaxBlocked(req) || waitingForReading(req)"
                 [attr.title]="waitingForReading(req) ? ('flow.readingReport' | rdTranslate) : null"
                 (click)="approveMatch(prop)"
               >
-                ✓ {{ 'coord.approve' | rdTranslate }} <kbd>A</kbd>
+                ✓ <span class="btn-label">{{ 'coord.approve' | rdTranslate }}</span> <kbd>A</kbd>
               </button>
               <button type="button" class="btn-sec btn-next" data-testid="next-case" [attr.title]="'batch.shortcuts' | rdTranslate" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
+              @if (!rejectOpen()) {
               <button
                 type="button"
                 class="btn-quiet btn-reject"
+                [attr.aria-label]="'coord.reject' | rdTranslate"
+                [attr.title]="'coord.reject' | rdTranslate"
                 (click)="rejectOpen.set(!rejectOpen()); changeOpen.set(false); openRejectModal(prop)"
               >
-                ✕ {{ 'coord.reject' | rdTranslate }}
+                ✕ <span class="btn-label">{{ 'coord.reject' | rdTranslate }}</span>
               </button>
+              }
               <button
                 type="button"
                 class="btn-sec btn-change"
@@ -699,16 +717,23 @@
                 [attr.aria-expanded]="changeOpen()"
                 [attr.aria-label]="'coord.chooseTeam' | rdTranslate"
               >
-                ✎ {{ 'confirm.change' | rdTranslate }}
+                ✎ <span class="btn-label">{{ 'confirm.change' | rdTranslate }}</span>
               </button>
               @if (capacityShort(prop); as cap) {
                 <p class="cap-warn" role="note" data-testid="capacity-warning">⚠ {{ 'coord.capacityShort' | rdTranslate:{ left: cap.left, need: cap.need } }}</p>
               }
               <button type="button" class="btn-sec btn-help" data-testid="help-btn" (click)="helpOpen.set(true)" [attr.aria-label]="'keys.title' | rdTranslate">?</button>
             </div>
+          } @else if (noTeam(); as nt) {
+            <div class="footer-buttons-row">
+              <button type="button" class="btn-approve nt-go" data-testid="no-team-go" [disabled]="!!noTeamDone() || offline()" (click)="noTeamGo(req, nt)">
+                <span class="btn-label">{{ noTeamGoLabel(nt) }}</span> <kbd>↵</kbd>
+              </button>
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
+            </div>
           } @else {
             <div class="footer-buttons-row">
-              <button type="button" class="btn-approve" disabled>{{ 'coord.approve' | rdTranslate }}</button>
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
             </div>
           }
         </footer>

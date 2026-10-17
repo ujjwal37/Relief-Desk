@@ -132,9 +132,12 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByRole('button', { name: 'Enter as demo coordinator' })).toBeVisible();
       await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
       await page.waitForURL(/\/coordinator\/command/);
-      const commandTab = page.locator('nav.tabs').getByRole('link', { name: 'Command', exact: true });
-      await expect(commandTab).toHaveClass(/on/);
-      await expect(page.locator('nav.tabs').getByRole('link', { name: 'Situation', exact: true })).toBeVisible();
+      // At phone width the nav is logo · Ask · menu; the page links live in the menu.
+      if (viewport.name !== 'mobile') {
+        const commandTab = page.locator('nav.tabs').getByRole('link', { name: 'Command', exact: true });
+        await expect(commandTab).toHaveClass(/on/);
+        await expect(page.locator('nav.tabs').getByRole('link', { name: 'Situation', exact: true })).toBeVisible();
+      }
       await expect(page.getByRole('heading', { name: 'Cases' })).toBeVisible();
       // The queue header still carries the synthetic-scenario sentence. The command layout hides it.
       await expect(page.locator('.scenario-visible')).toHaveText('Synthetic scenario inspired by Kerala floods');
@@ -269,7 +272,8 @@ test.describe('public and coordinator demo', () => {
           await expect(noTeam).toContainText(/No free boat|No free team|No suitable/);
           await expect(noTeam.getByText('Your options')).toBeVisible();
         }
-        await expect(page.getByRole('button', { name: 'Approve and send' })).toBeDisabled();
+        // No grey disabled Approve: the primary action is the chosen no-team option.
+        await expect(page.getByRole('button', { name: 'Approve and send' })).toHaveCount(0);
         await shot(page, 'desktop-no-team-free');
       }
 

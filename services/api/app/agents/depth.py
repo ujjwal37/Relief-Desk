@@ -44,3 +44,39 @@ def depth_rank(request: Any, resource: Any) -> int:
     if band in SHALLOW:
         return 1 if is_boat else 0
     return 0
+
+
+_RULES = [
+    ("roof", r"(?:on|onto|to) (?:the |our |a )?(?:roof|terrace|rooftop)|\btrapped on (?:the )?terrace\b|छत पर|മേൽക്കൂര|terrace-il|terrace il"),
+    ("roof", r"water (?:up )?to (?:the )?(?:first|upper|second) floor|first floor (?:is |was )?(?:under|flooded|submerged)|पहली मंजिल तक"),
+    ("chest", r"chest[- ]deep|up to (?:our |my |the )?(?:chest|neck)|neck[- ]deep|छाती तक|सीने तक|नेक तक|nenju vare|നെഞ്ച്"),
+    ("waist", r"waist[- ]deep|up to (?:our |my |the )?waist|कमर तक|aravattam|അരയോളം|at the windows?|window level"),
+    ("waist", r"\b(?:on|in) (?:the )?(?:first|upper) floor\b|first floor il|first floor-il"),
+    ("knee", r"knee[- ]deep|up to (?:our |my |the )?knees?|घुटने तक|മുട്ടോളം"),
+    ("ankle", r"ankle[- ]deep|up to (?:our |my |the )?ankles?|टखने तक"),
+]
+
+
+def depth_from_text(raw_text: str) -> Optional[Dict[str, Any]]:
+    """Rules reading of water depth. The quote is the exact words found in the report."""
+    text = raw_text or ""
+    for band, pattern in _RULES:
+        m = re.search(pattern, text, re.I)
+        if m:
+            return {"band": band, "quote": text[m.start():m.end()], "source": "rules"}
+    return None
+
+
+def fill_depth(request: Any) -> None:
+    """Keep a quoted model band; otherwise read the report words. Unknown stays unknown."""
+    if band_of(request) != "unknown":
+        return
+    texts = [getattr(request, "raw_text", None) or ""]
+    for q in getattr(request, "report_quotes", None) or []:
+        texts.append(getattr(q, "text", "") or "")
+    texts.append(getattr(request, "place_text", None) or "")
+    for t in texts:
+        got = depth_from_text(t)
+        if got:
+            request.water_depth = got
+            return

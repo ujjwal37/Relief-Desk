@@ -52,7 +52,7 @@ test('recorded traces, nearby single line, fallback preview and Hindi screenshot
   await expect(dialog.getByText('Offline fallback')).toHaveCount(0);
   await expect(dialog.getByText('ux.none')).toHaveCount(0);
   await dialog.getByRole('button', { name: /Show technical details/ }).click();
-  const recorded = dialog.locator('app-trace-step .badge').filter({ hasText: 'Recorded (Gemini)' });
+  const recorded = dialog.locator('app-trace-step .badge').filter({ hasText: 'Recorded replay' });
   const rulesBadges = dialog.locator('app-trace-step .badge').filter({ hasText: 'Rules mode' });
   await expect(dialog.locator('app-trace-step .badge').filter({ hasText: 'Google Maps' })).toHaveCount(1);
   await expect(recorded).toHaveCount(4);
@@ -68,7 +68,8 @@ test('recorded traces, nearby single line, fallback preview and Hindi screenshot
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.locator('[data-case-id="INC-001"] button.case').click();
-  await expect(page.locator('[data-case-id="INC-001"]').getByRole('button', { name: '3 reports', exact: true })).toBeVisible();
+  // INC-001 no longer carries a fake seeded cluster; only real merges show a reports chip.
+  await expect(page.locator('[data-case-id="INC-001"]').getByRole('button', { name: '3 reports', exact: true })).toHaveCount(0);
   await expect(page.locator('.cmd')).not.toContainText('kfermvxnjxct');
   await page.screenshot({ path: path.join(SHOTS, 'phone-desk-merged.png') });
   await page.locator('[data-case-id="INC-008"] button.case').click();

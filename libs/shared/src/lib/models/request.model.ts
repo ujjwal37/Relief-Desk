@@ -281,6 +281,7 @@ export interface MatchProposal {
   overcommit_warning: boolean;
   travel_mode?: 'water' | 'road' | string;
   route_note?: string | null;
+  takes_from?: { case_id?: string; case_ref: string; case_urgency: number; team: string; next_team?: string | null; next_km?: number | null } | null;
 }
 
 /** A citizen report from the last few minutes, for the desk's Just reported strip. */

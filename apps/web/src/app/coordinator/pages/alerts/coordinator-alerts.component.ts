@@ -16,32 +16,33 @@ export interface MapAlert {
 
 const W = 800;
 const H = 560;
-const LAT_MAX = 11.70;
-const LNG_MIN = 75.98;
-const proj = (lat: number, lng: number): Pt => ({ x: (lng - LNG_MIN) * 1100, y: (LAT_MAX - lat) * 230 });
+const LAT_MAX = 9.52;
+const LNG_MIN = 76.33;
+/** Kuttanad frame: ~0.17° of longitude by ~0.16° of latitude fills the 800x560 board. */
+const proj = (lat: number, lng: number): Pt => ({ x: (lng - LNG_MIN) * 4700, y: (LAT_MAX - lat) * 3500 });
 
-/** Real Kerala panchayats used by the synthetic flood pack. */
+/** Real Kuttanad (Alappuzha) panchayats used by the synthetic flood pack. Same area as the desk map. */
 const WARDS: Ward[] = [
   { id: 'ward_1', name: 'Kainakary', district: 'Alappuzha', lat: 9.470, lng: 76.390 },
   { id: 'ward_2', name: 'Champakulam', district: 'Alappuzha', lat: 9.416, lng: 76.411 },
   { id: 'ward_3', name: 'Nedumudi', district: 'Alappuzha', lat: 9.430, lng: 76.398 },
-  { id: 'ward_4', name: 'Aluva', district: 'Ernakulam', lat: 10.108, lng: 76.352 },
-  { id: 'ward_5', name: 'Varapuzha', district: 'Ernakulam', lat: 10.078, lng: 76.268 },
-  { id: 'ward_6', name: 'Kothamangalam', district: 'Ernakulam', lat: 10.065, lng: 76.628 },
-  { id: 'ward_7', name: 'Chalakudy', district: 'Thrissur', lat: 10.308, lng: 76.331 },
-  { id: 'ward_8', name: 'Mala', district: 'Thrissur', lat: 10.241, lng: 76.267 },
-  { id: 'ward_9', name: 'Anthikad', district: 'Thrissur', lat: 10.466, lng: 76.130 },
-  { id: 'ward_10', name: 'Meppadi', district: 'Wayanad', lat: 11.557, lng: 76.140 },
-  { id: 'ward_11', name: 'Vythiri', district: 'Wayanad', lat: 11.550, lng: 76.038 },
-  { id: 'ward_12', name: 'Kalpetta', district: 'Wayanad', lat: 11.608, lng: 76.082 },
+  { id: 'ward_4', name: 'Pulinkunnu', district: 'Alappuzha', lat: 9.455, lng: 76.427 },
+  { id: 'ward_5', name: 'Kavalam', district: 'Alappuzha', lat: 9.479, lng: 76.438 },
+  { id: 'ward_6', name: 'Ramankary', district: 'Alappuzha', lat: 9.429, lng: 76.473 },
+  { id: 'ward_7', name: 'Thalavady', district: 'Alappuzha', lat: 9.381, lng: 76.488 },
+  { id: 'ward_8', name: 'Moncompu', district: 'Alappuzha', lat: 9.441, lng: 76.439 },
+  { id: 'ward_9', name: 'Edathua', district: 'Alappuzha', lat: 9.364, lng: 76.473 },
+  { id: 'ward_10', name: 'Veliyanad', district: 'Alappuzha', lat: 9.415, lng: 76.448 },
+  { id: 'ward_11', name: 'Muttar', district: 'Alappuzha', lat: 9.404, lng: 76.493 },
+  { id: 'ward_12', name: 'Thakazhy', district: 'Alappuzha', lat: 9.370, lng: 76.410 },
 ];
 const LANDMARKS: Landmark[] = [
-  { name: 'Little Flower Hospital', lat: 10.108, lng: 76.352 },
+  { name: 'Taluk Hospital Kuttanad', lat: 9.455, lng: 76.427 },
   { name: 'Nedumudi Boat Jetty', lat: 9.430, lng: 76.398 },
-  { name: 'Chalakudy River Jetty', lat: 10.308, lng: 76.331 },
+  { name: 'Champakulam Jetty', lat: 9.416, lng: 76.411 },
   { name: 'Kainakary Relief Camp', lat: 9.470, lng: 76.390 },
 ];
-const FALLBACK_MEDICAL: ResPin[] = [{ id: 'm1', name: 'Medical team', lat: 10.108, lng: 76.352, free: true }];
+const FALLBACK_MEDICAL: ResPin[] = [{ id: 'm1', name: 'Medical team', lat: 9.455, lng: 76.427, free: true }];
 
 function clip(poly: Pt[], p: Pt, q: Pt): Pt[] {
   // keep points closer to p than to q

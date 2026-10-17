@@ -169,7 +169,7 @@ def submit_sample_report(payload: SampleReportRequest):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     if payload.kind.lower() == "duplicate":
-        has_hindi = any("चालाकुडी" in (row.raw_text or "") for row in storage_service.list_requests() if not row.merged_into)
+        has_hindi = any("पुलिंकुन्नु" in (row.raw_text or "") for row in storage_service.list_requests() if not row.merged_into)
         if not has_hindi:
             submit_report(ReportSubmitRequest(**sample_payload("hindi")))
     return submit_report(ReportSubmitRequest(**data))

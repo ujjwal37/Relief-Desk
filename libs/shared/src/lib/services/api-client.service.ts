@@ -273,10 +273,10 @@ export class ApiClientService {
   }
 
 
-  approveMatch(id: string, allowOvercommit = false): Observable<any> {
+  approveMatch(id: string, allowOvercommit = false, confirmTake = false): Observable<any> {
     return this.http.post<any>(
       `/api/matches/${id}/approve`,
-      { allow_overcommit: allowOvercommit },
+      { allow_overcommit: allowOvercommit, confirm_take: confirmTake },
       this.getAuthHeaders()
     );
   }

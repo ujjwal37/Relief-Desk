@@ -279,6 +279,10 @@ def case_merge(
         why = f"{why}. {req.count_note}" if why else req.count_note
     if why is None and cluster and cluster.evidence:
         why = " ".join(cluster.evidence)
+    if why:
+        import re as _re
+        # The case's urgency is shown on the card; an older score in this text would contradict it.
+        why = _re.sub(r",?\s*(?:with |and )?(?:an? )?urgency(?: score)?(?: of)? \d+(?:\.\d+)?", "", why, flags=_re.I).strip()
     return {
         "count": req.merged_count or 1,
         "why": why,
@@ -309,8 +313,11 @@ def list_requests(
     from app.api.public import public_code_for
     for req in reqs:
         ensure_trace(req)
-        if not req.public_code and req.report_ids:
-            req.public_code = public_code_for(req.report_ids[0])
+        if not req.public_code:
+            req.public_code = public_code_for(req.report_ids[0] if req.report_ids else req.id)
+        from app.agents.depth import fill_depth
+        fill_depth(req)
+        _fix_place(req)
         before = req.urgency_score
         if req.status not in closed:
             result = scoring_engine.compute_urgency(req)
@@ -340,3 +347,24 @@ def get_request_detail(
             detail=f"Request '{id}' not found"
         )
     return req
+
+
+def _fix_place(req) -> None:
+    """One place truth per case: ward comes from coordinates; a hoax with no place has no pin."""
+    from app.tools.gazetteer import ward_for_point
+    flags = set(req.flags or [])
+    hoax = bool(getattr(req, "hoax_reason", None)) or bool(flags & {"likely_hoax", "hoax"})
+    place = (req.place_text or "").strip()
+    if place and len(place) > 60:
+        # A whole sentence is not a place; keep only a short named span.
+        import re as _re
+        m = _re.search(r"\b(?:near|at|in)\s+((?:[A-Z][\w'-]+\s?){1,4})", place)
+        req.place_text = m.group(1).strip() if m else None
+        place = req.place_text or ""
+    if hoax and not place:
+        req.lat = None
+        req.lng = None
+        req.ward_id = None
+        return
+    if req.lat is not None and req.lng is not None:
+        req.ward_id = ward_for_point(req.lat, req.lng)

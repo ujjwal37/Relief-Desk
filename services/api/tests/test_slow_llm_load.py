@@ -184,7 +184,7 @@ def test_five_reports_against_a_slow_local_model(monkeypatch, tmp_path):
         approve_at = time.perf_counter()
         matches = client.get(f"/api/requests/{primary.id}/matches", headers=AUTH)
         assert matches.status_code == 200 and matches.json()
-        approved = client.post(f"/api/matches/{matches.json()[0]['match_id']}/approve", headers=AUTH, json={})
+        approved = client.post(f"/api/matches/{matches.json()[0]['match_id']}/approve", headers=AUTH, json={"confirm_take": True})
         assert approved.status_code == 200, approved.text
         status_url = f"/api/reports/{bodies[0]['report_id']}/status?token={bodies[0]['status_token']}"
         reached = _wait_for(lambda: client.get(status_url).json()["hero_title"] == "status.heroOnWay", 3.0)

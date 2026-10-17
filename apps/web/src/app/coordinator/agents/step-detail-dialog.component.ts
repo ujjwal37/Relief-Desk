@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { peopleText } from '../../core/people-text';
 import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
+import { STEP_COUNT, caseRef, urgencyNumber } from '../case-facts';
 
 export interface StepDetailData {
   request: StoredRequest;
@@ -32,10 +33,9 @@ export interface StepDetailData {
     <div class="step-dialog" data-testid="step-details" [attr.aria-label]="data.stepNameKey | rdTranslate">
       <header class="dialog-header">
         <div class="h-left">
-          <span class="step-num-badge" aria-hidden="true">{{ data.stepIndex + 1 }}</span>
           <div class="title-wrap">
-            <h2>{{ data.stepIndex + 1 }} · {{ data.stepNameKey | rdTranslate }}</h2>
-            <p class="case-sub">{{ 'flow.forCase' | rdTranslate:{ id: data.request.id, title: data.request.place_text || '' } }}</p>
+            <h2>{{ data.stepNameKey | rdTranslate }} · {{ 'step.ofN' | rdTranslate:{ k: data.stepIndex + 1, n: stepCount } }}</h2>
+            <p class="case-sub">{{ 'flow.forCase' | rdTranslate:{ id: ref, title: data.request.place_text || '' } }}</p>
           </div>
         </div>
         <button type="button" class="close-btn" (click)="close()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
@@ -44,14 +44,18 @@ export interface StepDetailData {
       <div class="dialog-body">
         <p class="headline">{{ headline() }}</p>
         @if (chips().length) {
+          <p class="why"><span>{{ 'step.inputs' | rdTranslate }}</span></p>
           <ul class="chips">
             @for (chip of chips(); track chip) {
               <li>{{ chip }}</li>
             }
           </ul>
         }
-        <p class="why"><span>{{ 'step.why' | rdTranslate }}</span> {{ whyLine() }}</p>
+        @if (whyLine() !== headline()) {
+          <p class="why"><span>{{ 'step.why' | rdTranslate }}</span> {{ whyLine() }}</p>
+        }
 
+        @if (modelRan() || data.prompt) {
         <button type="button" class="prompt-toggle" data-testid="show-prompt" (click)="showPrompt.set(!showPrompt())" [attr.aria-expanded]="showPrompt()">
           {{ (showPrompt() ? 'step.hidePrompt' : 'step.showPrompt') | rdTranslate }}
         </button>
@@ -72,6 +76,7 @@ export interface StepDetailData {
             <p class="lbl">{{ 'ux.raw' | rdTranslate }}</p>
             <pre>{{ rawText() }}</pre>
           </div>
+        }
         }
       </div>
 
@@ -175,6 +180,9 @@ export class StepDetailDialogComponent {
     this.dialogRef.close();
   }
 
+  readonly stepCount = STEP_COUNT;
+  get ref(): string { return caseRef(this.data.request); }
+
   modelRan(): boolean {
     return !!this.data.model || this.data.badge === 'gemini' || this.data.badge === 'cache' || this.data.badge === 'test';
   }
@@ -207,7 +215,7 @@ export class StepDetailDialogComponent {
       return extra;
     }
     if (this.data.stepIndex === 2) {
-      return t('step.headlineUrgency').replace('{score}', String(Math.round(req.urgency_score || 0))).replace('{reason}', req.urgency_reason || '');
+      return t('step.headlineUrgency').replace('{score}', String(urgencyNumber(req))).replace('{reason}', req.urgency_reason || '');
     }
     if (this.data.badge === 'you' || this.data.stepIndex === 5) {
       return t('coord.youDecide');
@@ -233,7 +241,7 @@ export class StepDetailDialogComponent {
     const t = (key: string) => this.lang.translate(key);
     const out: string[] = [];
     if (req.type) out.push(t(`incidentType.${req.type}`));
-    if (req.people_count) out.push(`${req.people_count} ${t('field.people')}`);
+    if (req.people_count) out.push(peopleText(req.people_count, t));
     if (req.place_text) out.push(req.place_text);
     if (req.hazard && req.hazard !== 'unknown' && req.hazard !== 'none') {
       const hazard = this.lang.translate(`hazardKind.${req.hazard}`);
@@ -278,7 +286,7 @@ export class StepDetailDialogComponent {
   footer(): string {
     this.lang.currentLang();
     if (this.data.badge === 'you') return this.lang.translate('flow.badgeYou');
-    if (this.isMaps()) return this.lang.translate('flow.badgeTool');
+    if (this.isMaps()) return this.lang.translate(this.data.providerLabel === 'Google Maps' ? 'flow.badgeTool' : 'flow.badgeStraight');
     if (this.data.badge === 'test') return this.lang.translate('badge.testModel');
     if (this.data.badge === 'gemini' && this.data.model) {
       const sec = this.data.latencyMs ? ` · ${(this.data.latencyMs / 1000).toFixed(1)} s` : '';
@@ -301,7 +309,7 @@ export class StepDetailDialogComponent {
   }
 
   isMaps(): boolean {
-    return this.data.badge === 'tool' || this.data.providerLabel === 'Google Maps' || this.data.stepIndex === 3;
+    return this.data.badge === 'tool' || this.data.providerLabel === 'Google Maps' || this.data.providerLabel === 'rules' || this.data.stepIndex === 3;
   }
 
   private parse(output?: string): Record<string, unknown> {

@@ -288,13 +288,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   // Computed signals
   readonly selectedRequest = computed<StoredRequest | undefined>(() => {
-    const list = this.requests();
+    // Only a case that is in the visible list can be selected; an empty tab shows an empty detail.
+    const list = this.filteredRequests();
     const id = this.selectedRequestId();
     return list.find((r) => r.id === id) || list[0];
   });
 
+  /** Which case the loaded `matches` belong to, so a proposal never shows on another case. */
+  readonly matchesFor = signal<string | null>(null);
+  /** Team picked with Change, kept per case id. */
+  private readonly pickedMatch = new Map<string, string>();
+
   readonly activeProposal = computed<MatchProposal | undefined>(() => {
-    return this.matches()[this.matchIdx()] || this.matches()[0];
+    const req = this.selectedRequest();
+    if (!req || this.matchesFor() !== req.id) return undefined;
+    const m = this.matches().filter((p) => !p.request_id || p.request_id === req.id);
+    return m[this.matchIdx()] || m[0];
   });
 
   /** Type, area, time and search. Chips and the queue both start from this list. */
@@ -804,8 +813,18 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       .replace('{team}', prop.wait_team_name || '');
   }
   toggleSection(s: 'why' | 'reports'): void { this.openSection.set(this.openSection() === s ? null : s); }
-  setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void { this.bandFilter.set(f); this.writeFilters(); }
-  pickMatch(i: number): void { this.matchIdx.set(i); this.changeOpen.set(false); this.choseTeam.set(true); }
+  setBandFilter(f: 'all' | 'now' | 'soon' | 'review' | 'dispatched' | 'completed'): void {
+    this.bandFilter.set(f); this.writeFilters();
+    // A tab change re-selects inside the new list (or nothing), and clears per-case UI state.
+    const first = this.filteredRequests()[0];
+    if (first) this.selectRequest(first.id);
+    else { this.selectedRequestId.set(""); this.matches.set([]); this.matchesFor.set(null); this.changeOpen.set(false); this.rejectOpen.set(false); this.choseTeam.set(false); }
+  }
+  pickMatch(i: number): void {
+    this.matchIdx.set(i); this.changeOpen.set(false); this.choseTeam.set(true);
+    const req = this.selectedRequest(); const m = this.matches()[i];
+    if (req && m) this.pickedMatch.set(req.id, m.match_id);
+  }
   closeWeights(): void { this.ui.weightsOpen.set(false); }
 
   @HostListener('window:offline')
@@ -827,8 +846,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (e.key === '?') { e.preventDefault(); this.helpOpen.set(!this.helpOpen()); return; }
     if (e.key === 'Escape' && this.helpOpen()) { this.helpOpen.set(false); return; }
     if (key === 'a') {
-      const btn = document.querySelector('.btn-approve') as HTMLButtonElement | null;
+      // A sends the suggested team only; it never dismisses a hoax or picks a no-team option.
+      const btn = document.querySelector('.footer-buttons-row .btn-approve:not(.btn-dismiss-hoax):not(.nt-go):not(.btn-reject-go)') as HTMLButtonElement | null;
       if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    }
+    if (e.key === 'Enter' && !(t?.tagName === 'BUTTON')) {
+      const go = document.querySelector('.footer-buttons-row .nt-go') as HTMLButtonElement | null;
+      if (go && !go.disabled) { e.preventDefault(); go.click(); }
     }
     if (key === 'd') {
       const btn = document.querySelector('.btn-dismiss-hoax') as HTMLButtonElement | null;
@@ -1167,8 +1191,60 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   noTeamLine(n: NoTeamOptions, k: string): string {
     const t = (key: string) => this.langService.translate(key);
     const o = (n.options as unknown as Record<string, { team?: string; km?: number | null; eta_min?: number | null; free_in_min?: number } | null>)[k];
-    return t('noTeam.opt.' + k).replace('{team}', o?.team || '').replace('{km}', o?.km != null ? String(o.km) : '?').replace('{eta}', o?.eta_min != null ? String(o.eta_min) : '?').replace('{free}', o?.free_in_min != null ? String(o.free_in_min) : '?').replace('{limit}', String(n.limit_km));
+    return t('noTeam.opt.' + k).replace('{team}', o?.team || '').replace('{km}', o?.km != null ? String(o.km) : '?').replace('{eta}', o?.eta_min != null ? String(o.eta_min) : '?').replace('{free}', o?.free_in_min != null ? String(o.free_in_min) : '?').replace('{limit}', String(n.limit_km)).replace('{travel}', o?.eta_min != null && o?.free_in_min != null ? String(Math.max(0, o.eta_min - o.free_in_min)) : '?');
   }
+  /** The selected option, or the first one, so the primary button is never a disabled grey Approve. */
+  noTeamKey(nt: NoTeamOptions): string {
+    return this.noTeamPick() || this.noTeamOptionKeys(nt)[0] || 'escalate';
+  }
+  noTeamGoLabel(nt: NoTeamOptions): string {
+    this.langService.currentLang();
+    const k = this.noTeamKey(nt);
+    const o = (nt.options as unknown as Record<string, { team?: string } | null>)[k];
+    const icon: Record<string, string> = { reserve: '⏱', road: '🚑', wider: '🛶', call112: '📞', escalate: '⬆', share: '📣' };
+    const named = this.langService.translate('noTeam.goTeam.' + k);
+    const label = o?.team && !named.startsWith('noTeam.') ? named.replace('{team}', o.team) : this.langService.translate('noTeam.go.' + k);
+    return `${icon[k] || ''} ${label}`.trim();
+  }
+  noTeamGo(req: StoredRequest, nt: NoTeamOptions): void {
+    if (!this.noTeamPick()) this.noTeamPick.set(this.noTeamKey(nt));
+    this.chooseNoTeam(req);
+  }
+  tipKey(): string {
+    const sel = this.selectedRequest();
+    if (sel && this.isHoax(sel) && !this.hoaxOverride()) return 'hoax.tipD';
+    if (sel && !this.activeProposal() && this.noTeam()) return 'noTeam.tip';
+    return 'queue.tip';
+  }
+  /** "Sent 09:41 · by you", from the audit time the case was dispatched. */
+  sentLine(req: StoredRequest): string | null {
+    const at = req.updated_at ? new Date(req.updated_at) : null;
+    if (!at || Number.isNaN(at.getTime())) return null;
+    const hm = at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return this.langService.translate('disp.sentAt').replace('{t}', hm);
+  }
+
+  readonly takeWarn = signal<{ prop: MatchProposal; case_ref: string; case_urgency: number; team: string; next_team?: string | null; next_km?: number | null } | null>(null);
+  takeWarnText(w: { case_ref: string; case_urgency: number; team: string; next_team?: string | null; next_km?: number | null }): string {
+    this.langService.currentLang();
+    const base = this.langService.translate('take.warn').replace('{team}', w.team).replace('{ref}', w.case_ref).replace('{u}', String(w.case_urgency));
+    if (!w.next_team) return base + ' ' + this.langService.translate('take.noNext');
+    return base + ' ' + this.langService.translate('take.next').replace('{team}', w.next_team).replace('{km}', String(w.next_km ?? '—'));
+  }
+  /** Shown before Approve: this team is also the best team for a more urgent waiting case. */
+  readonly takeNotice = computed(() => {
+    const w = this.takeWarn();
+    if (w) return w;
+    const p = this.activeProposal() as (MatchProposal & { takes_from?: { case_ref: string; case_urgency: number; team: string; next_team?: string | null; next_km?: number | null } | null }) | undefined;
+    return p?.takes_from ? { prop: p, ...p.takes_from } : null;
+  });
+  approveAnyway(): void {
+    const w = this.takeWarn();
+    if (!w) return;
+    this.takeWarn.set(null);
+    this.approveMatch(w.prop, false, true);
+  }
+
   chooseNoTeam(req: StoredRequest): void {
     const k = this.noTeamPick();
     if (!k) return;
@@ -1184,6 +1260,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       next: (proposals) => {
         if (this.selectedRequestId() !== requestId) return;
         this.matches.set(proposals);
+        this.matchesFor.set(requestId);
+        const picked = this.pickedMatch.get(requestId);
+        const pi = picked ? proposals.findIndex((p) => p.match_id === picked) : -1;
+        if (pi > 0) { this.matchIdx.set(pi); this.choseTeam.set(true); }
         if (!proposals.length) {
           this.apiClient.getNoTeam(requestId).subscribe({ next: (n) => { if (this.selectedRequestId() === requestId) { this.noTeam.set(n); this.noTeamPick.set(this.noTeamOptionKeys(n)[0] || null); } }, error: () => this.noTeam.set(null) });
         }
@@ -1412,6 +1492,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.mapFocus.update((n) => n + 1);
     this.ui.selectedCaseId.set(id);
     this.matchIdx.set(0);
+    this.matches.set([]);
+    this.matchesFor.set(null);
     this.openSection.set(this.ui.demoWhy ? 'why' : null);
     this.showOriginal.set(false);
     this.moreOpen.set(false);
@@ -1556,7 +1638,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return { left: team.capacity_remaining ?? 0, need };
   }
 
-  approveMatch(prop: MatchProposal, allowOvercommit = false): void {
+  approveMatch(prop: MatchProposal, allowOvercommit = false, confirmTake = false): void {
     if (this.approving()) return;
     // Ask about capacity before calling the API, instead of provoking a 400.
     if (!allowOvercommit) {
@@ -1572,7 +1654,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const sel = this.selectedRequest();
     if (sel && this.waitingForReading(sel)) return;
     this.approving.set(true);
-    this.apiClient.approveMatch(prop.match_id, allowOvercommit).subscribe({
+    this.apiClient.approveMatch(prop.match_id, allowOvercommit, confirmTake).subscribe({
       next: (approved) => {
         this.approving.set(false);
         this.lastSentId.set(prop.request_id);
@@ -1608,6 +1690,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.approving.set(false);
+        if (err.status === 409 && err.error?.detail?.code === 'takes_best_team') {
+          this.takeWarn.set({ prop, ...err.error.detail });
+          return;
+        }
         if (err.status === 400 && err.error?.detail?.includes('Overcommit')) {
           this.pendingMatch = prop;
           this.isOvercommitModalOpen.set(true);

@@ -38,6 +38,8 @@ class SitrepCounts(BaseModel):
     rescue_open: int
     rooftop_like: int
     free_boats: int
+    busy_boats: int = 0
+    busy_medical: int = 0
     free_medical: int
     free_food: int
     free_shelter: int
@@ -98,13 +100,7 @@ def _open_cases() -> List[StoredRequest]:
 
 
 def _tier_of(req: StoredRequest) -> str:
-    reason = (req.urgency_reason or "").lower()
-    if reason.startswith("immediate"):
-        return "immediate"
-    if reason.startswith("urgent"):
-        return "urgent"
-    if reason.startswith("standard"):
-        return "standard"
+    # Same bands as the queue and Ask the desk: score 80+ Critical, 60+ Urgent, else Can wait.
     if (req.urgency_score or 0) >= 80:
         return "immediate"
     if (req.urgency_score or 0) >= 60:
@@ -135,14 +131,30 @@ def collect_counts() -> SitrepCounts:
         if _rooftop_like(req):
             rooftop += 1
 
+    def _fresh(res) -> bool:
+        stamp = getattr(res, "location_updated_at", None)
+        if not stamp:
+            return False
+        try:
+            from datetime import datetime, timezone
+            at = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+            return (datetime.now(timezone.utc) - at).total_seconds() <= 120 * 60
+        except ValueError:
+            return False
+
+    def is_free(res) -> bool:
+        # Same rule as the Teams page: not on a case, seats left, checked in within 2 h.
+        return (not res.assigned_request_id and res.status == ResourceStatus.AVAILABLE
+                and (res.capacity_remaining or 0) > 0 and _fresh(res))
+
+    def is_busy(res) -> bool:
+        return bool(res.assigned_request_id) or res.status != ResourceStatus.AVAILABLE or (res.capacity_remaining or 0) <= 0
+
     def free(kind: ResourceKind) -> int:
-        return sum(
-            1
-            for res in storage_service.list_resources()
-            if res.kind == kind
-            and res.status == ResourceStatus.AVAILABLE
-            and (res.capacity_remaining or 0) > 0
-        )
+        return sum(1 for res in storage_service.list_resources() if res.kind == kind and is_free(res))
+
+    def busy(kind: ResourceKind) -> int:
+        return sum(1 for res in storage_service.list_resources() if res.kind == kind and is_busy(res))
 
     boats = free(ResourceKind.BOAT)
     medical = free(ResourceKind.MEDICAL)
@@ -168,6 +180,8 @@ def collect_counts() -> SitrepCounts:
         rescue_open=rescue,
         rooftop_like=rooftop,
         free_boats=boats,
+        busy_boats=busy(ResourceKind.BOAT),
+        busy_medical=busy(ResourceKind.MEDICAL),
         free_medical=medical,
         free_food=food,
         free_shelter=shelter,
@@ -183,11 +197,9 @@ def _template_brief(counts: SitrepCounts) -> _SitrepModel:
     tiers = f"Immediate {immediate}, Urgent {urgent}, Standard {standard}"
     gap = counts.gaps[0] if counts.gaps else "No resource gap from current open counts"
     brief = (
-        f"{counts.pending} open cases by triage: {tiers}. "
-        f"{counts.rescue_open} rescue, {counts.rooftop_like} rooftop/terrace. "
-        f"{counts.free_boats} free boats, {counts.free_medical} medical, "
-        f"{counts.free_food} food, {counts.free_shelter} shelter. {gap}. "
-        f"A coordinator must approve every dispatch. Drafts only — nothing was sent."
+        f"{counts.pending} open: {immediate} Critical, {urgent} Urgent, {standard} Can wait.\n"
+        f"Boats: {counts.free_boats} free, {counts.busy_boats} busy · Medical: {counts.free_medical} free, {counts.busy_medical} busy.\n"
+        f"Nothing is sent without a coordinator."
     )
     sms = (
         f"Relief Desk draft: {counts.pending} pending (now {immediate}). "
@@ -210,6 +222,8 @@ def _numbers_ok(text: str, counts: SitrepCounts) -> bool:
         counts.rescue_open,
         counts.rooftop_like,
         counts.free_boats,
+        counts.busy_boats,
+        counts.busy_medical,
         counts.free_medical,
         counts.free_food,
         counts.free_shelter,

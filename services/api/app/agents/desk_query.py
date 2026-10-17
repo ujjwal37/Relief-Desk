@@ -47,6 +47,23 @@ NEGATION = re.compile(
     r"\b(?:not|never|yet to|still not|haven'?t|hasn'?t|isn'?t|aren'?t|wasn'?t|nahi|nahin|nhi)\b|नहीं|नही|अभी तक",
     re.I,
 )
+BAND_WORDS = {
+    "critical": ["critical", "most urgent", "immediate", "life-threatening", "गंभीर", "क्रिटिकल", "gambhir", "critical cases", "ഗുരുതര"],
+    "urgent": ["urgent", "अर्जेंट", "जरूरी", "zaroori", "jaruri", "അടിയന്തര"],
+}
+# Same thresholds as the web band util (libs/shared band.util.ts): Critical >= 80, Urgent >= 60.
+BAND_MIN = {"critical": 80.0, "urgent": 60.0}
+
+
+def band_of_score(score: float) -> str:
+    s = float(score or 0)
+    if s >= BAND_MIN["critical"]:
+        return "critical"
+    if s >= BAND_MIN["urgent"]:
+        return "urgent"
+    return "other"
+
+
 WAITING_WORDS = ["waiting", "still", "open", "pending", "unassigned", "not yet", "इंतज़ार", "इंतजार", "intezaar",
                  "intezar", "baaki", "बाकी", "കാത്തിരി"]
 
@@ -63,6 +80,7 @@ FUNCTION = {
             "statuses": {"type": "array", "items": {"type": "string", "enum": STATUSES},
                          "description": "Case stages to include. completed/done/resolved/closed means [completed, resolved, closed]; dispatched/assigned/on the way means [approved, dispatched, in_progress]; pending/open/waiting means [new, needs_recheck, matched]. Empty means any stage."},
             "min_people": {"type": "integer", "description": "Only cases with at least this many people."},
+            "bands": {"type": "array", "items": {"type": "string", "enum": ["critical", "urgent"]}, "description": "Urgency bands asked for: critical (score 80+), urgent (60-79). Empty means any."},
             "reason": {"type": "string", "description": "One short English sentence saying what was searched for."},
         },
         "required": ["reason"],
@@ -127,7 +145,9 @@ def rule_filters(question: str) -> Dict[str, Any]:
         statuses = []
     waiting = (_has(q, WAITING_WORDS) or negated) and not statuses
     m = re.search(r"(?:at least|atleast|more than|over|minimum|kam se kam|से ज़्यादा|से ज्यादा)\s*(\d+)|(\d+)\s*(?:\+|or more|ya zyada|से अधिक)", q)
+    bands = [b for b, words in BAND_WORDS.items() if _has(q, words)]
     out: Dict[str, Any] = {
+        "bands": bands,
         "types": types,
         "ward_ids": ward_ids,
         "vulnerable": vulnerable,
@@ -150,6 +170,8 @@ def describe(f: Dict[str, Any]) -> str:
         parts.append("dispatched")
     elif st:
         parts.append("/".join(sorted(st)))
+    if f.get("bands"):
+        parts.append(" or ".join(f["bands"]))
     parts.append((" or ".join(f["types"]) + " cases") if f.get("types") else "cases")
     if f.get("vulnerable"):
         parts.append("with " + " and ".join(v.replace("_", " ") for v in f["vulnerable"]))
@@ -164,6 +186,7 @@ def clean_filters(raw: Dict[str, Any]) -> Dict[str, Any]:
     """Keep only known values so a model reply cannot widen or change the query."""
     wards = _wards()
     out: Dict[str, Any] = {
+        "bands": [b for b in (raw.get("bands") or []) if b in BAND_MIN],
         "types": [t for t in (raw.get("types") or []) if t in TYPES],
         "ward_ids": [w for w in (raw.get("ward_ids") or []) if w in wards],
         "vulnerable": [v for v in (raw.get("vulnerable") or []) if v in VULNERABLE],
@@ -326,6 +349,10 @@ def run_filters(requests: Iterable[Any], f: Dict[str, Any], limit: int = 12) -> 
             continue
         if f["min_people"] and (r.people_count or 0) < f["min_people"]:
             continue
+        if f.get("bands") and band_of_score(r.urgency_score) not in f["bands"]:
+            continue
+        if f.get("bands") and (getattr(r, "hoax_reason", None) or "likely_hoax" in (r.flags or []) or "hoax" in (r.flags or [])):
+            continue  # a held hoax is never counted as Critical
         hits.append(r)
     hits.sort(key=lambda r: (-(r.urgency_score or 0), r.created_at))
     return hits[:limit], len(hits)
@@ -359,6 +386,28 @@ def card(r: Any) -> Dict[str, Any]:
     }
 
 
+def sentence(f: Dict[str, Any], total: int) -> str:
+    """A plain first sentence: "4 critical cases are waiting."."""
+    words = []
+    if f.get("bands"):
+        words.append(" or ".join(f["bands"]))
+    if f.get("types"):
+        words.append(" or ".join(f["types"]))
+    noun = "case" if total == 1 else "cases"
+    verb = "is" if total == 1 else "are"
+    st = set(f.get("statuses") or [])
+    if f.get("waiting_only"):
+        tail = f"{verb} waiting"
+    elif st and st <= set(STATUS_GROUPS["completed"]):
+        tail = f"{verb} completed"
+    elif st and st <= set(STATUS_GROUPS["dispatched"]):
+        tail = f"{verb} dispatched"
+    else:
+        tail = "match"
+        return f"{total} {' '.join(words + [noun])} {tail}."
+    return f"{total} {' '.join(words + [noun])} {tail}."
+
+
 def ask(question: str, requests: Iterable[Any], call=None) -> Dict[str, Any]:
     started = time.monotonic()
     filters, ai = gemini_filters(question, call=call)
@@ -381,7 +430,7 @@ def ask(question: str, requests: Iterable[Any], call=None) -> Dict[str, Any]:
         {"agent": "Search cases (read-only)", "status": "complete", "provider": "tool", "model": None,
          "latency_ms": t_search, "tokens": None, "input": as_json, "output": f"{total} match(es)"},
     ]
-    answer = f"{total} case{'s' if total != 1 else ''} match." if count_only else None
+    answer = sentence(filters, total) if count_only else None
     return {"question": question, "filters": shown, "reason": filters["reason"], "total": total,
             "count_only": count_only, "answer": answer,
             "cases": [card(r) for r in hits], "ai": ai, "trace": trace}

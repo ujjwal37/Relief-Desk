@@ -1,7 +1,7 @@
 import logging
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from app.models.firestore_models import (
     StoredRequest,
@@ -47,6 +47,8 @@ class MatchProposal(BaseModel):
     wait_team_name: Optional[str] = None
     # Honest boat-vs-road comparison from the same haversine distance. Never invents closures.
     route_note: Optional[str] = None
+    # Set when this team is also the best team for a more urgent waiting case (warning only).
+    takes_from: Optional[Dict[str, Any]] = None
 
 
 def _explain_together(request: StoredRequest, candidates: list, use_model: bool = False) -> list:
@@ -94,6 +96,8 @@ class MatchingAgent:
             return []
         # A team that has not checked in for 90 min is not offered as available.
         resources = [r for r in resources if not _stale(r)]
+        # A team already sent to another case is busy: never offered again until it is free.
+        resources = [r for r in resources if not (getattr(r, "assigned_request_id", None) and r.assigned_request_id != request.id)]
 
         scored_candidates = []
         people_needed = request.people_count if request.people_count else 1
