@@ -100,6 +100,7 @@ export interface MapLeg {
         </svg>
       }
       </div>
+      <span class="rd-offline-label" data-testid="map-simplified">{{ 'map.simplified' | rdTranslate }}</span>
       <div class="rd-zoom" role="group" [attr.aria-label]="'map.zoom' | rdTranslate">
         <button type="button" data-testid="map-zoom-in" (click)="zoomBy(1)" [attr.aria-label]="'map.zoomIn' | rdTranslate">+</button>
         <button type="button" data-testid="map-zoom-out" (click)="zoomBy(-1)" [attr.aria-label]="'map.zoomOut' | rdTranslate">−</button>
@@ -117,6 +118,8 @@ export interface MapLeg {
     .rd-map-loading span { background: var(--surface); color: var(--text); padding: 8px 14px; border-radius: 999px; font-size: 13px; }
     @keyframes rd-map-pulse { to { background-position: -200% 0; } }
     @media (prefers-reduced-motion: reduce) { .rd-map-loading { animation: none; } }
+    .rd-offline-label { position: absolute; left: 10px; bottom: 10px; z-index: 7; padding: 3px 8px; border-radius: 999px; background: var(--surface); color: var(--muted); border: 1px solid var(--border); font-size: 11px; font-weight: 600; pointer-events: none; }
+    .rd-map-loading span::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand, #166534); animation: rd-spin .8s linear infinite; vertical-align: -1px; }
     .rd-leg { font-size: 13px; font-weight: 700; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
     .rd-route-loading { position: absolute; z-index: 6; top: 10px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--e1); font-size: 12px; font-weight: 600; pointer-events: none; }
     .rd-route-loading i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand, #166534); animation: rd-spin .8s linear infinite; }
@@ -139,6 +142,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   readonly routing = signal(0);
   private destroyed = false;
   private loadTimer?: ReturnType<typeof setTimeout>;
+  private slowTimer?: ReturnType<typeof setTimeout>;
   private readyListener?: { remove: () => void };
 
   @Input() pins: MapPin[] = [];
@@ -178,6 +182,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   ngAfterViewInit(): void {
     const w = window as unknown as { gm_authFailure?: () => void };
     w.gm_authFailure = () => this.fallBackToSvg();
+    // Never a blank loading panel: after 3 s without tiles, show the ward map labelled offline.
+    this.slowTimer = setTimeout(() => { if (this.loading() && !this.destroyed) this.fallBackToSvg(); }, 3000);
     this.maps.decide().then((mode) => {
       if (this.destroyed) return;
       if (this.gaveUp || this.maps.authFailed || mode !== 'google') {
@@ -191,7 +197,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
       this.refreshBuiltin();
       this.cdr.detectChanges();
       this.draw();
-      this.loadTimer = setTimeout(() => { this.fallbackIfBroken(); this.loading.set(false); }, 6000);
+      this.loadTimer = setTimeout(() => { this.fallbackIfBroken(); }, 3000);
     });
     window.addEventListener('offline', this.onOffline);
   }
@@ -199,6 +205,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   ngOnDestroy(): void {
     this.destroyed = true;
     clearTimeout(this.loadTimer);
+    clearTimeout(this.slowTimer);
     this.readyListener?.remove();
     this.markers.forEach((marker) => marker.setMap?.(null));
     this.lines.forEach((line) => line.setMap?.(null));

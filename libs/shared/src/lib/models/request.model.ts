@@ -146,6 +146,9 @@ export interface StoredRequest {
   ward_id: string | null;
   lat: number | null;
   lng: number | null;
+  /** Frozen at Approve: the team actually sent. */
+  alias_codes?: string[];
+  dispatch?: { match_id?: string; resource_id?: string; resource_name?: string | null; resource_kind?: string | null; distance_km?: number | null; eta_minutes?: number | null; travel_mode?: string; approved_at?: string } | null;
   people_count: number | null;
   /** Citizen wording such as "2-3" or "4". */
   people_span?: string | null;

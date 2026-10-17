@@ -281,9 +281,6 @@ test.describe('public and coordinator demo', () => {
       await page.getByRole('button', { name: 'Settings' }).click();
       await expect(page.getByRole('button', { name: 'Dark', exact: true })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
-      await expect(page.getByRole('button', { name: 'Hinglish' })).toHaveCount(0);
-      await page.getByTestId('lang-more').click();
-      await expect(page.getByRole('button', { name: 'Malayalam' })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Hinglish' })).toBeVisible();
       await page.getByRole('button', { name: 'Hindi' }).click();
       await page.getByRole('button', { name: 'हो गया' }).click();

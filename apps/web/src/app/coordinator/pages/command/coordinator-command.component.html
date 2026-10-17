@@ -31,7 +31,7 @@
   <div class="slim-stats-bar" data-testid="stats-line">
     <p class="safety-inline" role="note"><a href="tel:112">{{ 'safety.banner' | rdTranslate }}</a></p>
     <div class="batch-counters" data-testid="batch-counters" role="status">
-      <span><b>{{ batch().waiting }}</b> {{ 'batch.waiting' | rdTranslate }}</span>
+      <span data-testid="ready-chip"><b>{{ readyCount() }}</b> {{ 'batch.waiting' | rdTranslate }}</span>
       <span><b>{{ batch().dispatched }}</b> {{ 'batch.dispatched' | rdTranslate }}</span>
     </div>
   @if (!narrow()) {
@@ -138,13 +138,13 @@
           <p class="scenario-visible">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
         </div>
         <div class="queue-tabs" role="tablist" [attr.aria-label]="'queue.tabsLabel' | rdTranslate" (keydown)="onQueueTabKey($event)">
-          <button type="button" role="tab" class="qtab" data-testid="tab-waiting" [class.on]="queueTab() === 'waiting'" [attr.aria-selected]="queueTab() === 'waiting'" [attr.tabindex]="queueTab() === 'waiting' ? 0 : -1" (click)="setQueueTab('waiting')" [attr.aria-label]="queueSplitOn() ? ('aiq.waitingCount' | rdTranslate:{ ready: displayRows().length, n: aiWorkingRows().length }) : ('batch.waiting' | rdTranslate)">
-            @if (queueSplitOn() && aiWorkingRows().length) {
-              <span class="ql-full">{{ 'aiq.waitingCount' | rdTranslate:{ ready: displayRows().length, n: aiWorkingRows().length } }}</span>
-              <span class="ql-short" aria-hidden="true">{{ 'aiq.inAi' | rdTranslate:{ n: aiWorkingRows().length } }}</span>
+          <button type="button" role="tab" class="qtab" data-testid="tab-waiting" [class.on]="queueTab() === 'waiting'" [attr.aria-selected]="queueTab() === 'waiting'" [attr.tabindex]="queueTab() === 'waiting' ? 0 : -1" (click)="setQueueTab('waiting')" [attr.aria-label]="aiCount() > 0 ? ('aiq.waitingCount' | rdTranslate:{ ready: readyCount(), n: aiCount() }) : ('batch.waiting' | rdTranslate) + ' ' + readyCount()">
+            @if (aiCount() > 0) {
+              <span class="ql-full">{{ 'aiq.waitingCount' | rdTranslate:{ ready: readyCount(), n: aiCount() } }}</span>
             } @else {
-              <span class="ql-full">{{ 'batch.waiting' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabWaiting' | rdTranslate }}</span> <b class="seg-pill">{{ batch().waiting }}</b>
+              <span class="ql-full">{{ 'batch.waiting' | rdTranslate }} <b class="seg-pill">{{ readyCount() }}</b></span>
             }
+            <span class="ql-short" aria-hidden="true">{{ 'queue.tabWaiting' | rdTranslate }} <b class="seg-pill">{{ readyCount() }}</b></span>
           </button>
           <button type="button" role="tab" class="qtab" data-testid="tab-dispatched" [class.on]="queueTab() === 'dispatched'" [attr.aria-selected]="queueTab() === 'dispatched'" [attr.tabindex]="queueTab() === 'dispatched' ? 0 : -1" (click)="setQueueTab('dispatched')" [attr.aria-label]="'coord.filterDispatched' | rdTranslate"><span class="ql-full">{{ 'coord.filterDispatched' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabSent' | rdTranslate }}</span> <b class="seg-pill">{{ counts().dispatched }}</b></button>
           <button type="button" role="tab" class="qtab" data-testid="tab-completed" [class.on]="queueTab() === 'completed'" [attr.aria-selected]="queueTab() === 'completed'" [attr.tabindex]="queueTab() === 'completed' ? 0 : -1" (click)="setQueueTab('completed')" [attr.aria-label]="'coord.filterCompleted' | rdTranslate"><span class="ql-full">{{ 'coord.filterCompleted' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabDone' | rdTranslate }}</span> <b class="seg-pill">{{ counts().completed }}</b></button>
@@ -210,23 +210,26 @@
           }
           <div class="aiq-ready-head">
             <span>{{ 'aiq.ready' | rdTranslate }}</span>
-            <b>{{ displayRows().length }}</b>
+            <b data-testid="ready-count">{{ readyCount() }}</b>
             <span class="aiq-decide">{{ 'aiq.youDecide' | rdTranslate }}</span>
           </div>
         }
         @for (req of displayRows(); track req.id) {
-          @if (queueSplitOn() && caseLifeThreat(req)) {
+          @if (queueSplitOn() && lifePinned(req)) {
             <article class="aiq-life" [class.sel]="selectedRequestId() === req.id" data-testid="life-threat-card" [attr.aria-live]="'assertive'">
               <p class="aiq-life-label">{{ 'aiq.lifeThreat' | rdTranslate }}</p>
               <button type="button" class="aiq-life-title" (click)="freezeQueue(); selectRequest(req.id, true)">{{ req.place_text || caseTitle(req) }}</button>
               <p class="aiq-life-quote">“{{ getOriginalQuote(req) }}”</p>
-              @if (req.ai_queue?.life_phrase) { <p class="aiq-life-phrase">{{ req.ai_queue?.life_phrase }}</p> }
-              @if (req.ai_queue?.place_unverified) { <span class="aiq-unverified">{{ 'aiq.place' | rdTranslate }} · {{ 'aiq.unverified' | rdTranslate }}</span> }
+              <div class="aiq-life-chips">
+                @if (req.ai_queue?.life_phrase) { <span class="kw" data-testid="life-matched">{{ 'aiq.matched' | rdTranslate:{ p: req.ai_queue?.life_phrase } }}</span> }
+                @if (req.ai_queue?.place_unverified && !stepChecked(req, 'read')) { <span class="aiq-unverified" data-testid="life-place">{{ 'aiq.place' | rdTranslate }} · {{ 'aiq.unverified' | rdTranslate }}</span> }
+                @else { <span class="aiq-checked" data-testid="life-place">{{ 'aiq.place' | rdTranslate }} · {{ 'aiq.checked' | rdTranslate }}</span> }
+              </div>
               <p class="aiq-life-meta">{{ shortId(req.id, req.public_code) }} · @if (caseAiBlocked(req)) { {{ 'aiq.stillChecking' | rdTranslate }} } @else if (engineLabelKey(req); as ek) { <span [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span> }</p>
               <div class="aiq-life-actions">
-                <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="$event.stopPropagation(); sendNearestBoat(req)">{{ 'aiq.sendBoat' | rdTranslate }}</button>
-                <button type="button" class="btn-sec" (click)="$event.stopPropagation(); callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
-                <a class="btn-sec aiq-call" href="tel:112">{{ 'aiq.call112' | rdTranslate }}</a>
+                <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="$event.stopPropagation(); markLifeHandled(req.id); sendNearestBoat(req)">{{ 'aiq.sendBoat' | rdTranslate }}</button>
+                <button type="button" class="btn-sec" (click)="$event.stopPropagation(); markLifeHandled(req.id); callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
+                <a class="b112" data-testid="call-112" href="tel:112" (click)="markLifeHandled(req.id)">{{ 'aiq.call112' | rdTranslate }}</a>
               </div>
               <p class="sr-only">{{ 'aiq.lifeAnnounce' | rdTranslate:{ place: req.place_text || shortId(req.id, req.public_code) } }}</p>
             </article>
@@ -272,7 +275,7 @@
 
                 <!-- Line 2: Title & Location -->
                 <div class="card-line-mid">
-                  <strong class="card-place-title">{{ caseTitle(req) }}</strong>
+                  <strong class="card-place-title">{{ caseTitle(req) }}</strong>@if (caseLifeThreat(req)) { <span class="life-tag" data-testid="life-tag">⚠ {{ 'aiq.lifeTag' | rdTranslate }}</span> }
                   @if (isMovedUp(req)) {
                     <span class="moved-tag">{{ 'card.movedUp' | rdTranslate }}</span>
                   }
@@ -492,6 +495,7 @@
               <h2 class="dec-place-title" [attr.title]="caseTitle(req)">{{ caseTitle(req) }}</h2>
               @if (isHoax(req)) { <span class="hoax-chip hoax-head" data-testid="hoax-head">{{ hoaxLine(req) }}</span> }
               <button type="button" class="map-toggle" data-testid="map-toggle" [attr.aria-pressed]="mapOpen()" (click)="mapOpen.set(!mapOpen())">{{ (mapOpen() ? 'queue.hideMap' : 'queue.showMap') | rdTranslate }}</button>
+              @if (!caseAiBlocked(req) || stepChecked(req, 'urgency')) {
               <span class="dec-band-tag" [class]="'band-' + bandOf(req.urgency_score)">
                 @if (bandOf(req.urgency_score) === 'critical') {
                   ▲ {{ 'filter.critical' | rdTranslate }}
@@ -504,6 +508,9 @@
               <span class="dec-score-number" [style.color]="getUrgencyColor(req.urgency_score)">
                 {{ Math.round(req.urgency_score) }}
               </span>
+              } @else {
+                <span class="dec-score-skeleton" data-testid="urgency-pending" [attr.aria-label]="'aiq.beingRated' | rdTranslate"></span>
+              }
             </div>
             @if (!isHoax(req)) {
               <dl class="dec-facts" data-testid="dec-facts">
@@ -511,18 +518,22 @@
                   <div><dt>{{ 'dec.aiIncomplete' | rdTranslate }}</dt><dd class="flag" data-testid="dec-ai-incomplete">{{ 'dec.aiIncompleteRules' | rdTranslate }} {{ miss }}</dd></div>
                 }
                 <div><dt>{{ 'dec.depth' | rdTranslate }}</dt><dd data-testid="dec-depth-row">@if (depthChip(req); as dc) { {{ dc }} <q class="dec-quote">{{ req.water_depth?.quote }}</q> } @else { {{ 'dec.notStated' | rdTranslate }} }</dd></div>
-                @if (req.self_check && selfCheckLine($any(req.self_check)); as sc) {
-                  <div><dt>{{ 'dec.selfCheck' | rdTranslate }}</dt><dd data-testid="dec-selfcheck-row" [class.flag]="req.self_check?.verdict && req.self_check?.verdict !== 'pass'">{{ sc }}</dd></div>
-                }
               </dl>
             }
             <p class="dec-case-sub">
               <span [attr.title]="req.id">{{ shortId(req.id, req.public_code) }}</span> · {{ getWardText(req) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
-              @if (engineLabelKey(req); as ek) {
+              @if (caseAiBlocked(req)) {
+              } @else if (tookTooLong(req) && req.ai_queue?.engine !== 'gemini_rechecked') {
+                · <span class="aiq-engine" data-testid="ai-engine-panel">{{ 'aiq.provenanceTimeout' | rdTranslate }}</span>
+              } @else if (engineLabelKey(req); as ek) {
                 · <span class="aiq-engine" data-testid="ai-engine-panel" [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span>
               }
-              @if (tookTooLong(req)) { · {{ 'aiq.provenanceTimeout' | rdTranslate }} }
             </p>
+            @if (!caseAiBlocked(req)) {
+              @for (row of diffEntries(req); track row.field) {
+                <p class="aiq-diff" data-testid="recheck-diff">{{ 'aiq.diffLine' | rdTranslate:{ field: row.field, from: row.from, to: row.to } }}</p>
+              }
+            }
             @if (caseAiBlocked(req)) {
               <span class="aiq-work-badge">{{ 'aiq.workingBadge' | rdTranslate:{ t: clockOf(req) } }}</span>
             }
@@ -620,17 +631,19 @@
           <!-- 4. Decision: Best team for this -->
           <div class="decision-block">
             <span class="block-kicker">{{ 'coord.decision' | rdTranslate }}</span>
-            <h3 class="block-subheading">{{ 'coord.bestTeam' | rdTranslate }}</h3>
+            @if (!isCompleted(req)) { <h3 class="block-subheading">{{ 'coord.bestTeam' | rdTranslate }}</h3> }
 
-            @if (activeProposal(); as prop) {
+            @if (isCompleted(req)) {
+              <section class="done-card" data-testid="done-card">{{ 'coord.doneCard' | rdTranslate:{ t: doneTime(req), team: assignedTeam(req)?.name || activeProposal()?.resource_name || '' } }}</section>
+            } @else if (activeProposal(); as prop) {
               <div class="best-team-banner">
                 <div class="best-team-main-row">
                   <span class="team-veh-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" width="22" height="22"><path [attr.d]="vehiclePath(prop.resource_kind)" fill="currentColor"/></svg>
                   </span>
                   <div class="team-name-line">
-                    <strong class="team-name">{{ isDispatched(req) ? (assignedTeam(req)?.name || prop.resource_name) : prop.resource_name }}</strong>
-                    <span class="team-specs">{{ propEtaSubline(prop) }}</span>
+                    <strong class="team-name">{{ isDispatched(req) ? (req.dispatch?.resource_name || assignedTeam(req)?.name || prop.resource_name) : prop.resource_name }}</strong>
+                    <span class="team-specs">{{ isDispatched(req) && req.dispatch ? dispatchSubline(req) : propEtaSubline(prop) }}</span>
                   </div>
                 </div>
                 @if (prop.is_fallback && prop.fallback_label) {
@@ -642,7 +655,7 @@
                 @if (depthLine(prop); as dl) {
                   <p class="team-why-reason depth-line" data-testid="depth-why">{{ dl }}</p>
                 }
-                <p class="team-why-reason" data-testid="team-why">{{ teamWhy(prop) }}</p>
+                <p class="team-why-reason" data-testid="team-why">{{ isDispatched(req) ? sentWhy(req, prop) : teamWhy(prop) }}</p>
                 <button type="button" class="why-link" (click)="openWhyTeamModal()">{{ 'why.title' | rdTranslate }} ›</button>
                 <p class="straight-line-note">{{ 'team.straightLine' | rdTranslate }}</p>
               </div>
@@ -690,8 +703,8 @@
               </div>
             } @else {
               @if (noTeam(); as nt) {
-                <section class="no-team-card" data-testid="no-team">
-                  <h3>{{ ('noTeam.title.' + (nt.kind || 'other')) | rdTranslate:{ km: nt.limit_km } }}</h3>
+                <section class="no-team-card" data-testid="no-team" [class.info-only]="nt.reason === 'info_only'">
+                  <h3>@if (nt.reason === 'info_only') { {{ 'noTeam.infoOnly' | rdTranslate }} } @else { {{ ('noTeam.title.' + (nt.kind || 'other')) | rdTranslate:{ km: nt.limit_km } }} }</h3>
                   <p class="nt-reason">{{ noTeamReason(nt) }}</p>
                   <p class="nt-stays">{{ 'noTeam.stays' | rdTranslate }}</p>
                   <fieldset class="nt-options">
@@ -726,13 +739,13 @@
 
         <!-- 6. Pinned Footer Actions -->
         <footer class="decision-pinned-footer" data-tour="actions">
-          @if (tipOpen() && !(selectedRequest() && (isDispatched(selectedRequest()!) || isCompleted(selectedRequest()!)))) {
+          @if (tipOpen() && !caseAiBlocked(req) && !(selectedRequest() && (isDispatched(selectedRequest()!) || isCompleted(selectedRequest()!)))) {
             <p class="key-tip" role="note" data-testid="key-tip">{{ tipKey() | rdTranslate }} <button type="button" (click)="dismissTip()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
           }
           @if (!isDispatched(req) && !isCompleted(req)) {
             <p class="you-decide-msg">{{ 'coord.youDecide' | rdTranslate }}</p>
           }
-          @if (!isDispatched(req) && !isCompleted(req) && takeNotice(); as tw) {
+          @if (!isDispatched(req) && !isCompleted(req) && !caseAiBlocked(req) && takeNotice(); as tw) {
             <div class="take-warn" role="alert" data-testid="take-warning">
               <p>⚠ {{ takeWarnText(tw) }}</p>
               @if (takeWarn()) {

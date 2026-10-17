@@ -107,7 +107,8 @@
     "saidElderly": "There is an elderly person with us",
     "saidSick": "Someone here is sick",
     "saidNone": "No children, elderly or sick people",
-    "autoPlace": "Location not shared yet"
+    "autoPlace": "Location not shared yet",
+    "speakLang": "Language you will speak"
   },
   "confirm": {
     "title": "What We Understood",
@@ -306,7 +307,7 @@
   },
   "coord": {
     "noPlaceGiven": "no place given",
-    "findingTeam": "Finding the closest team…",
+    "findingTeam": "Finding the best team…",
     "cases": "Cases",
     "home": "Home",
     "overview": "Overview",
@@ -525,7 +526,6 @@
     "whyUrgent": "Matches the urgency",
     "whyVuln": "Fits who is vulnerable",
     "dupOf": "Possible duplicate of {id}",
-    "findingTeam": "Finding the best team…",
     "noTeamNow": "No suitable free team nearby",
     "approveOffline": "Approve when back online",
     "decideDupFirst": "Decide on the duplicate first.",
@@ -549,7 +549,8 @@
     "capacityShort": "Team has {left} seats for {need} people — approving will ask you to confirm.",
     "aiChecking": "Checking…",
     "undone": "Dispatch undone. The case is back in Waiting.",
-    "undoFailed": "Could not undo. The team may already be working the case."
+    "undoFailed": "Could not undo. The team may already be working the case.",
+    "doneCard": "Completed {t} · {team} · team free again"
   },
   "tour": {
     "next": "Next",
@@ -621,7 +622,8 @@
     "share": "Share link",
     "copied": "Copied",
     "copyLink": "Copy link",
-    "inQueue": "Your report is in the coordinator queue."
+    "inQueue": "Your report is in the coordinator queue.",
+    "tipLife112": "Call 112 now. Tell them what you told us."
   },
   "nearby": {
     "title2": "Nearby alerts",
@@ -1010,7 +1012,8 @@
     "routing": "Finding road route…",
     "zoom": "Map zoom",
     "zoomIn": "Zoom in",
-    "zoomOut": "Zoom out"
+    "zoomOut": "Zoom out",
+    "simplified": "Simplified map (offline)"
   },
   "photo": {
     "add": "Add photo",
@@ -1159,7 +1162,10 @@
     "prev": "Previous",
     "next": "Next",
     "result": {
-      "noDup": "No duplicate"
+      "noDup": "No duplicate",
+      "none": "None",
+      "nearest": "Nearest first",
+      "info": "Info"
     },
     "headlineIntake": "{type} for {people} at {place}.",
     "headlineJoined": "{n} more reports joined this case.",
@@ -1349,7 +1355,8 @@
       "reserve": "Reserve {team}",
       "road": "Send {team}",
       "wider": "Send {team}"
-    }
+    },
+    "infoOnly": "Information only · no team needed"
   },
   "dec": {
     "depth": "Depth",
@@ -1362,7 +1369,9 @@
   "disp": {
     "onWay": "Team on the way",
     "sentAt": "Sent {t} · by you",
-    "markArrived": "Mark arrived"
+    "markArrived": "Mark arrived",
+    "sentTeam": "{team} was sent.",
+    "sentTeamKm": "{team} was sent · {km} km away."
   },
   "take": {
     "warn": "{team} is also the best team for {ref} (urgency {u}), which is more urgent.",
@@ -1443,6 +1452,9 @@
     "ordinal2": "2nd in line",
     "ordinal3": "3rd in line",
     "ordinalN": "{n}th in line",
-    "diffLine": "{field}: {from} → {to}"
+    "diffLine": "{field}: {from} → {to}",
+    "newReport": "New report · {ref}",
+    "matched": "Matched: {p}",
+    "lifeTag": "Life threat"
   }
 }

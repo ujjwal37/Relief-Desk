@@ -60,3 +60,4 @@
 .quick-tiles .tile { min-height: 56px; font-size: 15px; justify-content: center; text-align: center; }
 .vuln-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .link { display: inline-flex; align-items: center; padding: 0 8px; }
+.v-langs { display:flex; gap:8px; margin:6px 0 10px; } .v-langs button { min-height:36px; padding:0 12px; border-radius:999px; border:1px solid rgba(255,255,255,.4); background:transparent; color:inherit; font:600 14px var(--rd-font-family); cursor:pointer; } .v-langs button.on { background:#fff; color:#1b3c53; }

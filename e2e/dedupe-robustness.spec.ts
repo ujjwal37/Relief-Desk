@@ -59,7 +59,7 @@ test('three reworded reports become one case, and conflicting counts keep the hi
   const firstTrace = await openHowItDecided(desk);
   await openTechnical(firstTrace);
   const firstDup = await openDedupeDetails(firstTrace);
-  await expect(firstDup).toContainText('Similarity');
+  await expect(firstDup).toContainText('Match evidence');
   await desk.keyboard.press('Escape');
 
   const ranges = `Oakbend${Date.now().toString(36).replace(/[0-9]/g, 'y')}`;
@@ -77,7 +77,7 @@ test('three reworded reports become one case, and conflicting counts keep the hi
   const trace = await openHowItDecided(desk);
   await openTechnical(trace);
   const conflictDup = await openDedupeDetails(trace);
-  await expect(conflictDup).toContainText('Similarity');
+  await expect(conflictDup).toContainText('Match evidence');
   await expect(conflictDup).toContainText(/Counts differ/);
   await context.close();
 });

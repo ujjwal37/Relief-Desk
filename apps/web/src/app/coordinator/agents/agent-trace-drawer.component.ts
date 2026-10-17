@@ -266,7 +266,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     if (agent === 'Intake') return JSON.stringify({ type: req.type, people: req.people_count, place: req.place_text });
     if (agent === 'Dedupe') return req.dedupe_trace || 'Review duplicate evidence with the coordinator.';
     if (agent === 'Triage') return req.urgency_reason;
-    return `Urgency score: ${req.urgency_score}. A coordinator reviews the team proposal.`;
+    return 'A coordinator reviews the team proposal.';
   }
 
   private fallbackCount(): number {

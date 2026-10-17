@@ -135,15 +135,13 @@ test.describe('agents visible', () => {
         await page.goto('/coordinator/command');
         await expect(page.getByRole('button', { name: 'यह कैसे तय हुआ' }).first()).toBeVisible();
         await menu.click();
-        await page.locator('.menu').getByTestId('lang-more').click();
         await page.locator('.menu').getByRole('button', { name: 'Hinglish' }).click();
         await closeMenu();
         await expect(page.getByRole('button', { name: 'Ye kaise decide hua' }).first()).toBeVisible();
+        // Malayalam is a report language, not a UI language (r4).
         await menu.click();
-        await page.locator('.menu').getByTestId('lang-more').click();
-        await page.locator('.menu').getByRole('button', { name: 'Malayalam' }).click();
+        await expect(page.locator('.menu').getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
         await closeMenu();
-        await expect(page.getByRole('button', { name: 'ഇത് എങ്ങനെ തീരുമാനിച്ചു' }).first()).toBeVisible();
         await menu.click();
         await page.locator('.menu').getByRole('button', { name: 'English' }).click();
         await closeMenu();

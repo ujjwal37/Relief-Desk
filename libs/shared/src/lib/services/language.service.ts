@@ -20,10 +20,14 @@ export const SUPPORTED_LANGUAGES: LangOption[] = [
 ];
 
 /** Shown without opening More. */
-export const PRIMARY_LANGUAGES: LangOption[] = SUPPORTED_LANGUAGES.filter((l) => l.code === 'en' || l.code === 'hi');
+export const PRIMARY_LANGUAGES: LangOption[] = SUPPORTED_LANGUAGES.filter((l) => l.code === 'en' || l.code === 'hi' || l.code === 'hinglish');
 
-/** Hinglish and Malayalam stay available behind More. */
-export const MORE_LANGUAGES: LangOption[] = SUPPORTED_LANGUAGES.filter((l) => l.code === 'hinglish' || l.code === 'ml');
+/** Hinglish stays available behind More. Malayalam is not a UI language (reports in Malayalam still work). */
+// EN, HI and Hinglish sit side by side (QA r4); no More menu. Malayalam is a report language only.
+export const MORE_LANGUAGES: LangOption[] = [];
+
+/** Languages a person can pick for the interface. ml.json stays for report-side strings and old links. */
+export const UI_LANGUAGES: LangOption[] = SUPPORTED_LANGUAGES.filter((l) => l.code !== 'ml');
 
 const DICTIONARIES: Record<SupportedLang, any> = {
   en: enJson,
@@ -40,7 +44,8 @@ export class LanguageService {
 
   constructor() {
     const stored = localStorage.getItem('rd_preferred_lang');
-    const saved = (stored === 'ta' ? 'en' : stored) as SupportedLang;
+    // Malayalam is no longer offered as a UI language: an old saved choice falls back to English.
+    const saved = (stored === 'ta' || stored === 'ml' ? 'en' : stored) as SupportedLang;
     if (saved && DICTIONARIES[saved]) {
       this.setLanguage(saved);
     }

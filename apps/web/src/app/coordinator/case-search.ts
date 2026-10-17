@@ -9,6 +9,8 @@ export interface SearchableCase {
   ai_translation?: string | null;
   translations?: Record<string, string> | null;
   report_ids?: string[] | null;
+  public_code?: string | null;
+  alias_codes?: string[] | null;
 }
 
 const TYPE_WORDS: Record<string, string[]> = {
@@ -28,6 +30,8 @@ export function caseMatches(r: SearchableCase, rawQuery: string, wardNames: Reco
   const hay: string[] = [
     r.id,
     ...(r.report_ids || []),
+    r.public_code || '',
+    ...(r.alias_codes || []),
     ward,
     `ward ${wardNum}`,
     ...(wardNames[ward] || []),

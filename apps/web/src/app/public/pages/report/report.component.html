@@ -124,6 +124,11 @@
       <div class="orb" aria-hidden="true"></div>
       <div class="wave" aria-hidden="true">@for (b of [1,2,3,4,5,6,7,8,9,10,11,12]; track b) { <i [style.animation-delay.ms]="b * 70"></i> }</div>
       <p class="det">{{ ('report.listeningLang' | rdTranslate).replace('{lang}', langLabel()) }}</p>
+      <div class="v-langs" role="group" [attr.aria-label]="'report.speakLang' | rdTranslate">
+        <button type="button" data-testid="voice-en" [class.on]="inputLocale() === 'en-IN'" (click)="pickVoiceLocale('en-IN')">{{ 'English' }}</button>
+        <button type="button" data-testid="voice-hi" [class.on]="inputLocale() === 'hi-IN'" (click)="pickVoiceLocale('hi-IN')">{{ 'हिंदी' }}</button>
+        <button type="button" data-testid="voice-ml" [class.on]="inputLocale() === 'ml-IN'" (click)="pickVoiceLocale('ml-IN')">{{ 'മലയാളം' }}</button>
+      </div>
       <p class="tx" aria-live="polite">{{ transcript() }}</p>
       <div class="v-btns">
         <button type="button" class="v-sec" (click)="typeInstead()">{{ 'report.type' | rdTranslate }}</button>

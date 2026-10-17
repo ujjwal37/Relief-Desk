@@ -16,12 +16,11 @@ describe('tap targets and language layouts', () => {
     }).compileComponents();
     const fixture = TestBed.createComponent(LanguageSwitcherComponent);
     fixture.detectChanges();
-    fixture.nativeElement.querySelector('details.more').open = true;
     fixture.detectChanges();
     const all = fixture.nativeElement.querySelectorAll('button, summary') as NodeListOf<HTMLElement>;
-    expect(all.length).toBe(5);
+    expect(all.length).toBe(3);
     const names = [...all].map((el) => el.getAttribute('aria-label') || (el.textContent || '').trim());
-    expect(names).toEqual(['English', 'Hindi', 'More', 'Hinglish', 'Malayalam']);
+    expect(names).toEqual(['English', 'Hindi', 'Hinglish']);
     all.forEach((button) => {
       expect(button.getBoundingClientRect().height).toBeGreaterThanOrEqual(48);
     });
@@ -45,7 +44,7 @@ describe('tap targets and language layouts', () => {
     expect(call.scrollWidth).toBeLessThanOrEqual(call.clientWidth + 1);
   });
 
-  it('public nav links stay at least 48px in Malayalam', async () => {
+  it('public nav links stay at least 48px in Hinglish', async () => {
     await TestBed.configureTestingModule({
       imports: [PublicLayoutComponent],
       providers: [
@@ -57,9 +56,7 @@ describe('tap targets and language layouts', () => {
     fixture.detectChanges();
     (fixture.nativeElement.querySelector('.rd-set-btn') as HTMLButtonElement).click();
     fixture.detectChanges();
-    (fixture.nativeElement.querySelector('[data-testid="lang-more"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    (fixture.nativeElement.querySelectorAll('.opt')[4] as HTMLButtonElement).click();
+    (fixture.nativeElement.querySelectorAll('.opt')[2] as HTMLButtonElement).click();
     fixture.detectChanges();
     const links = fixture.nativeElement.querySelectorAll('.tab') as NodeListOf<HTMLElement>;
     expect(links.length).toBeGreaterThan(0);

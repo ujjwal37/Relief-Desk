@@ -108,11 +108,8 @@ test('a Hindi report uses Hindi labels, reaches the desk, and the status stays H
   const sheet = phone.locator('.rd-sheet');
   await expect(sheet.getByRole('button', { name: 'English' })).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Hindi' })).toBeVisible();
-  await expect(sheet.getByRole('button', { name: 'Hinglish' })).toHaveCount(0);
-  await expect(sheet.getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
-  await sheet.getByTestId('lang-more').click();
   await expect(sheet.getByRole('button', { name: 'Hinglish' })).toBeVisible();
-  await expect(sheet.getByRole('button', { name: 'Malayalam' })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
   await sheet.getByRole('button', { name: 'Hindi' }).click();
   await phone.keyboard.press('Escape');
   await expect(phone.locator('.rd-sheet')).toHaveCount(0);

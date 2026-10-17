@@ -207,11 +207,9 @@ describe('ReportComponent confirmation gate', () => {
     const sheet = fixture.nativeElement.querySelector('.rd-sheet') as HTMLElement;
     expect(sheet.textContent).toContain('EN');
     expect(sheet.textContent).toContain('हिंदी');
-    expect(sheet.querySelector('[aria-label="Hinglish"]')).toBeNull();
-    (sheet.querySelector('[data-testid="lang-more"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    expect(sheet.querySelector('[data-testid="lang-more"]')).toBeNull(); // EN, HI and Hinglish shown directly
     expect(sheet.querySelector('[aria-label="Hinglish"]')).toBeTruthy();
-    expect(sheet.querySelector('[aria-label="Malayalam"]')).toBeTruthy();
+    expect(sheet.querySelector('[aria-label="Malayalam"]')).toBeNull(); // Malayalam is a report language, not a UI language
 
     fixture.componentInstance.openForm();
     fixture.detectChanges();

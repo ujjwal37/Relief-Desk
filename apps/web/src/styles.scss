@@ -602,4 +602,14 @@ app-merged-chip .pop .undo{position:sticky;bottom:0;z-index:1}
   .coordinator-shell .top-nav .ai-calls{display:none}
   .cmd .step-node .node-title{flex:0 0 auto}
   .cmd [data-testid="key-tip"]{display:none !important}
+}/* Design r4 (2026-10-17). 390: header on one row with ☰ always there; no sub-bar chips or AI banner; action bar on one row */
+@media (max-width:480px){
+  .coordinator-shell .top-nav .ai-pill{display:none !important}
+  .coordinator-shell .top-nav .more-btn{flex:none;display:inline-flex !important;width:40px;height:40px;align-items:center;justify-content:center}
+  .coordinator-shell .top-nav .right{flex:0 0 auto}
+  .coordinator-shell .top-nav .brand{flex:1 1 auto;min-width:0}
+  .cmd .batch-counters,.cmd .live-demo,.cmd .live-demo-problem,.cmd .ai-banner{display:none !important}
+  .cmd .decision-pinned-footer .footer-buttons-row{flex-wrap:nowrap !important;gap:6px}
+  .cmd .decision-pinned-footer .footer-buttons-row > *{min-width:0}
+  .cmd .decision-pinned-footer .footer-buttons-row .btn-help,.cmd .decision-pinned-footer .footer-buttons-row .help-btn,.cmd .decision-pinned-footer .footer-buttons-row kbd{display:none !important}
 }
