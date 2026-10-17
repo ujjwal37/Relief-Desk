@@ -30,12 +30,17 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
     if getattr(req.type, "value", req.type) == "info":
         return {"request_id": req.id, "reason": "info_only", "detail": {}, "limit_km": BOAT_MAX_KM, "kind": None,
                 "options": {"reserve": None, "road": None, "wider": None, "escalate": None, "share": {"available": True}}}
-    kinds = _PRIMARY.get(req.type, [])
+    from app.agents.matching import deep_water
+    from app.models.firestore_models import ResourceKind
+    deep = deep_water(req)
+    kinds = [ResourceKind.BOAT] if deep else _PRIMARY.get(req.type, [])
     right = [r for r in resources if r.kind in kinds]
     free = [r for r in right if r.status == ResourceStatus.AVAILABLE and (r.capacity_remaining or 0) > 0]
     busy = [r for r in right if r.status != ResourceStatus.AVAILABLE]
     need = req.people_count or 0
     limit = BOAT_MAX_KM if any(k.value == "boat" for k in kinds) else NEARBY_KM
+    if deep and getattr(req.type, "value", req.type) == "medical":
+        limit = 10.0  # the matcher only sends a boat to a medical emergency when it is this close
 
     reason, detail = "none_of_kind", {}
     if req.lat is None or req.lng is None:
@@ -47,6 +52,8 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
         reason = "none_of_kind"
     elif far and far[0][1] > limit:
         reason, detail = "too_far", {"km": far[0][1], "limit": limit, "team": far[0][0].name}
+        if deep:
+            reason = "deep_water"
     elif free and need and all((r.capacity_remaining or 0) < need for r in free):
         best = max(free, key=lambda r: r.capacity_remaining or 0)
         reason, detail = "too_small", {"seats": best.capacity_remaining, "need": need, "team": best.name}
@@ -63,7 +70,10 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
                    "free_in_min": wait, "eta_min": (wait + travel) if travel is not None else None, "km": km}
 
     road = None
-    others = [r for r in resources if r.kind not in kinds and r.status == ResourceStatus.AVAILABLE
+    # A road team only when it can help with this need (an ambulance for a medical case), never a food hub.
+    useful = {"medical": {"medical"}, "rescue": {"medical"}, "shelter": {"shelter"}, "food": {"food"}}.get(
+        getattr(req.type, "value", req.type), set())
+    others = [r for r in resources if r.kind not in kinds and r.kind.value in useful and r.status == ResourceStatus.AVAILABLE
               and travel_mode_for(r) != "water" and (r.capacity_remaining or 0) > 0]
     if others:
         best = min(others, key=lambda r: _km(req, r) if _km(req, r) is not None else 1e9)

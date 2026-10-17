@@ -1286,7 +1286,8 @@
       "too_far": "Nearest free team ({team}) is {km} km away (limit {limit} km).",
       "too_small": "Only free team ({team}) has {seats} seats; {need} people need help.",
       "none_of_kind": "There is no team of this kind in the area.",
-      "no_location": "No location yet, so distance to any team is unknown. Ask the reporter for a landmark or pin."
+      "no_location": "No location yet, so distance to any team is unknown. Ask the reporter for a landmark or pin.",
+      "deep_water": "Chest-deep water: only a boat can reach them. The nearest free boat, {team}, is {km} km away (limit {limit} km for a medical emergency)."
     },
     "stays": "Priority stays. The case keeps its place in the queue.",
     "yourOptions": "Your options",

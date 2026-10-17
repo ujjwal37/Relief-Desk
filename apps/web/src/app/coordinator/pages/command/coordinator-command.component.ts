@@ -386,6 +386,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     };
   }
   readonly mapBase = computed(() => projectBase((lat, lng) => this.project(lat, lng)));
+  wardName(req: StoredRequest): string {
+    const names: Record<string, string> = { ward_1: 'Kainakary', ward_2: 'Champakulam', ward_3: 'Nedumudi' };
+    return (req.ward_id && names[req.ward_id]) || '';
+  }
   /** Map footer names the area of the selected case, not a fixed district. */
   mapAreaLabel(): string {
     this.langService.currentLang();

@@ -983,6 +983,13 @@ class StorageService:
                     created_at=stamp,
                     updated_at=stamp,
                 )
+                # A seed head count is kept only when the report text itself states it; otherwise unknown.
+                import re as _re
+                _words = {1: "one|a|an|my|single", 2: "two|couple", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+                _txt = (raw_text or "").lower()
+                _n = req.people_count
+                if _n and not (_re.search(rf"(?<![\d.]){_n}(?![\d.])", _txt) or (_n in _words and _re.search(rf"\b({_words[_n]})\b", _txt))):
+                    req.people_count = None
                 urg_res = scoring_engine.compute_urgency(req)
                 req.urgency_score = urg_res.score
                 req.urgency_reason = urg_res.reason

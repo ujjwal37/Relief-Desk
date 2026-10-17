@@ -69,6 +69,16 @@ DEMO_CASES: List[Dict[str, Any]] = [
         "raw": "en",
     },
     {
+        # No-team demo: a life threat in deep water where no boat is within reach. The desk must not
+        # invent a team; the coordinator gets the no-team options (Call 112, road team, wider search).
+        "id": "DEMO-108", "minutes": 3, "type": "medical", "ward_id": "ward_3", "lat": 9.318, "lng": 76.383,
+        "people": 1, "hazard": "water_rising", "vulnerable": {"child": True, "medical_need": True},
+        "place": "Thottappally spillway, south of Kuttanad",
+        "en": "My son is not breathing properly, water is chest deep around our house near Thottappally spillway. Please help.",
+        "hi": "मेरा बेटा ठीक से सांस नहीं ले रहा, थोट्टपल्ली स्पिलवे के पास हमारे घर के चारों ओर छाती तक पानी है। कृपया मदद करें।",
+        "raw": "en",
+    },
+    {
         "id": "DEMO-106", "minutes": 110, "type": "info", "ward_id": "ward_2", "lat": 9.414, "lng": 76.415,
         "people": None, "hazard": "none", "vulnerable": {},
         "place": "Champakulam - Alappuzha road",

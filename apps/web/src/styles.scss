@@ -472,3 +472,12 @@ body:has(.cmd) .top-strip{display:none}
   .cmd .decision-pinned-footer .btn-reject, .cmd .decision-pinned-footer .btn-change { padding-inline:10px !important; }
 }
 .cmd .decision-scroll-content { padding-bottom:132px !important; }
+
+/* Designer r2 N-P1-4: time on row 1 right, selected card = 3px primary left border + tint; legend top-left, zoom bottom-right */
+.cmd .queue-col .card-line-top, .cmd .queue-col .case-card-compact > div:first-child { display:flex; align-items:center; gap:6px; }
+.cmd .queue-col .card-age { margin-left:auto; font-size:12px; color:var(--muted); white-space:nowrap; }
+.cmd .queue-col .case-card-compact.selected, .cmd .queue-col .case-card-compact.active {
+  border:1px solid var(--border) !important; border-left:3px solid var(--brand, #1b3c53) !important;
+  background:color-mix(in srgb, var(--brand, #1b3c53) 6%, var(--surface)) !important; box-shadow:none !important; }
+.cmd .map-legend-overlay { left:12px !important; right:auto !important; top:12px !important; }
+.rd-zoom { top:auto !important; bottom:40px !important; right:10px !important; }

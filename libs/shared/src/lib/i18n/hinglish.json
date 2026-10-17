@@ -1286,7 +1286,8 @@
       "too_far": "Sabse paas ki free team ({team}) {km} km door hai (limit {limit} km).",
       "too_small": "Akeli free team ({team}) mein {seats} seats hain; {need} logon ko madad chahiye.",
       "none_of_kind": "Is area mein is type ki koi team nahi hai.",
-      "no_location": "Location abhi nahi hai, isliye team ki doori pata nahi. Reporter se landmark ya pin maangein."
+      "no_location": "Location abhi nahi hai, isliye team ki doori pata nahi. Reporter se landmark ya pin maangein.",
+      "deep_water": "Chhati tak paani: sirf boat pahunch sakti hai. Sabse paas ki free boat {team} {km} km door hai (medical emergency ke liye limit {limit} km)."
     },
     "stays": "Priority wahi rahegi. Case queue mein apni jagah par rahega.",
     "yourOptions": "Aapke options",
