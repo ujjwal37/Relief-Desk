@@ -8,9 +8,15 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, Optional
 
-BANDS = ("none", "ankle", "knee", "waist", "chest", "roof", "unknown")
+BANDS = ("none", "ankle", "knee", "waist", "chest", "floor", "roof", "unknown")
 SHALLOW = {"none", "ankle", "knee"}
-DEEP = {"waist", "chest", "roof"}
+DEEP = {"waist", "chest", "floor", "roof"}
+# Where people are standing. That is not a water level.
+_POSITION = re.compile(
+    r"(?:on|onto|in|at)\s+(?:the\s+|our\s+|a\s+)?(?:roof|rooftop|terrace|first floor|upper floor)"
+    r"|छत पर|terrace[- ]?il|first floor[- ]?il|ഒന്നാം നിലയിൽ|മേൽക്കൂരയിൽ",
+    re.I,
+)
 
 
 def _norm(text: str) -> str:
@@ -25,7 +31,21 @@ def validate_depth(band: Optional[str], quote: Optional[str], raw_text: str, sou
     q = (quote or "").strip()
     if not q or _norm(q) not in _norm(raw_text):
         return {"band": "unknown", "quote": None, "source": source}
+    # "छत पर" / "on the roof" says where people are. It is not "up to the roof".
+    if _POSITION.search(q) and not re.search(r"water|flood|deep|submerged|पानी|വെള്ളം", q, flags=re.I):
+        return {"band": "unknown", "quote": None, "source": source}
+    if band == "roof" and not _water_at_roof(q):
+        return {"band": "unknown", "quote": None, "source": source}
     return {"band": band, "quote": q[:200], "source": source}
+
+
+def _water_at_roof(quote: str) -> bool:
+    """Roof depth is only water reaching the roof, never where the people are."""
+    if re.search(r"first\s*floor|पहली मंजिल|ഒന്നാം നില", quote or "", flags=re.I):
+        return False
+    has_water = re.search(r"water|flood|deep|पानी|വെള്ളം", quote or "", flags=re.I)
+    has_roof = re.search(r"roof|terrace|rooftop|छत|മേൽക്കൂര", quote or "", flags=re.I)
+    return bool(has_water and has_roof)
 
 
 def band_of(request: Any) -> str:
@@ -47,11 +67,11 @@ def depth_rank(request: Any, resource: Any) -> int:
 
 
 _RULES = [
-    ("roof", r"(?:on|onto|to) (?:the |our |a )?(?:roof|terrace|rooftop)|\btrapped on (?:the )?terrace\b|छत पर|മേൽക്കൂര|terrace-il|terrace il"),
-    ("roof", r"water (?:up )?to (?:the )?(?:first|upper|second) floor|first floor (?:is |was )?(?:under|flooded|submerged)|पहली मंजिल तक"),
+    ("roof", r"water (?:is |was )?(?:up |over )?(?:to )?(?:the )?(?:roof|terrace|rooftop)|(?:roof|terrace)[- ]deep|छत तक(?: पानी)?|വെള്ളം.{0,16}മേൽക്കൂര"),
+    ("floor", r"water (?:up )?to (?:the )?(?:first|upper|second) floor|first floor (?:is |was )?(?:under|flooded|submerged)|पहली मंजिल तक"),
+    ("floor", r"ground floor (?:is |was |fully )?(?:under(?: water)?|flooded|submerged|drowned)|house (?:is )?(?:fully )?submerged"),
     ("chest", r"chest[- ]deep|up to (?:our |my |the )?(?:chest|neck)|neck[- ]deep|छाती तक|सीने तक|नेक तक|nenju vare|നെഞ്ച്"),
     ("waist", r"waist[- ]deep|up to (?:our |my |the )?waist|कमर तक|aravattam|അരയോളം|at the windows?|window level"),
-    ("waist", r"\b(?:on|in) (?:the )?(?:first|upper) floor\b|first floor il|first floor-il"),
     ("knee", r"knee[- ]deep|up to (?:our |my |the )?knees?|घुटने तक|മുട്ടോളം"),
     ("ankle", r"ankle[- ]deep|up to (?:our |my |the )?ankles?|टखने तक"),
 ]

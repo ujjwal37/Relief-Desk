@@ -132,7 +132,12 @@ def rule_filters(question: str) -> Dict[str, Any]:
     vulnerable = [v for v, words in VULN_WORDS.items() if _has(q, words)]
     ward_ids: List[str] = []
     for wid, w in _wards().items():
-        names = [w["name_en"].lower(), (w.get("name_hi") or "").lower(), (w.get("district") or "").lower()]
+        names = [
+            w["name_en"].lower(),
+            (w.get("name_hi") or "").lower(),
+            (w.get("name_ml") or "").lower(),
+            (w.get("district") or "").lower(),
+        ]
         if _has(q, names):
             ward_ids.append(wid)
     statuses: List[str] = []
@@ -430,7 +435,20 @@ def ask(question: str, requests: Iterable[Any], call=None) -> Dict[str, Any]:
         {"agent": "Search cases (read-only)", "status": "complete", "provider": "tool", "model": None,
          "latency_ms": t_search, "tokens": None, "input": as_json, "output": f"{total} match(es)"},
     ]
-    answer = sentence(filters, total) if count_only else None
+    cases = [card(r) for r in hits]
+    answer = _answer_with_refs(sentence(filters, total), cases)
     return {"question": question, "filters": shown, "reason": filters["reason"], "total": total,
             "count_only": count_only, "answer": answer,
-            "cases": [card(r) for r in hits], "ai": ai, "trace": trace}
+            "cases": cases, "ai": ai, "trace": trace}
+
+
+def _answer_with_refs(line: str, cases: List[Dict[str, Any]]) -> str:
+    """Name only the cases this search returned, so the sentence cannot cite another id."""
+    refs = []
+    for row in cases:
+        ref = str(row.get("ref") or "")
+        if ref and ref not in refs:
+            refs.append(ref)
+    if not refs:
+        return line
+    return f"{line} Cases: {', '.join(refs)}."

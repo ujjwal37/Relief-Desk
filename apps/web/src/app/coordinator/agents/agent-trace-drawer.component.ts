@@ -338,7 +338,10 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     }
     if (agent === 'Dedupe') {
       // Same field as the merged chip and the strip.
-      if (joinedCount(req) > 1) return cap(t('flow.sentDedupeJoined').replace('{n}', String(joinedCount(req))));
+      if (joinedCount(req) > 1) {
+        const key = (req.place_text || '').trim() ? 'flow.sentDedupeJoined' : 'flow.sentDedupeNoPlace';
+        return cap(t(key).replace('{n}', String(joinedCount(req))));
+      }
       const id = this.dupId(raw);
       if (id) {
         const mins = String(parsed['minutes'] || req.possible_duplicate?.minutes || '—');

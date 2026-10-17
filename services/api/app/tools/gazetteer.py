@@ -61,8 +61,10 @@ class Gazetteer:
             # Add English aliases
             for alias in lm.get("aliases_en", []):
                 self._alias_index.append({**entry_base, "alias": alias.lower()})
-            # Add Hindi aliases
+            # Add Hindi and Malayalam aliases
             for alias in lm.get("aliases_hi", []):
+                self._alias_index.append({**entry_base, "alias": alias.lower()})
+            for alias in lm.get("aliases_ml", []):
                 self._alias_index.append({**entry_base, "alias": alias.lower()})
 
         # Also add wards as fallback matches
@@ -77,6 +79,8 @@ class Gazetteer:
             self._alias_index.append({**entry_base, "alias": ward["name_en"].lower()})
             self._alias_index.append({**entry_base, "alias": f"ward {ward['number']}"})
             self._alias_index.append({**entry_base, "alias": ward["name_hi"].lower()})
+            if ward.get("name_ml"):
+                self._alias_index.append({**entry_base, "alias": str(ward["name_ml"]).lower()})
 
     def _clean_query(self, query: str) -> str:
         q = query.lower()
@@ -88,8 +92,38 @@ class Gazetteer:
         ]
         for nw in noise_words:
             q = re.sub(nw, " ", q, flags=re.IGNORECASE)
-        q = re.sub(r"[^\w\s\u0900-\u097F]", " ", q)
+        q = re.sub(r"[^\w\s\u0900-\u097F\u0D00-\u0D7F]", " ", q)
         return " ".join(q.split())
+
+    # A lone generic word is not a place. "bridge" must not become Vythiri Bridge.
+    _GENERIC_TOKENS = {
+        "bridge", "school", "jetty", "road", "ghat", "ferry", "market", "temple",
+        "church", "hospital", "boat", "river", "ward", "near", "the", "camp",
+        "relief", "centre", "center", "high", "primary", "community", "health",
+        "പാലം", "ജെട്ടി", "സ്കൂൾ", "സമീപം", "അടുത്ത്", "ബോട്ട്",
+        "स्कूल", "घाट", "पुल", "मंदिर", "जेट्टी",
+    }
+
+    def _specific_tokens(self, text: str) -> List[str]:
+        raw = self._clean_query(text or "")
+        tokens = re.findall(r"[a-z0-9\u0900-\u097f\u0d00-\u0d7f]{2,}", raw)
+        kept = []
+        for token in tokens:
+            if token.isdigit() or token in self._GENERIC_TOKENS:
+                continue
+            script = bool(re.search(r"[\u0900-\u097f\u0d00-\u0d7f]", token))
+            if script or len(token) >= 4:
+                kept.append(token)
+        return kept
+
+    def landmark_ids_in(self, text: str) -> set:
+        """The one gazetteer landmark named in the text. Generic words alone match nothing."""
+        if not text or not str(text).strip() or not self._specific_tokens(text):
+            return set()
+        match = self.lookup(text)
+        if match.landmark_id and not match.is_low_confidence:
+            return {match.landmark_id}
+        return set()
 
     def lookup(self, text: str) -> GazetteerMatch:
         """Resolves informal place text to a landmark/ward or returns low confidence."""
@@ -101,6 +135,9 @@ class Gazetteer:
 
         cleaned = self._clean_query(text)
         raw_lower = text.lower().strip()
+        # "near the bridge" / "പാലം" stays place-unclear inside the demo region.
+        if not self._specific_tokens(text):
+            return GazetteerMatch(confidence=0.0, is_low_confidence=True)
 
         best_match = None
         highest_score = 0.0

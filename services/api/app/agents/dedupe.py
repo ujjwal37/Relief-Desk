@@ -22,6 +22,10 @@ REVIEW_CONFIDENCE = 0.50
 RETRIEVE_COSINE = 0.70
 # An update phrase with no landmark match only attaches to a case this close.
 UPDATE_NEAR_KM = 0.3
+# Measured similarity under this does not auto-merge, unless it is the same gazetteer landmark.
+MIN_MERGE_SIMILARITY = 0.60
+# Different landmarks merge only when the reports are nearly the same text.
+VERY_HIGH_SIMILARITY = 0.85
 
 # Devanagari to rough Latin, so "नेदुमुडी" and "Nedumudi" share character trigrams without embeddings.
 _DEVA = {
@@ -55,7 +59,8 @@ def trigram_similarity(left: str, right: str) -> float:
 def confidence_phrase(similarity: Optional[float], distance_km: Optional[float], minutes: Optional[float]) -> str:
     """Similarity plus how far apart the two reports are in space and time."""
     sim = "—" if similarity is None else f"{float(similarity):.2f}"
-    dist = "same place" if distance_km is None else f"{float(distance_km):.2f} km"
+    # No coordinates is not evidence the reports share a place.
+    dist = "place not stated" if distance_km is None else f"{float(distance_km):.2f} km"
     clock = "—" if minutes is None else f"{int(round(float(minutes)))} min"
     return f"Similarity {sim} · {dist} · {clock}"
 
@@ -251,7 +256,10 @@ class DedupeAgent:
         )
 
         # Case A: Update phrasing, attached to the landmark match when one exists.
+        # "ab 5 log hain" still updates the nearest pin. A different landmark does not.
         update_target = best_candidate or self._nearest_within(candidates, new_lat, new_lng, UPDATE_NEAR_KM)
+        if update_target is not None and self._landmarks_differ(raw_text, new_req, update_target):
+            update_target = None
         if (is_update_phrase or new_req.is_update_phrase) and update_target is not None:
             # "now" alone is common ("need food now"); it only updates a case with the same landmark or pin.
             target = update_target
@@ -303,18 +311,17 @@ class DedupeAgent:
         return self._count_guard(decision, pair, new_req)
 
     def _count_guard(self, decision: DedupeDecision, pair, new_req: ExtractedRequest) -> DedupeDecision:
-        """Different head counts: note it; with no confirmed shared place too, ask for review instead of merging."""
-        if pair is None or decision.decision != DedupeDecisionType.DUPLICATE:
+        """Conflicting head counts never auto-merge. The coordinator reviews the pair."""
+        if pair is None:
             return decision
         facts, cand = pair
-        new_count, old_count = new_req.people.count, cand.people_count
-        if not new_count or not old_count or new_count == old_count:
+        if not facts.get("counts_conflict"):
             return decision
-        note = f"Counts differ: {old_count} vs {new_count} people"
-        if not facts.get("confirmed"):
-            review = self._review_decision(cand, facts)
-            review.evidence.append(note)
-            return review
+        if decision.decision != DedupeDecisionType.DUPLICATE and not decision.review:
+            return decision
+        note = facts.get("counts_note") or "Counts differ"
+        if decision.decision == DedupeDecisionType.DUPLICATE:
+            decision = self._review_decision(cand, facts)
         if note not in decision.evidence:
             decision.evidence.append(note)
         return decision
@@ -380,27 +387,52 @@ class DedupeAgent:
         )
         overlap = min(1.0, overlap)
         shared = self._specific_places(incoming) & self._specific_places(heard)
-        landmark = self._landmark_score(raw_text, new_req.place_text or "", heard)
+        distinctive = {tok for tok in shared if len(tok) >= 6}
         phrase = self._same_place_phrase(incoming, cand.place_text or "")
-        confirmed = phrase or (bool(shared) and landmark >= 2)
+        incoming_ids = self._landmark_ids(incoming)
+        heard_ids = self._landmark_ids(heard)
+        same_landmark = bool(incoming_ids and heard_ids and (incoming_ids & heard_ids))
+        places_differ = bool(incoming_ids and heard_ids and not (incoming_ids & heard_ids))
+        place_missing = not self._real_place(raw_text, new_req.place_text or "") or not self._real_place(
+            cand.raw_text or "", cand.place_text or ""
+        )
         incoming_places = self._specific_places(incoming)
         heard_places = self._specific_places(heard)
-        conflicting = bool(incoming_places and heard_places and not shared and not phrase)
+        conflicting = bool(
+            incoming_places and heard_places and not shared and not phrase and not same_landmark
+        )
+        if places_differ and overlap < VERY_HIGH_SIMILARITY:
+            conflicting = True
+        # Champakulam and Kainakary, or Pulinkunnu and Kainakary, are different places.
+        ward_new = gazetteer.resolve_ward(new_req.place_text, raw_text)
+        ward_old = gazetteer.resolve_ward(cand.place_text, cand.raw_text or "")
+        if ward_new and ward_old and ward_new != ward_old and not same_landmark:
+            places_differ = True
+            conflicting = True
+        confirmed = bool(
+            not place_missing
+            and not (places_differ and overlap < VERY_HIGH_SIMILARITY)
+            and (same_landmark or phrase or bool(distinctive) or overlap >= VERY_HIGH_SIMILARITY)
+        )
         distance = None
         if new_lat is not None and new_lng is not None and cand.lat is not None and cand.lng is not None:
             distance = haversine_distance(float(new_lat), float(new_lng), float(cand.lat), float(cand.lng))
-            if distance > 1.5:
+            if distance > 5 or (distance > 1.5 and not same_landmark):
                 confirmed = False
                 conflicting = True
         minutes = self._minutes_since(cand)
-        # A shared landmark is itself strong evidence, so the score does not depend on wording alone.
-        sim_for_score = max(overlap, 0.88) if confirmed else overlap
+        # Same gazetteer landmark, or a shared distinctive token, is strong evidence across wording.
+        strong = bool(confirmed and (same_landmark or distinctive or phrase))
+        sim_for_score = max(overlap, 0.88) if strong else overlap
         if distance is None:
             dist_score = 0.95 if confirmed else 0.35
         else:
             dist_score = max(0.0, 1.0 - (distance / 1.5))
         time_score = 0.95 if minutes is None else max(0.0, 1.0 - (minutes / 120.0))
         confidence = round(min(0.99, 0.5 * sim_for_score + 0.3 * dist_score + 0.2 * time_score), 2)
+        new_count, old_count = new_req.people.count, cand.people_count
+        counts_conflict = bool(new_count and old_count and int(new_count) != int(old_count))
+        counts_note = f"Counts differ: {old_count} vs {new_count}" if counts_conflict else None
         # Show the measured similarity, not a floor.
         shown = round(overlap, 2)
         return {
@@ -410,6 +442,12 @@ class DedupeAgent:
             "confirmed": confirmed,
             "conflicting": conflicting,
             "confidence": confidence,
+            "same_landmark": same_landmark,
+            "places_differ": places_differ,
+            "place_missing": place_missing,
+            "distinctive": bool(distinctive),
+            "counts_conflict": counts_conflict,
+            "counts_note": counts_note,
         }
 
     def _best_pair(
@@ -428,9 +466,86 @@ class DedupeAgent:
             facts = self._pair_facts(raw_text, new_req, cand, new_lat, new_lng)
             if facts["conflicting"]:
                 continue
-            if best is None or facts["confidence"] > best[0]["confidence"]:
+            if best is None or facts["confidence"] > best[0]["confidence"] or (
+                facts["confidence"] == best[0]["confidence"] and cand.id < best[1].id
+            ):
                 best = (facts, cand)
         return best
+
+    def _should_duplicate(self, facts: dict) -> bool:
+        """Auto-merge only for the same place with compatible head counts."""
+        if not facts or facts.get("place_missing") or facts.get("counts_conflict"):
+            return False
+        if facts.get("places_differ") and facts.get("similarity", 0) < VERY_HIGH_SIMILARITY:
+            return False
+        if not facts.get("confirmed") or facts.get("confidence", 0) < AUTO_MERGE_CONFIDENCE:
+            return False
+        if facts.get("same_landmark") or facts.get("distinctive"):
+            return True
+        return facts.get("similarity", 0) >= MIN_MERGE_SIMILARITY
+
+    def _landmark_ids(self, text: str) -> set:
+        if not (text or "").strip():
+            return set()
+        return gazetteer.landmark_ids_in(text)
+
+    def _content_tokens(self, text: str) -> list:
+        # Keep place words such as "road" even when they are also ordinary stop words.
+        return [
+            tok for tok in re.findall(r"[a-z0-9]{3,}", transliterate(text or ""))
+            if not tok.isdigit() and (tok in self._GENERIC_PLACE or tok not in self._PLACE_STOP)
+        ]
+
+    def _named_place_tokens(self, text: str) -> set:
+        """A long name sitting next to a place word: 'Gandhi school', 'Oakbend ghat'."""
+        tokens = re.findall(r"[a-z0-9]{3,}", transliterate(text or ""))
+        named = set()
+        for index, token in enumerate(tokens):
+            if len(token) < 6 or token.isdigit() or token in self._PLACE_STOP or token in self._GENERIC_PLACE:
+                continue
+            window = tokens[max(0, index - 2): index + 3]
+            if any(word in self._GENERIC_PLACE for word in window):
+                named.add(token)
+        return named
+
+    def _place_phrases(self, text: str) -> set:
+        """'Church Road' is a place even though each word is ordinary."""
+        tokens = self._content_tokens(text)
+        phrases = set()
+        for index in range(len(tokens) - 1):
+            pair = tokens[index:index + 2]
+            if not any(tok in self._GENERIC_PLACE for tok in pair):
+                continue
+            phrase = " ".join(pair)
+            if len(phrase) >= 8:
+                phrases.add(phrase)
+        return phrases
+
+    def _coded_place_tokens(self, text: str) -> set:
+        """A made-up landmark token such as Mithralaneab12, not a bare number."""
+        found = set()
+        for tok in re.findall(r"[a-z0-9]{6,}", transliterate(text or "")):
+            if tok in self._PLACE_STOP or tok in self._GENERIC_PLACE or tok.isdigit():
+                continue
+            if any(ch.isdigit() for ch in tok):
+                found.add(tok)
+        return found
+
+    def _real_place(self, text: str, place_text: str) -> bool:
+        """A gazetteer landmark, a street phrase, or a name the reporter actually gave."""
+        blob = f"{place_text or ''} {text or ''}"
+        if self._landmark_ids(blob):
+            return True
+        if any(len(tok) >= 6 for tok in self._specific_places(place_text or "")):
+            return True
+        if self._named_place_tokens(blob) or self._place_phrases(blob) or self._coded_place_tokens(blob):
+            return True
+        return False
+
+    def _landmarks_differ(self, raw_text: str, new_req: ExtractedRequest, cand: StoredRequest) -> bool:
+        new_ids = self._landmark_ids(f"{raw_text} {new_req.place_text or ''}")
+        old_ids = self._landmark_ids(f"{cand.place_text or ''} {cand.raw_text or ''}")
+        return bool(new_ids and old_ids and not (new_ids & old_ids))
 
     def _stamp(self, decision: DedupeDecision, facts: dict) -> DedupeDecision:
         decision.similarity = facts["similarity"]
@@ -467,7 +582,18 @@ class DedupeAgent:
             )
         facts, cand = pair
         line = confidence_phrase(facts["similarity"], facts["distance_km"], facts["minutes"])
-        if facts["confirmed"] and facts["confidence"] >= AUTO_MERGE_CONFIDENCE:
+        if facts.get("place_missing"):
+            return DedupeDecision(
+                decision=DedupeDecisionType.NEW,
+                target_request_id=None,
+                changed_fields={},
+                evidence=[line, "No place named. Not merged on place."],
+                confidence=facts["confidence"],
+                similarity=facts["similarity"],
+                distance_km=facts["distance_km"],
+                minutes_apart=facts["minutes"],
+            )
+        if self._should_duplicate(facts):
             evidence = [
                 f"Same landmark and location: '{cand.place_text}'",
                 f"Both reports describe {self._type_name(cand.type)} situation",
@@ -484,7 +610,17 @@ class DedupeAgent:
                 distance_km=facts["distance_km"],
                 minutes_apart=facts["minutes"],
             )
-        if facts["confidence"] >= REVIEW_CONFIDENCE and (facts["confirmed"] or facts["similarity"] >= 0.34):
+        if facts.get("counts_conflict") and (facts.get("confirmed") or facts.get("same_landmark")):
+            review = self._review_decision(cand, facts)
+            note = facts.get("counts_note")
+            if note and note not in review.evidence:
+                review.evidence.append(note)
+            return review
+        if (
+            not facts.get("place_missing")
+            and facts["confidence"] >= REVIEW_CONFIDENCE
+            and (facts["confirmed"] or facts["similarity"] >= MIN_MERGE_SIMILARITY)
+        ):
             return self._review_decision(cand, facts)
         return DedupeDecision(
             decision=DedupeDecisionType.NEW,
@@ -508,12 +644,29 @@ class DedupeAgent:
                 confidence=live.confidence,
             )
         facts, cand = pair
-        if facts["confirmed"] and facts["confidence"] >= AUTO_MERGE_CONFIDENCE:
+        if facts.get("place_missing"):
+            return DedupeDecision(
+                decision=DedupeDecisionType.NEW,
+                target_request_id=None,
+                changed_fields={},
+                evidence=list(live.evidence) + ["No place named. Not merged on place."],
+                confidence=facts["confidence"],
+                similarity=facts["similarity"],
+                distance_km=facts["distance_km"],
+                minutes_apart=facts["minutes"],
+            )
+        if self._should_duplicate(facts):
             live.target_request_id = cand.id
             live.decision = DedupeDecisionType.DUPLICATE
             live.review = False
             return self._stamp(live, facts)
-        if facts["confidence"] >= REVIEW_CONFIDENCE:
+        if facts.get("counts_conflict") and (facts.get("confirmed") or facts.get("same_landmark")):
+            review = self._review_decision(cand, facts)
+            note = facts.get("counts_note")
+            if note and note not in review.evidence:
+                review.evidence.append(note)
+            return review
+        if facts["confidence"] >= REVIEW_CONFIDENCE and not facts.get("place_missing"):
             return self._review_decision(cand, facts)
         return DedupeDecision(
             decision=DedupeDecisionType.NEW,

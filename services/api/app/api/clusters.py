@@ -307,7 +307,7 @@ def list_requests(
     from app.models.firestore_models import RequestStatus
     from app.tools.scoring import scoring_engine
 
-    closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED}
+    closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED, RequestStatus.DISMISSED_HOAX}
     from app.agents.pipeline import ensure_trace
     refreshed = []
     from app.api.public import public_code_for
@@ -332,7 +332,25 @@ def list_requests(
     if sort == "urgency":
         refreshed = sorted(refreshed, key=lambda r: r.urgency_score, reverse=True)
     # A merge can land while this list is being built. Drop the copy that joined another case.
-    return [req for req in refreshed if not req.merged_into]
+    visible = [req for req in refreshed if not req.merged_into]
+    return _collapse_identical_hoaxes(visible)
+
+
+def _collapse_identical_hoaxes(rows):
+    """Identical hoax text is one row. This is not a same-place merge."""
+    import re as _re
+    seen = set()
+    kept = []
+    for req in rows:
+        flags = set(req.flags or [])
+        hoax = bool(getattr(req, "hoax_reason", None)) or bool(flags & {"hoax", "likely_hoax", "dismissed_hoax"})
+        key = _re.sub(r"\s+", " ", (req.raw_text or "").strip().lower())
+        if hoax and key:
+            if key in seen:
+                continue
+            seen.add(key)
+        kept.append(req)
+    return kept
 
 
 @router.get("/requests/{id}", response_model=StoredRequest, summary="Get single request detail")

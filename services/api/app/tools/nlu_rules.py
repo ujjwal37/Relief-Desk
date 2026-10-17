@@ -141,9 +141,13 @@ def known_place(text: str) -> Optional[str]:
     for landmark in gazetteer.landmarks:
         if landmark.get("name"):
             names.append(str(landmark["name"]))
-        for alias in landmark.get("aliases_en") or []:
-            if alias and len(str(alias)) >= 4:
-                names.append(str(alias))
+        for key in ("aliases_en", "aliases_hi", "aliases_ml"):
+            for alias in landmark.get(key) or []:
+                if alias and len(str(alias)) >= 4:
+                    names.append(str(alias))
+    for ward in gazetteer.wards.values():
+        if ward.get("name_ml"):
+            names.append(str(ward["name_ml"]))
     names.extend(_KUTTANAD_PLACES)
 
     best: Optional[str] = None
@@ -367,9 +371,51 @@ def counts_note(spans: list) -> Optional[str]:
     return "Counts differ: " + " vs ".join(ordered)
 
 
+def _as_count(token: str) -> Optional[int]:
+    token = (token or "").strip()
+    if token.isdigit():
+        number = int(token)
+        return number if 1 <= number <= 500 else None
+    for table in (_EN_NUMBER_WORDS, _HINGLISH_NUMBER_WORDS, _HI_NUMBER_WORDS, _ML_NUMBER_WORDS):
+        if token in table:
+            return table[token]
+        if token.lower() in table:
+            return table[token.lower()]
+    return None
+
+
+def _total_people_count(normalized: str) -> Optional[int]:
+    """The whole group ('12 of us', 'we are 12') wins over a subgroup such as 'a child'."""
+    if not normalized:
+        return None
+    latin = "|".join(
+        sorted(set(_EN_NUMBER_WORDS) | set(_HINGLISH_NUMBER_WORDS), key=len, reverse=True)
+    )
+    hindi = "|".join(sorted(_HI_NUMBER_WORDS, key=len, reverse=True))
+    malayalam = "|".join(sorted(_ML_NUMBER_WORDS, key=len, reverse=True))
+    patterns = (
+        rf"(?<![a-z\u0900-\u097f\u0d00-\u0d7f])(\d+|{latin})\s+of\s+us\b",
+        rf"\bwe\s+are\s+(\d+|{latin})\b",
+        rf"(?:हम|हमारे)\s+(\d+|{hindi})\b",
+        rf"(?:ഞങ്ങൾ|ഞങ്ങള്‍)\s+(\d+|{malayalam})\b",
+    )
+    flags = re.IGNORECASE
+    for pattern in patterns:
+        match = re.search(pattern, normalized, flags=flags)
+        if not match:
+            continue
+        count = _as_count(match.group(1))
+        if count:
+            return count
+    return None
+
+
 def _people_count_single(normalized: str) -> Optional[int]:
     if not normalized:
         return None
+    total = _total_people_count(normalized)
+    if total:
+        return total
     match = re.search(
         r"(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति|ആളുകൾ|പേർ|പേര്|പേരുകൾ|per)(?:ों|ें)?(?!\w)",
         normalized,

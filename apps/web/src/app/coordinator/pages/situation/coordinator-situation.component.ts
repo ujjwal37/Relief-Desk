@@ -8,6 +8,7 @@ import { DeskStore } from '../../../core/desk-store';
 
 const SENT = new Set(['approved', 'dispatched', 'in_progress']);
 const DONE = new Set(['completed', 'resolved', 'closed']);
+const DISMISSED = new Set(['dismissed_hoax']);
 const BRIEF_MIN_GAP_MS = 3 * 60 * 1000;
 
 interface Area { ward: string; label: string; critical: number; urgent: number; waiting: number; freeTeams: number; }
@@ -157,7 +158,7 @@ export class CoordinatorSituationComponent implements OnInit {
 
   private open(r: StoredRequest): boolean {
     const s = String(r.status || '');
-    return !SENT.has(s) && !DONE.has(s) && !r.merged_into;
+    return !SENT.has(s) && !DONE.has(s) && !DISMISSED.has(s) && !r.merged_into;
   }
 
   readonly stats = computed(() => {

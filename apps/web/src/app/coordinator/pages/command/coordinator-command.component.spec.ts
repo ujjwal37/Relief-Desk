@@ -214,11 +214,16 @@ describe('CoordinatorCommandComponent', () => {
 
   it('should approve match, update request status, and display confirmation toast', () => {
     component.approveMatch(mockProposal);
-    expect(apiClientSpy.approveMatch).toHaveBeenCalledWith('match_001', false);
+    expect(apiClientSpy.approveMatch).toHaveBeenCalledWith('match_001', false, false);
     expect(component.actionToast()?.text).toMatch(/Dispatch approved|Motorized Rescue Boat/);
     const updated = component.requests().find((r) => r.id === 'INC-001');
     expect(updated?.status).toBe('dispatched');
     expect(component.filteredRequests().some((r) => r.id === 'INC-001')).toBeFalse();
+    expect(component.selectedRequest()?.id).toBe('INC-001');
+    component.selectedRequestId.set('');
+    component.applyQueue(component.requests(), false);
+    expect(component.selectedRequestId()).toBe('');
+    expect(component.selectedRequest()).toBeUndefined();
     expect(component.counts().dispatched).toBe(1);
     expect(component.teamsFree().free).toBe(0);
     component.setBandFilter('dispatched');

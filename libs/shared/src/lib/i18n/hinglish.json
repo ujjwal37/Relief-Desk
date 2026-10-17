@@ -634,8 +634,8 @@
     "bucket3": "Pichle 3 ghante",
     "card": {
       "alt_01": {
-        "title": "Kutte ka hamla · Anthikad, Thrissur",
-        "desc": "2 ghante mein 3 reports. Andhere ke baad Anthikad ki galiyon mein akele mat chalein.",
+        "title": "Doobi galiyaan · Ward 9, Kuttanad",
+        "desc": "Galiyon mein paani hai. Unchi jagah rahiye. Emergency mein 112 call karein.",
         "ago": "25 min pehle"
       },
       "alt_02": {
@@ -652,7 +652,7 @@
     "hazard": {
       "cell_1031_7633_w7": "Paani badh raha hai, Temple Road doobi hai",
       "cell_1011_7635_w4": "2-3 foot paani bhara hai",
-      "cell_1047_7613_w9": "Anthikad ki galiyon mein aakramak kutte",
+      "cell_1047_7613_w9": "Ward 9 ki galiyon mein baadh ka paani",
       "cell_0942_7641_w2": "Peene ke paani ki kami, community kitchen chal rahi hai"
     }
   },
@@ -863,7 +863,7 @@
     "agentHello": "Namaste, aapko kya jaanna hai?",
     "deskTitle": "Desk se poochho",
     "deskHint": "Kisi bhi bhasha mein seedha poochho. Sirf padhna: kuch nahi badalta.",
-    "deskPlaceholder": "jaise: Aluva mein kaun se buzurg wale cases abhi bhi wait kar rahe hain?",
+    "deskPlaceholder": "jaise: Kainakary mein kaun se buzurg wale cases abhi bhi wait kar rahe hain?",
     "deskAsk": "Poochho",
     "deskAsking": "Dhoondh rahe hain…",
     "deskMatches": "{n} matching cases",
@@ -988,6 +988,7 @@
     "simulateOutage": "Rules fallback preview dekhein",
     "simulatedOnly": "Sirf preview. Saved traces aur dispatch decisions nahi badalte.",
     "sentDedupeJoined": "Ek hi jagah ki {n} reports jodi gayi.",
+    "sentDedupeNoPlace": "{n} reports judi hain. Jagah nahi batayi gayi, isliye yeh same-place merge nahi hai.",
     "badgeStraight": "Rules · seedhi doori"
   },
   "uiRef": {
@@ -1167,6 +1168,7 @@
     "showPrompt": "Prompt aur jawab dikhao",
     "hidePrompt": "Prompt aur jawab chhupao",
     "whyJoined": "{n} reports ek hi jagah aur logon ke baare mein hain, kam samay mein, isliye ek case hai.",
+    "whyJoinedNoPlace": "{n} reports ek saath rakhi gayi hain, lekin jagah nahi batayi gayi. Yeh same-place merge nahi hai.",
     "whyDistinct": "Pichhle ek ghante mein is jagah ka koi aur open case nahi.",
     "joinedN": "{n} jodi",
     "ofN": "step {k} / {n}",
@@ -1208,7 +1210,8 @@
       "knee": "ghutne tak",
       "waist": "kamar tak",
       "chest": "chhati tak",
-      "roof": "chhat tak"
+      "roof": "chhat tak",
+      "floor": "pehli manzil tak"
     },
     "chip": "lagbhag {depth} · {src}",
     "srcGemini": "✨ Report se Gemini ka andaaza",
@@ -1308,7 +1311,8 @@
       "too_small": "Akeli free team ({team}) mein {seats} seats hain; {need} logon ko madad chahiye.",
       "none_of_kind": "Is area mein is type ki koi team nahi hai.",
       "no_location": "Location abhi nahi hai, isliye team ki doori pata nahi. Reporter se landmark ya pin maangein.",
-      "deep_water": "Chhati tak paani: sirf boat pahunch sakti hai. Sabse paas ki free boat {team} {km} km door hai (medical emergency ke liye limit {limit} km)."
+      "deep_water": "Chhati tak paani: sirf boat pahunch sakti hai. Sabse paas ki free boat {team} {km} km door hai (limit {limit} km).",
+      "info_only": "Yeh report jaankari maangti hai, team nahi."
     },
     "stays": "Priority wahi rahegi. Case queue mein apni jagah par rahega.",
     "yourOptions": "Aapke options",

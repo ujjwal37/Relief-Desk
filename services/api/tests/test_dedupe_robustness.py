@@ -1,4 +1,4 @@
-"""Reworded reports merge. Conflicting counts keep the higher number. Weak matches wait."""
+"""Reworded reports merge. Conflicting counts wait for a person. Weak matches wait."""
 import uuid
 
 from fastapi.testclient import TestClient
@@ -65,25 +65,20 @@ def test_three_reworded_reports_merge_into_one_case():
 
 
 def test_conflicting_people_ranges_use_the_higher_bound_and_keep_both_texts():
+    """Head counts that disagree are not auto-merged. Each card keeps its own count."""
     token = f"Oakbend{uuid.uuid4().hex[:6]}"
     first = f"At {token} ghat, 2-3 people on the roof need a boat, send a rescue boat"
     second = f"{token} ghat: 4-5 people stranded, send a rescue boat"
     assert _post(first, PIN, f"rng-{token}-a")["dedupe_decision"] == "new"
-    assert _post(second, PIN, f"rng-{token}-b")["dedupe_decision"] == "duplicate"
+    second_body = _post(second, PIN, f"rng-{token}-b")
+    assert second_body["dedupe_decision"] != "duplicate"
     cards = _cards(token)
-    assert len(cards) == 1
-    card = cards[0]
-    assert card["people_count"] == 5
-    assert card["merged_count"] == 2
-    assert card["count_note"] == "Counts differ: 2-3 vs 4-5"
-    quotes = [quote["text"] for quote in card["report_quotes"]]
-    assert any("2-3 people" in quote for quote in quotes)
-    assert any("4-5 people" in quote for quote in quotes)
-    dedupe = next(step["output"] for step in card["trace"] if step["agent"] == "Dedupe")
-    assert "Counts differ: 2-3 vs 4-5" in dedupe
-    assert "Similarity" in dedupe
-    assert "km" in dedupe
-    assert "min" in dedupe
+    assert len(cards) == 2
+    counts = sorted(card["people_count"] for card in cards)
+    assert counts == [3, 5]
+    held = next(card for card in cards if card.get("possible_duplicate") or "Counts differ" in (card.get("dedupe_trace") or ""))
+    assert "Counts differ" in (held.get("count_note") or held.get("dedupe_trace") or "")
+    assert all(card["merged_count"] == 1 for card in cards)
 
 
 def test_a_different_place_or_a_different_type_stays_separate():

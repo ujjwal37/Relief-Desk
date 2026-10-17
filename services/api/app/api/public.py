@@ -93,12 +93,12 @@ CANONICAL_CELLS = [
         ward="Kainakary · Kuttanad",
         center_lat=9.4700,
         center_lng=76.3850,
-        incident_counts={"animal_attack": 3, "medical": 1},
+        incident_counts={"rescue": 3, "medical": 1},
         total_reports=4,
         severity_band="high",
         time_bucket="Last 2 hours",
-        active_hazard="Aggressive dogs spotted near Kainakary lanes",
-        alerts=["Dog attack alert · Kainakary: 3 reports in 2 h. Avoid walking alone after dark."],
+        active_hazard="Flood water on the lanes near Ward 9",
+        alerts=["Flooded lanes · Ward 9: water on the lanes. Stay on higher ground."],
         last_updated=datetime.now(timezone.utc).isoformat(),
     ),
     PublicCell(
@@ -200,12 +200,12 @@ def get_public_alerts():
     return [
         PublicAlert(
             id="alt_01",
-            title="Dog attack alert · Kainakary, Kuttanad",
+            title="Flooded lanes · Ward 9, Kuttanad",
             ward="Ward 9",
             time_ago="25 min ago",
             severity="warning",
-            description="3 reports in 2 h. Avoid walking alone near Kainakary lanes after dark.",
-            icon="dog",
+            description="Water on the lanes. Stay on higher ground. In an emergency call 112.",
+            icon="flood",
         ),
         PublicAlert(
             id="alt_02",

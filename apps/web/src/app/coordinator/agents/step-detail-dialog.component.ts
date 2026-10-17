@@ -266,7 +266,9 @@ export class StepDetailDialogComponent {
     const t = (key: string) => this.lang.translate(key);
     if (this.data.stepIndex === 0) return this.headline();
     if (this.data.stepIndex === 1) {
-      return (req.merged_count || 1) > 1 ? t('step.whyJoined').replace('{n}', String(req.merged_count)) : t('step.whyDistinct');
+      if ((req.merged_count || 1) <= 1) return t('step.whyDistinct');
+      const key = (req.place_text || '').trim() ? 'step.whyJoined' : 'step.whyJoinedNoPlace';
+      return t(key).replace('{n}', String(req.merged_count));
     }
     if (this.data.stepIndex === 2 && req.urgency_reason) return req.urgency_reason;
     if (this.isMaps()) {

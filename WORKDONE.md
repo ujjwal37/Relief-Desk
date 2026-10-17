@@ -1517,3 +1517,52 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
   - The coordinator desk still prints a missing people count as 0 in a couple of Angular labels. The stored value is null. Those desk components were left untouched.
   - A hoax is flagged and not matched. A coordinator still has to dismiss it. Nothing is auto-deleted.
 - Next (suggested task id): none
+
+### 2026-10-17 14:25 IST — JC-01 — Cursor
+- What changed: Judge-pass correctness on the rules path (no Gemini key). Auto-merge needs similarity 0.60 unless the reports name the same gazetteer landmark or the same distinctive place and the head counts agree. Different wards, different landmarks, a missing place, or unequal counts (4 vs 8, 4 vs 6, 2 vs 6, 2-3 vs 4-5) stay separate; a count conflict at the same place is held for review and the case count is not a silent max. Same Kainakary jetty merges across Malayalam and English and keeps the higher urgency. Malayalam-script aliases for Kuttanad landmarks LM-01–LM-15 (and Chalakudy jetty) geocode. "near the bridge" / "പാലം" stay place-unclear and do not become Ward 11 Wayanad. "on the roof" / "छत पर" is not a water depth; "water up to the roof" is roof and "water up to the first floor" is floor. "12 of us" wins over "a child". Chest-deep and jetty rescue do not offer a road ambulance. Medical offers stay within 25 km; rescue uses 30 km. One ETA (boats 10 km/h, road 20 km/h) on the API and on the desk. Match order is stable. Approve stays on the approved case and the toast and panel read that team. Dismissed hoax is its own state, not completed, and identical hoax text is not described as the same place. Ask cites only returned Kainakary refs. A Malayalam report is asked in Malayalam. The explainer uses plain words and says call 112 for a life threat. Dog attack is hidden from the scenario switcher and the public Ward 9 sample is a flood; the yaml pack remains. info_only copy no longer renders a raw key.
+- Files:
+  - `services/api/app/agents/dedupe.py`
+  - `services/api/app/agents/depth.py`
+  - `services/api/app/agents/intake.py`
+  - `services/api/app/agents/matching.py`
+  - `services/api/app/agents/no_team.py`
+  - `services/api/app/agents/explainer.py`
+  - `services/api/app/agents/desk_query.py`
+  - `services/api/app/agents/chat_intake.py`
+  - `services/api/app/api/clusters.py`
+  - `services/api/app/api/public.py`
+  - `services/api/app/models/firestore_models.py`
+  - `services/api/app/tools/case_merge.py`
+  - `services/api/app/tools/gazetteer.py`
+  - `services/api/app/tools/nlu_rules.py`
+  - `services/api/app/tools/storage.py`
+  - `services/api/tests/test_judge_correctness.py`
+  - `services/api/tests/test_dedupe_robustness.py`
+  - `services/api/tests/test_content_truth.py`
+  - `services/api/tests/test_live_demo.py`
+  - `data/gazetteer/kerala_gazetteer.json`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/teams/coordinator-teams.component.ts`
+  - `apps/web/src/app/coordinator/pages/situation/coordinator-situation.component.ts`
+  - `apps/web/src/app/coordinator/agents/agent-trace-drawer.component.ts`
+  - `apps/web/src/app/coordinator/agents/step-detail-dialog.component.ts`
+  - `apps/web/src/app/core/services/scenario.service.ts`
+  - `libs/shared/src/lib/i18n/en.json`
+  - `libs/shared/src/lib/i18n/hi.json`
+  - `libs/shared/src/lib/i18n/hinglish.json`
+  - `libs/shared/src/lib/i18n/ml.json`
+  - `libs/shared/src/lib/models/request.model.ts`
+  - `TASKS.md`
+- How verified (commands / screenshots):
+  - `python3 -m pytest` in `services/api` — 357 passed, 1 skipped. Includes `tests/test_judge_correctness.py`.
+  - `npx ng build web` — passed (existing command SCSS budget warning and duplicate `findingTeam` key warning).
+  - `node scripts/check-i18n.mjs` — PASSED, 1213 keys.
+  - `CI=true npx ng test web --watch=false --browsers=ChromeHeadless --include=coordinator-command.component.spec.ts` — approve stays on the dispatched case and a cleared selection survives the next queue refresh. 29 passed, 5 failed on older copy assertions.
+  - Demo desk in the browser at port 4200: approve stayed on the same case with the same team in the toast and the panel; Escape cleared the selection.
+- Notes / risks / not done:
+  - The tester patch's DEMO_MODE filter that drops every landmark outside Alappuzha was not applied. Chalakudy and Aluva must stay in the gazetteer.
+  - Playwright e2e still clicks the Dog attack menu button. The pack yaml is still loaded by the API; only the switcher and the public Ward 9 sample changed.
+  - Browser check on the demo desk (rules mode): approving Kainakary RD-7692 stayed on that case, and the toast and the on-the-way line both named Kainakary Mobile Medical Van (Ambulance). Escape then showed "No case selected." Dog attack is not in the scenario switcher. Five older command-component unit specs still fail on copy that this branch already shipped (Gemini reading label, district polygons, Google Maps in the trace). They were not part of this fix.
+  - A live Gemini key was not used. The eight live-Gemini failures are covered on the rules fallback path.
+- Next (suggested task id): none

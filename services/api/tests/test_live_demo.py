@@ -42,14 +42,17 @@ def test_live_run_merges_duplicates_flags_hoax_and_ranks_the_critical_case(monke
         rows.append(row)
     temple = [row for row in rows if "chalakudy mahadeva temple" in (row.raw_text or "").lower() or "चालाकुडी" in (row.raw_text or "")]
     assert len(temple) == 3
+    # 4 people and 6 people at the same temple stay separate. The Hindi report names no new count, so it joins one of them.
+    four = next(row for row in temple if "4 people" in (row.raw_text or "").lower())
+    six = next(row for row in temple if "6 people" in (row.raw_text or "").lower())
+    assert not four.merged_into
+    assert not six.merged_into
     duplicates = [row for row in temple if row.merged_into]
-    assert len(duplicates) == 2
-    assert len({row.merged_into for row in duplicates}) == 1
+    assert len(duplicates) == 1
     primary = storage_service.get_request(duplicates[0].merged_into)
-    survivor = next(row for row in temple if not row.merged_into)
     assert primary is not None
-    assert primary.id == survivor.id
-    assert (primary.merged_count or 1) >= 3
+    assert primary.id in {four.id, six.id}
+    assert (primary.merged_count or 1) >= 2
 
     hoax = next(row for row in rows if "nasa announced" in (row.raw_text or "").lower() or "likely_hoax" in (row.flags or []))
     visible = storage_service.get_request(hoax.merged_into) if hoax.merged_into else hoax
