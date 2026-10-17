@@ -335,6 +335,8 @@ def mark_analysing(request_id: str, channel: str = "text") -> None:
     if req is None:
         return
     req.analysis_status = "analysing"
+    from app.tools.case_queue import note_progress
+    note_progress(req, active="read")
     now = time.perf_counter()
     working = _extract_working(channel) or _extract_summary(req)
     req.trace = [
@@ -363,6 +365,8 @@ def note_dedupe(req: StoredRequest) -> None:
     """The duplicate check is decided before the model runs. Show it while Intake still works."""
     if req.analysis_status != "analysing":
         return
+    from app.tools.case_queue import note_progress
+    note_progress(req, done=("read", "duplicates"), active="urgency")
     for step in req.trace or []:
         if step.get("agent") == "Dedupe":
             step["status"] = "complete"
@@ -382,14 +386,19 @@ def finish(request_id: str) -> None:
         return
     req = req.model_copy(deep=True)
     started = time.perf_counter()
+    from app.tools.case_queue import abandon_if_capped, mark_steps_done, note_progress
+    capped = abandon_if_capped(req)
     # Second Gemini pass on the extraction; corrections need a quote from the report.
     from app.agents.self_check import should_check, self_check
-    if should_check(req):
+    checked = None
+    if not capped and should_check(req):
         emit_pipeline_step(request_id, "selfcheck", "working", "Gemini is double-checking the extracted facts...")
-    try:
-        checked = self_check(req)
-    except Exception:
-        logger.exception("self-check crashed")
+        try:
+            checked = self_check(req)
+        except Exception:
+            logger.exception("self-check crashed")
+            checked = None
+    elif capped:
         checked = None
     if checked is not None:
         req.self_check = checked
@@ -438,14 +447,25 @@ def finish(request_id: str) -> None:
         with ai_priority(report_priority(req.urgency_score)):
             return language_review(agent, context, fallback)
 
-    # Independent language checks share the same guarded model queue.
-    emit_pipeline_step(request_id, "dedupe", "working", "Gemini is checking for duplicates...")
-    emit_pipeline_step(request_id, "triage", "working", "Gemini is rating urgency...")
-    with ThreadPoolExecutor(max_workers=2, thread_name_prefix="case-review") as pool:
-        dup_future = pool.submit(review, "Dedupe", dedupe_context, _dedupe_output(req))
-        urg_future = pool.submit(review, "Triage", triage_context, scored.reason)
-        duplicate = dup_future.result()
-        urgency = urg_future.result()
+    def rules_only(text: str) -> dict:
+        return {"text": text, "provider": "fallback", "model": None, "latency_ms": 0, "prompt": None, "raw_output": text, "fallback_reason": "timeout_45s", "cached": False}
+
+    # Past 45s the Gemini call is abandoned and rules finish the remaining steps.
+    if not capped:
+        capped = abandon_if_capped(req)
+    if capped:
+        duplicate = rules_only(_dedupe_output(req))
+        urgency = rules_only(scored.reason)
+    else:
+        note_progress(req, active="urgency")
+        # Independent language checks share the same guarded model queue.
+        emit_pipeline_step(request_id, "dedupe", "working", "Gemini is checking for duplicates...")
+        emit_pipeline_step(request_id, "triage", "working", "Gemini is rating urgency...")
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="case-review") as pool:
+            dup_future = pool.submit(review, "Dedupe", dedupe_context, _dedupe_output(req))
+            urg_future = pool.submit(review, "Triage", triage_context, scored.reason)
+            duplicate = dup_future.result()
+            urgency = urg_future.result()
     matching_started = time.perf_counter()
     proposals = matching_agent.find_matches(req, top_n=1, save_to_storage=False)
     best = proposals[0] if proposals else None
@@ -463,8 +483,12 @@ def finish(request_id: str) -> None:
         },
     )
     explain_context = {"facts": facts, "matching": json.loads(matching_output), "free_teams": capacity["available"], "inventory_explanation": best.explanation if best else None}
-    emit_pipeline_step(request_id, "explainer", "working", "Gemini is explaining the choice...")
-    explained = review("Explainer", explain_context, explanation)
+    if capped:
+        explained = rules_only(explanation)
+    else:
+        note_progress(req, done=("urgency",), active="team")
+        emit_pipeline_step(request_id, "explainer", "working", "Gemini is explaining the choice...")
+        explained = review("Explainer", explain_context, explanation)
     measured = _km_between(req, best)
     explained["text"] = _with_measured_km(explained.get("text") or "", measured)
     if explained.get("raw_output"):
@@ -503,6 +527,10 @@ def finish(request_id: str) -> None:
         latest.trace = req.trace
         latest.analysis = req.analysis
         latest.analysis_status = "complete"
+        used_gemini = bool(req.ai and req.ai.provider == "gemini" and not req.ai.cached)
+        mark_steps_done(req, used_gemini=used_gemini and not capped)
+        if req.ai_queue is not None:
+            latest.ai_queue = req.ai_queue
         if req.self_check is not None:
             latest.self_check = req.self_check
             if req.self_check.get("verdict") == "fixed":

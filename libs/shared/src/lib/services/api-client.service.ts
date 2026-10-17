@@ -293,8 +293,16 @@ export class ApiClientService {
     return this.http.post<{ option: string; sent: boolean }>(`/api/requests/${id}/no-team`, { option }, this.getAuthHeaders());
   }
 
-  dismissHoax(id: string): Observable<StoredRequest> {
-    return this.http.post<StoredRequest>(`/api/requests/${id}/dismiss-hoax`, {}, this.getAuthHeaders());
+  dismissHoax(id: string, reason?: string): Observable<StoredRequest> {
+    return this.http.post<StoredRequest>(`/api/requests/${id}/dismiss-hoax`, { reason: reason || null }, this.getAuthHeaders());
+  }
+
+  sendNearestBoat(id: string): Observable<{ id: string; request_id: string; resource_id: string }> {
+    return this.http.post<{ id: string; request_id: string; resource_id: string }>(
+      `/api/requests/${id}/send-nearest-boat`,
+      {},
+      this.getAuthHeaders(),
+    );
   }
 
   completeRequest(id: string): Observable<StoredRequest> {

@@ -228,6 +228,8 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     urgency_res = scoring_engine.compute_urgency(req_obj)
     req_obj.urgency_score = urgency_res.score
     req_obj.urgency_reason = urgency_res.reason
+    from app.tools.case_queue import begin_case
+    begin_case(req_obj, citizen_text or report_text, others=storage_service.list_requests())
     storage_service.save_request(req_obj, actor="intake_pipeline")
     _link_report(raw_report, req_obj, req_id, machine_summary, citizen_text or report_text)
 

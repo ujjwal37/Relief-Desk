@@ -216,3 +216,8 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | ID | Task | Owner | Status | Depends | Acceptance criteria |
 |---|---|---|---|---|---|
 | JC-01 | Correctness bugs from the judge pass: merge floor 0.60, no merge across different places or conflicting head counts, same-landmark merge across languages, depth vs people location, vague places, Malayalam landmarks, one ETA, stable matching, same team name after approve, hoax state, i18n, desk refs | C | DONE | T-REBUILD-02 | `python3 -m pytest` in `services/api` passes including `tests/test_judge_correctness.py`; `npx ng build web` and `node scripts/check-i18n.mjs` pass. No auto-dispatch. |
+
+## AI queue (17 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| AQ-01 | AI working strip and Ready for you: per-step status, 45s rules cap, life-threat pre-filter, Gemini recheck when the circuit closes, approve blocked until steps finish | C | DONE | JC-01 | `python3 -m pytest` in `services/api` passes including `tests/test_ai_queue.py` with no Gemini calls; `npx ng build web` and `node scripts/check-i18n.mjs` pass. A person still approves every dispatch. |
