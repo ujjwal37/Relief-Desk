@@ -39,14 +39,14 @@
         <button type="button" class="tile" [class.active]="isVulnerableChecked('medical_need')" (click)="toggleFormVulnerable('medical_need')">{{ 'confirm.medical' | rdTranslate }}</button>
       </div>
       @if (pendingCard(); as card) {
-        <rd-confirmation-card [card]="card" [busy]="isLoading()" [smsHref]="offlineSync.getPrefilledSmsLink(card.summary)" (cardChange)="onCardEdited($event)" (send)="confirmAndSubmit($event)"></rd-confirmation-card>
+        <rd-confirmation-card [card]="card" [busy]="isLoading() && !slow()" [smsHref]="offlineSync.getPrefilledSmsLink(card.summary)" (cardChange)="onCardEdited($event)" (send)="confirmAndSubmit($event)"></rd-confirmation-card>
       }
       <button type="button" class="link" (click)="mode.set('chat')">{{ 'report.chatTab' | rdTranslate }}</button>
     </div>
   } @else if (pendingCard() && reviewOpen()) {
     <div class="review-wrap">
       @if (photoUsed()) { <p class="legal">{{ 'photo.reviewRequired' | rdTranslate }}</p> }
-      <rd-confirmation-card [card]="pendingCard()!" [quote]="citizenWords()" [busy]="isLoading()" [smsHref]="offlineSync.getPrefilledSmsLink(pendingCard()!.summary)" (cardChange)="onCardEdited($event)" (send)="confirmAndSubmit($event)"></rd-confirmation-card>
+      <rd-confirmation-card [card]="pendingCard()!" [quote]="citizenWords()" [busy]="isLoading() && !slow()" [smsHref]="offlineSync.getPrefilledSmsLink(pendingCard()!.summary)" (cardChange)="onCardEdited($event)" (send)="confirmAndSubmit($event)"></rd-confirmation-card>
       <button type="button" class="link back-chat" (click)="reviewOpen.set(false)">{{ 'report.back' | rdTranslate }}</button>
     </div>
   } @else {
@@ -107,7 +107,7 @@
           [ngModel]="userInput()" (ngModelChange)="userInput.set($event)" [ngModelOptions]="{ standalone: true }" (input)="autoGrow(ta)"
           (keydown.enter)="onEnter($event)"></textarea>
         @if (userInput().trim()) {
-          <button type="submit" class="send-btn" [disabled]="isLoading()" [attr.aria-label]="'report.sendMsg' | rdTranslate">
+          <button type="submit" class="send-btn" [disabled]="isLoading() && !slow()" [attr.aria-label]="'report.sendMsg' | rdTranslate">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         } @else {

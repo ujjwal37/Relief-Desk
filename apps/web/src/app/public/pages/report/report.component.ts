@@ -504,7 +504,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   confirmAndSubmit(card: ConfirmationCardData): void {
-    if (this.isLoading() || this.submittedResult()) {
+    // Slow reply: the bubble says the reporter can send as is, so the card stays sendable.
+    if ((this.isLoading() && !this.slow()) || this.submittedResult()) {
       return;
     }
 
