@@ -314,7 +314,8 @@ class ChatIntakeAgent:
                 current.hazard = HazardType.NONE
             elif stated not in ("rising", "none") and current.hazard == HazardType.UNKNOWN:
                 current.hazard = HazardType.WATER_RISING
-        if not place_is_usable(current.place_text):
+        # A junk place reopens the question. A question already given up on stays closed.
+        if current.place_text and not place_is_usable(current.place_text):
             current.place_text = None
             state.slot_location = False
         if current.people.count is not None and current.people.count <= 0:

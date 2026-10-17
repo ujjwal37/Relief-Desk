@@ -175,6 +175,8 @@ def known_place(text: str) -> Optional[str]:
     for ward in gazetteer.wards.values():
         if ward.get("name_ml"):
             names.append(str(ward["name_ml"]))
+        if ward.get("name_hi"):
+            names.append(str(ward["name_hi"]))
     names.extend(_KUTTANAD_PLACES)
 
     best: Optional[str] = None
