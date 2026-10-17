@@ -518,6 +518,9 @@ app-ai-stepper {
 
   .dec-place-title {
     margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     font-size: 17px;
     font-weight: 700;
     color: var(--text, #fff);
@@ -1207,15 +1210,16 @@ app-ai-stepper {
 
 /* Responsive */
 .live-demo {
-  flex: none;
-  margin: 6px 16px 0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border, #1a2f24);
-  background: var(--surface, #12211a);
+  flex: 0 1 auto;
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
 }
 
 .live-demo-top, .live-own-row {

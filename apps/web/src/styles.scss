@@ -341,3 +341,18 @@ body:has(.cmd) .top-strip{display:none}
 .cmd .case-steps .step-node .node-title{min-height:2.4em;font-size:12px}
 .cmd .slim-stats-bar section.live-demo{flex-direction:row}
 .cmd .slim-stats-bar details.live-own:not([open]){position:static}
+/* g7: Command polish */
+.cmd .slim-stats-bar details.live-own:not([open]){position:static;flex:0 0 auto}
+.cmd .slim-stats-bar details.live-own>summary{padding:0}
+.cmd aside.decision-panel .dec-place-title{font-size:22px;line-height:1.25}
+.cmd .queue-title-row{display:flex;flex-direction:column;align-items:flex-start;gap:0}
+.cmd .queue-title-row .scenario-visible{margin:0;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cmd .dec-title-row .map-toggle{display:none;flex:0 0 auto;min-height:28px;padding:0 10px;font-size:12px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+@media (max-width:1280px){
+  .cmd .dec-title-row .map-toggle{display:inline-flex;align-items:center}
+  .cmd .coordinator-grid:has(.map-stepper-col:not(.map-open)){grid-template-columns:240px minmax(0,1fr) !important}
+  .cmd .coordinator-grid>.map-stepper-col:not(.map-open){display:none}
+  .cmd .coordinator-grid:has(.map-stepper-col.map-open){grid-template-columns:240px minmax(0,1fr) 380px !important}
+}
+.cmd .case-steps .step-node .node-title{word-break:normal !important;overflow-wrap:normal !important;hyphens:none;font-size:11.5px}
+.cmd .case-steps .step-node{min-width:0;flex:1 1 0}

@@ -706,7 +706,14 @@
       "cost_per_1000_msgs_usd": "What the reading step would cost for a thousand messages."
     },
     "notRunTitle": "Accuracy test not run yet",
-    "notRunBody": "No measured numbers yet. Run the labelled benchmark to fill this page; nothing here is estimated."
+    "notRunBody": "No measured numbers yet. Run the labelled benchmark to fill this page; nothing here is estimated.",
+    "summary": "{n} measured metrics on synthetic labelled reports",
+    "geminiMeasured": "Gemini measured in this run",
+    "geminiNotInRun": "Gemini not measured in this run (rules shown)",
+    "runDetails": "Run details",
+    "lowerBetter": "lower is better",
+    "higherBetter": "higher is better",
+    "geminiTile": "✨ Gemini {v}"
   },
   "home": {
     "title": "How can we help?",

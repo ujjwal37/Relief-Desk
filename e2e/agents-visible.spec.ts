@@ -108,7 +108,8 @@ test.describe('agents visible', () => {
 
       await clickCoordLink(page, 'Accuracy report');
       await expect(page.getByRole('heading', { name: 'Accuracy report' })).toBeVisible();
-      await expect(page.getByText('Not measured yet').first()).toBeVisible();
+      await expect(page.getByTestId('bench-summary')).toContainText('Gemini not measured in this run');
+      await page.locator('details.run-details > summary').click();
       await expect(page.getByText('gemini-3.5-flash-lite')).toBeVisible();
       await expect(page.getByText('168').first()).toBeVisible();
       await expect(page.getByText('Example data')).toHaveCount(0);

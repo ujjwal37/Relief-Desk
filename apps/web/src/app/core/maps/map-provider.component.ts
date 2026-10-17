@@ -23,6 +23,25 @@ import { MapProviderService } from './map-provider.service';
 import { computeRoadRoute, RoadRoute, RoutingDeniedError } from './road-route';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
+/** Dark pine map for the dark coordinator theme; sand labels, deep water. */
+const PINE_DARK_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#173a32' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#e3d3b0' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0f2a24' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c544a' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0b1f1b' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#7fa79b' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3d6b5f' }] },
+];
+
+function isDarkTheme(): boolean {
+  const root = document.documentElement;
+  return root.dataset['theme'] === 'dark' || root.classList.contains('dark') || root.classList.contains('theme-dark');
+}
+
 /** Road route for one team->case pair. Shared by every map so a leg is routed once. */
 const ROUTES = new Map<string, Promise<RoadRoute | null>>();
 let routingBroken = false;
@@ -327,7 +346,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
-          styles: PINE_SAND_MAP_STYLE,
+          styles: isDarkTheme() ? PINE_DARK_MAP_STYLE : PINE_SAND_MAP_STYLE,
         });
         const ready = () => {
           this.loading.set(false);
@@ -335,7 +354,6 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           this.cdr.markForCheck();
         };
         this.readyListener = maps.event?.addListenerOnce(this.map, 'tilesloaded', ready);
-        maps.event?.addListenerOnce(this.map, 'idle', ready);
         this.lastCenter = { lat: this.center.lat, lng: this.center.lng };
       }
       const pinKey = this.pins.map((pin) => `${pin.id}:${pin.lat}:${pin.lng}`).join('|') + '#' + JSON.stringify(this.legs ?? []) + '#' + (this.highlightId || '') + '#' + (this.selectedId || '');

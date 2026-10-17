@@ -309,7 +309,6 @@
 
     <!-- CENTRE COLUMN: TALLER MAP + COMPACT AI STEPPER -->
     <section class="centre map-stepper-col" [class.map-open]="mapOpen()">
-      <button type="button" class="map-toggle" data-testid="map-toggle" [attr.aria-pressed]="mapOpen()" (click)="mapOpen.set(!mapOpen())">{{ (mapOpen() ? 'queue.hideMap' : 'queue.showMap') | rdTranslate }}</button>
       <div class="map-card-wrapper map-card">
         <rd-map-provider
           [ownSchematic]="true"
@@ -380,7 +379,8 @@
           <!-- 1. Case Header -->
           <div class="decision-case-header">
             <div class="dec-title-row">
-              <h2 class="dec-place-title" [attr.title]="caseTitle(req)">{{ shortTitle(req) }}</h2>
+              <h2 class="dec-place-title" [attr.title]="caseTitle(req)">{{ caseTitle(req) }}</h2>
+              <button type="button" class="map-toggle" data-testid="map-toggle" [attr.aria-pressed]="mapOpen()" (click)="mapOpen.set(!mapOpen())">{{ (mapOpen() ? 'queue.hideMap' : 'queue.showMap') | rdTranslate }}</button>
               <span class="dec-band-tag" [class]="'band-' + bandOf(req.urgency_score)">
                 @if (bandOf(req.urgency_score) === 'critical') {
                   ▲ {{ 'filter.critical' | rdTranslate }}

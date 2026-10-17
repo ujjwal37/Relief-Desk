@@ -3,20 +3,29 @@
     <h1>{{ 'bench.title2' | rdTranslate }}</h1>
     @if (example()) { <span class="example">{{ 'ux.exampleData' | rdTranslate }}</span> }
     <p class="sub">{{ 'bench.sub' | rdTranslate }}</p>
-    @if (subtitle()) { <p class="meta">{{ subtitle() }}</p> }
+    @if (realRows().length) {
+      <p class="summary" data-testid="bench-summary">
+        {{ 'bench.summary' | rdTranslate:{ n: realRows().length } }}
+        @if (gemini(); as g) { · {{ (g.measured ? 'bench.geminiMeasured' : 'bench.geminiNotInRun') | rdTranslate }} }
+      </p>
+    }
     @if (gemini(); as g) {
-      <div class="run-facts">
-      @if (g.model) { <p class="meta">{{ 'bench.model' | rdTranslate }} {{ g.model }}</p> }
-      @if (g.date) { <p class="meta">{{ 'bench.date' | rdTranslate }} {{ g.date }}</p> }
-      @if (g.n) { <p class="meta">{{ 'ux.labelled' | rdTranslate }} {{ g.n }}</p> }
-      </div>
-      @if (!g.measured) { <p class="not-run">{{ (g.reason === 'fallback' ? 'bench.geminiUnreachable' : 'bench.geminiNotMeasured') | rdTranslate }}</p> }
-      @if (g.measured) {
-        @if (g.type) { <p>{{ 'bench.geminiType' | rdTranslate }} {{ g.type }}</p> }
-        @if (g.ward) { <p>{{ 'bench.geminiWard' | rdTranslate }} {{ g.ward }}</p> }
-      }
-      @if (g.baseType) { <p>{{ 'bench.keywordType' | rdTranslate }} {{ g.baseType }}</p> }
-      @if (g.baseWard) { <p>{{ 'bench.keywordWard' | rdTranslate }} {{ g.baseWard }}</p> }
+      <details class="run-details">
+        <summary>{{ 'bench.runDetails' | rdTranslate }}</summary>
+        @if (subtitle()) { <p class="meta">{{ subtitle() }}</p> }
+        <div class="run-facts">
+          @if (g.model) { <p class="meta">{{ 'bench.model' | rdTranslate }} {{ g.model }}</p> }
+          @if (g.date) { <p class="meta">{{ 'bench.date' | rdTranslate }} {{ g.date }}</p> }
+          @if (g.n) { <p class="meta">{{ 'ux.labelled' | rdTranslate }} {{ g.n }}</p> }
+        </div>
+        @if (!g.measured) { <p class="not-run">{{ (g.reason === 'fallback' ? 'bench.geminiUnreachable' : 'bench.geminiNotMeasured') | rdTranslate }}</p> }
+        @if (g.measured) {
+          @if (g.type) { <p class="meta">{{ 'bench.geminiType' | rdTranslate }} {{ g.type }}</p> }
+          @if (g.ward) { <p class="meta">{{ 'bench.geminiWard' | rdTranslate }} {{ g.ward }}</p> }
+        }
+        @if (g.baseType) { <p class="meta">{{ 'bench.keywordType' | rdTranslate }} {{ g.baseType }}</p> }
+        @if (g.baseWard) { <p class="meta">{{ 'bench.keywordWard' | rdTranslate }} {{ g.baseWard }}</p> }
+      </details>
     }
   </header>
 
@@ -32,41 +41,22 @@
     </div>
   }
   @if (realRows().length) {
-    <div class="grid">
+    <div class="tiles">
       @for (row of realRows(); track row.key) {
-        <article class="metric">
+        <article class="tile" [attr.title]="row.means | rdTranslate">
           <h2>{{ row.label | rdTranslate }}</h2>
-          <p class="means">{{ row.means | rdTranslate }}</p>
-          @if (row.pct) {
-            <p class="key">{{ 'ux.higher' | rdTranslate }} · {{ 'ux.scale' | rdTranslate }}</p>
-            <p class="key">{{ 'ux.geminiBar' | rdTranslate }}</p>
-            @if (geminiValue(row); as value) {
-              <div class="pair">
-                <span class="val">{{ value }}</span>
-                <div class="track"><b class="gem" [style.width.%]="pct(value)"></b></div>
-              </div>
-            } @else {
-              <p class="miss">{{ 'ux.notMeasured' | rdTranslate }}</p>
-            }
-            <p class="key">{{ 'ux.ruleBar' | rdTranslate }}</p>
-            <div class="pair">
-              <span class="val">{{ row.relief || ('ux.notRecorded' | rdTranslate) }}</span>
-              @if (row.relief) { <div class="track"><b class="rule" [style.width.%]="pct(row.relief)"></b></div> }
-            </div>
-            <p class="base">{{ row.baselineName | rdTranslate }} {{ row.baseline || ('ux.notRecorded' | rdTranslate) }}</p>
-          } @else {
-            <div class="nums">
-              <div><span>{{ 'bench.ours' | rdTranslate }}</span><b>{{ row.relief || ('ux.notRecorded' | rdTranslate) }}</b></div>
-              <div><span>{{ row.baselineName | rdTranslate }}</span><b>{{ row.baseline || ('ux.notRecorded' | rdTranslate) }}</b></div>
-            </div>
-          }
+          <p class="big">{{ row.relief || '—' }}@if (row.pct && row.relief) {<small>%</small>}</p>
+          <p class="dir" [class.low]="lowerBetter(row.key)">{{ (lowerBetter(row.key) ? 'bench.lowerBetter' : 'bench.higherBetter') | rdTranslate }}</p>
+          @if (geminiValue(row); as value) { <p class="gem">{{ 'bench.geminiTile' | rdTranslate:{ v: value } }}</p> }
+          @if (row.baseline) { <p class="base">{{ row.baselineName | rdTranslate }} {{ row.baseline }}</p> }
         </article>
       }
     </div>
   }
 
   @if (tableRows().length) {
-    <div class="table-wrap">
+    <details class="table-wrap">
+      <summary>{{ 'ux.wrongTitle' | rdTranslate }}</summary>
       <table class="cases">
         <thead>
           <tr>
@@ -89,18 +79,13 @@
           }
         </tbody>
       </table>
-    </div>
+    </details>
   }
 
-  @if (failures().length || marginText()) {
-  <section class="failures">
-    <h2>{{ 'ux.wrongTitle' | rdTranslate }}</h2>
-    <ul>
-      @for (line of failures(); track line) { <li>{{ line }}</li> }
-      @if (!failures().length) { <li>{{ 'ux.notRecorded' | rdTranslate }}</li> }
-    </ul>
-    <p>{{ marginText() || ('ux.notRecorded' | rdTranslate) }}</p>
-    @if (smallSample()) { <p>{{ 'ux.smallSample' | rdTranslate }}</p> }
-  </section>
+  @if (marginText() || smallSample()) {
+    <section class="failures">
+      @if (marginText()) { <p>{{ marginText() }}</p> }
+      @if (smallSample()) { <p>{{ 'ux.smallSample' | rdTranslate }}</p> }
+    </section>
   }
 </div>

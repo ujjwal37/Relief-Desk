@@ -65,3 +65,11 @@ h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); } .sub { mar
 .empty-card{list-style:none;padding:24px;border:1px dashed var(--border);border-radius:12px;background:var(--surface);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 .empty-card .head-action{margin-left:0}
 .empty-card p{margin:0;color:var(--muted)}
+
+/* declutter: landmark names only when they matter; selected pin stands out */
+.lm text { display:none; }
+.alerts-page:has(.alert-row.selected.k-resource_gap) .lm text { display:inline; }
+.pin.on .drop { stroke:var(--focus, #e3d3b0); stroke-width:4; filter:drop-shadow(0 0 6px rgba(227,211,176,.6)); }
+.pin.on .pn { font-size:14px; }
+.wname { font-size:11px; }
+.alert-row.selected { border-color:var(--brand); box-shadow:0 0 0 1px var(--brand) inset; }

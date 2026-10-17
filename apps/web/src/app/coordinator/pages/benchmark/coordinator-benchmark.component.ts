@@ -86,6 +86,11 @@ export class CoordinatorBenchmarkComponent implements OnInit {
     return Math.max(0, Math.min(100, n <= 1 ? n * 100 : n));
   }
 
+  /** Rates of mistakes, latency, cost and rank are better when lower. */
+  lowerBetter(key: string): boolean {
+    return /false|mistake|latency|cost|mean_rank/.test(key);
+  }
+
   geminiValue(row: MetricRow): string | null {
     const gemini = this.gemini();
     if (!gemini?.measured) return null;

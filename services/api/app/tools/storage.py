@@ -332,6 +332,8 @@ class StorageService:
         self, kind: Optional[ResourceKind] = None, event_id: str = "event_kerala_flood"
     ) -> List[StoredResource]:
         res_list = [r for r in self._resources.values() if r.event_id == event_id]
+        if settings.DEMO_MODE:
+            simulate_demo_checkins(res_list)
         if kind:
             return [r for r in res_list if r.kind == kind]
         return res_list
@@ -1113,3 +1115,34 @@ except Exception:
     pass
 
 
+DEMO_CHECKIN_STALE_MIN = 90
+
+
+def simulate_demo_checkins(resources, now=None):
+    """DEMO_MODE only: synthetic teams 'check in' so Free/Busy reflect a live desk.
+
+    A synthetic team whose last check-in is older than 90 min gets a fresh simulated
+    check-in 2-26 min ago and is flagged simulated=True. About one in five teams is left
+    alone so the 'Not updated' state still shows. Real (non-synthetic) teams are never touched.
+    """
+    import zlib
+    now = now or datetime.now(timezone.utc)
+    changed = 0
+    for res in resources:
+        if not getattr(res, "synthetic", False):
+            continue
+        h = zlib.crc32(res.id.encode("utf-8"))
+        if h % 5 == 0:
+            continue
+        try:
+            last = datetime.fromisoformat(str(res.location_updated_at).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            last = None
+        if last is not None and last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        if last is not None and (now - last) <= timedelta(minutes=DEMO_CHECKIN_STALE_MIN):
+            continue
+        res.location_updated_at = (now - timedelta(minutes=2 + h % 25)).isoformat()
+        res.simulated = True
+        changed += 1
+    return changed
