@@ -303,7 +303,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.router.navigate(['/coordinator/login']);
   }
 
-  @HostListener('document:keydown.escape') onEsc(): void { this.menuOpen.set(false); }
+  @HostListener('document:keydown.escape') onEsc(): void { this.menuOpen.set(false); this.askDeskOpen.set(false); }
   @HostListener('document:keydown', ['$event']) onSlash(e: KeyboardEvent): void {
     const t = e.target as HTMLElement;
     if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(t?.tagName)) {
