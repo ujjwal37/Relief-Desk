@@ -734,9 +734,16 @@ class LLMClient:
         place_text = None
         place_match = re.search(r"(?:at|near|in|ke paas|paas|ward)\s+([A-Za-z0-9\s,\-\.\u0900-\u097F]+)", report_text, re.IGNORECASE)
         if place_match:
-            place_text = place_match.group(1).strip().split(".")[0].split("\n")[0]
-            if len(place_text) > 60:
-                place_text = place_text[:60]
+            chunk = place_match.group(1).strip().split("\n")[0]
+            # "in bit.ly/help" is a link, not a place called "bit".
+            if re.search(r"https?://|bit\.ly|\bwww\.", chunk, flags=re.IGNORECASE):
+                place_text = None
+            else:
+                place_text = chunk.split(".")[0].strip()
+                if len(place_text) > 60:
+                    place_text = place_text[:60]
+                if place_text.lower() in {"bit", "otp", "www", "http", "https"}:
+                    place_text = None
         elif "gandhi school" in lower:
             place_text = "Gandhi School, Ward 4"
 

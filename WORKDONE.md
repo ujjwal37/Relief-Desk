@@ -1500,3 +1500,20 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
   - Two older Coordinator layout unit specs still expect "Agent" and a restart-tour test id. Product copy was left as "Ask the desk".
   - Command SCSS is about 23 kB against a 20 kB warning budget and a 30 kB error budget.
 - Next (suggested task id): none
+
+### 2026-10-17 12:40 IST — QA chat intake — Cursor
+- What changed: Citizen phone chat now fills location, people, need, and water from the whole report and from typed answers (English, Hindi, Hinglish, Malayalam), and it does not ask again for a slot that is already filled. A bit.ly / OTP hoax is detected on the chat path the same way as a normal report and the case is held as a likely hoax. "Nobody is stranded" is not a rescue, and Kuttanad place names such as Pulincunnu are kept. "vellam koodunnu" counts as water already rising. Summaries are built from the report, not the last chat reply, and they cannot rename a stated condition (severe diabetic emergency stays that, on the rules path and when a mocked Gemini reply upgrades it).
+- Files:
+  - `services/api/app/agents/chat_intake.py`
+  - `services/api/app/agents/summary.py`
+  - `services/api/app/agents/intake.py`
+  - `services/api/app/api/reports.py`
+  - `services/api/app/tools/nlu_rules.py`
+  - `services/api/app/llm/client.py`
+  - `services/api/tests/test_chat_intake_truth.py`
+- How verified (commands / screenshots):
+  - `python3 -m pytest` in `services/api` — 337 passed, 1 skipped. No API key (`AI_MODE` fallback). Gemini summary guard covered with a mocked client.
+- Notes / risks / not done:
+  - The coordinator desk still prints a missing people count as 0 in a couple of Angular labels. The stored value is null. Those desk components were left untouched.
+  - A hoax is flagged and not matched. A coordinator still has to dismiss it. Nothing is auto-deleted.
+- Next (suggested task id): none

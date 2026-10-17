@@ -17,7 +17,8 @@ from app.tools.translation import translation_service, TranslationResult
 from app.models.firestore_models import PossibleDuplicate, ReportQuote, StoredReport, StoredRequest, RequestStatus
 from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.tools.request_contract import canonical_request_dict
-from app.tools.nlu_rules import extract_place, people_bounds, vulnerable_flags
+from app.agents.summary import guard_summary, summary_from_report
+from app.tools.nlu_rules import extract_place, people_bounds, people_count, place_is_usable, vulnerable_flags
 from app.agents.dedupe import confidence_phrase
 from app.tools.trust import detect_hoax_or_flood, hoax_reason_for
 from app.tools.gazetteer import gazetteer
@@ -179,11 +180,12 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         if citizen_text:
             report_text = citizen_text
 
-    hoax_reason = None if demo_sample else hoax_reason_for(citizen_text or report_text)
+    hoax_blob = _hoax_blob(payload, citizen_text or report_text)
+    hoax_reason = None if demo_sample else hoax_reason_for(hoax_blob)
     if not demo_sample:
         for flag in detect_hoax_or_flood(
             storage_service.list_reports(),
-            citizen_text or report_text,
+            hoax_blob,
             payload.source_id,
         ):
             if flag not in flags:
@@ -211,7 +213,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         ward_id=ward_id,
         lat=pin_lat,
         lng=pin_lng,
-        people_count=extracted.people.count or (people_bounds(citizen_text or report_text)[1] if people_bounds(citizen_text or report_text) else None),
+        people_count=_stated_people(extracted.people.count, citizen_text or report_text),
         people_span=(people_bounds(citizen_text or report_text) or (None, None, None))[2],
         vulnerable=extracted.vulnerable,
         hazard=extracted.hazard,
@@ -311,6 +313,10 @@ def _apply_card(extracted: ExtractedRequest, payload: ReportSubmitRequest, repor
     for flag, value in canon["vulnerable"].items():
         setattr(extracted.vulnerable, flag, bool(value or heard.get(flag)))
     card_place = (facts.place_text or "").strip()
+    if not place_is_usable(card_place):
+        card_place = ""
+    if not place_is_usable(extracted.place_text):
+        extracted.place_text = None
     ruled = extract_place(report_text)
     weak = (
         not card_place
@@ -322,10 +328,38 @@ def _apply_card(extracted: ExtractedRequest, payload: ReportSubmitRequest, repor
         extracted.place_text = ruled
     elif card_place and not weak:
         extracted.place_text = card_place
+    stated = people_count(report_text)
+    if extracted.people.count == 0 or (extracted.people.count is not None and extracted.people.count <= 0):
+        extracted.people.count = stated if stated else None
+    elif facts.people_count == 0 and stated != 0:
+        extracted.people.count = stated
     summary = canon["summary"] if facts.summary else None
     if summary and "person(s) needing " in summary:
         return None
-    return summary
+    if not summary:
+        return None
+    return summary_from_report(report_text, summary)
+
+
+def _hoax_blob(payload: ReportSubmitRequest, report_text: str) -> str:
+    """Hoax phrases can sit in the original message while the card summary is only the last reply."""
+    parts = [report_text or ""]
+    if payload.structured and payload.structured.summary:
+        parts.append(payload.structured.summary)
+    if payload.raw_text:
+        parts.append(payload.raw_text)
+    if payload.text:
+        parts.append(payload.text)
+    return "\n".join(part for part in parts if part)
+
+
+def _stated_people(count: Optional[int], report_text: str) -> Optional[int]:
+    """Unknown stays null. A card that says 0 is not a headcount the citizen gave."""
+    bounds = people_bounds(report_text)
+    stated = bounds[1] if bounds else None
+    if count is None or count <= 0:
+        return stated if stated else None
+    return count
 
 
 def _pin_for(payload: ReportSubmitRequest, extracted: ExtractedRequest, report_text: str) -> Tuple[float, float, Optional[str]]:
@@ -542,7 +576,10 @@ def _refine_with_model(
     joined = (req_obj.merged_count or 1) > 1
     pin_lat, pin_lng, ward_id = _pin_for(payload, analysis, report_text)
     req_obj.type = analysis.type
-    req_obj.place_text = analysis.place_text or req_obj.place_text
+    chosen_place = analysis.place_text or req_obj.place_text
+    if not place_is_usable(chosen_place):
+        chosen_place = extract_place(citizen_text or report_text)
+    req_obj.place_text = chosen_place if place_is_usable(chosen_place) else ""
     req_obj.ward_id = ward_id
     req_obj.lat = pin_lat
     req_obj.lng = pin_lng
@@ -574,9 +611,13 @@ def _refine_with_model(
     req_obj.flags = sorted(set(req_obj.flags) | flags)
     if model_reason and not req_obj.hoax_reason:
         req_obj.hoax_reason = model_reason[:300]
-    req_obj.summary = machine_summary or req_obj.summary
+    source_words = citizen_text or report_text
+    req_obj.summary = summary_from_report(source_words, machine_summary or req_obj.summary or source_words)
     if not (req_obj.raw_text or "").strip():
         req_obj.raw_text = (getattr(analysis, "original_text", None) or analysis.notes or getattr(analysis, "text_en", None) or "").strip() or req_obj.raw_text
+    if trans_res.text_en:
+        trans_res.text_en = guard_summary(citizen_text or report_text, trans_res.text_en)
+        trans_res.translations["en"] = trans_res.text_en
     req_obj.ai_translation = trans_res.text_en
     req_obj.ai_source = ai_source
     req_obj.ai = ai_usage
