@@ -194,15 +194,15 @@ def test_chest_deep_rescue_is_not_offered_a_road_ambulance():
 def test_route_eta_uses_the_same_speed_as_the_proposal():
     assert eta_for_distance(0.94, "road") == 3
     assert eta_for_distance(4.3, "road") == 13
-    command = (ROOT / "apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts").read_text()
+    command = (ROOT / "apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts").read_text(encoding="utf-8")
     assert "/ 12" not in command
     assert "/ 30 * 60" not in command
     assert "fallbackEta" in command
 
 
 def test_toast_and_panel_name_the_approved_team():
-    command = (ROOT / "apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts").read_text()
-    html = (ROOT / "apps/web/src/app/coordinator/pages/command/coordinator-command.component.html").read_text()
+    command = (ROOT / "apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts").read_text(encoding="utf-8")
+    html = (ROOT / "apps/web/src/app/coordinator/pages/command/coordinator-command.component.html").read_text(encoding="utf-8")
     start = command.find("approveMatch(prop: MatchProposal")
     approve = command[start:start + 2800]
     assert "selectRequest(next" not in approve
