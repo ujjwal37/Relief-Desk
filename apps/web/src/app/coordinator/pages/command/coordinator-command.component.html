@@ -33,32 +33,6 @@
       <span><b>{{ batch().waiting }}</b> {{ 'batch.waiting' | rdTranslate }}</span>
       <span><b>{{ batch().dispatched }}</b> {{ 'batch.dispatched' | rdTranslate }}</span>
     </div>
-    <div class="stats-left">
-      <span class="stat-pill stat-free">
-        {{ 'stat.teamsFree' | rdTranslate:{ a: teamsFree().free, b: teamsFree().total } }}
-      </span>
-      <span class="stat-sep">·</span>
-      <span class="stat-text">
-        {{ 'stat.busy' | rdTranslate:{ n: teamsFree().busy } }}
-      </span>
-      <span class="stat-sep">·</span>
-      <span class="stat-text">
-        {{ 'stat.notUpdated' | rdTranslate:{ n: teamsFree().notUpdated } }}
-      </span>
-      <span class="stat-divider">|</span>
-      <span class="stat-text stat-dispatched">
-        <strong>{{ counts().dispatched }}</strong> {{ 'coord.filterDispatched' | rdTranslate }}
-      </span>
-      <span class="stat-sep">·</span>
-      <span class="stat-text stat-completed">
-        <strong>{{ counts().completed }}</strong> {{ 'coord.filterCompleted' | rdTranslate }}
-      </span>
-    </div>
-    @if (resetNote(); as n) {
-      <span class="reset-note" role="status">{{ n | rdTranslate }}</span>
-    }
-  </div>
-
   @if (!narrow()) {
     <section class="live-demo" data-testid="live-demo" [attr.aria-label]="'demo.run' | rdTranslate">
       <div class="live-demo-top">
@@ -93,10 +67,49 @@
           <button type="button" class="sample-btn" (click)="fillExample()">{{ 'demo.exampleMl' | rdTranslate }}</button>
           <button type="button" class="live-demo-go" data-testid="send-own" (click)="submitOwn()" [disabled]="ownBusy() || !ownText().trim()">{{ 'demo.sendOwn' | rdTranslate }}</button>
         </div>
+        <!-- sample reports -->
+        <div class="samples sample-row" data-tour="sample">
+          <button type="button" class="sample-btn" data-testid="sample-hindi" (click)="sendSample('hindi')">
+            {{ 'sample.hindi' | rdTranslate }}
+          </button>
+          <button type="button" class="sample-btn" data-testid="sample-voice" (click)="sendSample('voice')">
+            {{ 'sample.voice' | rdTranslate }}
+          </button>
+          <button type="button" class="sample-btn" data-testid="sample-photo" (click)="sendSample('photo')">
+            {{ 'sample.photo' | rdTranslate }}
+          </button>
+        </div>
+
         @if (ownError()) { <p class="live-demo-note" data-testid="own-error" role="alert">{{ ownError() }}</p> }
       </details>
     </section>
   }
+    <div class="stats-left">
+      <span class="stat-pill stat-free">
+        {{ 'stat.teamsFree' | rdTranslate:{ a: teamsFree().free, b: teamsFree().total } }}
+      </span>
+      <span class="stat-sep">·</span>
+      <span class="stat-text">
+        {{ 'stat.busy' | rdTranslate:{ n: teamsFree().busy } }}
+      </span>
+      <span class="stat-sep">·</span>
+      <span class="stat-text">
+        {{ 'stat.notUpdated' | rdTranslate:{ n: teamsFree().notUpdated } }}
+      </span>
+      <span class="stat-divider">|</span>
+      <span class="stat-text stat-dispatched">
+        <strong>{{ counts().dispatched }}</strong> {{ 'coord.filterDispatched' | rdTranslate }}
+      </span>
+      <span class="stat-sep">·</span>
+      <span class="stat-text stat-completed">
+        <strong>{{ counts().completed }}</strong> {{ 'coord.filterCompleted' | rdTranslate }}
+      </span>
+    </div>
+    @if (resetNote(); as n) {
+      <span class="reset-note" role="status">{{ n | rdTranslate }}</span>
+    }
+  </div>
+
 
   <!-- AI Hero Banner (One line) -->
 @if (narrow()) {
@@ -112,19 +125,6 @@
       <p class="sr-only" aria-live="polite">{{ analysedLive() }}</p>
 
       <div class="queue-header">
-        <!-- 3 Sample Buttons in ONE compact row -->
-        <div class="samples sample-row" data-tour="sample">
-          <button type="button" class="sample-btn" data-testid="sample-hindi" (click)="sendSample('hindi')">
-            {{ 'sample.hindi' | rdTranslate }}
-          </button>
-          <button type="button" class="sample-btn" data-testid="sample-voice" (click)="sendSample('voice')">
-            {{ 'sample.voice' | rdTranslate }}
-          </button>
-          <button type="button" class="sample-btn" data-testid="sample-photo" (click)="sendSample('photo')">
-            {{ 'sample.photo' | rdTranslate }}
-          </button>
-        </div>
-
         @if (assist().proposals.length) {
           <app-assist-banner [count]="assist().proposals.length" (review)="assistOpen.set(true)" />
         }
@@ -133,78 +133,8 @@
           <h2 id="cases-h" class="cases-heading">{{ 'coord.cases' | rdTranslate }}</h2>
           <p class="scenario-visible">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
         </div>
-
-        <!-- Filter Chips -->
-        <div class="filters filter-row" role="group" [attr.aria-label]="'coord.cases' | rdTranslate">
-          <button
-            type="button"
-            class="filter-chip"
-            [class.on]="bandFilter() === 'all'"
-            (click)="setBandFilter('all')"
-            [attr.aria-pressed]="bandFilter() === 'all'"
-          >
-            {{ 'coord.filterAll' | rdTranslate }} {{ counts().total }}
-          </button>
-          <button
-            type="button"
-            class="filter-chip f-now chip-crit"
-            [class.on]="bandFilter() === 'now'"
-            (click)="setBandFilter('now')"
-            [attr.aria-pressed]="bandFilter() === 'now'"
-            [attr.title]="'filter.critical.tip' | rdTranslate"
-          >
-            <span class="chip-shape">▲</span> {{ 'filter.critical' | rdTranslate }} {{ counts().critical }} <span class="tip-ico" aria-hidden="true">ⓘ</span>
-          </button>
-          <button
-            type="button"
-            class="filter-chip chip-urgent"
-            [class.on]="bandFilter() === 'soon'"
-            (click)="setBandFilter('soon')"
-            [attr.aria-pressed]="bandFilter() === 'soon'"
-            [attr.title]="'filter.urgent.tip' | rdTranslate"
-          >
-            <span class="chip-shape">◆</span> {{ 'filter.urgent' | rdTranslate }} {{ counts().high }} <span class="tip-ico" aria-hidden="true">ⓘ</span>
-          </button>
-          <button
-            type="button"
-            class="filter-chip chip-review"
-            [class.on]="bandFilter() === 'review'"
-            (click)="setBandFilter('review')"
-            [attr.aria-pressed]="bandFilter() === 'review'"
-            [attr.title]="'filter.aiReview.tip' | rdTranslate"
-          >
-            {{ 'filter.aiReview' | rdTranslate }} {{ counts().review }} <span class="tip-ico" aria-hidden="true">ⓘ</span>
-          </button>
-        </div>
-
-        <!-- Secondary status chips: Dispatched & Completed -->
-        <div class="secondary-filter-row">
-          <button
-            type="button"
-            class="filter-chip sec-chip"
-            data-testid="filter-dispatched"
-            [attr.data-count]="counts().dispatched"
-            [class.on]="bandFilter() === 'dispatched'"
-            (click)="setBandFilter('dispatched')"
-            [attr.aria-pressed]="bandFilter() === 'dispatched'"
-            [attr.aria-label]="'coord.filterDispatched' | rdTranslate"
-          >
-            {{ 'coord.filterDispatched' | rdTranslate }} {{ counts().dispatched }}
-          </button>
-          <button
-            type="button"
-            class="filter-chip sec-chip"
-            data-testid="filter-completed"
-            [attr.data-count]="counts().completed"
-            [class.on]="bandFilter() === 'completed'"
-            (click)="setBandFilter('completed')"
-            [attr.aria-pressed]="bandFilter() === 'completed'"
-            [attr.aria-label]="'coord.filterCompleted' | rdTranslate"
-          >
-            {{ 'coord.filterCompleted' | rdTranslate }} {{ counts().completed }}
-          </button>
-        </div>
       </div>
+
 
       <!-- Case List -->
       <div class="list case-list-wrap" role="listbox" [attr.aria-label]="'coord.cases' | rdTranslate">
@@ -304,6 +234,79 @@
           </p>
         }
       </div>
+      <details class="full-queue" data-testid="full-queue">
+        <summary>{{ 'queue.viewFull' | rdTranslate }}</summary>
+        <!-- Filter Chips -->
+        <div class="filters filter-row" role="group" [attr.aria-label]="'coord.cases' | rdTranslate">
+          <button
+            type="button"
+            class="filter-chip"
+            [class.on]="bandFilter() === 'all'"
+            (click)="setBandFilter('all')"
+            [attr.aria-pressed]="bandFilter() === 'all'"
+          >
+            {{ 'coord.filterAll' | rdTranslate }} {{ counts().total }}
+          </button>
+          <button
+            type="button"
+            class="filter-chip f-now chip-crit"
+            [class.on]="bandFilter() === 'now'"
+            (click)="setBandFilter('now')"
+            [attr.aria-pressed]="bandFilter() === 'now'"
+            [attr.title]="'filter.critical.tip' | rdTranslate"
+          >
+            <span class="chip-shape">▲</span> {{ 'filter.critical' | rdTranslate }} {{ counts().critical }} <span class="tip-ico" aria-hidden="true">ⓘ</span>
+          </button>
+          <button
+            type="button"
+            class="filter-chip chip-urgent"
+            [class.on]="bandFilter() === 'soon'"
+            (click)="setBandFilter('soon')"
+            [attr.aria-pressed]="bandFilter() === 'soon'"
+            [attr.title]="'filter.urgent.tip' | rdTranslate"
+          >
+            <span class="chip-shape">◆</span> {{ 'filter.urgent' | rdTranslate }} {{ counts().high }} <span class="tip-ico" aria-hidden="true">ⓘ</span>
+          </button>
+          <button
+            type="button"
+            class="filter-chip chip-review"
+            [class.on]="bandFilter() === 'review'"
+            (click)="setBandFilter('review')"
+            [attr.aria-pressed]="bandFilter() === 'review'"
+            [attr.title]="'filter.aiReview.tip' | rdTranslate"
+          >
+            {{ 'filter.aiReview' | rdTranslate }} {{ counts().review }} <span class="tip-ico" aria-hidden="true">ⓘ</span>
+          </button>
+        </div>
+
+        <!-- Secondary status chips: Dispatched & Completed -->
+        <div class="secondary-filter-row">
+          <button
+            type="button"
+            class="filter-chip sec-chip"
+            data-testid="filter-dispatched"
+            [attr.data-count]="counts().dispatched"
+            [class.on]="bandFilter() === 'dispatched'"
+            (click)="setBandFilter('dispatched')"
+            [attr.aria-pressed]="bandFilter() === 'dispatched'"
+            [attr.aria-label]="'coord.filterDispatched' | rdTranslate"
+          >
+            {{ 'coord.filterDispatched' | rdTranslate }} {{ counts().dispatched }}
+          </button>
+          <button
+            type="button"
+            class="filter-chip sec-chip"
+            data-testid="filter-completed"
+            [attr.data-count]="counts().completed"
+            [class.on]="bandFilter() === 'completed'"
+            (click)="setBandFilter('completed')"
+            [attr.aria-pressed]="bandFilter() === 'completed'"
+            [attr.aria-label]="'coord.filterCompleted' | rdTranslate"
+          >
+            {{ 'coord.filterCompleted' | rdTranslate }} {{ counts().completed }}
+          </button>
+        </div>
+      </details>
     </section>
 
     <!-- CENTRE COLUMN: TALLER MAP + COMPACT AI STEPPER -->
@@ -369,24 +372,6 @@
         </div>
       </div>
 
-      <!-- Compact 5-Step Horizontal AI Stepper Under Map -->
-      @if (selectedRequest(); as sreq) {
-        <div class="steps-line" data-testid="steps-line">
-          <span class="steps-badge" [class.gemini]="stepsSummary(sreq).gemini">{{ stepsSummary(sreq).text }}</span>
-          <button type="button" class="steps-toggle" data-testid="steps-toggle" [attr.aria-expanded]="stepsOpen()" (click)="stepsOpen.set(!stepsOpen())">{{ (stepsOpen() ? 'steps.hide' : 'steps.see') | rdTranslate }}</button>
-          @if (!stepsOpen()) { <button type="button" class="steps-toggle" (click)="openTraceDrawer()">{{ 'ux.viewTrace' | rdTranslate }}</button> }
-        </div>
-      }
-      @if (stepsOpen() || !selectedRequest()) {
-      <app-ai-stepper
-        [request]="selectedRequest()"
-        [activeProposal]="activeProposal()"
-        [runBadge]="selectedRequest() ? aiSourceText(selectedRequest()!) : ('coord.aiOffline' | rdTranslate)"
-        [isAnalysing]="selectedRequest() ? isAnalysing(selectedRequest()!) : false"
-        (openStepDetail)="openStepDetailDialog($event)"
-        (howDecided)="openTraceDrawer()"
-      />
-      }
     </section>
 
     <!-- RIGHT COLUMN: DECISION PANEL -->
@@ -418,6 +403,26 @@
             </p>
           </div>
 
+          <div class="case-steps">
+          <!-- Compact 5-Step Horizontal AI Stepper Under Map -->
+          @if (selectedRequest(); as sreq) {
+            <div class="steps-line" data-testid="steps-line">
+              <span class="steps-badge" [class.gemini]="stepsSummary(sreq).gemini">{{ stepsSummary(sreq).text }}</span>
+              <button type="button" class="steps-toggle" (click)="openTraceDrawer()">{{ 'ux.viewTrace' | rdTranslate }}</button>
+            </div>
+          }
+          <app-ai-stepper
+            [request]="selectedRequest()"
+            [activeProposal]="activeProposal()"
+            [runBadge]="selectedRequest() ? aiSourceText(selectedRequest()!) : ('coord.aiOffline' | rdTranslate)"
+            [isAnalysing]="selectedRequest() ? isAnalysing(selectedRequest()!) : false"
+            (openStepDetail)="openStepDetailDialog($event)"
+            (howDecided)="openTraceDrawer()"
+          />
+          </div>
+
+          <details class="show-report">
+            <summary>{{ 'queue.showReport' | rdTranslate }}</summary>
           <!-- 2. Original Report alongside AI English -->
           <div class="report-comparison-box" data-testid="report-pair">
             <div class="rep-side rep-orig">
@@ -446,6 +451,8 @@
               <p class="rep-text ai-english" data-testid="ai-english-full">“{{ getTranslationText(req) }}”</p>
             </div>
           </div>
+
+          </details>
 
           <!-- 3. Down arrow and 2x2 Field Grid -->
           <div class="field-grid-arrow" aria-hidden="true">↓</div>
@@ -494,6 +501,7 @@
                   <p class="team-why-reason depth-line" data-testid="depth-why">{{ dl }}</p>
                 }
                 <p class="team-why-reason" data-testid="team-why">{{ teamWhy(prop) }}</p>
+                <button type="button" class="why-link" (click)="openWhyTeamModal()">{{ 'why.title' | rdTranslate }} ›</button>
                 <p class="straight-line-note">{{ 'coord.straightLine' | rdTranslate }}</p>
               </div>
 
@@ -633,6 +641,16 @@
             <div class="footer-buttons-row">
               <button
                 type="button"
+                class="btn-approve"
+                [disabled]="needsDupReview(req) || offline() || approving() || hoaxBlocked(req) || waitingForReading(req)"
+                [attr.title]="waitingForReading(req) ? ('flow.readingReport' | rdTranslate) : null"
+                (click)="approveMatch(prop)"
+              >
+                ✓ {{ 'coord.approve' | rdTranslate }} <kbd>A</kbd>
+              </button>
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" [attr.title]="'batch.shortcuts' | rdTranslate" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
+              <button
+                type="button"
                 class="btn-quiet btn-reject"
                 (click)="rejectOpen.set(!rejectOpen()); changeOpen.set(false); openRejectModal(prop)"
               >
@@ -650,17 +668,7 @@
               @if (capacityShort(prop); as cap) {
                 <p class="cap-warn" role="note" data-testid="capacity-warning">⚠ {{ 'coord.capacityShort' | rdTranslate:{ left: cap.left, need: cap.need } }}</p>
               }
-              <button
-                type="button"
-                class="btn-approve"
-                [disabled]="needsDupReview(req) || offline() || approving() || hoaxBlocked(req) || waitingForReading(req)"
-                [attr.title]="waitingForReading(req) ? ('flow.readingReport' | rdTranslate) : null"
-                (click)="approveMatch(prop)"
-              >
-                ✓ {{ 'coord.approve' | rdTranslate }} <kbd>A</kbd>
-              </button>
               <button type="button" class="btn-sec btn-help" data-testid="help-btn" (click)="helpOpen.set(true)" [attr.aria-label]="'keys.title' | rdTranslate">?</button>
-              <button type="button" class="btn-sec btn-next" data-testid="next-case" [attr.title]="'batch.shortcuts' | rdTranslate" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
             </div>
           } @else {
             <div class="footer-buttons-row">

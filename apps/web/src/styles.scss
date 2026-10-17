@@ -276,3 +276,47 @@ app-public-layout ion-item, app-public-layout ion-label {
 .cmd section.live-demo .live-own[open]{flex:1 1 100%;margin-left:0}
 /* Step names on one line */
 .cmd .step-node .node-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:11.5px}
+
+/* g5: Command layout per command-final mockup — queue | case | map */
+.cmd .coordinator-grid{grid-template-columns:260px minmax(0,1fr) minmax(320px,35%)}
+.cmd .coordinator-grid>.queue-col{order:1}
+.cmd .coordinator-grid>aside.decision-panel{order:2}
+.cmd .coordinator-grid>.map-stepper-col{order:3}
+.cmd .map-stepper-col .map-card-wrapper{min-height:calc(100vh - 190px);height:100%}
+.cmd .slim-stats-bar .stats-left{display:none}
+.cmd .slim-stats-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.cmd .slim-stats-bar section.live-demo{margin:0 0 0 auto;padding:4px 8px;border:0;background:transparent;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cmd .slim-stats-bar section.live-demo .live-demo-problem{display:none}
+.cmd .slim-stats-bar section.live-demo .live-demo-top{display:contents}
+.cmd .slim-stats-bar details.live-own{position:relative}
+.cmd .slim-stats-bar details.live-own[open]>:not(summary){position:relative}
+.cmd .slim-stats-bar details.live-own[open]{position:absolute;right:16px;top:100%;z-index:40;width:360px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
+.cmd .live-own .sample-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.cmd .queue-col details.full-queue{padding:8px 12px;border-top:1px solid var(--border)}
+.cmd .queue-col details.full-queue>summary{cursor:pointer;color:var(--brand);font-weight:600;font-size:13px;list-style:none}
+.cmd .queue-col details.full-queue[open]>summary{margin-bottom:8px}
+.cmd .queue-col .case-card-compact .card-need-text,.cmd .queue-col .case-card-compact .card-meta-text{font-size:12px}
+.cmd aside.decision-panel .dec-place-title{font-size:26px;line-height:1.2}
+.cmd aside.decision-panel .case-steps{margin:12px 0}
+.cmd aside.decision-panel .case-steps app-ai-stepper{display:block}
+.cmd aside.decision-panel .field-grid-arrow,.cmd aside.decision-panel .field-2x2-grid,.cmd aside.decision-panel .why-mini-table-wrap,.cmd aside.decision-panel .block-subheading,.cmd aside.decision-panel .straight-line-note,.cmd aside.decision-panel .you-decide-msg{display:none}
+.cmd aside.decision-panel .block-kicker::after{content:none}
+.cmd .why-link{background:none;border:0;padding:0;color:var(--brand);font-weight:600;cursor:pointer;font-size:13px}
+.cmd details.show-report{margin:10px 0}
+.cmd details.show-report>summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--muted)}
+.cmd footer.decision-pinned-footer .footer-buttons-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-approve{flex:1 1 260px;min-height:56px;font-size:18px;font-weight:800;background:var(--brand);color:var(--on-brand)}
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-next{min-height:56px}
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-reject,.cmd footer.decision-pinned-footer .footer-buttons-row .btn-change,.cmd footer.decision-pinned-footer .footer-buttons-row .btn-help{min-height:34px;font-size:13px;padding:4px 10px}
+.cmd footer.decision-pinned-footer .footer-buttons-row .cap-warn{flex-basis:100%;order:9}
+@media (max-width:1280px){
+  .cmd .coordinator-grid,.cmd .coordinator-grid:has(.map-stepper-col:not(.map-open)){grid-template-columns:240px minmax(0,1fr) auto}
+  .cmd .coordinator-grid:has(.map-stepper-col.map-open){grid-template-columns:240px minmax(0,1fr) 360px}
+}
+
+.cmd footer.decision-pinned-footer .footer-buttons-row>button{flex:0 0 auto;width:auto}
+.cmd footer.decision-pinned-footer .footer-buttons-row>button.btn-approve{flex:1 1 240px}
+.cmd aside.decision-panel .case-steps .steps-line{display:none}
+.cmd aside.decision-panel footer.decision-pinned-footer div.footer-buttons-row{display:flex !important;flex-wrap:nowrap;align-items:stretch}
+.cmd aside.decision-panel footer.decision-pinned-footer div.footer-buttons-row>button{grid-column:auto !important;flex:0 0 auto !important;width:auto !important}
+.cmd aside.decision-panel footer.decision-pinned-footer div.footer-buttons-row>button.btn-approve{flex:1 1 auto !important}

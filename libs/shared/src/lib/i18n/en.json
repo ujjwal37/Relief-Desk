@@ -164,7 +164,9 @@
     "tip": "Tip: press A to send the suggested team, N to skip to the next case.",
     "away": "~{m} min away",
     "seats": "{n} seats",
-    "offline": "You are offline. Approvals wait until the connection is back."
+    "offline": "You are offline. Approvals wait until the connection is back.",
+    "viewFull": "View full queue",
+    "showReport": "Show report"
   },
   "alerts": {
     "title": "Alerts",
