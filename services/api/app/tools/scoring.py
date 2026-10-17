@@ -63,6 +63,12 @@ _WINDOW_WATER = re.compile(
     r"\u0916\u093f\u0921\u093c\u0915\u0940|\u0916\u093f\u0921\u0915\u0940|\u092a\u093e\u0928\u0940 \u092c\u0922\u093c",
     re.I,
 )
+# "Everything below is under water" while people are up on a roof.
+_SUBMERGED_BELOW = re.compile(
+    r"submerged|under ?water|everything (?:below|downstairs) (?:is )?(?:flooded|gone)|ground floor (?:is )?(?:flooded|gone)|"
+    r"\u0921\u0942\u092c|doob gaya|mungi|\u0d2e\u0d41\u0d19\u0d4d\u0d19\u0d3f",
+    re.I,
+)
 _BOAT_RESCUE = re.compile(
     r"need(?:s|ed)? a (?:rescue )?boat|send (?:a |the )?(?:rescue )?boat|boat rescue|"
     r"rescue boat|naav bhej|nauka|boat (?:bhej|chahiye)|"
@@ -114,6 +120,9 @@ class ScoringEngine:
             return "urgent", f"{who} {where}"
         roofed = bool(_ROOF.search(text))
         window_or_rising = bool(_WINDOW_WATER.search(text)) or req.hazard == HazardType.WATER_RISING
+        submerged = bool(_SUBMERGED_BELOW.search(text))
+        if roofed and submerged and (req.people_count or 0) >= 1:
+            return "urgent", "people stranded on a roof with everything below under water"
         if roofed and window_or_rising:
             return "urgent", "adults stranded on a roof or upper floor with water at window level or rising"
         if _BOAT_RESCUE.search(text) and (
