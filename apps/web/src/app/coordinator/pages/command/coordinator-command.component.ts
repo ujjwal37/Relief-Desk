@@ -391,7 +391,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.langService.currentLang();
     const req = this.selectedRequest();
     if (req && inKuttanad(req.lat, req.lng)) {
-      const ward = this.getWardText(req);
+      const names: Record<string, string> = { ward_1: 'Kainakary', ward_2: 'Champakulam', ward_3: 'Nedumudi' };
+      const ward = (req.ward_id && names[req.ward_id]) || this.getWardText(req);
       return ward && ward !== '—' ? `${ward}, Kuttanad · Alappuzha` : 'Kuttanad · Alappuzha';
     }
     return req?.place_text ? req.place_text : 'Kuttanad · Alappuzha';
