@@ -25,9 +25,16 @@ export interface LiveEvent {
   tier?: string;
   score?: number;
   team?: string;
+  received?: number;
+  joined?: number;
+  flagged?: number;
+  critical?: number;
+  queue_position?: number;
+  critical_id?: string | null;
+  active_id?: string | null;
 }
 
-const NAMES = ['case.created', 'case.merged', 'case.updated', 'dispatch.created', 'team.updated', 'alert.created', 'heartbeat', 'demo.surge', 'pipeline.step'];
+const NAMES = ['case.created', 'case.merged', 'case.updated', 'dispatch.created', 'team.updated', 'alert.created', 'heartbeat', 'demo.surge', 'demo.progress', 'pipeline.step'];
 
 /** 1s, 2s, 4s… capped at 15s. */
 export function backoffMs(attempt: number): number {
@@ -81,7 +88,10 @@ export class LiveEventsService implements OnDestroy {
   private deskSub?: Subscription;
 
   constructor() {
-    this.deskSub = this.kinds.subscribe((kind) => this.desk.apply(kind));
+    // A reporter's status stream must not pull coordinator-only lists (they answer 401).
+    this.deskSub = this.kinds.subscribe((kind) => {
+      if (this.mode !== 'report') this.desk.apply(kind);
+    });
   }
 
   /** Coordinator shell. Falls back to a 5s refresh when the stream is down. */

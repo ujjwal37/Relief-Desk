@@ -775,8 +775,8 @@ incidents:
   hazard: water_rising
   urgency_band: critical
   reported_at: '2026-10-12T07:15:00Z'
-  description: Rising water reaching second floor of residential house near Nedumudi Boat Jetty. 3 children
-    and 2 elderly family members trapped on terrace.
+  description: Water up to the first floor of a house near Nedumudi Boat Jetty. 8 people, including 3 children
+    and 2 elderly, trapped on the terrace.
   sample_reports:
   - lang: hi
     text: नेदुमुडी Boat Jetty के पास पानी पहली मंजिल तक आ गया है, छत पर 8 लोग फंसे हैं जिनमें 3 बच्चे

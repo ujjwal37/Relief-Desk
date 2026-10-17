@@ -24,7 +24,11 @@ export class CoordinatorLoginComponent {
   constructor() {
     const forced = this.route.snapshot.queryParamMap.get('demo') === '1';
     this.api.getHealth().subscribe({
-      next: (h) => this.demoMode.set(forced || !!h?.demo_mode),
+      next: (h) => {
+        const on = forced || !!h?.demo_mode;
+        this.demoMode.set(on);
+        if (!on) this.demoFailed.set(true);
+      },
       error: () => this.demoMode.set(true),
     });
   }

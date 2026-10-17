@@ -17,7 +17,7 @@ describe('AgentBadgeComponent', () => {
 
     fixture.componentRef.setInput('source', 'fallback');
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Offline fallback');
+    expect(fixture.nativeElement.textContent).toContain('Gemini unavailable, built-in rules used');
     expect(fixture.nativeElement.querySelector('.fallback')).not.toBeNull();
 
     fixture.componentRef.setInput('source', 'replay');

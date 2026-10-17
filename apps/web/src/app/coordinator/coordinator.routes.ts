@@ -23,6 +23,10 @@ export const COORDINATOR_ROUTES: Routes = [
         pathMatch: 'full',
       },
       {
+        path: 'situation',
+        loadComponent: () => import('./pages/situation/coordinator-situation.component').then(m => m.CoordinatorSituationComponent),
+      },
+      {
         path: 'overview',
         loadComponent: () => import('./pages/overview/coordinator-overview.component').then(m => m.CoordinatorOverviewComponent),
       },

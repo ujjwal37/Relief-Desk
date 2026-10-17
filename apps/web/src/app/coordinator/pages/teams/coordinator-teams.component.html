@@ -1,6 +1,7 @@
 <section class="teams">
   <header class="head">
     <h1>{{ 'coord.teams' | rdTranslate }}</h1>
+    <p class="head-sub">{{ 'teams.sub' | rdTranslate:{ a: counts().free, b: counts().busy } }}</p>
   </header>
 
   <div class="strip" role="group" [attr.aria-label]="'coord.teamStrip' | rdTranslate">
@@ -22,8 +23,8 @@
   @if (notice()) { <p class="note" role="status">{{ notice() }}</p> }
   <ul class="list">
     @for (team of filtered(); track team.id) {
-      <li class="card" [class.open]="openId() === team.id" data-testid="team-card">
-        <button type="button" class="row" (click)="toggle(team.id); $event.stopPropagation()" (mouseenter)="highlightId.set(team.id)" (mouseleave)="highlightId.set(null)" [attr.aria-expanded]="openId() === team.id" [attr.aria-label]="team.name">
+      <li class="card" [class.open]="openId() === team.id" [attr.data-selected]="openId() === team.id" data-testid="team-card">
+        <button type="button" class="row" data-testid="team-row" (click)="toggle(team.id)" (mouseenter)="highlightId.set(team.id)" (mouseleave)="highlightId.set(null)" [attr.aria-expanded]="openId() === team.id" [attr.aria-selected]="openId() === team.id" [attr.aria-label]="team.name">
           <span class="icon" [style.color]="fill(team.kind)" aria-hidden="true">
             @switch (team.kind) {
               @case ('medical') {
@@ -47,7 +48,7 @@
           <span class="chev" aria-hidden="true">{{ openId() === team.id ? '▾' : '▸' }}</span>
         </button>
         @if (openId() === team.id) {
-          <div class="detail">
+          <div class="detail" data-testid="team-detail">
             <h3>{{ 'coord.teamSize' | rdTranslate }}</h3>
             <p>{{ seats(team) }}</p>
             <p>{{ canDo(team) }}</p>
@@ -77,7 +78,7 @@
         }
       </li>
     } @empty {
-      <li class="empty">{{ 'coord.teamsEmpty' | rdTranslate }}</li>
+      <li class="empty empty-card"><p>{{ 'coord.teamsEmpty' | rdTranslate }}</p><a class="head-action" routerLink="/coordinator/command">{{ 'teams.goCommand' | rdTranslate }}</a></li>
     }
   </ul>
 </section>

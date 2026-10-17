@@ -28,7 +28,7 @@
 
     <div class="kv">
       <span class="k">{{ 'confirm.people' | rdTranslate }}</span>
-      <span class="v" *ngIf="editing() !== 'people'">{{ card.people_count ?? 0 }}</span>
+      <span class="v" *ngIf="editing() !== 'people'">{{ card.people_count ?? ('people.notStated' | rdTranslate) }}</span>
       <input *ngIf="editing() === 'people'" class="edit-control people-input" type="number" min="0" max="99" [ngModel]="card.people_count" (ngModelChange)="setPeople($event)" [attr.aria-label]="'confirm.people' | rdTranslate" />
       <button type="button" class="edit-btn" (click)="startEdit('people')">{{ editing() === 'people' ? ('confirm.done' | rdTranslate) : ('confirm.edit' | rdTranslate) }}</button>
     </div>
@@ -70,6 +70,8 @@
       <span class="knob"></span>
     </button>
   </div>
+
+  <p class="ai-progress" *ngIf="busy" data-testid="ai-analysing" role="status">{{ 'flow.readingReport' | rdTranslate }}</p>
 
   <div class="sticky-bar" *ngIf="showActions">
     <button type="button" class="send-now" [disabled]="busy" (click)="onSend()">

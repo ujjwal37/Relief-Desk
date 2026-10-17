@@ -23,7 +23,7 @@ export class ScenarioService {
       // ignore private-mode storage
     }
     this.api.getScenarios().subscribe({
-      next: (rows) => this.scenarios.set(rows || []),
+      next: (rows) => this.scenarios.set((rows || []).filter((row) => row.id !== 'dog_attack')),
       error: () => this.scenarios.set([]),
     });
   }

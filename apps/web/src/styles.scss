@@ -117,3 +117,484 @@ app-public-layout ion-item, app-public-layout ion-label {
 
 /* Google Maps labels are outside Angular's component-scoped styles. */
 .rd-distance-pill { background: rgba(15, 23, 42, .88); color: #fff; padding: 4px 10px; border-radius: 999px; white-space: nowrap; box-shadow: 0 2px 6px #0002; }
+
+/* Step popups open above the How-it-decided drawer (z-index 1600). */
+.cdk-overlay-container { z-index: 2000; }
+
+/* Command page header + shared interaction states (moved from the Command stylesheet to keep it under budget). */
+.cmd {
+/* Toast */
+.toast {
+  flex: none;
+  z-index: 20;
+  width: 100%;
+  background: var(--banner-ok, #14532d);
+  color: #fff;
+  padding: 8px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+
+  &.ok { background: var(--banner-ok, #14532d); }
+  &.warn { background: var(--amber, #a35c00); color: #fff; }
+
+  button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .toast-undo {
+    text-decoration: underline;
+    font-weight: 700;
+  }
+}
+
+/* Slim Stats Line */
+.slim-stats-bar {
+  flex: none;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--surface-2, #101c16);
+  border-bottom: 1px solid var(--border, #1a2f24);
+  font-size: 12.5px;
+  color: var(--muted, #94a3b8);
+
+  .stats-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stat-pill {
+    font-weight: 700;
+    color: var(--text, #f1f5f9);
+  }
+
+  .stat-sep {
+    color: var(--border, #22382c);
+  }
+
+  .stat-divider {
+    color: var(--border, #22382c);
+    margin: 0 4px;
+  }
+
+  .stat-chip-btn {
+    border: 0;
+    background: transparent;
+    color: var(--muted, #94a3b8);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 120ms ease;
+
+    strong {
+      color: var(--text, #f1f5f9);
+    }
+
+    &:hover, &.active {
+      color: var(--brand, #34d399);
+      strong { color: var(--brand, #34d399); }
+    }
+  }
+
+  .reset-note {
+    font-size: 11.5px;
+    color: var(--brand, #34d399);
+  }
+}
+
+.filter-chip:focus-visible,
+.sample-btn:focus-visible,
+.live-demo-go:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+}
+/* Consistent interaction states across coordinator pages. */
+.coordinator-shell button:not(:disabled), .coordinator-shell [role="button"], .coordinator-shell a { transition: background-color .15s var(--ease), border-color .15s var(--ease), color .15s var(--ease), box-shadow .15s var(--ease); }
+.coordinator-shell button:focus-visible, .coordinator-shell a:focus-visible, .coordinator-shell [tabindex]:focus-visible, .coordinator-shell summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.coordinator-shell button:disabled { cursor: not-allowed; opacity: .55; }
+
+.cmd .batch-counters{display:flex;gap:var(--s3);margin-right:var(--s3);font-variant-numeric:tabular-nums}
+.cmd .batch-counters span{padding:2px 8px;border-radius:var(--r1);background:var(--surface);border:1px solid var(--border);color:var(--text-2)}
+.cmd .batch-counters b{color:var(--text);font-weight:600}
+.cmd kbd{font:600 11px/1 ui-monospace,monospace;padding:2px 5px;border-radius:4px;border:1px solid currentColor;opacity:.75;margin-left:4px}
+.cmd .shortcut-hint{flex:1 1 100%;margin:4px 0 0;font-size:12px;color:var(--text-2);text-align:right}
+
+/* Command triage (group 2) */
+.cmd .new-pill{position:sticky;top:0;z-index:3;align-self:center;margin:4px auto;display:block;border:0;border-radius:999px;padding:4px 12px;font:600 12px/1.4 inherit;background:var(--brand);color:var(--on-brand);cursor:pointer;box-shadow:var(--e2)}
+.cmd .steps-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r3,12px);background:var(--card)}
+.cmd .steps-badge{font-size:13px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums}
+.cmd .steps-badge.gemini{color:var(--gemini,#6d28d9)}
+.cmd .steps-toggle{border:1px solid var(--border);background:transparent;color:var(--text);border-radius:var(--r1);padding:3px 10px;font:inherit;font-size:12px;cursor:pointer}
+.cmd .steps-toggle:first-of-type{margin-left:auto}
+.cmd .steps-toggle:hover{background:var(--brand-tint)}
+.cmd .key-tip{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:6px 10px;border-radius:var(--r2);background:var(--brand-tint);color:var(--text);font-size:12px}
+.cmd .key-tip button{margin-left:auto;border:0;background:transparent;color:var(--text);text-decoration:underline;cursor:pointer;font:inherit}
+.cmd .map-toggle{display:none}
+@media (max-width:1280px){
+  .cmd .map-toggle{display:inline-flex;align-self:flex-start;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:var(--r1);padding:4px 12px;font:inherit;font-size:12px;cursor:pointer}
+  .cmd .map-stepper-col:not(.map-open) .map-card-wrapper{display:none}
+}
+.cmd button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+.cmd footer.decision-pinned-footer .footer-buttons-row{grid-template-columns:auto auto 1fr auto}
+@media (max-width:1280px){.cmd .coordinator-grid:has(.map-stepper-col:not(.map-open)){grid-template-columns:300px 240px minmax(0,1fr)}}
+
+
+.cmd .offline-banner{margin:0;padding:8px 16px;background:var(--sev-high-t);color:var(--text);font-weight:600;font-size:13px}
+.cmd .dec-depth{margin:6px 0 0;font-size:13px;color:var(--gemini,#6d28d9)}
+.cmd .card-score{margin-left:6px;font-size:11px;font-weight:600;opacity:.8;font-variant-numeric:tabular-nums}
+
+.cmd .help-scrim{position:fixed;inset:0;background:var(--scrim);z-index:60}
+.cmd .help-sheet{position:fixed;z-index:61;top:50%;left:50%;transform:translate(-50%,-50%);width:min(420px,92vw);background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--r4,16px);padding:20px 22px;box-shadow:var(--e3)}
+.cmd .help-sheet h2{margin:0 0 12px;font-size:16px;font-weight:600}
+.cmd .help-sheet dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0 0 16px;font-size:14px}
+.cmd .help-sheet dt{font-variant-numeric:tabular-nums}.cmd .help-sheet dd{margin:0;color:var(--text-2)}
+.cmd .help-close{border:0;border-radius:var(--r2);padding:8px 16px;background:var(--brand);color:var(--on-brand);font:inherit;font-weight:600;cursor:pointer}
+.cmd .btn-help{min-width:32px}
+
+/* Compact live-demo strip */
+.cmd section.live-demo{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;padding:6px 16px;margin:0;border-radius:0;border-left:0;border-right:0;border-top:0;box-shadow:none}
+.cmd section.live-demo .live-demo-top{display:contents}
+.cmd section.live-demo .live-demo-problem{display:none}
+.cmd section.live-demo .live-demo-progress{order:2;margin:0;font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.cmd section.live-demo .live-demo-go{order:3;padding:4px 12px;font-size:12px;min-height:0}
+.cmd section.live-demo .live-demo-note{order:4;margin:0;font-size:11px}
+.cmd section.live-demo .live-own{order:5;margin-left:auto}
+.cmd section.live-demo .live-own[open]{flex:1 1 100%;margin-left:0}
+/* Step names on one line */
+.cmd .step-node .node-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:11.5px}
+
+/* g5: Command layout per command-final mockup — queue | case | map */
+.cmd .coordinator-grid{grid-template-columns:260px minmax(0,1fr) minmax(320px,35%)}
+.cmd .coordinator-grid>.queue-col{order:1}
+.cmd .coordinator-grid>aside.decision-panel{order:2}
+.cmd .coordinator-grid>.map-stepper-col{order:3}
+.cmd .map-stepper-col .map-card-wrapper{min-height:calc(100vh - 190px);height:100%}
+.cmd .slim-stats-bar .stats-left{display:none}
+.cmd .slim-stats-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.cmd .slim-stats-bar section.live-demo{margin:0 0 0 auto;padding:4px 8px;border:0;background:transparent;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cmd .slim-stats-bar section.live-demo .live-demo-problem{display:none}
+.cmd .slim-stats-bar section.live-demo .live-demo-top{display:contents}
+.cmd .slim-stats-bar details.live-own{position:relative}
+.cmd .slim-stats-bar details.live-own[open]>:not(summary){position:relative}
+.cmd .slim-stats-bar details.live-own[open]{position:absolute;right:16px;top:100%;z-index:40;width:360px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
+.cmd .live-own .sample-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.cmd .queue-col details.full-queue{padding:8px 12px;border-top:1px solid var(--border)}
+.cmd .queue-col details.full-queue>summary{cursor:pointer;color:var(--brand);font-weight:600;font-size:13px;list-style:none}
+.cmd .queue-col details.full-queue[open]>summary{margin-bottom:8px}
+.cmd .queue-col .case-card-compact .card-need-text,.cmd .queue-col .case-card-compact .card-meta-text{font-size:12px}
+.cmd aside.decision-panel .dec-place-title{font-size:26px;line-height:1.2}
+.cmd aside.decision-panel .case-steps{margin:12px 0}
+.cmd aside.decision-panel .case-steps app-ai-stepper{display:block}
+.cmd aside.decision-panel .field-grid-arrow,.cmd aside.decision-panel .field-2x2-grid,.cmd aside.decision-panel .why-mini-table-wrap,.cmd aside.decision-panel .block-subheading,.cmd aside.decision-panel .straight-line-note,.cmd aside.decision-panel .you-decide-msg{display:none}
+.cmd aside.decision-panel .block-kicker::after{content:none}
+.cmd .why-link{background:none;border:0;padding:0;color:var(--brand);font-weight:600;cursor:pointer;font-size:13px}
+.cmd details.show-report{margin:10px 0}
+.cmd details.show-report>summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--muted)}
+.cmd footer.decision-pinned-footer .footer-buttons-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-approve{flex:1 1 260px;min-height:56px;font-size:18px;font-weight:800;background:var(--brand);color:var(--on-brand)}
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-next{min-height:56px}
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-reject,.cmd footer.decision-pinned-footer .footer-buttons-row .btn-change,.cmd footer.decision-pinned-footer .footer-buttons-row .btn-help{min-height:34px;font-size:13px;padding:4px 10px}
+.cmd footer.decision-pinned-footer .footer-buttons-row .cap-warn{flex-basis:100%;order:9}
+@media (max-width:1280px){
+  .cmd .coordinator-grid,.cmd .coordinator-grid:has(.map-stepper-col:not(.map-open)){grid-template-columns:240px minmax(0,1fr) auto}
+  .cmd .coordinator-grid:has(.map-stepper-col.map-open){grid-template-columns:240px minmax(0,1fr) 360px}
+}
+
+.cmd footer.decision-pinned-footer .footer-buttons-row>button{flex:0 0 auto;width:auto}
+.cmd footer.decision-pinned-footer .footer-buttons-row>button.btn-approve{flex:1 1 240px}
+.cmd aside.decision-panel .case-steps .steps-line{display:none}
+.cmd aside.decision-panel footer.decision-pinned-footer div.footer-buttons-row{display:flex !important;flex-wrap:nowrap;align-items:stretch}
+.cmd aside.decision-panel footer.decision-pinned-footer div.footer-buttons-row>button{grid-column:auto !important;flex:0 0 auto !important;width:auto !important}
+.cmd aside.decision-panel footer.decision-pinned-footer div.footer-buttons-row>button.btn-approve{flex:1 1 auto !important}
+
+/* g6: Command finish */
+body:has(.cmd) .top-strip{display:none}
+.cmd .slim-stats-bar{flex-wrap:nowrap;min-height:40px;padding:4px 16px}
+.cmd .slim-stats-bar .safety-inline{margin:0;font-size:12px;white-space:nowrap}
+.cmd .slim-stats-bar .safety-inline a{color:var(--muted);text-decoration:none}
+.cmd .slim-stats-bar section.live-demo{flex-wrap:nowrap}
+.cmd .slim-stats-bar section.live-demo .live-demo-progress,.cmd .slim-stats-bar section.live-demo .live-demo-note{margin:0;font-size:12px}
+.cmd .slim-stats-bar details.live-own:not([open])>summary{white-space:nowrap}
+.cmd .queue-col .case-card-compact .card-need-text,.cmd .queue-col .case-card-compact .merged-count-tag{display:none}
+.cmd .queue-col .case-card-compact .card-place-title{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cmd .queue-col .merged-chip-overlay{position:static;padding:0 10px 8px;margin-top:-6px}
+.cmd .queue-col .merged-chip-overlay button{min-height:0;padding:2px 8px;font-size:11px;border-radius:999px}
+.cmd .case-steps .step-node .node-title{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;text-align:center}
+.cmd .case-steps .step-node .node-result{white-space:normal !important;overflow:hidden;text-overflow:clip;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;text-align:center}
+.cmd .case-steps .step-node .node-indicator{width:36px;height:36px}
+.cmd .case-steps .step-node .indicator-icon svg{width:18px;height:18px}
+.cmd .case-steps .step-node{gap:3px}
+.cmd .case-steps .step-node .node-title{min-height:2.4em;font-size:12px}
+.cmd .slim-stats-bar section.live-demo{flex-direction:row}
+.cmd .slim-stats-bar details.live-own:not([open]){position:static}
+/* g7: Command polish */
+.cmd .slim-stats-bar details.live-own:not([open]){position:static;flex:0 0 auto}
+.cmd .slim-stats-bar details.live-own>summary{padding:0}
+.cmd aside.decision-panel .dec-place-title{font-size:22px;line-height:1.25}
+.cmd .queue-title-row{display:flex;flex-direction:column;align-items:flex-start;gap:0}
+.cmd .queue-title-row .scenario-visible{margin:0;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cmd .dec-title-row .map-toggle{display:none;flex:0 0 auto;min-height:28px;padding:0 10px;font-size:12px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer}
+@media (max-width:1280px){
+  .cmd .dec-title-row .map-toggle{display:inline-flex;align-items:center}
+  .cmd .coordinator-grid:has(.map-stepper-col:not(.map-open)){grid-template-columns:240px minmax(0,1fr) !important}
+  .cmd .coordinator-grid>.map-stepper-col:not(.map-open){display:none}
+  .cmd .coordinator-grid:has(.map-stepper-col.map-open){grid-template-columns:240px minmax(0,1fr) 380px !important}
+}
+.cmd .case-steps .step-node .node-title{word-break:normal !important;overflow-wrap:normal !important;hyphens:none;font-size:11.5px}
+.cmd .case-steps .step-node{min-width:0;flex:1 1 0}
+
+/* queue tabs */
+.cmd .queue-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;margin:8px 0 4px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border)}
+.cmd .queue-tabs .qtab{min-height:32px;border:0;border-radius:8px;background:transparent;color:var(--text-2,var(--muted));font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;padding:0 4px}
+.cmd .queue-tabs .qtab b{font-weight:800;margin-left:2px}
+.cmd .queue-tabs .qtab.on{background:var(--brand);color:var(--on-brand)}
+.cmd .queue-tabs .qtab:focus-visible{outline:2px solid var(--focus,#1b3c53);outline-offset:1px}
+
+/* round 6 */
+.cmd .slim-stats-bar .live-demo-go{min-height:38px;padding:0 18px;font-size:14px;font-weight:800;border-radius:10px;background:var(--brand);color:var(--on-brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 25%,transparent)}
+.cmd .slim-stats-bar .gem-calls{font-size:12px;font-weight:700;color:var(--gemini,#6d28d9);white-space:nowrap}
+.cmd .queue-title-row .scenario-visible{white-space:normal !important;overflow:visible !important;text-overflow:clip !important}
+.cmd .case-steps .step-node:last-child .node-result{-webkit-line-clamp:4 !important}
+.cmd .queue-tabs .qtab::first-letter{text-transform:uppercase}
+
+/* final: case title never clips; 3 lines max with room for each */
+.cmd aside.decision-panel .dec-title-row{align-items:flex-start}
+.cmd aside.decision-panel .dec-place-title{-webkit-line-clamp:3 !important;line-height:1.3 !important;padding-bottom:2px;overflow:hidden;font-size:20px !important}
+
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-approve{white-space:nowrap;min-height:48px !important;font-size:16px !important}
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-next,.cmd footer.decision-pinned-footer .footer-buttons-row .btn-reject,.cmd footer.decision-pinned-footer .footer-buttons-row .btn-change,.cmd footer.decision-pinned-footer .footer-buttons-row .btn-help{white-space:nowrap;min-height:48px !important}
+.cmd footer.decision-pinned-footer .footer-buttons-row .cap-warn{flex:1 1 100% !important;order:9}
+.cmd .queue-tabs .qtab{white-space:nowrap;font-size:12px;padding-inline:4px}
+.cmd footer.decision-pinned-footer .footer-buttons-row{display:flex !important;flex-wrap:wrap !important;align-items:stretch}
+.cmd .queue-tabs .qtab b{margin-left:3px}
+
+/* ===== Command layout: designer spec COMMAND_SPEC_LIGHT (17 Oct) ===== */
+.cmd .coordinator-grid{gap:12px !important;padding:0 16px 16px !important;height:calc(100dvh - 112px);min-height:0;align-items:stretch}
+@media (min-width:1440px){.cmd .coordinator-grid,.cmd .coordinator-grid:has(.map-stepper-col){grid-template-columns:360px minmax(540px,1fr) 440px !important}}
+@media (min-width:1200px) and (max-width:1439px){.cmd .coordinator-grid,.cmd .coordinator-grid:has(.map-stepper-col){grid-template-columns:320px minmax(540px,1fr) 360px !important}}
+@media (max-width:1199px){
+  .cmd .coordinator-grid,.cmd .coordinator-grid:has(.map-stepper-col),.cmd .coordinator-grid:has(.map-stepper-col.map-open){grid-template-columns:320px minmax(0,1fr) !important}
+  .cmd .coordinator-grid>.map-stepper-col{display:none}
+  .cmd .coordinator-grid>.map-stepper-col.map-open{display:block;position:fixed;top:112px;right:16px;bottom:16px;width:420px;z-index:60;box-shadow:var(--e3);border-radius:12px;background:var(--surface)}
+}
+@media (min-width:1200px){.cmd .map-toggle{display:none !important}}
+/* independent column scroll; sticky approve bar */
+.cmd .coordinator-grid>.queue-col,.cmd .coordinator-grid>aside.decision-panel,.cmd .coordinator-grid>.map-stepper-col{min-height:0;height:100%;overflow:auto}
+.cmd aside.decision-panel{display:flex;flex-direction:column}
+.cmd aside.decision-panel footer.decision-pinned-footer{position:sticky;bottom:0;z-index:5;background:var(--surface);margin-top:auto}
+.cmd .map-stepper-col .map-card-wrapper{min-height:0 !important;height:100% !important}
+/* segmented tabs */
+.cmd .queue-tabs{display:flex !important;gap:6px !important;padding:3px;width:100%;box-sizing:border-box;container-type:inline-size}
+.cmd .queue-tabs .qtab{flex:1 1 0 !important;min-width:0;height:36px;padding:0 8px !important;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font:600 13px var(--rd-font-family) !important;border-radius:8px;border:0;background:transparent;color:var(--text);cursor:pointer}
+.cmd .queue-tabs .qtab b{margin:0 !important;min-width:20px;height:18px;padding:0 5px;border-radius:9px;display:inline-grid;place-items:center;font:600 12px var(--rd-font-family);background:var(--surface-2);color:var(--text);box-sizing:border-box}
+.cmd .queue-tabs .qtab.on{background:var(--brand) !important;color:var(--on-brand) !important}
+.cmd .queue-tabs .qtab.on b{background:rgb(255 255 255 / 20%);color:#fff}
+.cmd .queue-tabs .ql-short{display:none}
+.cmd .queue-col:has(.queue-tabs){container-type:inline-size;container-name:queue}
+@container queue (max-width: 420px){.cmd .queue-tabs .ql-full{display:none}.cmd .queue-tabs .ql-short{display:inline}}
+/* queue cards */
+.cmd .queue-col .case-card-compact{padding:12px 14px !important;border-radius:10px !important;border:1px solid var(--border) !important;display:flex !important;flex-direction:column;gap:6px;background:var(--surface);transition:border-color .12s;transform:none !important}
+.cmd .queue-col .case-card-compact:hover{border-color:var(--border-2) !important}
+.cmd .queue-col .case-card-compact.sel{border-color:var(--brand) !important;box-shadow:inset 3px 0 0 var(--brand) !important;background:var(--brand-tint) !important}
+.cmd .queue-col .card-band-tag{font:600 12px var(--rd-font-family);height:22px;display:inline-flex;align-items:center;gap:4px;padding:0 8px;border-radius:6px}
+.cmd .queue-col .card-place-title{font:600 15px/1.35 var(--rd-font-family) !important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal !important}
+.cmd .queue-col .card-meta-text{font-size:13px !important;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cmd .queue-col .merged-count-tag{font:500 12px var(--rd-font-family);background:var(--brand-tint);color:var(--text);padding:2px 8px;border-radius:999px}
+.cmd .queue-col .scenario-visible{display:none}
+/* hoax card + header */
+.cmd .queue-col .case-card-compact:has(.hoax-chip){border:1.5px solid #b91c1c !important;background:#fef2f2 !important}
+.cmd .queue-col .case-card-compact:has(.hoax-chip) .card-band-tag,.cmd .queue-col .case-card-compact:has(.hoax-chip) .card-need-text{display:none}
+.cmd .queue-col .case-card-compact:has(.hoax-chip) .card-place-title{color:#57534e}
+.cmd .hoax-chip{display:block;font:700 12px var(--rd-font-family);color:#b91c1c;background:transparent;border:0;padding:0;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.cmd .hoax-chip::before{content:"\26A0  "}
+.cmd .hoax-head{flex-basis:100%;order:5;font-size:13px;border:1.5px solid #b91c1c;background:#fef2f2;border-radius:8px;padding:6px 10px}
+.cmd .dec-title-row:has(.hoax-head) .dec-band-tag,.cmd .dec-title-row:has(.hoax-head) .dec-score-number,.cmd aside.decision-panel:has(.hoax-head) .dec-score-number{display:none !important}
+.cmd .dec-title-row{flex-wrap:wrap}
+.cmd .hoax-actions .btn-dismiss-hoax{background:#b91c1c !important;color:#fff !important}
+/* case panel */
+.cmd aside.decision-panel{min-width:540px}
+.cmd aside.decision-panel .dec-place-title{font:600 22px/1.3 var(--rd-font-family) !important;-webkit-line-clamp:2 !important}
+.cmd .case-steps .steps-row,.cmd .case-steps .stepper-track{grid-template-columns:repeat(6,minmax(76px,1fr))}
+.cmd .step-node .node-title{font:600 13px var(--rd-font-family) !important;white-space:nowrap !important;overflow:hidden;text-overflow:ellipsis}
+.cmd .step-node .node-result{font-size:12px !important;display:-webkit-box;-webkit-line-clamp:2 !important;-webkit-box-orient:vertical;overflow:hidden}
+.cmd .queue-tabs .qtab{text-transform:capitalize}
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-help{min-width:40px;padding:0 10px !important}
+.cmd footer.decision-pinned-footer .footer-buttons-row>button{flex-shrink:1;min-width:0}
+.cmd footer.decision-pinned-footer .footer-buttons-row .btn-next,.cmd footer.decision-pinned-footer .footer-buttons-row .btn-reject,.cmd footer.decision-pinned-footer .footer-buttons-row .btn-change{padding:0 10px !important}
+/* No free team: reason + options (designer no-team.png) */
+.cmd .no-team-card{border:1.5px solid var(--sev-high);background:var(--sev-high-t);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.cmd .no-team-card h3{margin:0;font:700 16px var(--rd-font-family);color:var(--sev-high)}
+.cmd .no-team-card .nt-reason{margin:0;font-weight:600;color:var(--text)}
+.cmd .no-team-card .nt-stays,.cmd .no-team-card .nt-foot{margin:0;font-size:12px;color:var(--muted)}
+.cmd .no-team-card fieldset{border:0;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.cmd .no-team-card legend{font:600 12px var(--rd-font-family);color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.cmd .nt-opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer;font-size:13px;line-height:1.4}
+.cmd .nt-opt.on{border-color:var(--brand);box-shadow:inset 3px 0 0 var(--brand)}
+.cmd .nt-opt input{margin-top:2px;accent-color:var(--brand)}
+.cmd .no-team-card .nt-go{align-self:flex-start;min-height:44px;padding:0 18px;border-radius:10px;border:0;background:var(--brand);color:var(--on-brand);font:700 14px var(--rd-font-family);cursor:pointer}
+.cmd .no-team-card .nt-go:disabled{opacity:.5;cursor:default}
+.cmd aside.decision-panel:has(.btn-dismiss-hoax) .decision-block{display:none}
+.cmd aside.decision-panel .dec-place-title{max-height:calc(2 * 1.3em);overflow:hidden !important}
+
+/* Decision facts: depth + self-check, always visible on the case header */
+.cmd .dec-facts { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; margin:6px 0 2px; font-size:13px; }
+.cmd .dec-facts > div { display:flex; gap:6px; min-width:0; }
+.cmd .dec-facts dt { color:var(--muted); font-weight:600; flex:none; }
+.cmd .dec-facts dd { margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cmd .dec-facts dd.flag { color:#a35c00; font-weight:600; }
+.cmd .dec-depth { display:none; }
+
+/* Offline Kuttanad base map (lake, rivers, panchayat outlines) */
+.kb-water { fill:#cfe0ea; stroke:#a9c6d6; stroke-width:1; }
+.kb-river { fill:none; stroke:#a9c6d6; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; }
+.kb-ward { fill:#f1ece2; stroke:#c9bfae; stroke-width:1; stroke-dasharray:4 3; }
+.kb-wlabel { font:600 11px system-ui, sans-serif; fill:#7b7466; letter-spacing:.02em; pointer-events:none; }
+
+/* 1200-1439: action bar stays one row; ? is a 36px icon; room under the decision for the tip bar */
+@media (min-width:1200px) and (max-width:1439px) {
+  .cmd .decision-pinned-footer .footer-buttons-row { flex-wrap:nowrap !important; gap:8px !important; }
+  .cmd .decision-pinned-footer .footer-buttons-row > button { white-space:nowrap; min-width:0; }
+  .cmd .decision-pinned-footer .btn-help { width:36px !important; height:36px !important; min-width:36px !important; padding:0 !important; flex:none !important; border-radius:50% !important; }
+  .cmd .decision-pinned-footer .btn-reject, .cmd .decision-pinned-footer .btn-change { padding-inline:10px !important; }
+}
+.cmd .decision-scroll-content { padding-bottom:132px !important; }
+
+/* Designer r2 N-P1-4: time on row 1 right, selected card = 3px primary left border + tint; legend top-left, zoom bottom-right */
+.cmd .queue-col .card-line-top, .cmd .queue-col .case-card-compact > div:first-child { display:flex; align-items:center; gap:6px; }
+.cmd .queue-col .card-age { margin-left:auto; font-size:12px; color:var(--muted); white-space:nowrap; }
+.cmd .queue-col .case-card-compact.selected, .cmd .queue-col .case-card-compact.active {
+  border:1px solid var(--border) !important; border-left:3px solid var(--brand, #1b3c53) !important;
+  background:color-mix(in srgb, var(--brand, #1b3c53) 6%, var(--surface)) !important; box-shadow:none !important; }
+.cmd .map-legend-overlay { left:12px !important; right:auto !important; top:12px !important; }
+.rd-zoom { top:auto !important; bottom:40px !important; right:10px !important; }
+
+/* ===== design r2 (P0-1..5, P1 layout). Kept last so it wins over earlier breakpoint rules. ===== */
+/* P0-1: 1200-1439 keeps the map column visible; queue 320 / detail >=540 / map 360. */
+@media (min-width: 1200px) and (max-width: 1439px) {
+  html body .cmd .coordinator-grid,
+  html body .cmd .coordinator-grid:has(.map-stepper-col:not(.map-open)) { grid-template-columns: 320px minmax(540px, 1fr) 360px !important; }
+  html body .cmd .map-stepper-col,
+  html body .cmd .map-stepper-col:not(.map-open) { display: flex !important; }
+  html body .cmd .map-stepper-col .map-card-wrapper,
+  html body .cmd .map-stepper-col:not(.map-open) .map-card-wrapper { display: block !important; flex: 1 1 auto; min-height: 420px !important; }
+  html body .cmd .map-toggle { display: none !important; }
+}
+/* P0-2: queue tabs never clip; pills never shrink; short labels for long languages. */
+.cmd .queue-tabs { display: flex; gap: 4px; min-width: 0; }
+.cmd .queue-tabs .qtab { display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; white-space: nowrap; }
+.cmd .queue-tabs .qtab .ql-full, .cmd .queue-tabs .qtab .ql-short { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cmd .queue-tabs .seg-pill { flex: none; }
+:lang(ml) .cmd .queue-tabs .ql-full, :lang(hi-Latn) .cmd .queue-tabs .ql-full { display: none; }
+:lang(ml) .cmd .queue-tabs .ql-short, :lang(hi-Latn) .cmd .queue-tabs .ql-short { display: inline; }
+/* P0-3: step labels wrap on two lines with a real gap instead of running together. */
+app-ai-stepper .stepper-nodes, app-ai-stepper .nodes { column-gap: 8px; }
+app-ai-stepper .step-node { min-width: 0; }
+app-ai-stepper .node-title, app-ai-stepper .node-result { white-space: normal !important; overflow-wrap: anywhere; word-break: break-word; hyphens: auto; font-size: 11.5px; max-width: 100%; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* P0-4: action bar never wraps; Reject/Change go icon-only when space is short. */
+.cmd .footer-buttons-row { flex-wrap: nowrap !important; min-width: 0; gap: 8px; }
+.cmd .footer-buttons-row > button { white-space: nowrap; flex: none; }
+.cmd .footer-buttons-row .btn-approve { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1359px) {
+  .cmd .footer-buttons-row kbd { display: none; }
+  .cmd .footer-buttons-row .btn-reject .btn-label, .cmd .footer-buttons-row .btn-change .btn-label { display: none; }
+}
+:lang(ml) .cmd .footer-buttons-row .btn-reject .btn-label, :lang(hi-Latn) .cmd .footer-buttons-row .btn-reject .btn-label,
+:lang(ml) .cmd .footer-buttons-row .btn-change .btn-label, :lang(hi-Latn) .cmd .footer-buttons-row .btn-change .btn-label { display: none; }
+:lang(ml) .cmd .footer-buttons-row kbd, :lang(hi-Latn) .cmd .footer-buttons-row kbd { display: none; }
+.cmd .btn-arrived { white-space: nowrap; min-width: 128px; }
+/* P0-5: phone nav is logo · Ask · ☰ (no duplicate More). */
+.top-nav .more-btn .burger { display: none; }
+.menu .item.m-only { display: none; }
+@media (max-width: 480px) {
+  .top-nav .tabs > a, .top-nav .tabs .more-tab, .top-nav .search, .top-nav .ai-pill .ai-calls { display: none !important; }
+  .top-nav .more-btn .more-word { display: none; }
+  .top-nav .more-btn .burger { display: inline; font-size: 18px; }
+  .menu .item.m-only { display: flex; }
+  .top-nav { gap: 8px; overflow: hidden; }
+  .top-nav .tabs { flex: 1 1 auto; justify-content: flex-end; min-width: 0; }
+  .top-nav .ai-pill { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sub-bar .chip, .cmd .sub-chips { display: none; }
+}
+/* P1-4: the whole card is the selection target; merged chip sits inside it. */
+.cmd .case-wrap { position: relative; border-radius: 10px; }
+.cmd .case-wrap.sel { box-shadow: inset 4px 0 0 var(--brand); background: color-mix(in srgb, var(--brand) 6%, transparent); }
+.cmd .case-wrap .merged-chip-overlay { position: static !important; display: inline-flex; margin: 4px 0 6px 12px; }
+/* P1-9: toast never shifts layout. */
+.cmd .toast { position: fixed !important; left: 16px; bottom: 16px; width: 360px; max-width: calc(100vw - 32px); z-index: 60; }
+/* P1-7: dismissing a hoax is the primary action. */
+.cmd .btn-dismiss-hoax { background: var(--brand) !important; color: var(--on-brand, #fff) !important; border-color: var(--brand) !important; }
+/* P1-6: decision card is plain white. */
+.cmd .decision-card, .cmd .dec-card { background: var(--surface, #fff) !important; }
+.cmd .dec-quote { display: block; margin-top: 2px; font-style: italic; color: var(--ink-2, #555); quotes: "“" "”"; }
+.cmd .take-warn { border: 1px solid var(--urg, #a35c00); background: #fdf3e2; color: #5a3300; border-radius: 8px; padding: 10px 12px; margin: 8px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cmd .take-warn p { margin: 0; flex: 1 1 260px; }
+.cmd .on-way-title { font-weight: 700; margin: 0 0 2px; }
+.cmd .nt-opt { min-height: 44px; }
+.cmd .nt-opt .nt-why { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* P1-16: Indic scripts get fonts and line-height that fit their glyphs. */
+:lang(hi) body, :lang(hi) .cmd { font-family: "Noto Sans Devanagari", "Inter", system-ui, sans-serif; line-height: 1.5; }
+:lang(ml) body, :lang(ml) .cmd { font-family: "Noto Sans Malayalam", "Inter", system-ui, sans-serif; line-height: 1.55; }
+.chip { min-height: 24px; }
+.cmd .reject-team{margin:0 0 8px;font-weight:600}
+
+/* Tab pills: the count never squeezes the label; the label switches to its short form first. */
+.cmd .queue-tabs .qtab { overflow: hidden; }
+:lang(ml) .cmd .queue-tabs .qtab { font-size: 12px; letter-spacing: -0.01em; }
+
+/* Design r3 (2026-10-17) */
+/* A. Queue tabs: Malayalam "Sent" fits at 1280 */
+.cmd .queue-tabs{gap:4px !important;padding:3px !important}
+.cmd .queue-tabs .qtab{padding:0 6px !important;gap:4px !important}
+.cmd .queue-tabs .qtab b{flex:none;min-width:18px !important;padding:0 5px}
+:lang(ml) .cmd .queue-tabs .qtab{font-size:12px;letter-spacing:0}
+/* P0-3. Sub-bar stays on one row */
+.cmd .live-demo-top{display:flex;flex-wrap:nowrap;gap:8px;white-space:nowrap;align-items:center}
+.cmd .live-demo-top > *{flex:none}
+.cmd .live-demo-top .live-demo-problem{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.cmd .live-demo-progress{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cmd .run-short{display:none}
+@media (max-width:1359px){
+  .cmd .live-demo-progress{display:none}
+  .cmd .run-long{display:none}
+  .cmd .run-short{display:inline}
+}
+/* P1-7. Merged popup scrolls; Undo stays visible */
+app-merged-chip .pop{max-height:calc(100vh - 120px);overflow:auto}
+app-merged-chip .pop .undo{position:sticky;bottom:0;z-index:1}
+/* P1-1. Decision card on white */
+.cmd .decision-block{background:var(--surface,#fff);border:1px solid var(--line,#ddd1c8);border-radius:12px}
+/* P0-1. Team loading state (never the old grey no-team box) */
+.cmd .team-finding{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line,#ddd1c8);border-radius:12px;background:var(--surface,#fff)}
+.cmd .team-finding .tf-bar{display:block;height:10px;border-radius:5px;background:var(--surface-2,#efe9e3);animation:tfPulse 1.2s ease-in-out infinite}
+.cmd .team-finding .tf-bar.short{width:60%}
+.cmd .team-finding p{margin:4px 0 0;font:600 13px/1.4 var(--rd-font-family);color:var(--muted)}
+@keyframes tfPulse{50%{opacity:.45}}
+/* P1-1 (real element): the suggested-team card on white */
+.cmd .best-team-banner{background:var(--surface,#fff) !important;border:1px solid var(--line,#ddd1c8) !important;border-radius:12px !important}
+/* P1-14. 390 header on one row: logo, AI pill, Ask (icon only), menu */
+@media (max-width:480px){
+  .coordinator-shell .top-nav{display:flex !important;flex-wrap:nowrap !important;align-items:center;gap:6px !important;min-height:52px}
+  .coordinator-shell .top-nav .brand .name{display:none}
+  .coordinator-shell .top-nav .tabs{display:flex !important;flex:none;flex-wrap:nowrap;gap:0;order:2}
+  .coordinator-shell .top-nav .tabs > a,.coordinator-shell .top-nav .tabs .more-tab{display:none !important}
+  .coordinator-shell .top-nav .btn-ask-desk{width:36px;height:36px;padding:0 !important;font-size:0 !important;justify-content:center}
+  .coordinator-shell .top-nav .btn-ask-desk .sparkle{font-size:16px}
+  .coordinator-shell .top-nav .search{display:none !important}
+  .coordinator-shell .top-nav .right{flex:1 1 auto;min-width:0;display:flex;justify-content:flex-end;gap:6px;order:3}
+  .coordinator-shell .top-nav .ai-pill{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .coordinator-shell .top-nav .ai-calls{display:none}
+}

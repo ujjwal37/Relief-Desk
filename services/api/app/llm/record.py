@@ -109,8 +109,11 @@ def record_seeded_reports() -> int:
     return written
 
 
-def record_seeded_traces(ids: list[str]) -> int:
-    """Record a small number of whole-case traces. Never synthesize Gemini provenance."""
+def record_seeded_traces(ids: list[str] | None = None) -> int:
+    """Record whole-case traces for seed ids. Empty means every DEMO case.
+
+    Never synthesize Gemini provenance. Exits before writing when the key is a placeholder.
+    """
     _never_antigravity()
     from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_agent
     from app.agents.pipeline import finish
@@ -122,6 +125,9 @@ def record_seeded_traces(ids: list[str]) -> int:
     settings.AI_MODE = "auto"
     settings.GEMINI_ENABLED = True
     storage_service.load_full_scenario()
+    if not ids:
+        from app.tools.demo_cases import DEMO_CASES
+        ids = [row["id"] for row in DEMO_CASES]
     written = 0
     for request_id in ids:
         req = storage_service.get_request(request_id)

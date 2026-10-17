@@ -17,7 +17,8 @@
     "nearby2": "Nearby",
     "status2": "Status",
     "reportFab": "Report",
-    "ask": "Ask the desk"
+    "ask": "Ask the desk",
+    "command": "Command"
   },
   "landing": {
     "title": "Relief Desk",
@@ -43,7 +44,7 @@
     "deskSub": "Relief Desk turns messy crisis messages into ranked, de-duplicated cases that coordinators can act on in seconds.",
     "coordCard": "I'm a coordinator",
     "coordCardSub": "Open the live dashboard",
-    "judgeLink": "Judge or reviewer? Open the demo coordinator in one click",
+    "judgeLink": "Judge? Watch Gemini sort 8 live flood reports in one click",
     "trustOffline": "Works offline",
     "trustLang": "4 languages",
     "trustArea": "Area-level public data",
@@ -58,7 +59,10 @@
     "composer": "Type or tap the mic",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
     "problem": "In Kerala floods, help requests arrive scattered and duplicated, and coordinators can't see who to send first.",
-    "does": "Relief Desk puts them in one queue, merges the duplicates, and suggests who to send first. A person approves every dispatch."
+    "does": "Relief Desk puts them in one queue, merges the duplicates, and suggests who to send first. A person approves every dispatch.",
+    "aiProof": "Every step shows the real Gemini prompt, answer and timing. A person approves every dispatch.",
+    "heroLine": "Floods bury coordinators in messy reports in many languages. Relief Desk reads, merges and ranks them, and suggests the nearest right team — a human approves every dispatch.",
+    "tryDesk": "Try the desk"
   },
   "report": {
     "title": "Emergency Crisis Report",
@@ -103,7 +107,7 @@
     "saidElderly": "There is an elderly person with us",
     "saidSick": "Someone here is sick",
     "saidNone": "No children, elderly or sick people",
-    "autoPlace": "Chalakudy · Auto-detected"
+    "autoPlace": "Location not shared yet"
   },
   "confirm": {
     "title": "What We Understood",
@@ -114,7 +118,7 @@
     "sendNow": "Send now",
     "edit": "Edit",
     "understood": "Understood",
-    "aiSummary": "AI summary",
+    "aiSummary": "Summary",
     "nothingSent": "Nothing is sent until you tap Send now.",
     "vulnerable": "Who needs extra care",
     "child": "Child",
@@ -129,7 +133,10 @@
     "done": "Done",
     "review": "Review",
     "callOutline": "Call 112",
-    "change": "Change"
+    "change": "Change",
+    "yourWords": "Your words:",
+    "hoaxWarn": "This looks like a forwarded or spam message. Send only if you are really at this place.",
+    "notStated": "Not stated"
   },
   "incidentType": {
     "rescue": "Rescue",
@@ -148,13 +155,28 @@
     "unknown": "Unknown"
   },
   "queue": {
+    "nothingSent": "Nothing sent yet. Approved cases appear here.",
     "title": "Ranked Priority Queue",
     "critical": "Critical Urgency",
     "high": "High Urgency",
     "medium": "Medium Urgency",
     "low": "Low Urgency",
     "approve": "Approve Dispatch",
-    "reject": "Reject"
+    "reject": "Reject",
+    "newPill": "{n} new ↑",
+    "allCaughtUp": "All caught up — 0 waiting.",
+    "showMap": "Show map",
+    "hideMap": "Hide map",
+    "tip": "Tip: press A to send the suggested team, N to skip to the next case.",
+    "away": "~{m} min away",
+    "seats": "{n} seats",
+    "offline": "You are offline. Approvals wait until the connection is back.",
+    "viewFull": "View full queue",
+    "showReport": "Show report",
+    "tabsLabel": "Queue view",
+    "tabSent": "Sent",
+    "tabDone": "Done",
+    "tabWaiting": "Waiting"
   },
   "alerts": {
     "title": "Alerts",
@@ -187,7 +209,8 @@
     "sampleGap": "Sample: Resource gap",
     "sampleBadge": "Sample",
     "reasonConflict": "\"{left}\" vs \"{right}\" in {place}",
-    "reasonStale": "{n} requests unconfirmed for {mins} min → needs recheck"
+    "reasonStale": "{n} requests unconfirmed for {mins} min → needs recheck",
+    "emptyTitle": "All clear"
   },
   "benchmark": {
     "nav": "Benchmark",
@@ -231,6 +254,7 @@
     "demoDisabled": "Demo mode is disabled on this server. Please sign in with coordinator credentials."
   },
   "demo": {
+    "runShort": "Run demo (8)",
     "phone": "Demo phone",
     "hide": "Hide phone",
     "surgeButton": "⚡ Simulate 5 reports",
@@ -240,7 +264,34 @@
     "surgeFailed": "Surge finished with errors; {n} reports submitted.",
     "surgeUnavailable": "Surge unavailable or already running. Try again shortly.",
     "scenarioFailed": "Scenario could not be loaded.",
-    "mergeNotice": "Reports joined into {id}. Review the updated count and evidence."
+    "mergeNotice": "Reports joined into {id}. Review the updated count and evidence.",
+    "run": "Run live demo (8 reports)",
+    "problem": "Flood reports in. AI ranks. You decide.",
+    "running": "Running the live demo…",
+    "received": "Received {n}/8",
+    "joined": "Joined {n}",
+    "flagged": "Flagged {n}",
+    "critical": "Critical {n}",
+    "waitingGemini": "Waiting for Gemini · queue {n}",
+    "done": "Live demo finished",
+    "recordedNotice": "Recorded replay of an earlier run.",
+    "samplesLabel": "Eight sample reports",
+    "tryOwn": "Try your own report",
+    "tryOwnPlaceholder": "Type a flood report in any language",
+    "tryOwnLimit": "Gemini is at its free limit right now; try again in a minute.",
+    "brief": "Short brief from the live counts",
+    "geminiCalls": "Gemini calls {n}",
+    "exampleMl": "Example in Malayalam",
+    "sendOwn": "Send",
+    "now": "Now: {step}",
+    "stepIntake": "reading the report",
+    "stepDedupe": "checking for duplicates",
+    "stepTriage": "rating urgency",
+    "stepMatching": "finding the closest team",
+    "stepExplainer": "explaining the choice",
+    "momentMerged": "Duplicate caught: a new report was joined to an existing case.",
+    "momentHoax": "Possible hoax flagged and held for review.",
+    "stepSelfCheck": "double-checking the facts"
   },
   "settings": {
     "title": "Settings",
@@ -253,6 +304,8 @@
     "close": "Done"
   },
   "coord": {
+    "noPlaceGiven": "no place given",
+    "findingTeam": "Finding the closest team…",
     "cases": "Cases",
     "home": "Home",
     "overview": "Overview",
@@ -340,8 +393,9 @@
     "tracePending": "Waiting",
     "traceComplete": "Done",
     "aiGemini": "Gemini",
-    "aiOffline": "Gemini unavailable, built-in rules used",
-    "aiRecorded": "Recorded (Gemini)",
+    "aiPaused": "Gemini paused · rules for now",
+    "aiOffline": "Rules mode",
+    "aiRecorded": "Recorded replay",
     "updateLocation": "Update location",
     "lat": "Latitude",
     "lng": "Longitude",
@@ -349,7 +403,7 @@
     "savedLocation": "Location saved.",
     "kind": {
       "boat": "Boat",
-      "medical": "Medical",
+      "medical": "Ambulance / medical",
       "food": "Food",
       "shelter": "Shelter"
     },
@@ -487,7 +541,12 @@
     "referralStock": "Human-entered referral stock requirement",
     "mapClear": "Clear selection",
     "verify": "Verify",
-    "verifyHint": "The report is unclear. Priority was kept, not lowered. Please confirm the details."
+    "verifyHint": "The report is unclear. Priority was kept, not lowered. Please confirm the details.",
+    "reviewHoax": "I reviewed this flag",
+    "capacityShort": "Team has {left} seats for {need} people — approving will ask you to confirm.",
+    "aiChecking": "Checking…",
+    "undone": "Dispatch undone. The case is back in Waiting.",
+    "undoFailed": "Could not undo. The team may already be working the case."
   },
   "tour": {
     "next": "Next",
@@ -558,7 +617,8 @@
     "saved": "Saved on this phone so you can come back to it.",
     "share": "Share link",
     "copied": "Copied",
-    "copyLink": "Copy link"
+    "copyLink": "Copy link",
+    "inQueue": "Your report is in the coordinator queue."
   },
   "nearby": {
     "title2": "Nearby alerts",
@@ -575,8 +635,8 @@
     "bucket3": "Last 3 hours",
     "card": {
       "alt_01": {
-        "title": "Dog attack alert · Anthikad, Thrissur",
-        "desc": "3 reports in 2 h. Avoid walking alone near Anthikad lanes after dark.",
+        "title": "Flooded lanes · Ward 9, Kuttanad",
+        "desc": "Water on the lanes. Stay on higher ground. In an emergency call 112.",
         "ago": "25 min ago"
       },
       "alt_02": {
@@ -593,7 +653,7 @@
     "hazard": {
       "cell_1031_7633_w7": "Water rising, Temple Road submerged",
       "cell_1011_7635_w4": "Waterlogging 2-3 feet",
-      "cell_1047_7613_w9": "Aggressive dogs spotted near Anthikad lanes",
+      "cell_1047_7613_w9": "Flood water on the lanes near Ward 9",
       "cell_0942_7641_w2": "Drinking water shortage, community kitchen operational"
     }
   },
@@ -614,7 +674,7 @@
     "date": "Run date",
     "count": "Reports in this split",
     "geminiNotMeasured": "Gemini was not called. No API key was set for this run.",
-    "geminiUnreachable": "Gemini was called but did not answer (daily quota or outage), so this run has no Gemini score.",
+    "geminiUnreachable": "No Gemini score in this saved run: Gemini did not respond at the time (daily limit or outage), so only the keyword baseline is shown. The live demo calls Gemini.",
     "geminiType": "Gemini, kind of help",
     "geminiWard": "Gemini, right area",
     "keywordType": "Keyword baseline, kind of help",
@@ -661,7 +721,20 @@
       "latency_p50_ms": "Half of messages are read at least this fast. Milliseconds.",
       "latency_p95_ms": "Almost all messages are read by this time. Milliseconds.",
       "cost_per_1000_msgs_usd": "What the reading step would cost for a thousand messages."
-    }
+    },
+    "notRunTitle": "Accuracy test not run yet",
+    "notRunBody": "No measured numbers yet. Run the labelled benchmark to fill this page; nothing here is estimated.",
+    "summary": "{n} measured metrics on synthetic labelled reports",
+    "geminiMeasured": "Gemini measured in this run",
+    "geminiNotInRun": "Gemini not measured in this run (rules shown)",
+    "runDetails": "Run details",
+    "lowerBetter": "lower is better",
+    "higherBetter": "higher is better",
+    "geminiTile": "✨ Gemini {v}",
+    "runGemini": "Measured with Gemini ({model})",
+    "runRules": "Rules-only baseline (Gemini not in this run)",
+    "testN": "test set n = {n} messages",
+    "smallSet": "Small test set (n = {n}); not a guarantee"
   },
   "home": {
     "title": "How can we help?",
@@ -777,7 +850,7 @@
     "tools": "Tools",
     "badgeGemini": "Gemini",
     "badgeRules": "Rules",
-    "badgeOffline": "Offline fallback",
+    "badgeOffline": "Gemini unavailable, built-in rules used",
     "badgeLocal": "Local test model (Antigravity)",
     "badgeTest": "Test model ({name})",
     "resetDemo": "Reset demo",
@@ -791,7 +864,7 @@
     "agentHello": "Hi, what do you need to know?",
     "deskTitle": "Ask the desk",
     "deskHint": "Ask in plain words, in any language. Read-only: nothing is changed.",
-    "deskPlaceholder": "e.g. Which elderly cases in Aluva are still waiting?",
+    "deskPlaceholder": "e.g. Which elderly cases in Kainakary are still waiting?",
     "deskAsk": "Ask",
     "deskAsking": "Looking…",
     "deskMatches": "{n} matching cases",
@@ -811,7 +884,7 @@
     "deskPeople": "{n} people",
     "noModel": "Rules (no model)",
     "ms": "{n} ms",
-    "badgeRecorded": "Recorded (Gemini)",
+    "badgeRecorded": "Recorded replay",
     "statusDone": "Done",
     "statusRunning": "Running",
     "statusWaiting": "Waiting",
@@ -869,11 +942,13 @@
     "deskHowAnswered": "How I answered · {n} steps",
     "agentScope": "Case assistant",
     "agentIntro": "Find requests by place, need, or who is still waiting.",
-    "agentFootnote": "Answers help you review cases. Approve dispatches from the case queue."
+    "agentFootnote": "Answers help you review cases. Approve dispatches from the case queue.",
+    "textNotStored": "Text not stored for this sample report",
+    "firstReport": "First report"
   },
   "flow": {
     "title": "How it decided",
-    "headline": "{n} AI steps",
+    "headline": "{n} steps",
     "forCase": "For {id} · {title}",
     "parallel": "At the same time",
     "details": "Details",
@@ -885,13 +960,13 @@
     "urgency": "Rated urgency",
     "matching": "Found the closest team",
     "explain": "Explained the choice",
-    "sentIntake": "{need} for {people} people.",
+    "sentIntake": "{need} for {people}.",
     "sentDedupeClear": "No other case at this place in the last hour.",
     "sentDedupeHit": "Looks like {id} (same place, {n} min apart).",
     "sentUrgency": "{band}: {reason}.",
     "sentMatch": "{team}: {km} km, {capability}, {seats} free seat(s).",
     "sentExplain": "Wrote the one-line reason you see on the panel.",
-    "fallbackBanner": "{n} AI steps used the offline fallback. Open Details for the recorded reason. Python scoring and matching remain available.",
+    "fallbackBanner": "{n} steps used built-in rules. Open Details for the reason. Distance and team matching stay available.",
     "loading": "Working… step {k} of {n} · {t} s",
     "failed": "Couldn't finish the AI steps. The team match is missing, so there is no suggestion. You can retry or choose a team yourself.",
     "noTrace": "No AI record for this case",
@@ -907,12 +982,15 @@
     "modelLatency": "Model · latency",
     "waiting": "Waiting",
     "badgeTool": "Google Maps",
-    "badgeCache": "Recorded (Gemini)",
+    "badgeCache": "Recorded replay",
     "badgeYou": "You",
     "fallbackBuiltIn": "Gemini unavailable, built-in rules used",
-    "readingReport": "Gemini is reading this report…",
+    "readingReport": "Reading this report…",
     "simulateOutage": "Preview rules fallback",
-    "simulatedOnly": "Preview only. Stored traces and dispatch decisions are unchanged."
+    "simulatedOnly": "Preview only. Stored traces and dispatch decisions are unchanged.",
+    "sentDedupeJoined": "Joined {n} reports about the same place.",
+    "sentDedupeNoPlace": "Joined {n} reports. No place was named, so this is not a same-place merge.",
+    "badgeStraight": "Rules · straight line"
   },
   "uiRef": {
     "activeQueue": "Active queue",
@@ -926,7 +1004,10 @@
   },
   "map": {
     "loading": "Loading sector map…",
-    "routing": "Finding road route…"
+    "routing": "Finding road route…",
+    "zoom": "Map zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
   },
   "photo": {
     "add": "Add photo",
@@ -967,7 +1048,7 @@
     "photoReading": "Gemini is reading the photo...",
     "askPending": "How many pending cases?",
     "geminiLive": "Gemini live",
-    "rulesFallback": "Rules fallback",
+    "rulesFallback": "Gemini unavailable, built-in rules used",
     "cached": "Cached",
     "sitrepTitle": "Situation report",
     "sitrepBusy": "Writing from live counts…",
@@ -997,7 +1078,8 @@
     "routeNote": "Route",
     "geminiChip": "✨Gemini",
     "tierImmediate": "Immediate",
-    "tierUrgent": "Urgent"
+    "tierUrgent": "Urgent",
+    "localTestAi": "Local test AI"
   },
   "band": {
     "critical": "Critical",
@@ -1075,7 +1157,25 @@
     "next": "Next",
     "result": {
       "noDup": "No duplicate"
-    }
+    },
+    "headlineIntake": "{type} for {people} at {place}.",
+    "headlineJoined": "{n} more reports joined this case.",
+    "headlineUrgency": "Urgency {score}. {reason}",
+    "headlineMatch": "{team} is {km} km away.",
+    "matchNoKm": "{team} is the closest free team.",
+    "noTeam": "No free team is close enough.",
+    "whyMatch": "{team} is the nearest free team that can take them, {km} km away.",
+    "why": "Why",
+    "showPrompt": "Show prompt and response",
+    "hidePrompt": "Hide prompt and response",
+    "whyJoined": "{n} reports describe the same place and people, close in time, so they are one case.",
+    "whyJoinedNoPlace": "{n} reports were grouped, but no place was named. This is not a same-place merge.",
+    "whyDistinct": "No other open case at this place in the last hour.",
+    "joinedN": "{n} joined",
+    "ofN": "step {k} of {n}",
+    "inputs": "Inputs used",
+    "maybeDup": "Maybe a repeat",
+    "noFree": "No free team"
   },
   "panel": {
     "moreDetails": "More details"
@@ -1083,7 +1183,263 @@
   "badge": {
     "rules": "Rules",
     "gemini": "Gemini",
-    "testModel": "Test model"
+    "testModel": "Test model",
+    "recorded": "Recorded replay"
   },
-  "ward": "Ward {n}"
+  "ward": "Ward {n}",
+  "chip": {
+    "likelyHoax": "Held · likely hoax: {reason}"
+  },
+  "card": {
+    "movedUp": "Moved up"
+  },
+  "selfCheck": {
+    "ok": "Second Gemini pass: facts match the report",
+    "fixed": "Second Gemini pass corrected {changes}, quoting the report:",
+    "people": "people",
+    "place": "place",
+    "recorded": "Recorded replay"
+  },
+  "depth": {
+    "boatChosen": "Boat chosen: report says water is {depth}.",
+    "groundChosen": "Ground team chosen: report says water is only {depth}.",
+    "boatShallow": "Report says water is {depth}; only a boat is free nearby.",
+    "groundDeep": "Report says water is {depth}; no free boat nearby, check before sending.",
+    "band": {
+      "none": "not flooded",
+      "ankle": "ankle-deep",
+      "knee": "knee-deep",
+      "waist": "waist-deep",
+      "chest": "chest-deep",
+      "roof": "up to the roof",
+      "floor": "up to the first floor"
+    },
+    "chip": "about {depth} · {src}",
+    "srcGemini": "✨ Gemini estimate from the report",
+    "srcRecorded": "Recorded Gemini estimate",
+    "srcOther": "estimate from the report"
+  },
+  "batch": {
+    "new": "new (10 min)",
+    "merged": "merged",
+    "waiting": "waiting",
+    "dispatched": "dispatched",
+    "next": "Next case",
+    "shortcuts": "Keys: A approve · N next · U undo"
+  },
+  "sit": {
+    "title": "Situation",
+    "ratio": "{r} reports → {c} cases after merging duplicates",
+    "openCommand": "Open Command",
+    "perMin": "reports/min (last 10 min)",
+    "completed": "completed",
+    "merged": "duplicates merged",
+    "hoax": "hoaxes flagged",
+    "topAreas": "High-alert areas",
+    "allClear": "All caught up: no critical or urgent cases waiting.",
+    "areaMeta": "{w} waiting · {t} free teams in area",
+    "teams": "Teams by type",
+    "free": "free",
+    "busy": "busy",
+    "brief": "Situation brief",
+    "refresh": "Refresh",
+    "briefLoading": "Writing the brief…",
+    "briefError": "Brief unavailable right now.",
+    "forJudges": "For judges:",
+    "src": {
+      "gemini": "✨ Gemini live",
+      "recorded": "Recorded replay",
+      "local": "Local test AI",
+      "rules": "Rules"
+    },
+    "briefUnavailable": "Brief unavailable",
+    "notUpdated": "not updated"
+  },
+  "steps": {
+    "gemini": "✨ Gemini checked 5 steps",
+    "recorded": "Gemini · recorded",
+    "rules": "Rules checked 5 steps",
+    "see": "See how",
+    "hide": "Hide steps",
+    "badgeRules": "Rules",
+    "badgeRecorded": "Gemini · recorded",
+    "short.intake": "Read",
+    "short.dedupe": "Duplicates",
+    "short.urgency": "Urgency",
+    "short.maps": "Team",
+    "short.explain": "Explained",
+    "short.you": "You",
+    "youShort": "You approve"
+  },
+  "keys": {
+    "title": "Keyboard shortcuts",
+    "a": "Approve and send the suggested team",
+    "n": "Next waiting case",
+    "u": "Undo the last send",
+    "jk": "Move down / up the queue",
+    "search": "Search cases",
+    "help": "Show this sheet"
+  },
+  "teams.goCommand": "Go to Command",
+  "teams.sub": "{a} free · {b} busy",
+  "people": {
+    "notStated": "People: not stated",
+    "one": "1 person",
+    "many": "{n} people",
+    "provisional": "(unconfirmed)",
+    "none": "No one reported at risk"
+  },
+  "hoax": {
+    "dismiss": "Dismiss as hoax",
+    "notHoax": "Not a hoax",
+    "dismissed": "Closed as hoax. Nothing was sent.",
+    "likely": "Likely hoax",
+    "tipD": "Press D to dismiss",
+    "held": "Held · likely hoax",
+    "notMatched": "Not matched"
+  },
+  "noTeam": {
+    "title": {
+      "boat": "No free boat within {km} km",
+      "medical": "No free medical team nearby",
+      "food": "No free food team nearby",
+      "shelter": "No free shelter nearby",
+      "other": "No free team nearby"
+    },
+    "reason": {
+      "all_busy": "All {n} teams of this kind are busy on other cases.",
+      "too_far": "Nearest free team ({team}) is {km} km away (limit {limit} km).",
+      "too_small": "Only free team ({team}) has {seats} seats; {need} people need help.",
+      "none_of_kind": "There is no team of this kind in the area.",
+      "no_location": "No location yet, so distance to any team is unknown. Ask the reporter for a landmark or pin.",
+      "deep_water": "Chest-deep water: only a boat can reach them. The nearest free boat, {team}, is {km} km away (limit {limit} km).",
+      "info_only": "This report asks for information, not a team."
+    },
+    "stays": "Priority stays. The case keeps its place in the queue.",
+    "yourOptions": "Your options",
+    "opt": {
+      "reserve": "Reserve {team}: free in ~{free} min, then ~{travel} min to reach (≈ {eta} min total)",
+      "road": "Send a road team now to check and guide: {team}, {km} km, about {eta} min. It cannot do water rescue.",
+      "wider": "Search beyond {limit} km: {team}, {km} km, about {eta} min",
+      "escalate": "Escalate to the district control room",
+      "call112": "Call 112 now (ambulance / fire). Nearest boat is too far for a life threat.",
+      "share": "Share as an alert to the area"
+    },
+    "go": {
+      "reserve": "Reserve next free team",
+      "road": "Send road team",
+      "wider": "Use the farther team",
+      "escalate": "Escalate",
+      "call112": "Call 112 now",
+      "share": "Share as alert"
+    },
+    "logged": {
+      "reserve": "Reserved. It will be proposed when the team is free. Nothing was sent.",
+      "road": "Road team choice logged. Nothing was sent yet.",
+      "wider": "Wider search choice logged. Nothing was sent yet.",
+      "escalate": "Escalated to the district control room (logged)."
+    },
+    "failed": "Could not save that choice. Try again.",
+    "footer": "Nothing is sent until you approve. Times are straight-line estimates.",
+    "tip": "Pick an option, then press Enter.",
+    "goTeam": {
+      "reserve": "Reserve {team}",
+      "road": "Send {team}",
+      "wider": "Send {team}"
+    }
+  },
+  "dec": {
+    "depth": "Depth",
+    "selfCheck": "Self-check",
+    "aiIncomplete": "AI incomplete",
+    "aiIncompleteRules": "rules used for",
+    "notStated": "not stated",
+    "notRun": "not run yet"
+  },
+  "disp": {
+    "onWay": "Team on the way",
+    "sentAt": "Sent {t} · by you",
+    "markArrived": "Mark arrived"
+  },
+  "take": {
+    "warn": "{team} is also the best team for {ref} (urgency {u}), which is more urgent.",
+    "next": "That case would get {team} ({km} km) instead.",
+    "noNext": "That case would have no free team.",
+    "anyway": "Send anyway"
+  },
+  "reject": {
+    "which": "Rejecting {team} for this case. Why?"
+  },
+  "aiq": {
+    "working": "AI working",
+    "ready": "Ready for you",
+    "flow": "New reports → AI working → Ready for you → you approve",
+    "flowShort": "New → AI working → Ready for you → you approve",
+    "inLine": "{n} in line",
+    "reading": "{n} reading",
+    "readingLine": "{reading} reading · {queued} in line",
+    "timeout": "Took too long · rules used",
+    "paused": "Gemini paused · rules",
+    "pausedBanner": "Gemini paused · using rules. Free limit is about 10 calls a minute.",
+    "notFinished": "AI not finished",
+    "unverified": "Unverified",
+    "checked": "Checked",
+    "lifeThreat": "Life threat · skipped the line",
+    "slideHint": "finished cases slide into Ready",
+    "empty": "AI is idle. New reports appear here first.",
+    "stepRead": "Read",
+    "stepDuplicates": "Duplicates",
+    "stepUrgency": "Urgency",
+    "stepTeam": "Team",
+    "waiting": "waiting",
+    "more": "+{n} more in line",
+    "engineGemini": "Gemini",
+    "engineRules": "Rules",
+    "engineRechecked": "Gemini rechecked",
+    "tookTooLong": "took too long",
+    "provenanceTimeout": "Rules · Gemini timed out",
+    "approveLocked": "Approve · AI not finished",
+    "approveToast": "AI not finished. Approve unlocks when all 4 steps finish.",
+    "footnote": "Approve unlocks when all 4 AI steps finish (or rules finish after 45 s). A person approves every dispatch.",
+    "stillWorking": "AI is still working on this case (step {step} of 4: {name}). Fields marked Unverified have not been checked yet.",
+    "pausedNote": "Gemini is paused, so this case uses rules.",
+    "workingBadge": "AI working · {t}",
+    "justReady": "Just ready",
+    "newReady": "↑ {n} new ready",
+    "readyAnnounce": "{ref} ready for you.",
+    "lifeAnnounce": "Life threat reported at {place}. Call 112.",
+    "sendBoat": "Send nearest boat now",
+    "callReporter": "Call reporter",
+    "call112": "Call 112 (emergency)",
+    "noPhone": "No phone number on this report.",
+    "noBoat": "No free boat is close enough.",
+    "stillChecking": "AI still checking",
+    "youDecide": "AI checked · you decide",
+    "waitingCount": "Waiting {ready} · {n} in AI",
+    "inAi": "{n} in AI",
+    "checking": "Checking…",
+    "noneFound": "None found",
+    "joined": "Joined {ref}",
+    "beingRated": "Being rated…",
+    "notChosen": "Not chosen yet",
+    "what": "What",
+    "place": "Place",
+    "duplicates": "Duplicates",
+    "people": "People",
+    "urgency": "Urgency",
+    "team": "Team",
+    "hoaxWord": "One word: why is this a hoax?",
+    "hoaxWordPh": "word",
+    "markHoax": "Mark as hoax",
+    "nextReady": "Next ready case",
+    "stepOf": "Step {n} of 4: {name}, {state}",
+    "stateDone": "done",
+    "stateActive": "in progress",
+    "statePending": "waiting",
+    "ordinal1": "1st in line",
+    "ordinal2": "2nd in line",
+    "ordinal3": "3rd in line",
+    "ordinalN": "{n}th in line",
+    "diffLine": "{field}: {from} → {to}"
+  }
 }

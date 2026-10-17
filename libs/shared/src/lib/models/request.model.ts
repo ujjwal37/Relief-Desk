@@ -1,7 +1,7 @@
 export type IncidentType = 'rescue' | 'food' | 'medical' | 'shelter' | 'info' | 'animal_attack' | 'other';
 export type UrgencyBand = 'critical' | 'high' | 'medium' | 'low';
 export type HazardType = 'water_rising' | 'stranded' | 'injury' | 'none' | 'unknown';
-export type RequestStatus = 'new' | 'needs_recheck' | 'matched' | 'approved' | 'dispatched' | 'in_progress' | 'resolved' | 'completed' | 'closed';
+export type RequestStatus = 'new' | 'needs_recheck' | 'matched' | 'approved' | 'dispatched' | 'in_progress' | 'resolved' | 'completed' | 'closed' | 'dismissed_hoax';
 
 export interface VulnerableFlags {
   child: boolean;
@@ -179,6 +179,8 @@ export interface StoredRequest {
   cluster_id?: string | null;
   merged_into?: string | null;
   flags?: string[];
+  hoax_reason?: string | null;
+  public_code?: string | null;
   raw_text?: string | null;
   /** The confirmed card summary. A case title falls back to it while the model works. */
   summary?: string | null;
@@ -198,7 +200,23 @@ export interface StoredRequest {
   assigned_resource_id?: string | null;
   reserved_people?: number | null;
   merged_count?: number;
-  analysis_status?: 'analysing' | 'complete';
+  analysis_status?: 'analysing' | 'complete' | 'failed';
+  /** Per-step AI queue. `engine` is the only Gemini / Rules / Gemini rechecked label. */
+  ai_queue?: {
+    status?: 'queued' | 'processing' | 'ready' | string;
+    step?: string | null;
+    steps?: Record<string, 'pending' | 'active' | 'done' | string>;
+    engine?: 'gemini' | 'rules' | 'gemini_rechecked' | string;
+    started_at?: string;
+    elapsed_s?: number;
+    flags?: string[];
+    queue_pos?: number | null;
+    life_phrase?: string | null;
+    place_unverified?: boolean;
+    recheck_diff?: Record<string, { from?: unknown; to?: unknown }> | null;
+  } | null;
+  water_depth?: { band?: string; quote?: string | null; source?: string } | null;
+  self_check?: { verdict?: string; provider?: string; model?: string | null; latency_ms?: number; changes?: Array<{ field: string; from: unknown; to: unknown }>; evidence?: string; reason?: string } | null;
   trace?: Array<{
     agent: string;
     status: string;
@@ -215,6 +233,9 @@ export interface StoredRequest {
     latency_ms?: number;
     tokens?: number | null;
     tool_calls?: string[];
+    prompt?: string;
+    raw_output?: string;
+    recorded_at?: string;
     ts?: string;
   }>;
   update_count?: number;
@@ -274,6 +295,7 @@ export interface MatchProposal {
   overcommit_warning: boolean;
   travel_mode?: 'water' | 'road' | string;
   route_note?: string | null;
+  takes_from?: { case_id?: string; case_ref: string; case_urgency: number; team: string; next_team?: string | null; next_km?: number | null } | null;
 }
 
 /** A citizen report from the last few minutes, for the desk's Just reported strip. */

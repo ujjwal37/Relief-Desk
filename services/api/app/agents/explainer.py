@@ -22,22 +22,26 @@ class ExplainerAgent:
         resource: StoredResource,
         breakdown: MatchBreakdown,
     ) -> Explanation:
-        people = request.people_count if request.people_count else 1
+        # The live score is shown next to this text; repeating it here goes stale as wait time grows.
+        people = request.people_count
+        who_en = f"{people} {'person' if people == 1 else 'people'}" if people else "the people reported (count not stated)"
         text_en = (
             f"{resource.name} is {breakdown.distance_km} km away"
-            f"{' by water (boat, straight line)' if getattr(resource.kind, 'value', resource.kind) == 'boat' else ''} with {resource.capacity_remaining} capacity "
-            f"to assist {people} people. Total match score is {breakdown.total_score} based on proximity and urgency."
+            f"{' by water (boat, straight line)' if getattr(resource.kind, 'value', resource.kind) == 'boat' else ''} with {resource.capacity_remaining} seats "
+            f"to assist {who_en}."
         )
 
         from app.tools.inventory import inventory_note
         note = inventory_note(request, resource)
         if note:
             text_en += " " + note
+        if _life_threat(request) and "112" not in text_en:
+            text_en += " In an emergency call 112."
 
         res_name_hi = resource.name_hi or resource.name
         text_hi = (
-            f"{res_name_hi} {breakdown.distance_km} किमी दूर है और {people} लोगों की सहायता के लिए उपलब्ध है। "
-            f"कुल मिलान स्कोर {breakdown.total_score} है।"
+            f"{res_name_hi} {breakdown.distance_km} किमी दूर है और "
+            f"{(str(people) + ' लोगों') if people else 'बताए गए लोगों'} की सहायता के लिए उपलब्ध है।"
         )
 
         return Explanation(text_en=text_en, text_hi=text_hi)
@@ -108,13 +112,14 @@ class ExplainerAgent:
 
         prompt = (
             f"Explain why {resource.name} is matched to this rescue request in <= 2 sentences.\n"
+            f"Use plain words. Do not write the field names urgency_score or match_score.\n"
             f"Input numbers:\n"
-            f"- Distance: {breakdown.distance_km} km (score: {breakdown.distance_score})\n"
-            f"- Capacity remaining: {resource.capacity_remaining} (needed: {request.people_count or 1})\n"
-            f"- Urgency score: {breakdown.urgency_score}\n"
-            f"- Vulnerability score: {breakdown.vulnerability_fit_score}\n"
-            f"- Total match score: {breakdown.total_score}\n"
+            f"- Distance: {breakdown.distance_km} km\n"
+            f"- Seats free: {resource.capacity_remaining} (people reported: {request.people_count or 1})\n"
+            f"- How urgent this case is, as a number already on the card: {breakdown.urgency_score}\n"
+            f"- How well this team fits: {breakdown.total_score}\n"
             f"RULE: Cite ONLY these provided numbers. Do not invent any numbers.\n"
+            f"If someone may die (not breathing, unconscious, oxygen, bleeding), end with: In an emergency call 112.\n"
             f"Provide valid JSON: {{\"text_en\": \"...\", \"text_hi\": \"...\"}}"
         )
 
@@ -131,6 +136,10 @@ class ExplainerAgent:
                 logger.warning("LLM hallucinated numbers not in breakdown. Falling back to template.")
                 return fallback
 
+            en_text = _plain_words(en_text or fallback.text_en)
+            hi_text = _plain_words(hi_text or fallback.text_hi)
+            if _life_threat(request) and "112" not in en_text:
+                en_text += " In an emergency call 112."
             return Explanation(
                 text_en=en_text or fallback.text_en,
                 text_hi=hi_text or fallback.text_hi,
@@ -138,6 +147,21 @@ class ExplainerAgent:
         except Exception as e:
             logger.info("Explainer LLM generation skipped or failed: %s. Using template fallback.", e)
             return fallback
+
+
+def _plain_words(text: str) -> str:
+    """Internal score field names stay off the card."""
+    if not text:
+        return text
+    text = re.sub(r"urgency[_\s-]*scores?", "how urgent it is", text, flags=re.I)
+    text = re.sub(r"(?:total\s+)?match[_\s-]*scores?", "how well this team fits", text, flags=re.I)
+    return text
+
+
+def _life_threat(request: StoredRequest) -> bool:
+    from app.agents.intake import _LIFE_THREAT
+    kind = getattr(request.type, "value", request.type)
+    return kind == "medical" or bool(_LIFE_THREAT.search(request.raw_text or ""))
 
 
 explainer_agent = ExplainerAgent()

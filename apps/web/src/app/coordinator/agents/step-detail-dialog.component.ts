@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { peopleText } from '../../core/people-text';
 import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
+import { STEP_COUNT, caseRef, urgencyNumber } from '../case-facts';
 
 export interface StepDetailData {
   request: StoredRequest;
@@ -17,6 +19,8 @@ export interface StepDetailData {
   latencyMs?: number;
   fallbackReason?: string;
   recordedAt?: string;
+  /** Measured kilometres for this case and team, when the step text left a blank. */
+  distanceKm?: number | null;
   onNavigate?: (newIndex: number) => void;
 }
 
@@ -26,66 +30,53 @@ export interface StepDetailData {
   imports: [RdTranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="step-dialog" role="dialog" aria-modal="true" data-testid="step-details" [attr.aria-label]="data.stepNameKey | rdTranslate">
+    <div class="step-dialog" data-testid="step-details" [attr.aria-label]="data.stepNameKey | rdTranslate">
       <header class="dialog-header">
         <div class="h-left">
-          <span class="step-num-badge">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-              <path d="M5 12l5 5L20 7" />
-            </svg>
-          </span>
           <div class="title-wrap">
-            <div class="step-title-line">
-              <h2>{{ data.stepIndex + 1 }} · {{ data.stepNameKey | rdTranslate }}</h2>
-              <span class="badge" [class.gemini]="data.badge === 'gemini' || data.badge === 'cache'" [class.tool]="data.badge === 'tool'">{{ badgeLabel() }}</span>
-            </div>
-            <p class="case-sub">{{ 'flow.forCase' | rdTranslate:{ id: data.request.id, title: data.request.place_text || '' } }}</p>
+            <h2>{{ data.stepNameKey | rdTranslate }} · {{ 'step.ofN' | rdTranslate:{ k: data.stepIndex + 1, n: stepCount } }}</h2>
+            <p class="case-sub">{{ 'flow.forCase' | rdTranslate:{ id: ref, title: data.request.place_text || '' } }}</p>
           </div>
         </div>
         <button type="button" class="close-btn" (click)="close()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
       </header>
 
       <div class="dialog-body">
-        <div class="row">
-          <span class="lbl">{{ 'ux.input' | rdTranslate }}</span>
-          <div class="val text-bubble">{{ data.inputSummary || data.request.raw_text }}</div>
-        </div>
-
-        <div class="row">
-          <span class="lbl">{{ 'flow.prompt' | rdTranslate }}</span>
-          <div class="val">{{ data.prompt || ('step.noModel' | rdTranslate) }}</div>
-        </div>
-
-        <div class="row">
-          <span class="lbl">{{ 'ux.tools' | rdTranslate }}</span>
-          <div class="val">
-            @if (data.tools && data.tools.length) {
-              <div class="tool-tags">
-                @for (t of data.tools; track t) {
-                  <code>{{ t }}</code>
-                }
-              </div>
-            } @else {
-              <span>—</span>
+        <p class="headline">{{ headline() }}</p>
+        @if (chips().length) {
+          <p class="why"><span>{{ 'step.inputs' | rdTranslate }}</span></p>
+          <ul class="chips">
+            @for (chip of chips(); track chip) {
+              <li>{{ chip }}</li>
             }
+          </ul>
+        }
+        @if (whyLine() !== headline()) {
+          <p class="why"><span>{{ 'step.why' | rdTranslate }}</span> {{ whyLine() }}</p>
+        }
+
+        @if (modelRan() || data.prompt) {
+        <button type="button" class="prompt-toggle" data-testid="show-prompt" (click)="showPrompt.set(!showPrompt())" [attr.aria-expanded]="showPrompt()">
+          {{ (showPrompt() ? 'step.hidePrompt' : 'step.showPrompt') | rdTranslate }}
+        </button>
+        @if (showPrompt()) {
+          <div class="prompt-block" data-testid="prompt-and-response">
+            @if (promptText()) {
+              <p class="lbl">{{ 'flow.prompt' | rdTranslate }}</p>
+              <pre>{{ promptText() }}</pre>
+            }
+            <p class="lbl">{{ 'ux.tools' | rdTranslate }}</p>
+            @if (data.tools?.length) {
+              <p class="tools" data-testid="step-tools">
+                @for (tool of data.tools; track tool) { <code>{{ tool }}</code> }
+              </p>
+            } @else {
+              <p class="tools" data-testid="step-tools">{{ 'ux.noTools' | rdTranslate }}</p>
+            }
+            <p class="lbl">{{ 'ux.raw' | rdTranslate }}</p>
+            <pre>{{ rawText() }}</pre>
           </div>
-        </div>
-
-        <div class="row">
-          <span class="lbl">{{ 'ux.raw' | rdTranslate }}</span>
-          <div class="val text-bubble">{{ data.rawOutput || ('ux.none' | rdTranslate) }}</div>
-        </div>
-
-        <div class="row">
-          <span class="lbl">{{ 'flow.modelLatency' | rdTranslate }}</span>
-          <div class="val">{{ data.model || '—' }} · {{ data.latencyMs ? data.latencyMs + ' ms' : '—' }}</div>
-        </div>
-
-        @if (data.fallbackReason) {
-          <div class="row">
-            <span class="lbl">{{ 'flow.fellBack' | rdTranslate }}</span>
-            <div class="val text-bubble fallback-text">{{ data.fallbackReason }}</div>
-          </div>
+        }
         }
       </div>
 
@@ -93,7 +84,7 @@ export interface StepDetailData {
         <button type="button" class="nav-step prev" [disabled]="data.stepIndex <= 0" (click)="prevStep()">
           ‹ {{ 'step.prev' | rdTranslate }}
         </button>
-        <span class="note">{{ 'coord.youDecide' | rdTranslate }}</span>
+        <span class="note">{{ footer() }}</span>
         <button type="button" class="nav-step next" [disabled]="data.stepIndex >= data.totalSteps - 1" (click)="nextStep()">
           {{ 'step.next' | rdTranslate }} ›
         </button>
@@ -134,139 +125,234 @@ export interface StepDetailData {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 700;
     }
-    .title-wrap h2 { margin: 0; font-size: 16px; font-weight: 600; color: var(--text, #fff); }
-    .step-title-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 6px;
-      background: var(--surface-2, #1b3026);
-      color: var(--text-2, #9bb0a5);
-      border: 1px solid var(--border, #2a4136);
-    }
-    .badge.gemini {
-      background: color-mix(in srgb, var(--brand, #10b981) 18%, transparent);
-      color: var(--brand, #34d399);
-      border-color: var(--brand, #10b981);
-    }
+    .title-wrap h2 { margin: 0; font-size: 16px; font-weight: 600; }
     .case-sub { margin: 4px 0 0; font-size: 12px; color: var(--muted, #728c7f); }
     .close-btn {
-      background: transparent;
-      border: 0;
-      color: var(--text-2, #9bb0a5);
-      font-size: 18px;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 6px;
+      background: transparent; border: 0; color: var(--text-2, #9bb0a5);
+      font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
     }
-    .close-btn:hover { color: var(--text, #fff); background: var(--surface-2, #1b3026); }
-    .dialog-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 18px 0;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+    .dialog-body { flex: 1; overflow-y: auto; padding: 18px 0; display: flex; flex-direction: column; gap: 12px; }
+    .headline { margin: 0; font-size: 16px; line-height: 1.45; font-weight: 600; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .chips li {
+      font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
+      background: var(--surface-2, #1b3026); border: 1px solid var(--border, #2a4136); color: var(--text, #e8f0ec);
     }
-    .row {
-      display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 16px;
-      font-size: 13px;
-      line-height: 1.5;
+    .why { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-2, #c5d5cc); }
+    .why span { color: var(--muted, #728c7f); font-weight: 600; margin-right: 6px; }
+    .tools code {
+      display: inline-block; margin-right: 6px; font-size: 12px; padding: 2px 6px; border-radius: 4px;
+      background: var(--surface-2, #182a21); border: 1px solid var(--border, #2a4136); color: var(--brand, #34d399);
     }
-    .lbl { color: var(--muted, #728c7f); font-weight: 500; }
-    .val { color: var(--text, #e8f0ec); }
-    .text-bubble {
-      background: var(--surface-2, #182a21);
-      border: 1px solid var(--border, #2a4136);
-      border-radius: 8px;
-      padding: 10px 14px;
-      word-break: break-word;
+    .prompt-toggle {
+      align-self: flex-start; background: transparent; border: 0; padding: 0;
+      color: var(--brand, #34d399); font-weight: 600; cursor: pointer; font-size: 13px;
     }
-    .fallback-text { color: #f59e0b; }
-    .tool-tags code {
-      display: inline-block;
-      background: var(--surface-2, #182a21);
-      border: 1px solid var(--border, #2a4136);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 12px;
-      color: var(--brand, #34d399);
-      margin-right: 6px;
+    .prompt-block pre {
+      white-space: pre-wrap; word-break: break-word; margin: 4px 0 10px;
+      background: var(--surface-2, #182a21); border: 1px solid var(--border, #2a4136);
+      border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.45;
+      max-height: 180px; overflow: auto;
     }
+    .lbl { margin: 0; font-size: 11px; color: var(--muted, #728c7f); font-weight: 600; }
     .dialog-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 16px;
-      border-top: 1px solid var(--border, #2a4136);
-      font-size: 12px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      padding-top: 16px; border-top: 1px solid var(--border, #2a4136); font-size: 12px;
     }
-    .note { color: var(--muted, #728c7f); }
+    .note { color: var(--text-2, #c5d5cc); text-align: center; font-weight: 600; }
     .nav-step {
-      background: var(--surface-2, #1b3026);
-      border: 1px solid var(--border, #2a4136);
-      color: var(--text, #e8f0ec);
-      padding: 6px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
+      background: var(--surface-2, #1b3026); border: 1px solid var(--border, #2a4136);
+      color: var(--text, #e8f0ec); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 500;
     }
     .nav-step:disabled { opacity: 0.4; cursor: not-allowed; }
-    .nav-step:not(:disabled):hover { border-color: var(--brand, #10b981); color: var(--brand, #34d399); }
-    .badge.tool {
-      background: color-mix(in srgb, #3b82f6 18%, transparent);
-      color: #60a5fa;
-      border-color: #3b82f6;
-    }
   `],
 })
 export class StepDetailDialogComponent {
   readonly data: StepDetailData = inject(DIALOG_DATA);
   private readonly dialogRef = inject(DialogRef);
   private readonly lang = inject(LanguageService);
+  readonly showPrompt = signal(false);
 
   close(): void {
     this.dialogRef.close();
   }
 
-  badgeLabel(): string {
-    if (this.data.badge === 'you' || this.data.stepIndex === 4 && this.data.totalSteps === 5 && this.data.providerLabel === 'You') {
-      return this.lang.translate('flow.badgeYou') || 'You';
+  readonly stepCount = STEP_COUNT;
+  get ref(): string { return caseRef(this.data.request); }
+
+  modelRan(): boolean {
+    return !!this.data.model || this.data.badge === 'gemini' || this.data.badge === 'cache' || this.data.badge === 'test';
+  }
+
+  promptText(): string {
+    this.lang.currentLang();
+    if (this.data.prompt) return this.data.prompt;
+    if (this.data.badge === 'you' || this.modelRan() || this.isMaps()) return '';
+    return this.lang.translate('step.noModel');
+  }
+
+  rawText(): string {
+    return this.withKm(this.data.rawOutput || '');
+  }
+
+  headline(): string {
+    this.lang.currentLang();
+    const req = this.data.request;
+    const t = (key: string) => this.lang.translate(key);
+    const people = peopleText(req.people_count, t);
+    const place = req.place_text || t('field.place');
+    const kind = req.type ? t(`incidentType.${req.type}`) : t('incidentType.rescue');
+    if (this.data.stepIndex === 0) {
+      return t('step.headlineIntake').replace('{type}', kind).replace('{people}', people).replace('{place}', place);
     }
-    if (this.data.badge === 'tool' || this.data.stepIndex === 3 || this.data.providerLabel === 'Google Maps') {
-      return this.lang.translate('flow.badgeTool') || 'Google Maps';
+    if (this.data.stepIndex === 1) {
+      const extra = (req.merged_count || 1) > 1
+        ? t('step.headlineJoined').replace('{n}', String((req.merged_count || 1) - 1))
+        : t('step.result.noDup');
+      return extra;
     }
-    if (this.data.badge === 'gemini') {
+    if (this.data.stepIndex === 2) {
+      return t('step.headlineUrgency').replace('{score}', String(urgencyNumber(req))).replace('{reason}', req.urgency_reason || '');
+    }
+    if (this.data.badge === 'you' || this.data.stepIndex === 5) {
+      return t('coord.youDecide');
+    }
+    if (this.isMaps()) {
+      const parsed = this.parse(this.data.rawOutput);
+      const team = String(parsed['team'] || '');
+      const km = this.kmOf(parsed);
+      if (team && km != null && !/boat free/i.test(team)) {
+        return t('step.headlineMatch').replace('{team}', team).replace('{km}', String(km));
+      }
+      if (team && !/boat free/i.test(team)) return t('step.matchNoKm').replace('{team}', team);
+      const filled = this.withKm(this.plain(this.data.rawOutput));
+      return filled || t('step.noTeam');
+    }
+    const text = this.withKm(this.plain(this.data.rawOutput));
+    return text || t('flow.sentExplain');
+  }
+
+  chips(): string[] {
+    this.lang.currentLang();
+    const req = this.data.request;
+    const t = (key: string) => this.lang.translate(key);
+    const out: string[] = [];
+    if (req.type) out.push(t(`incidentType.${req.type}`));
+    if (req.people_count) out.push(peopleText(req.people_count, t));
+    if (req.place_text) out.push(req.place_text);
+    if (req.hazard && req.hazard !== 'unknown' && req.hazard !== 'none') {
+      const hazard = this.lang.translate(`hazardKind.${req.hazard}`);
+      out.push(hazard.startsWith('hazardKind.') ? String(req.hazard).replace(/_/g, ' ') : hazard);
+    }
+    const flags = req.vulnerable;
+    if (flags?.child) out.push(t('coord.metaChildren'));
+    if (flags?.elderly) out.push(t('coord.metaElderly'));
+    if (flags?.pregnant) out.push(t('coord.metaPregnant'));
+    if (flags?.medical_need) out.push(t('coord.metaMedical'));
+    if (req.hoax_reason) out.push(t('chip.likelyHoax').replace('{reason}', req.hoax_reason));
+    return out.slice(0, 6);
+  }
+
+  whyLine(): string {
+    this.lang.currentLang();
+    if (this.data.badge === 'you' || this.data.stepIndex === 5) {
+      return this.lang.translate('coord.youDecide');
+    }
+    // Each step gives its own reason, from the same case data the card shows.
+    const req = this.data.request;
+    const t = (key: string) => this.lang.translate(key);
+    if (this.data.stepIndex === 0) return this.headline();
+    if (this.data.stepIndex === 1) {
+      if ((req.merged_count || 1) <= 1) return t('step.whyDistinct');
+      const key = (req.place_text || '').trim() ? 'step.whyJoined' : 'step.whyJoinedNoPlace';
+      return t(key).replace('{n}', String(req.merged_count));
+    }
+    if (this.data.stepIndex === 2 && req.urgency_reason) return req.urgency_reason;
+    if (this.isMaps()) {
+      const parsed = this.parse(this.data.rawOutput);
+      const km = this.kmOf(parsed);
+      const team = String(parsed['team'] || '');
+      if (team && km != null && !/boat free/i.test(team)) {
+        return this.lang.translate('step.whyMatch').replace('{team}', team).replace('{km}', String(km));
+      }
+    }
+    const text = this.withKm(this.plain(this.data.rawOutput));
+    if (text) return text.split(/(?<=[.!?])\s/)[0] || text;
+    if (this.data.stepIndex === 2 && this.data.request.urgency_reason) return this.data.request.urgency_reason;
+    return this.lang.translate('coord.youDecide');
+  }
+
+  footer(): string {
+    this.lang.currentLang();
+    if (this.data.badge === 'you') return this.lang.translate('flow.badgeYou');
+    if (this.isMaps()) return this.lang.translate(this.data.providerLabel === 'Google Maps' ? 'flow.badgeTool' : 'flow.badgeStraight');
+    if (this.data.badge === 'test') return this.lang.translate('badge.testModel');
+    if (this.data.badge === 'gemini' && this.data.model) {
       const sec = this.data.latencyMs ? ` · ${(this.data.latencyMs / 1000).toFixed(1)} s` : '';
-      return `Gemini${sec}`;
+      return `Gemini ${this.data.model}${sec}`;
     }
+    if (this.data.badge === 'gemini') return this.lang.translate('badge.gemini');
     if (this.data.badge === 'cache') {
-      const date = this.data.recordedAt || '16 Oct';
-      return `Recorded (Gemini) · ${date}`;
-    }
-    if (this.data.badge === 'fallback') {
-      return this.lang.translate('coord.aiOffline');
-    }
-    if (this.data.badge === 'test') {
-      return this.lang.translate('badge.testModel');
+      const date = this.data.recordedAt ? ` · ${this.data.recordedAt}` : '';
+      return `${this.lang.translate('badge.recorded')}${date}`;
     }
     return this.lang.translate('coord.aiOffline');
   }
 
   prevStep(): void {
-    if (this.data.stepIndex > 0 && this.data.onNavigate) {
-      this.data.onNavigate(this.data.stepIndex - 1);
-    }
+    if (this.data.stepIndex > 0 && this.data.onNavigate) this.data.onNavigate(this.data.stepIndex - 1);
   }
 
   nextStep(): void {
-    if (this.data.stepIndex < this.data.totalSteps - 1 && this.data.onNavigate) {
-      this.data.onNavigate(this.data.stepIndex + 1);
+    if (this.data.stepIndex < this.data.totalSteps - 1 && this.data.onNavigate) this.data.onNavigate(this.data.stepIndex + 1);
+  }
+
+  isMaps(): boolean {
+    return this.data.badge === 'tool' || this.data.providerLabel === 'Google Maps' || this.data.providerLabel === 'rules' || this.data.stepIndex === 3;
+  }
+
+  private parse(output?: string): Record<string, unknown> {
+    if (!output) return {};
+    try {
+      const json = JSON.parse(output);
+      return json && typeof json === 'object' ? json as Record<string, unknown> : {};
+    } catch {
+      return {};
     }
+  }
+
+  private plain(output?: string): string {
+    const text = (output || '').trim();
+    if (!text || text.startsWith('{') || text.startsWith('[')) return '';
+    return text;
+  }
+
+  private kmOf(parsed: Record<string, unknown>): number | null {
+    const raw = parsed['km'] ?? parsed['distance_km'];
+    const n = typeof raw === 'number' ? raw : Number(raw);
+    if (raw != null && raw !== '' && Number.isFinite(n)) return n;
+    return this.data.distanceKm != null && Number.isFinite(this.data.distanceKm) ? this.data.distanceKm : null;
+  }
+
+  /** A blank "— km" is filled from the measured distance. It is never left as a dash. */
+  private withKm(text: string): string {
+    return this.oneScore(this.withKmRaw(text));
+  }
+
+  /** The urgency step shows the case's current score (re-scored after merges), the same number as the card. */
+  private oneScore(text: string): string {
+    if (this.data.stepIndex !== 2 || !text) return text;
+    const now = Math.round(this.data.request?.urgency_score || 0);
+    return text.replace(/((?:score|urgency)["']?\s*[:=]?\s*)(\d+(?:\.\d+)?)/gi, (_m, pre) => `${pre}${now}`);
+  }
+
+  private withKmRaw(text: string): string {
+    const km = this.data.distanceKm;
+    if (!text || !text.includes('—')) return text;
+    if (km == null || !Number.isFinite(km)) return text.replace(/\s*:?\s*—\s*km/g, '').trim();
+    return text.replace(/—\s*km/g, `${Number(km).toFixed(1)} km`);
   }
 }

@@ -28,6 +28,21 @@ _GEMINI_POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="gemini")
 _PLACEHOLDER_KEYS = {"", "replace-me", "synthetic-demo-gemini-key"}
 
 
+def _queue_budget() -> float:
+    """Longest a step waits for its turn before using the rules reading instead."""
+    import os
+    try:
+        return float(os.environ.get("GEMINI_QUEUE_BUDGET_S") or 15.0)
+    except ValueError:
+        return 15.0
+
+
+def _retry_delay_s(exc: BaseException) -> float:
+    """The 429's retryDelay in seconds (e.g. '49s'); 60 when absent."""
+    m = re.search(r"retryDelay['\"]?:\s*['\"]?(\d+(?:\.\d+)?)s", str(exc))
+    return min(120.0, float(m.group(1))) if m else 60.0
+
+
 def _is_quota(exc: BaseException) -> bool:
     status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
     if status == 429:
@@ -84,7 +99,9 @@ class LLMClient:
         self._memory_cache: Dict[str, str] = {}
         self._memory_source: Dict[str, str] = {}
         self._memory_meta: Dict[str, Dict[str, Any]] = {}
-        self.guard = Guard(max_in_flight=settings.AI_CONCURRENCY)
+        self._sent_prompts: Dict[str, str] = {}
+        # Free tier: stay under the per-minute request limit for all callers together.
+        self.guard = Guard(per_minute=float(settings.GEMINI_RPM_ALL), max_in_flight=settings.AI_CONCURRENCY)
         self._local_cache: Dict[str, str] = {}
         self.cache_hits = 0
         self.cache_misses = 0
@@ -96,6 +113,15 @@ class LLMClient:
         cleaned = scrub_pii(user_prompt)
         full_prompt = f"SYSTEM:\n{system_instruction}\n\nUSER:\n{cleaned}"
         return self._hash_key(full_prompt)
+
+    def _note_sent(self, key: str, system_instruction: str, user_prompt: str) -> None:
+        """Remember the exact system and user text for this call, including a repair suffix."""
+        self._sent_prompts[key] = f"{system_instruction}\n\n{user_prompt}"
+        if len(self._sent_prompts) > 300:
+            self._sent_prompts.pop(next(iter(self._sent_prompts)))
+
+    def sent_prompt(self, key: str) -> Optional[str]:
+        return self._sent_prompts.get(key)
 
     def gemini_live(self) -> bool:
         """True when a real key is set. DEMO_MODE does not block that call."""
@@ -269,6 +295,7 @@ class LLMClient:
             self._tls.max_output_tokens = int(max_output_tokens)
         user_prompt = scrub_pii(user_prompt)
         cache_key = self.cache_key(system_instruction, user_prompt)
+        self._note_sent(cache_key, system_instruction, user_prompt)
         mode = (settings.AI_MODE or "auto").lower()
 
         from app.llm import openai_compat as oc
@@ -276,7 +303,9 @@ class LLMClient:
         if oc.enabled():
             return self._via_openai_compat(system_instruction, user_prompt, validator, max_retries, started)
 
-        cached = self.get_cached(cache_key)
+        from app.llm.pacer import replay_forbidden
+
+        cached = None if replay_forbidden() else self.get_cached(cache_key)
         cache_ok = False
         if cached:
             if validator:
@@ -325,6 +354,7 @@ class LLMClient:
         self._tls.network_attempts = 0
         try:
             while True:
+                self._note_sent(cache_key, system_instruction, current_prompt)
                 text = self._call_with_retry(system_instruction, current_prompt)
                 if validator:
                     try:
@@ -340,7 +370,7 @@ class LLMClient:
                         )
                         continue
                 usage = AiCall(
-                    provider="gemini",
+                    provider=("antigravity-local" if ag.gemini_base_is_local() else "gemini"),
                     model=settings.GEMINI_MODEL,
                     latency_ms=int((time.perf_counter() - started) * 1000),
                     tokens=self._last_tokens,
@@ -377,9 +407,15 @@ class LLMClient:
             self.guard.trip(seconds_until_pacific_midnight())
             logger.warning("Gemini daily quota is exhausted. Circuit open until the Pacific midnight reset.")
             return "quota"
-        self.guard.record_failure()
+        if isinstance(exc, TimeoutError) and "Gemini timed out" not in str(exc):
+            # Our own queue/pacing budget ran out: the step used rules. Gemini did not fail.
+            return "queue_wait"
         if _is_quota(exc):
+            # Per-minute limit: pause for exactly the server's retry delay, then try again.
+            self.guard.trip(_retry_delay_s(exc) + 2.0)
+            logger.warning("Gemini per-minute limit hit; paused for the retry window.")
             return "quota"
+        self.guard.record_failure()
         if isinstance(exc, TimeoutError):
             return "timeout"
         return "error"
@@ -478,6 +514,17 @@ class LLMClient:
         def once() -> str:
             if getattr(self._tls, "network_attempts", 0) >= 3:
                 raise _RetryLimit("At most two retries per language call")
+            from app.llm.pacer import gemini_pacer, should_pace
+            from app.tools.events import publish
+
+            if should_pace():
+                position = gemini_pacer.acquire(max_wait=_queue_budget())
+                if position > 1 or gemini_pacer.waiting:
+                    publish({
+                        "type": "demo.progress",
+                        "status": "waiting",
+                        "queue_position": max(position, gemini_pacer.waiting),
+                    })
             with self._budget_lock:
                 if self.call_count >= self.daily_cap:
                     raise _DailyCallCap("Gemini daily call cap reached")
@@ -486,6 +533,14 @@ class LLMClient:
             return self._call_gemini(system_instruction, user_prompt)
 
         try:
+            return once()
+        except TimeoutError as exc:
+            if "Gemini timed out" in str(exc):
+                raise
+            # Only our own queue budget ran out: back off briefly and try once more before rules.
+            logger.info("Gemini queue busy; retrying once after a short backoff.")
+            self.guard.sleep(3.0)
+            self._tls.network_attempts = max(0, getattr(self._tls, "network_attempts", 1) - 1)
             return once()
         except Exception as exc:
             if not _is_transient(exc):
@@ -527,9 +582,9 @@ class LLMClient:
         json_output = "json" in system_instruction.lower()
         model_name = settings.GEMINI_MODEL
         self._last_tokens = None
-        self.guard.slots.acquire()
+        self.guard.slots.acquire(timeout=_queue_budget())
         try:
-            self.guard.wait_turn()
+            self.guard.wait_turn(max_wait=_queue_budget())
         except BaseException:
             self.guard.slots.release()
             raise
@@ -709,9 +764,16 @@ class LLMClient:
         place_text = None
         place_match = re.search(r"(?:at|near|in|ke paas|paas|ward)\s+([A-Za-z0-9\s,\-\.\u0900-\u097F]+)", report_text, re.IGNORECASE)
         if place_match:
-            place_text = place_match.group(1).strip().split(".")[0].split("\n")[0]
-            if len(place_text) > 60:
-                place_text = place_text[:60]
+            chunk = place_match.group(1).strip().split("\n")[0]
+            # "in bit.ly/help" is a link, not a place called "bit".
+            if re.search(r"https?://|bit\.ly|\bwww\.", chunk, flags=re.IGNORECASE):
+                place_text = None
+            else:
+                place_text = chunk.split(".")[0].strip()
+                if len(place_text) > 60:
+                    place_text = place_text[:60]
+                if place_text.lower() in {"bit", "otp", "www", "http", "https"}:
+                    place_text = None
         elif "gandhi school" in lower:
             place_text = "Gandhi School, Ward 4"
 

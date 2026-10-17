@@ -61,8 +61,10 @@ class Gazetteer:
             # Add English aliases
             for alias in lm.get("aliases_en", []):
                 self._alias_index.append({**entry_base, "alias": alias.lower()})
-            # Add Hindi aliases
+            # Add Hindi and Malayalam aliases
             for alias in lm.get("aliases_hi", []):
+                self._alias_index.append({**entry_base, "alias": alias.lower()})
+            for alias in lm.get("aliases_ml", []):
                 self._alias_index.append({**entry_base, "alias": alias.lower()})
 
         # Also add wards as fallback matches
@@ -77,6 +79,8 @@ class Gazetteer:
             self._alias_index.append({**entry_base, "alias": ward["name_en"].lower()})
             self._alias_index.append({**entry_base, "alias": f"ward {ward['number']}"})
             self._alias_index.append({**entry_base, "alias": ward["name_hi"].lower()})
+            if ward.get("name_ml"):
+                self._alias_index.append({**entry_base, "alias": str(ward["name_ml"]).lower()})
 
     def _clean_query(self, query: str) -> str:
         q = query.lower()
@@ -88,8 +92,38 @@ class Gazetteer:
         ]
         for nw in noise_words:
             q = re.sub(nw, " ", q, flags=re.IGNORECASE)
-        q = re.sub(r"[^\w\s\u0900-\u097F]", " ", q)
+        q = re.sub(r"[^\w\s\u0900-\u097F\u0D00-\u0D7F]", " ", q)
         return " ".join(q.split())
+
+    # A lone generic word is not a place. "bridge" must not become Vythiri Bridge.
+    _GENERIC_TOKENS = {
+        "bridge", "school", "jetty", "road", "ghat", "ferry", "market", "temple",
+        "church", "hospital", "boat", "river", "ward", "near", "the", "camp",
+        "relief", "centre", "center", "high", "primary", "community", "health",
+        "പാലം", "ജെട്ടി", "സ്കൂൾ", "സമീപം", "അടുത്ത്", "ബോട്ട്",
+        "स्कूल", "घाट", "पुल", "मंदिर", "जेट्टी",
+    }
+
+    def _specific_tokens(self, text: str) -> List[str]:
+        raw = self._clean_query(text or "")
+        tokens = re.findall(r"[a-z0-9\u0900-\u097f\u0d00-\u0d7f]{2,}", raw)
+        kept = []
+        for token in tokens:
+            if token.isdigit() or token in self._GENERIC_TOKENS:
+                continue
+            script = bool(re.search(r"[\u0900-\u097f\u0d00-\u0d7f]", token))
+            if script or len(token) >= 4:
+                kept.append(token)
+        return kept
+
+    def landmark_ids_in(self, text: str) -> set:
+        """The one gazetteer landmark named in the text. Generic words alone match nothing."""
+        if not text or not str(text).strip() or not self._specific_tokens(text):
+            return set()
+        match = self.lookup(text)
+        if match.landmark_id and not match.is_low_confidence:
+            return {match.landmark_id}
+        return set()
 
     def lookup(self, text: str) -> GazetteerMatch:
         """Resolves informal place text to a landmark/ward or returns low confidence."""
@@ -101,6 +135,9 @@ class Gazetteer:
 
         cleaned = self._clean_query(text)
         raw_lower = text.lower().strip()
+        # "near the bridge" / "പാലം" stays place-unclear inside the demo region.
+        if not self._specific_tokens(text):
+            return GazetteerMatch(confidence=0.0, is_low_confidence=True)
 
         best_match = None
         highest_score = 0.0
@@ -169,6 +206,34 @@ class Gazetteer:
             if geo.ward_id and not geo.is_low_confidence:
                 return geo.ward_id
         return None
+
+
+def ward_for_point(lat: Optional[float], lng: Optional[float], max_km: float = 4.0) -> Optional[str]:
+    """Ward of a point: the nearest ward centre within ``max_km``, else None (outside mapped wards).
+
+    The area label must come from where the case is, not from a default ward.
+    """
+    if lat is None or lng is None:
+        return None
+    import math
+    best, best_km = None, max_km
+    for wid, w in gazetteer.wards.items():
+        if w.get("lat") is None or w.get("lng") is None:
+            continue
+        dlat = math.radians(float(w["lat"]) - lat)
+        dlng = math.radians(float(w["lng"]) - lng)
+        h = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat)) * math.cos(math.radians(float(w["lat"]))) * math.sin(dlng / 2) ** 2
+        km = 2 * 6371 * math.asin(math.sqrt(h))
+        if km <= best_km:
+            best, best_km = wid, km
+    return best
+
+
+def landmark_name(landmark_id: Optional[str]) -> Optional[str]:
+    for lm in gazetteer.landmarks:
+        if lm.get("id") == landmark_id:
+            return lm.get("name")
+    return None
 
 
 gazetteer = Gazetteer()

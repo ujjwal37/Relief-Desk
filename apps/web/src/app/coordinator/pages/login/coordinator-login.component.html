@@ -38,8 +38,12 @@
       <p class="or"><span>{{ 'auth.orAccount' | rdTranslate }}</span></p>
       }
 
-      @if (failed()) {
-        <div class="error-banner" role="alert">{{ (demoFailed() ? 'auth.demoDisabled' : 'auth.wrong') | rdTranslate }}</div>
+      @if (demoFailed()) {
+        <div class="error-banner" role="alert" data-testid="demo-login-error">{{ 'auth.demoDisabled' | rdTranslate }}</div>
+      }
+
+      @if (failed() && !demoFailed()) {
+        <div class="error-banner" role="alert">{{ 'auth.wrong' | rdTranslate }}</div>
       }
 
       <form (submit)="$event.preventDefault(); onLogin()" novalidate>

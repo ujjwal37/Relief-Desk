@@ -48,3 +48,15 @@
 @media (prefers-reduced-motion: reduce) { .orb, .wave i, .typing i { animation:none; } }
 
 .report-safety { flex: none; margin: 0; padding: 4px 12px; color: var(--text-2); background: var(--surface-2); font-size: 12px; line-height: 18px; }
+
+.review-btn{position:sticky;bottom:8px;z-index:2;font-weight:700;box-shadow:var(--e2)}
+.review-btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* tap targets: every touch control at least 44px */
+.chip, .tile, .qr, .link, .loc-change, .review-btn, .v-sec, .v-done { min-height: 44px; }
+.chips, .samples { gap: 8px; }
+.chip { padding: 0 14px; font-size: 14px; }
+.quick-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.quick-tiles .tile { min-height: 56px; font-size: 15px; justify-content: center; text-align: center; }
+.vuln-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.link { display: inline-flex; align-items: center; padding: 0 8px; }

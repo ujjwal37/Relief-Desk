@@ -1,93 +1,62 @@
-/* Shared surfaces and pine accents from the supplied relief-desk-ui-redesign. */
-:root, :root[data-theme='light'] {
-  --bg: oklch(0.975 0.006 90);
-  --surface: oklch(0.998 0.002 90);
-  --surface-2: oklch(0.955 0.008 100);
-  --border: oklch(0.89 0.012 95);
-  --text: oklch(0.22 0.025 188);
-  --text-2: oklch(0.52 0.02 190);
-  --muted: oklch(0.52 0.02 190);
-  --brand: oklch(0.39 0.082 178);
-  --on-brand: #ffffff;
-  --brand-tint: oklch(0.944 0.018 170);
-  --sev-crit: oklch(0.56 0.19 28);
-  --sev-crit-t: #fef2f2;
-  --sev-high: #a76416;
-  --sev-high-t: #fffbeb;
-  --sev-med: #2563eb;
-  --sev-med-t: #eff6ff;
-  --sev-low: #64748b;
-  --ok: #176d59;
-  --ok-t: #e8f3ed;
-  --e1: 0 1px 2px rgb(25 49 43 / 4%);
-  --e2: 0 2px 8px rgb(25 49 43 / 6%);
-  --e3: 0 12px 36px rgb(25 49 43 / 12%);
-  --scrim: rgb(15 23 32 / 48%);
-}
-:root[data-theme='dark'] {
-  --bg: #0b1210;
-  --surface: #121a17;
-  --surface-2: #1a2420;
-  --border: #24302b;
-  --text: #ecf3ee;
-  --text-2: #a7b4ad;
-  --muted: #8b9a93;
-  --brand: #82cbb5;
-  --on-brand: #102c24;
-  --brand-tint: #0f2a20;
-  --sev-crit: #f87171;
-  --sev-crit-t: #3b1515;
-  --sev-high: #fbbf24;
-  --sev-high-t: #3a2c0a;
-  --sev-med: #60a5fa;
-  --sev-med-t: #132338;
-  --sev-low: #94a3b8;
-  --ok: #34d399;
-  --ok-t: #0f2a20;
-  --e1: 0 1px 2px rgb(0 0 0 / 40%);
-  --e2: 0 4px 12px rgb(0 0 0 / 45%);
-  --e3: 0 12px 28px rgb(0 0 0 / 50%);
-  --scrim: rgb(0 0 0 / 62%);
-}
+/* Single light theme: palette A (colorhunt 1b3c53 / 234c6a / 456882 / d2c1b6). */
 :root {
+  --gemini: #6d28d9;
+  --gemini-t: #f1ebfe;
+  --bg: #f7f3ef;
+  --surface: #ffffff;
+  --surface-2: #f1ebe6;
+  --border: #ddd1c8;
+  --text: #1b3c53;
+  --text-2: #4f6b80;
+  --muted: #4f6b80;
+  --brand: #1b3c53;
+  --on-brand: #ffffff;
+  --brand-hover: #234c6a;
+  --link: #234c6a;
+  --accent: #456882;
+  --brand-tint: #e9eef2;
+  --sev-crit: #b91c1c;
+  --sev-crit-t: #fdecec;
+  --sev-high: #a35c00;
+  --sev-high-t: #fff3dc;
+  --sev-med: #456882;
+  --sev-med-t: #e9eef2;
+  --sev-low: #64748b;
+  --ok: #166534;
+  --ok-t: #e8f6ec;
+  --e1: 0 1px 2px rgb(27 60 83 / 5%);
+  --e2: 0 2px 8px rgb(27 60 83 / 8%);
+  --e3: 0 12px 36px rgb(27 60 83 / 14%);
+  --scrim: rgb(15 23 32 / 48%);
   --border-2: color-mix(in srgb, var(--text) 16%, var(--border));
   --sos: var(--sev-crit);
   --sos-text: var(--sev-crit);
-  --on-sos: var(--on-brand);
+  --on-sos: #ffffff;
   --amber: var(--sev-high);
   --amber-tint: var(--sev-high-t);
   --green: var(--ok);
   --blue: var(--sev-med);
-  --focus: var(--brand);
-  --map-bg: #e9eee4;
-  --map-water: color-mix(in srgb, var(--brand) 16%, var(--surface));
-  --map-flood: color-mix(in srgb, var(--sev-med) 10%, transparent);
-  --map-flood-line: color-mix(in srgb, var(--sev-med) 55%, var(--border));
+  --focus: #234c6a;
+  --map-bg: #eef0ec;
+  --map-water: #bcd3e2;
+  --map-road: #ffffff;
+  --map-text: #5b6b78;
+  --map-flood: rgb(69 104 130 / 12%);
+  --map-flood-line: rgb(69 104 130 / 50%);
   --ease: cubic-bezier(.2, 0, 0, 1);
-  --s1: 4px;
-  --s2: 8px;
-  --s3: 12px;
-  --s4: 16px;
-  --s5: 24px;
-  --s6: 32px;
-  --r1: 6px;
-  --r2: 8px;
-  --r3: 12px;
-  --r4: 16px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+  --r1: 6px; --r2: 8px; --r3: 12px; --r4: 16px;
   --card: var(--surface);
   --card-fg: var(--text);
   --primary: var(--brand);
   --primary-fg: var(--on-brand);
   --muted-fg: var(--muted);
   --radius: var(--r3);
-  --banner-ok: #059669;
+  --banner-ok: #166534;
   --banner-ok-fg: #ffffff;
+  color-scheme: light;
 }
-:root[data-theme='dark'] {
-  --map-bg: #15201c;
-  --banner-ok: #059669;
-  --banner-ok-fg: #ffffff;
-}
+a { color: var(--link); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }

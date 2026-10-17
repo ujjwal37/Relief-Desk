@@ -11,10 +11,32 @@ from app.models.schemas import (
     PeopleInfo,
 )
 from app.agents.intake import intake_agent
+from app.agents.summary import summary_from_report
 from app.tools.scenario_loader import scenario_registry
 from app.tools.gazetteer import gazetteer
+from app.tools.nlu_rules import (
+    extract_place,
+    infer_incident_type,
+    need_from_reply,
+    parse_people_reply,
+    people_count,
+    place_from_answer,
+    place_is_usable,
+    water_from_answer,
+    water_stated,
+)
+from app.tools.trust import hoax_reason_for
 
 logger = logging.getLogger("relief_desk.chat_intake")
+
+
+def _script_lang(text: str) -> Optional[str]:
+    """Malayalam or Devanagari in the report picks the question language."""
+    if re.search(r"[\u0D00-\u0D7F]", text or ""):
+        return "ml"
+    if re.search(r"[\u0900-\u097F]", text or ""):
+        return "hi"
+    return None
 
 _INJECTION = re.compile(
     r"\b(?:ignore (?:all )?previous instructions|system prompt|jailbreak|bypass)\b",
@@ -30,6 +52,20 @@ _SWIM = re.compile(
     r"is the water safe|can i drink the water|should i drink)\b",
     re.IGNORECASE,
 )
+
+_NEED_Q = {
+    "en": "What do you need? Rescue, medical help, food, or shelter?",
+    "hi": "आपको किस मदद की ज़रूरत है? बचाव, चिकित्सा, भोजन या आश्रय?",
+    "hinglish": "Aapko kya chahiye? Rescue, medical, khana ya shelter?",
+    "ml": "നിങ്ങൾക്ക് എന്ത് സഹായമാണ് വേണ്ടത്? രക്ഷാപ്രവർത്തനം, മെഡിക്കൽ, ഭക്ഷണം അല്ലെങ്കിൽ അഭയം?",
+}
+
+_HOAX_HELD = {
+    "en": "This message looks like spam or a hoax. It is held for a coordinator to review. Nothing is sent until a person checks it.",
+    "hi": "यह संदेश स्पैम या धोखा लगता है। इसे समन्वयक की जाँच तक रोक दिया गया है। कोई मदद तब तक नहीं भेजी जाएगी।",
+    "hinglish": "Yeh message spam ya hoax lagta hai. Coordinator ke review tak ise rok diya gaya hai. Tab tak kuch nahi bheja jayega.",
+    "ml": "ഈ സന്ദേശം സ്പാം അല്ലെങ്കിൽ തട്ടിപ്പ് ആണെന്ന് തോന്നുന്നു. ഒരു കോർഡിനേറ്റർ പരിശോധിക്കുന്നതുവരെ ഇത് നിർത്തിവെച്ചിരിക്കുന്നു.",
+}
 
 # Short close, with no pipe summary and no raw hazard or type keys.
 _READY = {
@@ -84,6 +120,9 @@ class ConfirmationCardData(BaseModel):
     summary: str
     safety_line: Optional[str] = None
     ready_to_submit: bool = True
+    likely_hoax: bool = False
+    hoax_reason: Optional[str] = None
+    held: bool = False
 
 
 class ChatTurnState(BaseModel):
@@ -95,6 +134,12 @@ class ChatTurnState(BaseModel):
     messages_history: List[Dict[str, str]] = Field(default_factory=list)
     is_complete: bool = False
     confirmation_card: Optional[ConfirmationCardData] = None
+    awaiting_slot: Optional[str] = None
+    slot_location: bool = False
+    slot_people: bool = False
+    slot_need: bool = False
+    slot_water: bool = False
+    people_unknown: bool = False
 
 
 class ChatTurnResponse(BaseModel):
@@ -104,6 +149,9 @@ class ChatTurnResponse(BaseModel):
     missing_fields: List[str]
     confirmation_card: Optional[ConfirmationCardData] = None
     safety_line: Optional[str] = None
+    likely_hoax: bool = False
+    hoax_reason: Optional[str] = None
+    held: bool = False
 
 
 class ChatIntakeAgent:
@@ -136,6 +184,11 @@ class ChatIntakeAgent:
             state.language = lang_override
         else:
             lang = state.language or "en"
+        # A Malayalam or Hindi report is asked about in that language, even if the UI is English.
+        script = _script_lang(user_message)
+        if script:
+            lang = script
+            state.language = script
 
         # 1. Safety guardrail: advice and injection requests return fixed lines only.
         advice = safety_refusal_lines(user_message)
@@ -153,103 +206,172 @@ class ChatIntakeAgent:
                 confirmation_card=None,
             )
 
-        # 2. Extract facts from current turn
-        extracted_turn = intake_agent.parse_report(user_message, language_hint=lang)
-        current = state.extracted_so_far
+        full_text = "\n".join(
+            message["text"] for message in state.messages_history if message.get("role") == "user" and message.get("text")
+        )
+        hoax_reason = hoax_reason_for(full_text)
+        self._fill_slots(state, user_message, full_text, lang, lang_override, location_pin)
 
-        # Detect language only when the client did not choose one.
-        if extracted_turn.language and not lang_override:
-            lang = extracted_turn.language.value
-            state.language = lang
+        # A scam is filed once, held, and never turned into a follow-up whose last word becomes the summary.
+        if hoax_reason or not self._missing_slots(state) or state.turn_count >= 4:
+            return self._finish(state, scenario, lang, full_text, hoax_reason)
 
-        # Merge extracted facts
-        if extracted_turn.type != IncidentType.OTHER:
-            current.type = extracted_turn.type
-        elif current.type == IncidentType.OTHER and scenario and scenario.incident_types:
-            current.type = IncidentType(scenario.incident_types[0])
-
-        if extracted_turn.place_text:
-            current.place_text = extracted_turn.place_text
-        elif location_pin and not current.place_text:
-            current.place_text = f"Pin ({location_pin.get('lat', 9.498):.4f}, {location_pin.get('lng', 76.339):.4f})"
-
-        if extracted_turn.people.count is not None:
-            current.people = extracted_turn.people
-
-        # Merge vulnerable flags
-        for flag in ["child", "elderly", "disabled", "pregnant", "medical_need"]:
-            if getattr(extracted_turn.vulnerable, flag):
-                setattr(current.vulnerable, flag, True)
-
-        if extracted_turn.hazard != HazardType.UNKNOWN:
-            current.hazard = extracted_turn.hazard
-
-        # 3. Compute Missing Fields
-        missing = []
-        if not current.place_text:
-            missing.append("location")
-        if current.people.count is None:
-            missing.append("people_count")
-        if not any(getattr(current.vulnerable, f) for f in ["child", "elderly", "disabled", "pregnant", "medical_need"]):
-            # If vulnerable questions not addressed and turn count is early
-            if state.turn_count <= 2:
-                missing.append("vulnerable")
-        if current.hazard in (HazardType.UNKNOWN, HazardType.NONE):
-            if state.turn_count <= 2:
-                missing.append("hazard")
-
-        # 4. If all critical fields present, or turn count reached threshold (<= 4 turns hero case)
-        if not missing or state.turn_count >= 4:
-            state.is_complete = True
-            summary_parts = [
-                f"{current.people.count or 1} person{'s' if (current.people.count or 1) > 1 else ''} needing {current.type.value}"
-            ]
-            if current.place_text:
-                summary_parts.append(f"at {current.place_text}")
-            vuln_list = [k for k, v in current.vulnerable.model_dump().items() if v]
-            if vuln_list:
-                summary_parts.append(f"Vulnerable: {', '.join(vuln_list)}")
-            if current.hazard != HazardType.NONE:
-                summary_parts.append(f"Hazard: {current.hazard.value}")
-
-            summary_text = " | ".join(summary_parts)
-            card = ConfirmationCardData(
-                incident_type=current.type.value,
-                place_text=current.place_text or "Champakulam",
-                people_count=current.people.count or 1,
-                vulnerable=current.vulnerable.model_dump(),
-                hazard=current.hazard.value,
-                summary=summary_text,
-                safety_line=pack_notice(scenario, lang),
-                ready_to_submit=True,
-            )
-            state.confirmation_card = card
-
-            bot_msg = _READY.get(lang, _READY["en"])
-
-            state.messages_history.append({"role": "assistant", "text": bot_msg})
-            return ChatTurnResponse(
-                session_id=state.session_id,
-                bot_message=bot_msg,
-                turn_count=state.turn_count,
-                missing_fields=[],
-                confirmation_card=card,
-                safety_line=card.safety_line,
-            )
-
-        # 5. Ask ONLY the next missing field using active scenario pack questions
-        next_missing = missing[0]
-        q_dict = scenario.follow_up_questions.get(next_missing, {}) if scenario else {}
-        question_text = q_dict.get(lang) or q_dict.get("en") or f"Please share your {next_missing}."
-
-        state.messages_history.append({"role": "assistant", "text": question_text})
+        missing = self._missing_slots(state)
+        question = self._question_for(scenario, missing[0], lang)
+        state.awaiting_slot = missing[0]
+        state.messages_history.append({"role": "assistant", "text": question})
         return ChatTurnResponse(
             session_id=state.session_id,
-            bot_message=question_text,
+            bot_message=question,
             turn_count=state.turn_count,
             missing_fields=missing,
             confirmation_card=None,
             safety_line=scenario_registry.get_safety_line("call_112", lang=lang),
+        )
+
+    def _fill_slots(
+        self,
+        state: ChatTurnState,
+        message: str,
+        full_text: str,
+        lang: str,
+        lang_override: Optional[str],
+        location_pin: Optional[Dict[str, float]],
+    ) -> None:
+        """Read slots from the whole report, then from the answer to the question we just asked."""
+        extracted_turn = intake_agent.parse_report(message, language_hint=lang)
+        current = state.extracted_so_far
+        if extracted_turn.language and not lang_override:
+            state.language = extracted_turn.language.value
+        for flag in ("child", "elderly", "disabled", "pregnant", "medical_need"):
+            if getattr(extracted_turn.vulnerable, flag):
+                setattr(current.vulnerable, flag, True)
+
+        if not state.slot_location:
+            place = place_from_answer(full_text) if state.awaiting_slot == "location" else None
+            if not place:
+                place = extract_place(full_text)
+            if place and place_is_usable(place):
+                current.place_text = place
+                state.slot_location = True
+            elif location_pin and location_pin.get("lat") is not None and location_pin.get("lng") is not None and not current.place_text:
+                current.place_text = f"Pin ({location_pin['lat']:.4f}, {location_pin['lng']:.4f})"
+                state.slot_location = True
+        if state.awaiting_slot == "location" and not state.slot_location:
+            answered = place_from_answer(message)
+            if answered and place_is_usable(answered):
+                current.place_text = answered
+                state.slot_location = True
+
+        if not state.slot_people:
+            status, count = ("absent", None)
+            if state.awaiting_slot == "people_count":
+                status, count = parse_people_reply(message)
+            if status == "unknown":
+                current.people.count = None
+                state.slot_people = True
+                state.people_unknown = True
+            elif status == "count" and count:
+                current.people.count = count
+                state.slot_people = True
+                state.people_unknown = False
+            else:
+                counted = people_count(full_text)
+                if counted:
+                    current.people.count = counted
+                    state.slot_people = True
+                    state.people_unknown = False
+        elif state.awaiting_slot == "people_count":
+            # A filled slot is never overwritten by a later shrug, and never asked again.
+            status, count = parse_people_reply(message)
+            if status == "count" and count and not state.people_unknown:
+                current.people.count = count
+
+        kind = infer_incident_type(full_text)
+        if not kind and state.awaiting_slot == "need":
+            kind = need_from_reply(message)
+        if kind and kind != "other":
+            current.type = IncidentType(kind)
+            state.slot_need = True
+        elif state.awaiting_slot == "need" and kind:
+            current.type = IncidentType(kind)
+            state.slot_need = True
+
+        stated = water_stated(full_text)
+        if not stated and state.awaiting_slot == "water":
+            stated = water_from_answer(message)
+        if stated and not state.slot_water:
+            state.slot_water = True
+            if stated == "rising" and current.hazard != HazardType.WATER_RISING:
+                current.hazard = HazardType.WATER_RISING
+            elif stated == "none" and current.hazard in (HazardType.UNKNOWN, HazardType.NONE):
+                current.hazard = HazardType.NONE
+            elif stated not in ("rising", "none") and current.hazard == HazardType.UNKNOWN:
+                current.hazard = HazardType.WATER_RISING
+        if not place_is_usable(current.place_text):
+            current.place_text = None
+            state.slot_location = False
+        if current.people.count is not None and current.people.count <= 0:
+            current.people.count = None
+
+    def _missing_slots(self, state: ChatTurnState) -> List[str]:
+        missing: List[str] = []
+        if not state.slot_location:
+            missing.append("location")
+        if not state.slot_people:
+            missing.append("people_count")
+        if not state.slot_need:
+            missing.append("need")
+        if not state.slot_water:
+            missing.append("water")
+        return missing
+
+    def _question_for(self, scenario, slot: str, lang: str) -> str:
+        if slot == "need":
+            return _NEED_Q.get(lang) or _NEED_Q["en"]
+        key = "hazard" if slot == "water" else slot
+        questions = scenario.follow_up_questions.get(key, {}) if scenario else {}
+        return questions.get(lang) or questions.get("en") or f"Please share your {slot}."
+
+    def _finish(self, state: ChatTurnState, scenario, lang: str, full_text: str, hoax_reason: Optional[str]) -> ChatTurnResponse:
+        state.is_complete = True
+        state.awaiting_slot = None
+        current = state.extracted_so_far
+        people = current.people.count if state.slot_people and not state.people_unknown else None
+        if people is not None and people <= 0:
+            people = None
+        summary = summary_from_report(full_text)
+        if hoax_reason:
+            line = scenario_registry.get_safety_line("call_112", lang=lang)
+            bot_msg = f"{_HOAX_HELD.get(lang, _HOAX_HELD['en'])} {line}".strip()
+        else:
+            line = pack_notice(scenario, lang)
+            bot_msg = _READY.get(lang, _READY["en"])
+        card = ConfirmationCardData(
+            incident_type=current.type.value,
+            place_text=current.place_text or "",
+            people_count=people,
+            vulnerable=current.vulnerable.model_dump(),
+            hazard=current.hazard.value,
+            summary=summary,
+            safety_line=line,
+            ready_to_submit=True,
+            likely_hoax=bool(hoax_reason),
+            hoax_reason=hoax_reason,
+            held=bool(hoax_reason),
+        )
+        state.confirmation_card = card
+        state.messages_history.append({"role": "assistant", "text": bot_msg})
+        return ChatTurnResponse(
+            session_id=state.session_id,
+            bot_message=bot_msg,
+            turn_count=state.turn_count,
+            missing_fields=[],
+            confirmation_card=card,
+            safety_line=line,
+            likely_hoax=bool(hoax_reason),
+            hoax_reason=hoax_reason,
+            held=bool(hoax_reason),
         )
 
 

@@ -113,7 +113,8 @@ export class ConfirmationCardComponent {
   }
 
   private composeSummary(card: ConfirmationCardData): string {
-    const count = card.people_count ?? 0;
+    // Unknown stays unknown: a missing count is 'not stated', never 0.
+    const count = card.people_count ?? this.lang.translate('people.notStated');
     const type = this.lang.translate(`incidentType.${card.incident_type}`);
     const vulns = Object.entries(card.vulnerable || {})
       .filter(([, on]) => on)

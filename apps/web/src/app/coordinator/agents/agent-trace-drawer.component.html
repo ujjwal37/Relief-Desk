@@ -42,9 +42,6 @@
           </span>
           <div class="alt-b-name-wrap">
             <span class="alt-b-name">{{ nameKey(step.agent) | rdTranslate }}</span>
-            @if (step.agent === 'Dedupe' || step.agent === 'Triage') {
-              <span class="tag-parallel">{{ 'step.parallel' | rdTranslate }}</span>
-            }
           </div>
           <span class="alt-b-sentence">{{ step.sentence }}</span>
           <span class="badge" [class.model]="step.badge === 'gemini' || step.badge === 'cache'">{{ badgeWord(step) }}</span>
@@ -76,11 +73,11 @@
             <app-trace-step [step]="step" [nameKey]="techNameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
           }
         </ol>
+        <label class="outage-preview"><input type="checkbox" [checked]="simulateOutage()" (change)="simulateOutage.set(!simulateOutage())" /> {{ 'flow.simulateOutage' | rdTranslate }}</label>
+        @if (simulateOutage()) { <p class="empty-sub">{{ 'flow.simulatedOnly' | rdTranslate }}</p> }
       }
     </div>
   }
 
-  <label class="outage-preview"><input type="checkbox" [checked]="simulateOutage()" (change)="simulateOutage.set(!simulateOutage())" /> {{ 'flow.simulateOutage' | rdTranslate }}</label>
-  @if (simulateOutage()) { <p class="empty-sub">{{ 'flow.simulatedOnly' | rdTranslate }}</p> }
   <p class="human">{{ 'flow.humanNote' | rdTranslate }}</p>
 </div>

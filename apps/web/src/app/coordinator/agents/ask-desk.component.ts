@@ -83,10 +83,10 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
               @for (c of turn.answer.cases; track c.id) {
                 <li>
                   <button type="button" class="case case-link" (click)="picked.emit(c.id)">
-                    <span class="id">{{ c.id }}</span>
+                    <span class="id" [attr.title]="c.id">{{ $any(c).ref || c.id }}</span>
                     <span class="type">{{ ('incidentType.' + c.type) | rdTranslate }}</span>
                     @if (c.ward_name) { <span class="ward">{{ c.ward_name }}</span> }
-                    @if (c.people_count) { <span class="ppl">{{ peopleText(c.people_count) }}</span> }
+                    <span class="ppl">{{ peopleText(c.people_count) }}</span>
                     <span class="sum">{{ c.summary }}</span>
                   </button>
                 </li>
@@ -146,7 +146,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
     .row input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border, rgba(0,0,0,.2)); background: var(--surface, #fff); color: inherit; font: inherit; }
     .row .btn { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: var(--r2); border: 0; background: var(--brand); color: var(--on-brand); font: 600 14px inherit; cursor: pointer; }
     .row .btn:disabled { opacity: .55; cursor: default; }
-    .reason { margin: 0 0 6px; font-size: 14px; } .reason strong { font-weight: 600; } .reason .count { display: inline-block; margin-left: 8px; min-width: 22px; padding: 0 7px; border-radius: 999px; background: var(--accent, #047857); color: #fff; font-size: 12px; font-weight: 700; text-align: center; }
+    .reason { margin: 0 0 6px; font-size: 14px; } .reason strong { font-weight: 600; } .reason .count { display: inline-block; margin-left: 8px; min-width: 22px; padding: 0 7px; border-radius: 999px; background: var(--accent, #166534); color: #fff; font-size: 12px; font-weight: 700; text-align: center; }
     .via { display: block; font-size: .75rem; opacity: .7; }
     .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow-y: auto; }
     .trace { max-height: 320px; overflow-y: auto; }
@@ -303,8 +303,9 @@ export class AskDeskComponent {
     return this.lang.translate('ux.deskMatches').replace('{n}', String(n));
   }
 
-  peopleText(n: number): string {
+  peopleText(n: number | null): string {
     this.lang.currentLang();
+    if (n == null) return this.lang.translate('people.notStated');
     return this.lang.translate('ux.deskPeople').replace('{n}', String(n));
   }
 

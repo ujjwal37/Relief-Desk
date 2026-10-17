@@ -59,8 +59,8 @@ export class PipelineStripComponent {
       extract: 'xfactor.stepExtract',
       dedupe: 'xfactor.stepDedupe',
       triage: 'xfactor.stepTriage',
-      matching: 'xfactor.stepMatch',
-      approval: 'xfactor.stepApproval',
+      matching: 'flow.badgeTool',
+      approval: 'flow.badgeYou',
     } as Record<string, string>)[agent];
     return key ? this.lang.translate(key) : agent;
   }

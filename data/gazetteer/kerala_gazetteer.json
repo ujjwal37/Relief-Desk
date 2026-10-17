@@ -13,6 +13,7 @@
       "number": 1,
       "name_en": "Kainakary",
       "name_hi": "काइनकरी",
+      "name_ml": "കൈനകരി",
       "district": "Alappuzha",
       "lat": 9.47,
       "lng": 76.39
@@ -22,6 +23,7 @@
       "number": 2,
       "name_en": "Champakulam",
       "name_hi": "चम्पाकुलाम",
+      "name_ml": "ചമ്പക്കുളം",
       "district": "Alappuzha",
       "lat": 9.416,
       "lng": 76.411
@@ -31,6 +33,7 @@
       "number": 3,
       "name_en": "Nedumudi",
       "name_hi": "नेदुमुडी",
+      "name_ml": "നെടുമുടി",
       "district": "Alappuzha",
       "lat": 9.43,
       "lng": 76.398
@@ -67,6 +70,7 @@
       "number": 7,
       "name_en": "Chalakudy",
       "name_hi": "चालाकुडी",
+      "name_ml": "ചാലക്കുടി",
       "district": "Thrissur",
       "lat": 10.308,
       "lng": 76.331
@@ -131,6 +135,10 @@
       "aliases_en": [
         "kainakary lp school",
         "kainakarylpschool"
+      ],
+      "aliases_ml": [
+        "കൈനകരി സ്കൂൾ",
+        "കൈനകരി എൽപി സ്കൂൾ"
       ]
     },
     {
@@ -146,6 +154,10 @@
       "aliases_en": [
         "kainakary boat jetty",
         "kainakaryboatjetty"
+      ],
+      "aliases_ml": [
+        "കൈനകരി ജെട്ടി",
+        "കൈനകരി ബോട്ട് ജെട്ടി"
       ]
     },
     {
@@ -161,6 +173,9 @@
       "aliases_en": [
         "kainakary church",
         "kainakarychurch"
+      ],
+      "aliases_ml": [
+        "കൈനകരി പള്ളി"
       ]
     },
     {
@@ -176,6 +191,10 @@
       "aliases_en": [
         "kainakary relief camp",
         "kainakaryreliefcamp"
+      ],
+      "aliases_ml": [
+        "കൈനകരി ക്യാമ്പ്",
+        "കൈനകരി റിലീഫ് ക്യാമ്പ്"
       ]
     },
     {
@@ -191,6 +210,9 @@
       "aliases_en": [
         "kainakary health centre",
         "kainakaryhealthcentre"
+      ],
+      "aliases_ml": [
+        "കൈനകരി ആരോഗ്യ കേന്ദ്രം"
       ]
     },
     {
@@ -206,6 +228,9 @@
       "aliases_en": [
         "champakulam school",
         "champakulamschool"
+      ],
+      "aliases_ml": [
+        "ചമ്പക്കുളം സ്കൂൾ"
       ]
     },
     {
@@ -221,6 +246,9 @@
       "aliases_en": [
         "champakulam church",
         "champakulamchurch"
+      ],
+      "aliases_ml": [
+        "ചമ്പക്കുളം പള്ളി"
       ]
     },
     {
@@ -236,6 +264,10 @@
       "aliases_en": [
         "champakulam boat jetty",
         "champakulamboatjetty"
+      ],
+      "aliases_ml": [
+        "ചമ്പക്കുളം ജെട്ടി",
+        "ചമ്പക്കുളം ബോട്ട് ജെട്ടി"
       ]
     },
     {
@@ -251,6 +283,9 @@
       "aliases_en": [
         "champakulam market",
         "champakulammarket"
+      ],
+      "aliases_ml": [
+        "ചമ്പക്കുളം ചന്ത"
       ]
     },
     {
@@ -266,6 +301,9 @@
       "aliases_en": [
         "champakulam shelter",
         "champakulamshelter"
+      ],
+      "aliases_ml": [
+        "ചമ്പക്കുളം അഭയകേന്ദ്രം"
       ]
     },
     {
@@ -281,6 +319,10 @@
       "aliases_en": [
         "nedumudi boat jetty",
         "nedumudiboatjetty"
+      ],
+      "aliases_ml": [
+        "നെടുമുടി ജെട്ടി",
+        "നെടുമുടി ബോട്ട് ജെട്ടി"
       ]
     },
     {
@@ -296,6 +338,9 @@
       "aliases_en": [
         "nedumudi bridge",
         "nedumudibridge"
+      ],
+      "aliases_ml": [
+        "നെടുമുടി പാലം"
       ]
     },
     {
@@ -311,6 +356,9 @@
       "aliases_en": [
         "nedumudi school",
         "nedumudischool"
+      ],
+      "aliases_ml": [
+        "നെടുമുടി സ്കൂൾ"
       ]
     },
     {
@@ -326,6 +374,9 @@
       "aliases_en": [
         "nedumudi relief camp",
         "nedumudireliefcamp"
+      ],
+      "aliases_ml": [
+        "നെടുമുടി ക്യാമ്പ്"
       ]
     },
     {
@@ -341,6 +392,9 @@
       "aliases_en": [
         "nedumudi church",
         "nedumudichurch"
+      ],
+      "aliases_ml": [
+        "നെടുമുടി പള്ളി"
       ]
     },
     {
@@ -626,6 +680,9 @@
       "aliases_en": [
         "chalakudy river jetty",
         "chalakudyriverjetty"
+      ],
+      "aliases_ml": [
+        "ചാലക്കുടി ജെട്ടി"
       ]
     },
     {

@@ -169,3 +169,22 @@ def call_antigravity(system_instruction: str, user_prompt: str, timeout_s: Optio
     except RuntimeError as exc:
         _log_raw(str(exc), proc.stdout, proc.stderr)
         raise
+
+
+_LOCAL_BASE = None
+
+
+def gemini_base_is_local() -> bool:
+    """True when the Gemini SDK is pointed at a localhost base (the local test AI), so its answers are not labelled Gemini."""
+    global _LOCAL_BASE
+    if _LOCAL_BASE is None:
+        import os
+        from urllib.parse import urlparse
+        base = os.environ.get("GOOGLE_GEMINI_BASE_URL") or ""
+        try:
+            import google.genai as _genai  # type: ignore
+            base = base or str(_genai.Client(api_key="unused")._api_client._http_options.base_url or "")
+        except Exception:
+            pass
+        _LOCAL_BASE = (urlparse(base).hostname or "") in ("127.0.0.1", "localhost", "0.0.0.0")
+    return _LOCAL_BASE

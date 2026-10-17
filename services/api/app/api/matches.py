@@ -13,6 +13,41 @@ router = APIRouter(prefix="/api", tags=["Matches & Dispatch"])
 
 class ApproveMatchRequest(BaseModel):
     allow_overcommit: bool = False
+    confirm_take: bool = False  # kept for older clients; the warning is shown before Approve
+    check_take: bool = False  # opt-in: refuse with 409 when a more urgent case loses its best team
+
+
+def _would_take_from(match: StoredMatch) -> Optional[dict]:
+    """A more urgent waiting case whose best team is this one. None when nobody loses out."""
+    req = storage_service.get_request(match.request_id)
+    if req is None:
+        return None
+    from app.models.firestore_models import RequestStatus
+    from app.api.public import public_code_for
+    waiting = {RequestStatus.NEW, RequestStatus.NEEDS_RECHECK, RequestStatus.MATCHED}
+    for other in sorted(storage_service.list_requests(), key=lambda r: -(r.urgency_score or 0)):
+        if other.id == req.id or other.merged_into or other.status not in waiting:
+            continue
+        if (other.urgency_score or 0) <= (req.urgency_score or 0):
+            break
+        if other.hoax_reason or {"hoax", "likely_hoax"} & set(other.flags or []):
+            continue
+        try:
+            props = matching_agent.find_matches(other, top_n=2, save_to_storage=False)
+        except Exception:
+            continue
+        if not props or props[0].resource_id != match.resource_id:
+            continue
+        nxt = props[1] if len(props) > 1 else None
+        return {
+            "case_id": other.id,
+            "case_ref": other.public_code or public_code_for(other.report_ids[0] if other.report_ids else other.id),
+            "case_urgency": round(other.urgency_score or 0),
+            "team": props[0].resource_name,
+            "next_team": nxt.resource_name if nxt else None,
+            "next_km": nxt.breakdown.distance_km if nxt else None,
+        }
+    return None
 
 
 class RejectMatchRequest(BaseModel):
@@ -41,6 +76,14 @@ def get_request_matches(
         )
 
     proposals = matching_agent.find_matches(req, top_n=top_n)
+    # Warn, never block: mark a team that a more urgent waiting case would also get first.
+    for prop in proposals:
+        stored = storage_service._matches.get(prop.match_id)
+        if stored is not None:
+            try:
+                prop.takes_from = _would_take_from(stored)
+            except Exception:  # pragma: no cover - a warning must never break the list
+                prop.takes_from = None
     return proposals
 
 
@@ -54,6 +97,16 @@ def approve_match(
     payload: ApproveMatchRequest = ApproveMatchRequest(),
     user: CoordinatorUser = Depends(get_current_coordinator),
 ):
+    match = storage_service._matches.get(id)
+    if match is not None:
+        from app.tools.case_queue import approve_blocked
+        case = storage_service.get_request(match.request_id)
+        if case is not None and approve_blocked(case):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "ai_not_finished"})
+    if match is not None and payload.check_take and not payload.confirm_take and match.state.value == "proposed":
+        taken = _would_take_from(match)
+        if taken:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "takes_best_team", **taken})
     try:
         coordinator_id = user.email
         approved_match = storage_service.approve_match(
@@ -62,6 +115,14 @@ def approve_match(
             allow_overcommit=payload.allow_overcommit,
         )
         return approved_match
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.post("/matches/{id}/undo", response_model=StoredMatch, summary="Undo a just-approved dispatch")
+def undo_match(id: str, user: CoordinatorUser = Depends(get_current_coordinator)):
+    try:
+        return storage_service.undo_approval(match_id=id, actor=user.email)
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
 
@@ -112,6 +173,90 @@ def complete_request(
 ):
     try:
         return storage_service.complete_request(id, actor=user.email)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.get("/requests/{id}/no-team", summary="Why no team fits, and the options left")
+def no_team(id: str, user: CoordinatorUser = Depends(get_current_coordinator)):
+    from app.agents.no_team import no_team_options
+    req = storage_service.get_request(id)
+    if req is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return no_team_options(req, storage_service.list_resources(event_id=req.event_id))
+
+
+class NoTeamChoice(BaseModel):
+    option: str
+
+
+@router.post("/requests/{id}/no-team", summary="Log the coordinator's choice when no team fits")
+def choose_no_team(id: str, payload: NoTeamChoice, user: CoordinatorUser = Depends(get_current_coordinator)):
+    from app.agents.no_team import OPTIONS, no_team_options
+    if payload.option not in OPTIONS:
+        raise HTTPException(status_code=400, detail="Unknown option")
+    req = storage_service.get_request(id)
+    if req is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    opts = no_team_options(req, storage_service.list_resources(event_id=req.event_id))
+    chosen = opts["options"].get(payload.option)
+    if payload.option != "escalate" and not chosen:
+        raise HTTPException(status_code=400, detail="That option is not available for this case")
+    before = req.model_dump()
+    req.flags = sorted(set((req.flags or []) + [f"no_team_{payload.option}"]))
+    storage_service._requests[req.id] = req
+    storage_service.record_audit(actor=user.email, action=f"no_team_{payload.option}", target=req.id, before=before, after=req.model_dump())
+    return {"request_id": req.id, "option": payload.option, "chosen": chosen, "sent": False}
+
+
+class DismissHoaxRequest(BaseModel):
+    reason: Optional[str] = None
+
+
+@router.post(
+    "/requests/{id}/dismiss-hoax",
+    response_model=StoredRequest,
+    summary="Close a report the coordinator confirmed is a hoax",
+)
+def dismiss_hoax(
+    id: str,
+    payload: DismissHoaxRequest = DismissHoaxRequest(),
+    user: CoordinatorUser = Depends(get_current_coordinator),
+):
+    try:
+        return storage_service.dismiss_hoax(id, actor=user.email, reason=payload.reason)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.post(
+    "/requests/{id}/send-nearest-boat",
+    response_model=StoredMatch,
+    summary="One tap from a life-threat card: send the nearest free boat",
+)
+def send_nearest_boat(
+    id: str,
+    user: CoordinatorUser = Depends(get_current_coordinator),
+):
+    """A person presses this. Matching stays deterministic. The AI may still be checking."""
+    from app.tools.case_queue import is_life_threat
+    req = storage_service.get_request(id)
+    if req is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
+    if not is_life_threat(req):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"code": "not_life_threat"})
+    if req.status in ("dispatched", "approved", "in_progress", "completed"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already sent")
+    # A life-threat send is a boat even when the report was read as medical.
+    from app.models.schemas import IncidentType
+    as_rescue = req if req.type == IncidentType.RESCUE else req.model_copy(update={"type": IncidentType.RESCUE})
+    proposals = matching_agent.find_matches(as_rescue, top_n=5, save_to_storage=True)
+    boats = [p for p in proposals if getattr(p.resource_kind, "value", p.resource_kind) == "boat"]
+    if not boats:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "no_boat"})
+    nearest = min(boats, key=lambda p: (p.breakdown.distance_km if p.breakdown else 1e9, p.resource_id))
+    try:
+        return storage_service.approve_match(nearest.match_id, approved_by=user.email)
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
 

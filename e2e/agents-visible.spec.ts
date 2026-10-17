@@ -83,24 +83,34 @@ test.describe('agents visible', () => {
       await expect(dialog.getByText('Explainer', { exact: true }).first()).toBeVisible();
       await expect(dialog.locator('.run-badge')).toHaveText(/Rules|Gemini|Recorded/);
       await expect(dialog.getByText('Offline fallback')).toHaveCount(0);
-      await dialog.getByRole('button', { name: /Details|Show details/ }).nth(3).click();
-      await expect(dialog.getByText('check_capacity').or(dialog.getByText('No tools')).first()).toBeVisible();
+      await expect(dialog.getByText('ux.none')).toHaveCount(0);
+      await expect(dialog.getByText('No model ran for this step')).toHaveCount(0);
+      await dialog.getByTestId('step-details-btn').nth(3).click();
+      const step = page.getByTestId('step-details');
+      await expect(step).toBeVisible();
+      await step.getByRole('button', { name: /Show prompt and response/ }).click();
+      await expect(step.getByText('check_capacity').or(step.getByText('Gemini unavailable, built-in rules used')).first()).toBeVisible();
+      await expect(step.getByText('ux.none')).toHaveCount(0);
+      await shot(page, `${viewport.name}-step-popup`);
+      await page.keyboard.press('Escape');
       await shot(page, `${viewport.name}-agent-trace`);
       await noHorizontalOverflow(page);
       await page.keyboard.press('Escape');
       await expect(dialog).toBeHidden();
 
-      await page.getByRole('button', { name: /\d+ reports/ }).first().click();
+      await page.locator('app-merged-chip').getByRole('button').first().click();
       const merge = page.getByRole('dialog', { name: 'Reports merged into this case' });
       await expect(merge).toBeVisible();
-      await expect(merge.getByText('Not recorded').first()).toBeVisible();
+      // Empty fields are hidden now; each merged report shows its RD reference.
+      await expect(merge.getByText(/RD-\d+/).first()).toBeVisible();
       await shot(page, `${viewport.name}-merged-reports`);
       await page.keyboard.press('Escape');
       await expect(merge).toBeHidden();
 
       await clickCoordLink(page, 'Accuracy report');
       await expect(page.getByRole('heading', { name: 'Accuracy report' })).toBeVisible();
-      await expect(page.getByText('Not measured yet').first()).toBeVisible();
+      await expect(page.getByTestId('bench-summary')).toContainText('Gemini not measured in this run');
+      await page.locator('details.run-details > summary').click();
       await expect(page.getByText('gemini-3.5-flash-lite')).toBeVisible();
       await expect(page.getByText('168').first()).toBeVisible();
       await expect(page.getByText('Example data')).toHaveCount(0);
@@ -109,14 +119,9 @@ test.describe('agents visible', () => {
       await shot(page, `${viewport.name}-accuracy-bars`);
       await noHorizontalOverflow(page);
 
+      // Single light theme: no theme switch in the account menu.
       await page.getByRole('button', { name: 'Account menu' }).click();
-      await page.getByRole('button', { name: 'Dark', exact: true }).click();
-      await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('dark');
-      await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
-      await shot(page, `${viewport.name}-accuracy-dark`);
-      await noHorizontalOverflow(page);
-      await page.getByRole('button', { name: 'Account menu' }).click();
-      await page.getByRole('button', { name: 'Light', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Dark', exact: true })).toHaveCount(0);
       await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
 
       if (viewport.name === 'desktop') {
