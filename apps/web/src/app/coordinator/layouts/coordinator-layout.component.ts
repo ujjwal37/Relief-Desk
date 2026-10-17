@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
-import { AiHealthResponse, ApiClientService, AuthService, LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, SitrepResponse, ThemeMode, ThemeService } from '@rd/shared';
+import { AiHealthResponse, ApiClientService, AuthService, LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, SitrepResponse } from '@rd/shared';
 import { ScenarioService } from '../../core/services/scenario.service';
 import { CoordUiService } from '../../core/services/coord-ui.service';
 import { LiveEventsService } from '../../core/live-events.service';
@@ -21,7 +21,6 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   readonly authService = inject(AuthService);
   readonly live = inject(LiveEventsService);
   readonly ui = inject(CoordUiService);
-  readonly theme = inject(ThemeService);
   readonly lang = inject(LanguageService);
   readonly scenarioService = inject(ScenarioService);
   private router = inject(Router);
@@ -52,9 +51,6 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   readonly primaryLangs = PRIMARY_LANGUAGES;
   readonly moreLangs = MORE_LANGUAGES;
   readonly langMore = signal(false);
-  readonly themes: { m: ThemeMode; k: string }[] = [
-    { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' }, { m: 'system', k: 'settings.themeSystem' },
-  ];
   readonly initial = computed(() => (this.authService.currentUser()?.email || 'D').charAt(0).toUpperCase());
   readonly liveLabel = computed(() => {
     const state = this.live.state();
@@ -77,7 +73,6 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     effect(() => {
       if (!this.menuOpen()) this.langMore.set(false);
     });
-    this.theme.ensureDefault('dark');
     this.media = window.matchMedia('(min-width: 600px)');
     this.wideEnough.set(this.media.matches);
     this.media.addEventListener('change', this.onMedia);

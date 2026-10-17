@@ -847,6 +847,21 @@ class StorageService:
             self._resources[resource_id] = res
         return req
 
+    def dismiss_hoax(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
+        """Coordinator confirms a flagged report is a hoax: close it. Nothing is sent; the audit log keeps it."""
+        req = self._requests.get(request_id)
+        if not req:
+            raise ValueError(f"Request {request_id} not found")
+        if req.status in (RequestStatus.DISPATCHED, RequestStatus.APPROVED, RequestStatus.IN_PROGRESS):
+            raise ValueError(f"Request {request_id} is already dispatched")
+        before = req.model_dump()
+        req.status = RequestStatus.CLOSED
+        req.flags = sorted(set((req.flags or []) + ["dismissed_hoax"]))
+        req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._requests[req.id] = req
+        self.record_audit(actor=actor, action="dismiss_hoax", target=req.id, before=before, after=req.model_dump())
+        return req
+
     def reject_match(
         self, match_id: str, reason: str, actor: str = "coordinator"
     ) -> StoredMatch:
@@ -949,7 +964,7 @@ class StorageService:
                     ward_id=item.get("ward_id"),
                     lat=float(item.get("lat", 10.50)),
                     lng=float(item.get("lng", 76.30)),
-                    people_count=int(item.get("people", 1)),
+                    people_count=(int(item["people"]) if item.get("people") else None),
                     vulnerable=vuln,
                     hazard=HazardType(item.get("hazard", "unknown")),
                     status=RequestStatus.NEW,
@@ -983,7 +998,7 @@ class StorageService:
                         request_ids=[req.id, "INC-001-dup1", "INC-001-dup2"],
                         evidence=[
                             "3 reports, same lane, within 9 min",
-                            "Now 5 people = update, urgency raised",
+                            "Update: now 8 people, urgency raised",
                         ],
                         merged_by="dedupe_agent",
                     )
@@ -1021,6 +1036,8 @@ class StorageService:
             if settings.DEMO_MODE:
                 from app.tools.demo_seed import load_demo_pack
                 demo = load_demo_pack(self)
+                from app.tools.demo_cases import load_demo_cases
+                load_demo_cases(self)
         else:
             resources = self.load_seed_resources(only_ids=SMALL_TEAM_IDS)
             incidents = self.load_seed_incidents(only_ids=SMALL_CASE_IDS)

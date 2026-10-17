@@ -3,6 +3,7 @@ import { Dialog } from '@angular/cdk/dialog';
 import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
 import { testProviderWord } from './provider-label';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
+import { peopleText } from '../../core/people-text';
 import { StepDetailDialogComponent } from './step-detail-dialog.component';
 
 const outputText = (value: unknown) => typeof value === 'string' ? value : '';
@@ -326,7 +327,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
     const cap = (text: string) => text.trim();
     if (agent === 'Intake') {
       const need = String(parsed['need'] || parsed['type'] || req.type || t('coord.queueNeedBoat'));
-      const people = String(parsed['people'] || req.people_count || 1);
+      const people = peopleText(Number(parsed['people']) || req.people_count, t);
       return cap(t('flow.sentIntake').replace('{need}', need).replace('{people}', people));
     }
     if (agent === 'Dedupe') {

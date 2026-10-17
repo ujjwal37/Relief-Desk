@@ -211,7 +211,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         ward_id=ward_id,
         lat=pin_lat,
         lng=pin_lng,
-        people_count=extracted.people.count or (people_bounds(citizen_text or report_text)[1] if people_bounds(citizen_text or report_text) else None) or 1,
+        people_count=extracted.people.count or (people_bounds(citizen_text or report_text)[1] if people_bounds(citizen_text or report_text) else None),
         people_span=(people_bounds(citizen_text or report_text) or (None, None, None))[2],
         vulnerable=extracted.vulnerable,
         hazard=extracted.hazard,
@@ -545,12 +545,13 @@ def _refine_with_model(
     req_obj.ward_id = ward_id
     req_obj.lat = pin_lat
     req_obj.lng = pin_lng
-    counted = analysis.people.count or req_obj.people_count or 1
+    # Unknown stays unknown (None): never invent a count of 1.
+    counted = analysis.people.count or req_obj.people_count or None
     bounds = people_bounds(citizen_text or report_text)
-    if bounds and counted < bounds[1]:
+    if bounds and (counted or 0) < bounds[1]:
         counted = bounds[1]
     # Reports that joined while the model worked may carry a larger count. Keep the largest.
-    req_obj.people_count = max(counted, req_obj.people_count or 1) if joined else counted
+    req_obj.people_count = (max(counted or 0, req_obj.people_count or 0) or None) if joined else counted
     if joined:
         for name, value in analysis.vulnerable.model_dump().items():
             if value:

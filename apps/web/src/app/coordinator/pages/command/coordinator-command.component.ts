@@ -35,8 +35,10 @@ import { teamsFreeCounts, teamsFreeLabel } from '../../team-status';
 import { AiStepperComponent } from '../../agents/ai-stepper.component';
 import { StepDetailDialogComponent } from '../../agents/step-detail-dialog.component';
 import { WhyThisTeamDialogComponent, DroppedTeamRow } from './why-this-team-dialog.component';
+import { peopleText } from '../../../core/people-text';
 import {
   ApiClientService,
+  NoTeamOptions,
   LiveDemoState,
   RdTranslatePipe,
   LanguageService,
@@ -453,6 +455,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   });
   setQueueTab(tab: 'waiting' | 'dispatched' | 'completed'): void {
     this.setBandFilter(tab === 'waiting' ? 'all' : tab);
+    // Never leave the panel on a case the tab hides: open the first visible case, or none.
+    const rows = this.filteredRequests();
+    if (!rows.some((r) => r.id === this.selectedRequestId())) {
+      if (rows.length) this.selectRequest(rows[0].id, false);
+      else this.selectedRequestId.set('');
+    }
   }
   onQueueTabKey(event: KeyboardEvent): void {
     const order = ['waiting', 'dispatched', 'completed'] as const;
@@ -669,9 +677,18 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (hint.minutes != null && hint.minutes > 0) parts.push(`${Math.round(hint.minutes)} min`);
     return parts.join(' · ');
   }
+  /** Short, human ID for cards: never a raw req_ hash. */
+  shortId(id: string, code?: string | null): string {
+    if (code) return code;
+    return id.startsWith('req_') ? `Report ${id.slice(-4)}` : id.length > 10 ? id.slice(0, 8) : id;
+  }
+  peopleLabel(n: number | null | undefined): string {
+    this.langService.currentLang();
+    return peopleText(n, (k) => this.langService.translate(k));
+  }
   factLine(r: StoredRequest): string {
     this.langService.currentLang();
-    const people = `${r.people_count || 1} ${this.langService.translate('coord.people')}`;
+    const people = peopleText(r.people_count, (k) => this.langService.translate(k));
     const ward = r.ward_id ? r.ward_id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '';
     const extra = r.hazard ? r.hazard.replace(/_/g, ' ') : (r.place_text || '');
     return [people, ward, extra].filter(Boolean).join(' · ');
@@ -814,7 +831,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** Queue order frozen while a case is open, so rows do not jump under the cursor. */
   private readonly frozenOrder = signal<string[] | null>(null);
   readonly queueRows = computed<StoredRequest[]>(() => {
-    const live = this.filteredRequests();
+    // Likely hoaxes sink to the bottom of the queue; order otherwise unchanged.
+    const all = this.filteredRequests();
+    const live = [...all.filter((r) => !this.isHoax(r)), ...all.filter((r) => this.isHoax(r))];
     const order = this.frozenOrder();
     if (!order || this.liveDemo()?.running) return live;
     const byId = new Map(live.map((r) => [r.id, r] as const));
@@ -1111,11 +1130,41 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (next.length > 0 && !keep) this.selectRequest(next[0].id);
   }
 
+  /** No free team of the right kind: reason + options, loaded when matching returns nothing. */
+  readonly noTeam = signal<NoTeamOptions | null>(null);
+  readonly noTeamPick = signal<string | null>(null);
+  readonly noTeamDone = signal<string | null>(null);
+  noTeamReason(n: NoTeamOptions): string {
+    const t = (k: string) => this.langService.translate(k);
+    const d = n.detail || {};
+    return t('noTeam.reason.' + n.reason).replace('{n}', String(d.busy ?? '')).replace('{km}', String(d.km ?? '')).replace('{limit}', String(d.limit ?? n.limit_km)).replace('{seats}', String(d.seats ?? '')).replace('{need}', String(d.need ?? '')).replace('{team}', d.team || '');
+  }
+  noTeamOptionKeys(n: NoTeamOptions): string[] {
+    return (['reserve', 'road', 'wider', 'escalate'] as const).filter((k) => k === 'escalate' || !!n.options[k]);
+  }
+  noTeamLine(n: NoTeamOptions, k: string): string {
+    const t = (key: string) => this.langService.translate(key);
+    const o = (n.options as unknown as Record<string, { team?: string; km?: number | null; eta_min?: number | null; free_in_min?: number } | null>)[k];
+    return t('noTeam.opt.' + k).replace('{team}', o?.team || '').replace('{km}', o?.km != null ? String(o.km) : '?').replace('{eta}', o?.eta_min != null ? String(o.eta_min) : '?').replace('{free}', o?.free_in_min != null ? String(o.free_in_min) : '?').replace('{limit}', String(n.limit_km));
+  }
+  chooseNoTeam(req: StoredRequest): void {
+    const k = this.noTeamPick();
+    if (!k) return;
+    this.apiClient.chooseNoTeam(req.id, k).subscribe({
+      next: () => { this.noTeamDone.set(k); this.actionToast.set({ text: this.langService.translate('noTeam.logged.' + k), type: 'warning' }); },
+      error: () => this.actionToast.set({ text: this.langService.translate('noTeam.failed'), type: 'warning' }),
+    });
+  }
+
   loadMatches(requestId: string): void {
+    this.noTeam.set(null); this.noTeamPick.set(null); this.noTeamDone.set(null);
     this.apiClient.getRequestMatches(requestId, 5).subscribe({
       next: (proposals) => {
         if (this.selectedRequestId() !== requestId) return;
         this.matches.set(proposals);
+        if (!proposals.length) {
+          this.apiClient.getNoTeam(requestId).subscribe({ next: (n) => { if (this.selectedRequestId() === requestId) { this.noTeam.set(n); this.noTeamPick.set(this.noTeamOptionKeys(n)[0] || null); } }, error: () => this.noTeam.set(null) });
+        }
       },
       error: (err) => {
         console.warn('Could not load matches for request:', requestId, err);
@@ -1892,6 +1941,19 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return !!req.hoax_reason || flags.includes('likely_hoax') || flags.includes('hoax');
   }
 
+  dismissHoax(req: StoredRequest): void {
+    this.approving.set(true);
+    this.apiClient.dismissHoax(req.id).subscribe({
+      next: (row) => {
+        this.approving.set(false);
+        this.requests.update((rows) => rows.map((r) => (r.id === row.id ? row : r)));
+        this.actionToast.set({ text: this.langService.translate('hoax.dismissed'), type: 'warning' });
+        this.nextCase();
+      },
+      error: () => this.approving.set(false),
+    });
+  }
+
   hoaxBlocked(req: StoredRequest): boolean {
     return this.isHoax(req) && !this.hoaxOverride();
   }
@@ -2044,7 +2106,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   getPeopleText(req: StoredRequest): string {
     this.langService.currentLang();
-    const n = req.people_count || 1;
+    const n = this.peopleLabel(req.people_count);
     const flags = req.vulnerable;
     const parts: string[] = [];
     if (flags?.elderly) parts.push(this.langService.translate('coord.metaElderly'));

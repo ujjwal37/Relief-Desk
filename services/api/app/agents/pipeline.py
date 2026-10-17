@@ -61,7 +61,7 @@ _spawn: Callable[[Callable[[], None]], None] = _start_thread
 
 
 def score_urgency(
-    people_count: int,
+    people_count: Optional[int],
     incident_type: str,
     child: bool = False,
     elderly: bool = False,
@@ -89,7 +89,7 @@ def score_urgency(
     req = StoredRequest(
         id="tool_score",
         type=kind,
-        people_count=max(0, int(people_count)),
+        people_count=max(0, int(people_count or 0)),
         hazard=hz,
         raw_text=report_text or None,
         created_at=created,
@@ -324,7 +324,7 @@ def _extract_working(channel: str) -> str:
 def _extract_summary(req: StoredRequest) -> str:
     bits = [getattr(req.type, "value", req.type) or "report"]
     if req.people_count:
-        bits.append(f"{req.people_count} people")
+        bits.append("1 person" if req.people_count == 1 else f"{req.people_count} people")
     if req.place_text:
         bits.append(req.place_text)
     return " · ".join(str(bit) for bit in bits)

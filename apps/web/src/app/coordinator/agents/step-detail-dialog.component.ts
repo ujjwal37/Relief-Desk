@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { peopleText } from '../../core/people-text';
 import { LanguageService, RdTranslatePipe, StoredRequest } from '@rd/shared';
 
 export interface StepDetailData {
@@ -193,7 +194,7 @@ export class StepDetailDialogComponent {
     this.lang.currentLang();
     const req = this.data.request;
     const t = (key: string) => this.lang.translate(key);
-    const people = String(req.people_count || 1);
+    const people = peopleText(req.people_count, t);
     const place = req.place_text || t('field.place');
     const kind = req.type ? t(`incidentType.${req.type}`) : t('incidentType.rescue');
     if (this.data.stepIndex === 0) {
@@ -252,6 +253,14 @@ export class StepDetailDialogComponent {
     if (this.data.badge === 'you' || this.data.stepIndex === 5) {
       return this.lang.translate('coord.youDecide');
     }
+    // Each step gives its own reason, from the same case data the card shows.
+    const req = this.data.request;
+    const t = (key: string) => this.lang.translate(key);
+    if (this.data.stepIndex === 0) return this.headline();
+    if (this.data.stepIndex === 1) {
+      return (req.merged_count || 1) > 1 ? t('step.whyJoined').replace('{n}', String(req.merged_count)) : t('step.whyDistinct');
+    }
+    if (this.data.stepIndex === 2 && req.urgency_reason) return req.urgency_reason;
     if (this.isMaps()) {
       const parsed = this.parse(this.data.rawOutput);
       const km = this.kmOf(parsed);

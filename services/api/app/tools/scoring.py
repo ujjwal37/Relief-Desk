@@ -152,7 +152,8 @@ class ScoringEngine:
         # People: log scale so one person is not penalised. 50 people -> 1.0.
         count = req.people_count if req.people_count is not None else 1
         p_score = min(1.0, math.log2(1 + max(1, count)) / math.log2(51))
-        reasons_parts.append(f"{count} person{'s' if count != 1 else ''}")
+        # Score as one person when unknown, but never claim a count the report did not give.
+        reasons_parts.append("people not stated" if not req.people_count else f"{count} person{'s' if count != 1 else ''}")
 
         # Hazard.
         in_water = bool(_IN_WATER.search(text))

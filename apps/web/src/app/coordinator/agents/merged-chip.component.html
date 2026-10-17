@@ -7,7 +7,7 @@
     <h2 id="merge-title">{{ 'ux.mergeTitle' | rdTranslate }}</h2>
     @for (row of shown(); track row.id) {
       <blockquote>
-        <p>“{{ row.text || ('ux.notRecorded' | rdTranslate) }}”</p>
+        <p>@if (row.text) { “{{ row.text }}” } @else { <em class="muted">{{ 'ux.textNotStored' | rdTranslate }}</em> }</p>
         <footer>{{ row.id }} · {{ clock(row.at) || ('ux.notRecorded' | rdTranslate) }} · {{ row.channel || ('ux.notRecorded' | rdTranslate) }} · {{ row.lang || ('ux.notRecorded' | rdTranslate) }}</footer>
       </blockquote>
     }

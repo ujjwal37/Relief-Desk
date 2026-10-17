@@ -60,3 +60,16 @@
 .empty-card{list-style:none;padding:24px;border:1px dashed var(--border);border-radius:12px;background:var(--surface);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 .empty-card .head-action{margin-left:0}
 .empty-card p{margin:0;color:var(--muted)}
+
+/* Map fixed in a right column; only the list scrolls (same pattern as Command). */
+@media (min-width: 1000px) {
+  :host { overflow: hidden; }
+  .teams { max-width: none; height: 100%; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 44%; grid-template-rows: auto auto auto minmax(0, 1fr); column-gap: 20px; padding: 20px 24px 0; }
+  .head { grid-column: 1; grid-row: 1; }
+  .strip { grid-column: 1; grid-row: 2; }
+  .note { grid-column: 1; grid-row: 3; }
+  .list { grid-column: 1; grid-row: 4; overflow: auto; min-height: 0; padding: 2px 4px 20px 0; }
+  .team-map { grid-column: 2; grid-row: 1 / -1; height: auto; margin: 0 0 20px; }
+}
+@media (min-width: 1000px) { .list > li { flex-shrink: 0; } }
+.status.free { background: var(--ok-t); color: var(--ok); }

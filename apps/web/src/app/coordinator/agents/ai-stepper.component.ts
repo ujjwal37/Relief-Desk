@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { peopleText } from '../../core/people-text';
 import { LanguageService, MatchProposal, RdTranslatePipe, StoredRequest } from '@rd/shared';
 
 export interface StepStatusInfo {
@@ -352,7 +353,7 @@ export interface StepStatusInfo {
       white-space: nowrap;
     }
     .node-badge { margin-top: 4px; font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font-variant-numeric: tabular-nums; }
-    .node-badge.gem { color: var(--gemini, #7c3aed); background: color-mix(in srgb, var(--gemini, #a78bfa) 14%, transparent); }
+    .node-badge.gem { color: var(--gemini, #6d28d9); background: color-mix(in srgb, var(--gemini, #6d28d9) 14%, transparent); }
     .same-time-note {
       text-align: center;
       font-size: 11px;
@@ -408,8 +409,7 @@ export class AiStepperComponent {
     if (!req) return '—';
     const t = (k: string) => this.lang.translate(k);
     const need = req.type ? t(`incidentType.${req.type}`) : t('incidentType.rescue');
-    const ppl = req.people_count || 1;
-    return `${need} · ${ppl} ${t('field.people').toLowerCase()}`;
+    return `${need} · ${peopleText(req.people_count, t)}`;
   });
 
   readonly dedupeResult = computed<string>(() => {

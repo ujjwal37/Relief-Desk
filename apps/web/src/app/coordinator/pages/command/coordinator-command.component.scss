@@ -175,14 +175,14 @@ button {
 
     &.chip-crit.on {
       background: rgba(239, 68, 68, 0.16);
-      border-color: var(--sev-crit, #f87171);
-      color: var(--sev-crit, #f87171);
+      border-color: var(--sev-crit, #b91c1c);
+      color: var(--sev-crit, #b91c1c);
     }
 
     &.chip-urgent.on {
       background: rgba(245, 158, 11, 0.16);
-      border-color: var(--sev-high, #fbbf24);
-      color: var(--sev-high, #fbbf24);
+      border-color: var(--sev-high, #a35c00);
+      color: var(--sev-high, #a35c00);
     }
   }
 }
@@ -243,7 +243,7 @@ button {
   }
 
   &.moved-up {
-    box-shadow: 0 0 0 1px var(--sev-crit, #f87171);
+    box-shadow: 0 0 0 1px var(--sev-crit, #b91c1c);
   }
 
   &:not(.sel):hover {
@@ -256,7 +256,7 @@ button {
   }
 
   &.failed {
-    border-color: var(--sev-high, #fbbf24);
+    border-color: var(--sev-high, #a35c00);
     padding: 8px 10px;
   }
 }
@@ -287,11 +287,11 @@ button {
     font-size: 10.5px;
 
     &.band-critical {
-      color: var(--sev-crit, #f87171);
+      color: var(--sev-crit, #b91c1c);
       background: rgba(239, 68, 68, 0.15);
     }
     &.band-high {
-      color: var(--sev-high, #fbbf24);
+      color: var(--sev-high, #a35c00);
       background: rgba(245, 158, 11, 0.15);
     }
     &.band-medium, &.band-low {
@@ -430,7 +430,7 @@ button {
   display: flex;
   gap: 12px;
   align-items: center;
-  background: rgba(11, 23, 18, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(6px);
   border: 1px solid var(--border, #1a2f24);
   border-radius: 8px;
@@ -452,8 +452,8 @@ button {
     display: inline-block;
   }
 
-  .dot-crit { background: var(--sev-crit, #f87171); }
-  .dot-urgent { background: var(--sev-high, #fbbf24); }
+  .dot-crit { background: var(--sev-crit, #b91c1c); }
+  .dot-urgent { background: var(--sev-high, #a35c00); }
   .dot-other { background: var(--muted, #64748b); }
 
   .sq {
@@ -472,7 +472,7 @@ button {
   left: 10px;
   font-size: 11px;
   color: var(--muted, #64748b);
-  background: rgba(11, 23, 18, 0.75);
+  background: rgba(255, 255, 255, 0.85);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -537,11 +537,11 @@ app-ai-stepper {
     white-space: nowrap;
 
     &.band-critical {
-      color: var(--sev-crit, #f87171);
+      color: var(--sev-crit, #b91c1c);
       background: rgba(239, 68, 68, 0.15);
     }
     &.band-high {
-      color: var(--sev-high, #fbbf24);
+      color: var(--sev-high, #a35c00);
       background: rgba(245, 158, 11, 0.15);
     }
     &.band-medium, &.band-low {
@@ -755,7 +755,7 @@ app-ai-stepper {
     margin: 4px 0 2px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--sev-high, #fbbf24);
+    color: var(--sev-high, #a35c00);
   }
 
   .team-why-reason {
@@ -826,7 +826,7 @@ app-ai-stepper {
     td {
       padding: 4px 6px;
       color: var(--text, #e2e8f0);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(27, 60, 83, 0.03);
     }
 
     tr {
@@ -834,7 +834,7 @@ app-ai-stepper {
       transition: background 100ms ease;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(27, 60, 83, 0.04);
       }
 
       &.chosen {
@@ -883,29 +883,29 @@ app-ai-stepper {
   padding: 8px 10px;
   border-radius: 8px;
   background: rgba(245, 158, 11, 0.12);
-  border: 1px solid var(--sev-high, #fbbf24);
+  border: 1px solid var(--sev-high, #a35c00);
 
   p {
     margin: 0;
     flex-basis: 100%;
     font-size: 12px;
     font-weight: 600;
-    color: var(--sev-high, #fbbf24);
+    color: var(--sev-high, #a35c00);
   }
 
   button {
     min-height: 32px;
     padding: 0 10px;
     border-radius: 999px;
-    border: 1px solid var(--sev-high, #fbbf24);
+    border: 1px solid var(--sev-high, #a35c00);
     background: transparent;
-    color: var(--sev-high, #fbbf24);
+    color: var(--sev-high, #a35c00);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
 
     &:first-of-type {
-      background: var(--sev-high, #fbbf24);
+      background: var(--sev-high, #a35c00);
       color: #000;
     }
   }
@@ -1025,7 +1025,7 @@ app-ai-stepper {
 
         &.on {
           color: var(--ok, #4ade80);
-          background: rgba(74, 222, 128, 0.12);
+          background: rgba(22, 101, 52, 0.10);
         }
       }
     }

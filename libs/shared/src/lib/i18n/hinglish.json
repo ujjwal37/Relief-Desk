@@ -169,7 +169,9 @@
     "offline": "Aap offline hain. Connection wapas aane tak approvals rukenge.",
     "viewFull": "Poori queue dekhein",
     "showReport": "Report dikhayein",
-    "tabsLabel": "Queue ka view"
+    "tabsLabel": "Queue ka view",
+    "tabSent": "Sent",
+    "tabDone": "Done"
   },
   "alerts": {
     "title": "Alerts",
@@ -924,7 +926,8 @@
     "deskHowAnswered": "Maine kaise jawab diya · {n} steps",
     "agentScope": "Case assistant",
     "agentIntro": "Jagah, zaroorat, ya abhi bhi intezaar kar rahe logon ke requests khojein.",
-    "agentFootnote": "Jawab cases review karne mein madad karte hain. Dispatch ki manzoori case queue se dein."
+    "agentFootnote": "Jawab cases review karne mein madad karte hain. Dispatch ki manzoori case queue se dein.",
+    "textNotStored": "Is sample report ka text save nahi hai"
   },
   "flow": {
     "title": "AI ne kaise decide kiya",
@@ -940,7 +943,7 @@
     "urgency": "Zaroorat aanki",
     "matching": "Sabse paas ki team dhoondhi",
     "explain": "Reason likha",
-    "sentIntake": "{people} logon ke liye {need}.",
+    "sentIntake": "{people} ke liye {need}.",
     "sentDedupeClear": "Pichhle ghante is jagah koi aur case nahi.",
     "sentDedupeHit": "{id} jaisa lagta hai (wahi jagah, {n} min apart).",
     "sentUrgency": "{band}: {reason}.",
@@ -1135,7 +1138,7 @@
     "result": {
       "noDup": "Koi duplicate nahi"
     },
-    "headlineIntake": "{place} par {people} logon ke liye {type}.",
+    "headlineIntake": "{place} par {people} ke liye {type}.",
     "headlineJoined": "Is case mein {n} aur reports judi.",
     "headlineUrgency": "Urgency {score}. {reason}",
     "headlineMatch": "{team} {km} km door hai.",
@@ -1144,7 +1147,9 @@
     "whyMatch": "{team} unhe le ja sakti hai, {km} km door.",
     "why": "Kyun",
     "showPrompt": "Prompt aur jawab dikhao",
-    "hidePrompt": "Prompt aur jawab chhupao"
+    "hidePrompt": "Prompt aur jawab chhupao",
+    "whyJoined": "{n} reports ek hi jagah aur logon ke baare mein hain, kam samay mein, isliye ek case hai.",
+    "whyDistinct": "Pichhle ek ghante mein is jagah ka koi aur open case nahi."
   },
   "panel": {
     "moreDetails": "Aur details"
@@ -1230,10 +1235,10 @@
     "hide": "Steps chhupayein",
     "badgeRules": "Rules",
     "badgeRecorded": "Recorded (Gemini)",
-    "short.intake": "Report padhi",
+    "short.intake": "Read",
     "short.dedupe": "Duplicates check",
     "short.urgency": "Urgency rating",
-    "short.maps": "Maps check",
+    "short.maps": "Team",
     "short.explain": "Samjhaya",
     "short.you": "Aap"
   },
@@ -1247,5 +1252,53 @@
     "help": "Ye sheet dikhayein"
   },
   "teams.goCommand": "Command par jaayein",
-  "teams.sub": "{a} free · {b} busy"
+  "teams.sub": "{a} free · {b} busy",
+  "people": {
+    "notStated": "Log: nahi bataya",
+    "one": "1 vyakti",
+    "many": "{n} log"
+  },
+  "hoax": {
+    "dismiss": "Hoax maan ke band karo",
+    "notHoax": "Hoax nahi hai",
+    "dismissed": "Hoax maan ke band kiya. Kuch nahi bheja gaya.",
+    "likely": "Shayad hoax"
+  },
+  "noTeam": {
+    "title": {
+      "boat": "{km} km ke andar koi free boat nahi",
+      "medical": "Paas mein koi free medical team nahi",
+      "food": "Paas mein koi free food team nahi",
+      "shelter": "Paas mein koi free shelter nahi",
+      "other": "Paas mein koi free team nahi"
+    },
+    "reason": {
+      "all_busy": "Is type ki saari {n} teams doosre cases par busy hain.",
+      "too_far": "Sabse paas ki free team ({team}) {km} km door hai (limit {limit} km).",
+      "too_small": "Akeli free team ({team}) mein {seats} seats hain; {need} logon ko madad chahiye.",
+      "none_of_kind": "Is area mein is type ki koi team nahi hai."
+    },
+    "stays": "Priority wahi rahegi. Case queue mein apni jagah par rahega.",
+    "yourOptions": "Aapke options",
+    "opt": {
+      "reserve": "Agli free team reserve karo: {team}, lagbhag {free} min mein free, lagbhag {eta} min mein pahunchegi",
+      "road": "Abhi road team bhejo jaanch ke liye: {team}, {km} km, lagbhag {eta} min. Ye paani mein rescue nahi kar sakti.",
+      "wider": "{limit} km se aage dhoondo: {team}, {km} km, lagbhag {eta} min",
+      "escalate": "District control room ko escalate karo"
+    },
+    "go": {
+      "reserve": "Agli free team reserve karo",
+      "road": "Road team bhejo",
+      "wider": "Door wali team lo",
+      "escalate": "Escalate karo"
+    },
+    "logged": {
+      "reserve": "Reserve ho gaya. Team free hote hi propose hogi. Kuch nahi bheja gaya.",
+      "road": "Road team ka choice log hua. Abhi kuch nahi bheja.",
+      "wider": "Door search ka choice log hua. Abhi kuch nahi bheja.",
+      "escalate": "District control room ko escalate kiya (log hua)."
+    },
+    "failed": "Choice save nahi hua. Dobara try karo.",
+    "footer": "Aapke approve karne tak kuch nahi bheja jaata. Samay seedhi doori ka andaaza hai."
+  }
 }

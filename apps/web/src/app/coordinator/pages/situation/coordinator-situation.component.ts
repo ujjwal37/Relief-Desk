@@ -98,7 +98,8 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
     .ghost:hover:not(:disabled) { background:var(--brand-tint); }
     button:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
     button:disabled { opacity:.55; cursor:not-allowed; }
-    .panel.brief { border-color:var(--gemini, #a78bfa); background:color-mix(in srgb, var(--gemini, #a78bfa) 8%, var(--card)); }
+    .panel.brief { border-color:var(--border-2); background:var(--card); }
+    .panel.brief:has(.badge.gemini) { border-color:var(--gemini); background:color-mix(in srgb, var(--gemini) 5%, var(--card)); }
     .panel.brief .brief-text { font-size:15px; line-height:1.55; color:var(--text); }
     .tiles { display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:12px; }
     .tile { background:var(--card); border:1px solid var(--border); border-radius:var(--r3, 12px); padding:12px 14px; display:flex; flex-direction:column; gap:2px; min-height:64px; }
@@ -131,7 +132,7 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
     .brief-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
     .brief-head h2 { margin:0; }
     .badge { font-size:11px; padding:2px 8px; border-radius:999px; background:var(--surface-2); color:var(--text-2); }
-    .badge.gemini { background:var(--brand-tint); color:var(--text); }
+    .badge.gemini { background:var(--gemini-t); color:var(--gemini); }
     .brief-text { margin:0; font-size:14px; line-height:1.55; color:var(--text); white-space:pre-line; }
     .empty { margin:0; font-size:13px; color:var(--text-2); }
     @media (max-width: 1280px) { .grid { grid-template-columns:minmax(0,1fr) 340px; } .tiles { grid-template-columns:repeat(3, minmax(0,1fr)); } }

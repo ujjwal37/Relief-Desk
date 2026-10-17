@@ -5,11 +5,11 @@ export type PinTone = 'free' | 'busy' | 'stale' | 'critical' | 'high' | 'medium'
 
 /** Free is green, busy and not-updated are grey. Case tones match the urgency chips. */
 export const TONE_COLOR: Record<PinTone, string> = {
-  free: '#047857',
+  free: '#166534',
   busy: '#6b7280',
   stale: '#6b7280',
-  critical: '#dc2626',
-  high: '#d97706',
+  critical: '#b91c1c',
+  high: '#a35c00',
   medium: '#2563eb',
   low: '#64748b',
 };

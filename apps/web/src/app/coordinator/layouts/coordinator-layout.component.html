@@ -42,12 +42,6 @@
                   <button type="button" [class.on]="scenarioService.activeId() === pack.id" (click)="selectScenario(pack.id)">{{ pack.title }}</button>
                 }
               </div>
-              <h3>{{ 'settings.theme' | rdTranslate }}</h3>
-              <div class="seg">
-                @for (t of themes; track t.m) {
-                  <button type="button" [class.on]="theme.mode() === t.m" [attr.aria-pressed]="theme.mode() === t.m" (click)="theme.setMode(t.m)">{{ t.k | rdTranslate }}</button>
-                }
-              </div>
               <h3>{{ 'settings.language' | rdTranslate }}</h3>
               <div class="seg two">
                 @for (l of primaryLangs; track l.code) {

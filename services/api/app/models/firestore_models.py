@@ -82,6 +82,8 @@ class StoredRequest(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     people_count: Optional[int] = None
+    # Reporter-facing reference (RD-1234) for the first report, so both sides quote the same id.
+    public_code: Optional[str] = None
     # The citizen's own words for the count, such as "2-3" or "4".
     people_span: Optional[str] = None
     count_spans: List[str] = Field(default_factory=list)

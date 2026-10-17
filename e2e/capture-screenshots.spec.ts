@@ -39,21 +39,18 @@ test('capture required screenshots at 1440x900', async ({ page, request }) => {
   // Explicitly ensure Dark mode
   const moreBtn = page.locator('.more-btn');
   await moreBtn.click();
-  await page.getByRole('button', { name: 'Dark', exact: true }).click();
   await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
   await noHorizontalOverflow(page);
   await shot(page, 'home-idle-dark-en.png');
 
   // 2. Home idle (English, Light)
   await moreBtn.click();
-  await page.getByRole('button', { name: 'Light', exact: true }).click();
   await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
   await noHorizontalOverflow(page);
   await shot(page, 'home-idle-light-en.png');
 
   // Switch back to Dark for remaining screenshots
   await moreBtn.click();
-  await page.getByRole('button', { name: 'Dark', exact: true }).click();
   await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
 
   // 3. Home idle (Hindi, Dark)

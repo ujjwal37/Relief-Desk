@@ -118,14 +118,9 @@ test.describe('agents visible', () => {
       await shot(page, `${viewport.name}-accuracy-bars`);
       await noHorizontalOverflow(page);
 
+      // Single light theme: no theme switch in the account menu.
       await page.getByRole('button', { name: 'Account menu' }).click();
-      await page.getByRole('button', { name: 'Dark', exact: true }).click();
-      await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('dark');
-      await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
-      await shot(page, `${viewport.name}-accuracy-dark`);
-      await noHorizontalOverflow(page);
-      await page.getByRole('button', { name: 'Account menu' }).click();
-      await page.getByRole('button', { name: 'Light', exact: true }).click();
+      await expect(page.getByRole('button', { name: 'Dark', exact: true })).toHaveCount(0);
       await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
 
       if (viewport.name === 'desktop') {

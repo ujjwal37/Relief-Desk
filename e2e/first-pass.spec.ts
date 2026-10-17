@@ -251,17 +251,12 @@ test.describe('public and coordinator demo', () => {
 
       await page.goto('/');
       await page.getByRole('button', { name: 'Settings' }).click();
-      await page.getByRole('button', { name: 'Dark', exact: true }).click();
-      await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('dark');
-      await page.getByRole('button', { name: 'Done' }).click();
-      await shot(page, `${viewport.name}-dark`);
-      await page.getByRole('button', { name: 'Settings' }).click();
+      await expect(page.getByRole('button', { name: 'Dark', exact: true })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Malayalam' })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Hinglish' })).toHaveCount(0);
       await page.getByTestId('lang-more').click();
       await expect(page.getByRole('button', { name: 'Malayalam' })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Hinglish' })).toBeVisible();
-      await page.getByRole('button', { name: 'Light', exact: true }).click();
       await page.getByRole('button', { name: 'Hindi' }).click();
       await page.getByRole('button', { name: 'हो गया' }).click();
       await expect(page.getByRole('link', { name: 'मुझे मदद चाहिए' })).toBeVisible();

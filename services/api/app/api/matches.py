@@ -116,6 +116,53 @@ def complete_request(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
 
 
+@router.get("/requests/{id}/no-team", summary="Why no team fits, and the options left")
+def no_team(id: str, user: CoordinatorUser = Depends(get_current_coordinator)):
+    from app.agents.no_team import no_team_options
+    req = storage_service.get_request(id)
+    if req is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return no_team_options(req, storage_service.list_resources(event_id=req.event_id))
+
+
+class NoTeamChoice(BaseModel):
+    option: str
+
+
+@router.post("/requests/{id}/no-team", summary="Log the coordinator's choice when no team fits")
+def choose_no_team(id: str, payload: NoTeamChoice, user: CoordinatorUser = Depends(get_current_coordinator)):
+    from app.agents.no_team import OPTIONS, no_team_options
+    if payload.option not in OPTIONS:
+        raise HTTPException(status_code=400, detail="Unknown option")
+    req = storage_service.get_request(id)
+    if req is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    opts = no_team_options(req, storage_service.list_resources(event_id=req.event_id))
+    chosen = opts["options"].get(payload.option)
+    if payload.option != "escalate" and not chosen:
+        raise HTTPException(status_code=400, detail="That option is not available for this case")
+    before = req.model_dump()
+    req.flags = sorted(set((req.flags or []) + [f"no_team_{payload.option}"]))
+    storage_service._requests[req.id] = req
+    storage_service.record_audit(actor=user.email, action=f"no_team_{payload.option}", target=req.id, before=before, after=req.model_dump())
+    return {"request_id": req.id, "option": payload.option, "chosen": chosen, "sent": False}
+
+
+@router.post(
+    "/requests/{id}/dismiss-hoax",
+    response_model=StoredRequest,
+    summary="Close a report the coordinator confirmed is a hoax",
+)
+def dismiss_hoax(
+    id: str,
+    user: CoordinatorUser = Depends(get_current_coordinator),
+):
+    try:
+        return storage_service.dismiss_hoax(id, actor=user.email)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
 @router.post(
     "/resources/{id}/location",
     response_model=StoredResource,

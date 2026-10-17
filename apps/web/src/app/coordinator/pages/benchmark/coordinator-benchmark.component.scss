@@ -61,6 +61,6 @@ h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); }
 .tile .dir{margin:0;font-size:11px;color:var(--muted)}
 .tile .dir::before{content:'↑ '}
 .tile .dir.low::before{content:'↓ '}
-.tile .gem{margin:0;font-size:12px;color:var(--gemini, #a78bfa);font-weight:600}
+.tile .gem{margin:0;font-size:12px;color:var(--gemini, #6d28d9);font-weight:600}
 .tile .base{margin:0;font-size:12px;color:var(--muted)}
 details.table-wrap>summary{cursor:pointer;font-weight:600;margin-bottom:8px}

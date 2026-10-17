@@ -62,12 +62,22 @@ DEMO_CASES: List[Dict[str, Any]] = [
     },
     {
         "id": "DEMO-106", "minutes": 110, "type": "info", "ward_id": "ward_2", "lat": 9.414, "lng": 76.415,
-        "people": 1, "hazard": "none", "vulnerable": {},
+        "people": None, "hazard": "none", "vulnerable": {},
         "place": "Champakulam - Alappuzha road",
         "en": "Champakulam to Alappuzha road is blocked by 3 feet of water near the bridge, vehicles turning back.",
         "hi": "चंपक्कुलम से अलप्पुझा सड़क पुल के पास 3 फीट पानी से बंद है, गाड़ियां वापस लौट रही हैं।",
         "raw": "en",
         "status": "completed",
+    },
+    {
+        # A forwarded spam message, so the hoax flag is visible in every demo.
+        "id": "DEMO-107", "minutes": 6, "type": "info", "ward_id": "ward_3", "lat": 9.431, "lng": 76.401,
+        "people": None, "hazard": "none", "vulnerable": {},
+        "place": None,
+        "en": "NASA announced a free helicopter rescue. Call this number and forward this to 10 groups. 100% verified news share fast.",
+        "hi": "NASA announced a free helicopter rescue. Call this number and forward this to 10 groups. 100% verified news share fast.",
+        "raw": "en",
+        "hoax_reason": "Known spam phrase: forward this to 10 groups",
     },
 ]
 
@@ -103,7 +113,8 @@ def load_demo_cases(storage) -> int:
             vulnerable=VulnerableFlags(**row["vulnerable"]),
             hazard=HazardType(row["hazard"]),
             status=RequestStatus(row.get("status", "new")),
-            flags=["synthetic"],
+            flags=["synthetic"] + (["hoax", "likely_hoax"] if row.get("hoax_reason") else []),
+            hoax_reason=row.get("hoax_reason"),
             raw_text=raw,
             ai_translation=row["en"],
             summary=row["en"],

@@ -180,6 +180,7 @@ export interface StoredRequest {
   merged_into?: string | null;
   flags?: string[];
   hoax_reason?: string | null;
+  public_code?: string | null;
   raw_text?: string | null;
   /** The confirmed card summary. A case title falls back to it while the model works. */
   summary?: string | null;

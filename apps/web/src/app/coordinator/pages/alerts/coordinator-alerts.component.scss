@@ -69,7 +69,7 @@ h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); } .sub { mar
 /* declutter: landmark names only when they matter; selected pin stands out */
 .lm text { display:none; }
 .alerts-page:has(.alert-row.selected.k-resource_gap) .lm text { display:inline; }
-.pin.on .drop { stroke:var(--focus, #e3d3b0); stroke-width:4; filter:drop-shadow(0 0 6px rgba(227,211,176,.6)); }
+.pin.on .drop { stroke:var(--focus, #1b3c53); stroke-width:4; filter:drop-shadow(0 0 6px rgba(27,60,83,.45)); }
 .pin.on .pn { font-size:14px; }
 .wname { font-size:11px; }
 .alert-row.selected { border-color:var(--brand); box-shadow:0 0 0 1px var(--brand) inset; }
@@ -77,3 +77,11 @@ h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); } .sub { mar
 /* declutter: unselected pins smaller, ward names quieter */
 .pin:not(.on) .drop, .pin:not(.on) .pn { transform-box:fill-box; transform-origin:50% 100%; transform:scale(.8); }
 .wname { opacity:.7; } .wname.dim { opacity:.35; }
+
+/* Map fixed in a right column; only the list scrolls. */
+@media (min-width: 901px) {
+  :host { overflow: hidden; }
+  .alerts-page:not(.list-only) { height: 100%; min-height: 0; box-sizing: border-box; padding: 20px 24px; }
+  .alerts-page:not(.list-only) .alert-list { overflow: auto; min-height: 0; padding-right: 4px; }
+  .alerts-page:not(.list-only) .map-panel { min-height: 0; height: 100%; }
+}

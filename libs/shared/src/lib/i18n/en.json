@@ -169,7 +169,9 @@
     "offline": "You are offline. Approvals wait until the connection is back.",
     "viewFull": "View full queue",
     "showReport": "Show report",
-    "tabsLabel": "Queue view"
+    "tabsLabel": "Queue view",
+    "tabSent": "Sent",
+    "tabDone": "Done"
   },
   "alerts": {
     "title": "Alerts",
@@ -924,7 +926,8 @@
     "deskHowAnswered": "How I answered · {n} steps",
     "agentScope": "Case assistant",
     "agentIntro": "Find requests by place, need, or who is still waiting.",
-    "agentFootnote": "Answers help you review cases. Approve dispatches from the case queue."
+    "agentFootnote": "Answers help you review cases. Approve dispatches from the case queue.",
+    "textNotStored": "Text not stored for this sample report"
   },
   "flow": {
     "title": "How it decided",
@@ -940,7 +943,7 @@
     "urgency": "Rated urgency",
     "matching": "Found the closest team",
     "explain": "Explained the choice",
-    "sentIntake": "{need} for {people} people.",
+    "sentIntake": "{need} for {people}.",
     "sentDedupeClear": "No other case at this place in the last hour.",
     "sentDedupeHit": "Looks like {id} (same place, {n} min apart).",
     "sentUrgency": "{band}: {reason}.",
@@ -1135,7 +1138,7 @@
     "result": {
       "noDup": "No duplicate"
     },
-    "headlineIntake": "{type} for {people} people at {place}.",
+    "headlineIntake": "{type} for {people} at {place}.",
     "headlineJoined": "{n} more reports joined this case.",
     "headlineUrgency": "Urgency {score}. {reason}",
     "headlineMatch": "{team} is {km} km away.",
@@ -1144,7 +1147,9 @@
     "whyMatch": "{team} is the nearest free team that can take them, {km} km away.",
     "why": "Why",
     "showPrompt": "Show prompt and response",
-    "hidePrompt": "Hide prompt and response"
+    "hidePrompt": "Hide prompt and response",
+    "whyJoined": "{n} reports describe the same place and people, close in time, so they are one case.",
+    "whyDistinct": "No other open case at this place in the last hour."
   },
   "panel": {
     "moreDetails": "More details"
@@ -1230,10 +1235,10 @@
     "hide": "Hide steps",
     "badgeRules": "Rules",
     "badgeRecorded": "Recorded (Gemini)",
-    "short.intake": "Read report",
+    "short.intake": "Read",
     "short.dedupe": "Duplicates",
     "short.urgency": "Urgency",
-    "short.maps": "Maps",
+    "short.maps": "Team",
     "short.explain": "Explained",
     "short.you": "You"
   },
@@ -1247,5 +1252,53 @@
     "help": "Show this sheet"
   },
   "teams.goCommand": "Go to Command",
-  "teams.sub": "{a} free · {b} busy"
+  "teams.sub": "{a} free · {b} busy",
+  "people": {
+    "notStated": "People: not stated",
+    "one": "1 person",
+    "many": "{n} people"
+  },
+  "hoax": {
+    "dismiss": "Dismiss as hoax",
+    "notHoax": "Not a hoax",
+    "dismissed": "Closed as hoax. Nothing was sent.",
+    "likely": "Likely hoax"
+  },
+  "noTeam": {
+    "title": {
+      "boat": "No free boat within {km} km",
+      "medical": "No free medical team nearby",
+      "food": "No free food team nearby",
+      "shelter": "No free shelter nearby",
+      "other": "No free team nearby"
+    },
+    "reason": {
+      "all_busy": "All {n} teams of this kind are busy on other cases.",
+      "too_far": "Nearest free team ({team}) is {km} km away (limit {limit} km).",
+      "too_small": "Only free team ({team}) has {seats} seats; {need} people need help.",
+      "none_of_kind": "There is no team of this kind in the area."
+    },
+    "stays": "Priority stays. The case keeps its place in the queue.",
+    "yourOptions": "Your options",
+    "opt": {
+      "reserve": "Reserve the next free team: {team}, free in about {free} min, arrives in about {eta} min",
+      "road": "Send a road team now to check and guide: {team}, {km} km, about {eta} min. It cannot do water rescue.",
+      "wider": "Search beyond {limit} km: {team}, {km} km, about {eta} min",
+      "escalate": "Escalate to the district control room"
+    },
+    "go": {
+      "reserve": "Reserve next free team",
+      "road": "Send road team",
+      "wider": "Use the farther team",
+      "escalate": "Escalate"
+    },
+    "logged": {
+      "reserve": "Reserved. It will be proposed when the team is free. Nothing was sent.",
+      "road": "Road team choice logged. Nothing was sent yet.",
+      "wider": "Wider search choice logged. Nothing was sent yet.",
+      "escalate": "Escalated to the district control room (logged)."
+    },
+    "failed": "Could not save that choice. Try again.",
+    "footer": "Nothing is sent until you approve. Times are straight-line estimates."
+  }
 }

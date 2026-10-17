@@ -305,8 +305,11 @@ def list_requests(
     closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED}
     from app.agents.pipeline import ensure_trace
     refreshed = []
+    from app.api.public import public_code_for
     for req in reqs:
         ensure_trace(req)
+        if not req.public_code and req.report_ids:
+            req.public_code = public_code_for(req.report_ids[0])
         before = req.urgency_score
         if req.status not in closed:
             result = scoring_engine.compute_urgency(req)

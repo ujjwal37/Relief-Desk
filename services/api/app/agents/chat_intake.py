@@ -206,8 +206,8 @@ class ChatIntakeAgent:
             summary_text = (user_message or "").strip()
             card = ConfirmationCardData(
                 incident_type=current.type.value,
-                place_text=current.place_text or "Champakulam",
-                people_count=current.people.count or 1,
+                place_text=current.place_text or "",
+                people_count=current.people.count,
                 vulnerable=current.vulnerable.model_dump(),
                 hazard=current.hazard.value,
                 summary=summary_text,

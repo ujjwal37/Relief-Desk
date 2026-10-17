@@ -137,8 +137,8 @@
         </div>
         <div class="queue-tabs" role="tablist" [attr.aria-label]="'queue.tabsLabel' | rdTranslate" (keydown)="onQueueTabKey($event)">
           <button type="button" role="tab" class="qtab" data-testid="tab-waiting" [class.on]="queueTab() === 'waiting'" [attr.aria-selected]="queueTab() === 'waiting'" [attr.tabindex]="queueTab() === 'waiting' ? 0 : -1" (click)="setQueueTab('waiting')">{{ 'batch.waiting' | rdTranslate }} <b>{{ batch().waiting }}</b></button>
-          <button type="button" role="tab" class="qtab" data-testid="tab-dispatched" [class.on]="queueTab() === 'dispatched'" [attr.aria-selected]="queueTab() === 'dispatched'" [attr.tabindex]="queueTab() === 'dispatched' ? 0 : -1" (click)="setQueueTab('dispatched')">{{ 'coord.filterDispatched' | rdTranslate }} <b>{{ counts().dispatched }}</b></button>
-          <button type="button" role="tab" class="qtab" data-testid="tab-completed" [class.on]="queueTab() === 'completed'" [attr.aria-selected]="queueTab() === 'completed'" [attr.tabindex]="queueTab() === 'completed' ? 0 : -1" (click)="setQueueTab('completed')">{{ 'coord.filterCompleted' | rdTranslate }} <b>{{ counts().completed }}</b></button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-dispatched" [class.on]="queueTab() === 'dispatched'" [attr.aria-selected]="queueTab() === 'dispatched'" [attr.tabindex]="queueTab() === 'dispatched' ? 0 : -1" (click)="setQueueTab('dispatched')" [attr.aria-label]="'coord.filterDispatched' | rdTranslate"><span class="ql-full">{{ 'coord.filterDispatched' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabSent' | rdTranslate }}</span> <b>{{ counts().dispatched }}</b></button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-completed" [class.on]="queueTab() === 'completed'" [attr.aria-selected]="queueTab() === 'completed'" [attr.tabindex]="queueTab() === 'completed' ? 0 : -1" (click)="setQueueTab('completed')" [attr.aria-label]="'coord.filterCompleted' | rdTranslate"><span class="ql-full">{{ 'coord.filterCompleted' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabDone' | rdTranslate }}</span> <b>{{ counts().completed }}</b></button>
         </div>
       </div>
 
@@ -202,7 +202,7 @@
                 <!-- Line 3: Meta & chips -->
                 <div class="card-line-meta">
                   <span class="card-meta-text">
-                    {{ req.id }} · {{ req.people_count || 1 }} {{ 'coord.people' | rdTranslate }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
+                    {{ shortId(req.id, req.public_code) }} · {{ peopleLabel(req.people_count) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
                   </span>
                   <div class="card-meta-chips">
                     @if ((req.merged_count || 1) > 1) {
@@ -333,7 +333,7 @@
               <text class="dlabel" [attr.x]="d.lx" [attr.y]="d.ly" text-anchor="middle">{{ ('coord.district.' + d.id) | rdTranslate }}</text>
             }
             @for (leg of focusLegs(); track leg.id) {
-              <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#047857' : '#6b7280'" [attr.stroke-width]="leg.suggested ? (highlightId() === leg.id ? 6 : 4) : (highlightId() === leg.id ? 5 : 2)" stroke-linecap="round"/>
+              <line [attr.x1]="leg.x1" [attr.y1]="leg.y1" [attr.x2]="leg.x2" [attr.y2]="leg.y2" [attr.stroke]="leg.suggested ? '#166534' : '#6b7280'" [attr.stroke-width]="leg.suggested ? (highlightId() === leg.id ? 6 : 4) : (highlightId() === leg.id ? 5 : 2)" stroke-linecap="round"/>
               <rect [attr.x]="leg.lx - (leg.label.length * 3.2 + 10)" [attr.y]="leg.ly - 49" [attr.width]="leg.label.length * 6.4 + 20" height="23" rx="11.5" fill="#0f172a" opacity=".88"/>
               <text class="leg" [class.on]="leg.suggested" [attr.x]="leg.lx" [attr.y]="leg.ly - 34" text-anchor="middle">{{ leg.label }}</text>
             }
@@ -343,7 +343,7 @@
             @for (p of drawnPins(); track p.id) {
               @if (p.kind === 'team') {
                 <g class="pin" [class.dim]="p.dim" [class.suggested]="p.suggested" [attr.opacity]="p.dim ? null : p.fade" [attr.transform]="'translate(' + p.x + ' ' + p.y + ')'">
-                  <rect x="-10" y="-10" width="20" height="20" rx="3" fill="#047857" [attr.stroke]="p.suggested ? '#065f46' : 'var(--surface)'" [attr.stroke-width]="p.suggested ? 3 : 2"/>
+                  <rect x="-10" y="-10" width="20" height="20" rx="3" fill="#166534" [attr.stroke]="p.suggested ? '#14532d' : 'var(--surface)'" [attr.stroke-width]="p.suggested ? 3 : 2"/>
                   <circle cx="8" cy="-8" r="4" [attr.fill]="p.fill" stroke="var(--surface)" stroke-width="1.5"/>
                 </g>
               }
@@ -386,6 +386,7 @@
           <div class="decision-case-header">
             <div class="dec-title-row">
               <h2 class="dec-place-title" [attr.title]="caseTitle(req)">{{ caseTitle(req) }}</h2>
+              @if (isHoax(req)) { <span class="hoax-chip hoax-head" data-testid="hoax-head">{{ hoaxLine(req) }}</span> }
               <button type="button" class="map-toggle" data-testid="map-toggle" [attr.aria-pressed]="mapOpen()" (click)="mapOpen.set(!mapOpen())">{{ (mapOpen() ? 'queue.hideMap' : 'queue.showMap') | rdTranslate }}</button>
               <span class="dec-band-tag" [class]="'band-' + bandOf(req.urgency_score)">
                 @if (bandOf(req.urgency_score) === 'critical') {
@@ -404,7 +405,7 @@
               <p class="dec-depth" data-testid="depth-chip">{{ dc }}</p>
             }
             <p class="dec-case-sub">
-              {{ req.id }} · {{ getWardText(req) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
+              <span [attr.title]="req.id">{{ shortId(req.id, req.public_code) }}</span> · {{ getWardText(req) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
             </p>
           </div>
 
@@ -552,9 +553,28 @@
                 </table>
               </div>
             } @else {
-              <div class="best-team-banner no-team">
-                <p>{{ 'coord.noTeamNow' | rdTranslate }}</p>
-              </div>
+              @if (noTeam(); as nt) {
+                <section class="no-team-card" data-testid="no-team">
+                  <h3>{{ ('noTeam.title.' + (nt.kind || 'other')) | rdTranslate:{ km: nt.limit_km } }}</h3>
+                  <p class="nt-reason">{{ noTeamReason(nt) }}</p>
+                  <p class="nt-stays">{{ 'noTeam.stays' | rdTranslate }}</p>
+                  <fieldset class="nt-options">
+                    <legend>{{ 'noTeam.yourOptions' | rdTranslate }}</legend>
+                    @for (k of noTeamOptionKeys(nt); track k) {
+                      <label class="nt-opt" [class.on]="noTeamPick() === k" [attr.data-testid]="'no-team-' + k">
+                        <input type="radio" name="nt-opt" [value]="k" [checked]="noTeamPick() === k" (change)="noTeamPick.set(k)" />
+                        <span>{{ noTeamLine(nt, k) }}</span>
+                      </label>
+                    }
+                  </fieldset>
+                  <button type="button" class="btn-approve nt-go" data-testid="no-team-go" [disabled]="!noTeamPick() || !!noTeamDone()" (click)="chooseNoTeam(req)">{{ ('noTeam.go.' + (noTeamPick() || 'escalate')) | rdTranslate }}</button>
+                  <p class="nt-foot">{{ 'noTeam.footer' | rdTranslate }}</p>
+                </section>
+              } @else {
+                <div class="best-team-banner no-team">
+                  <p>{{ 'coord.noTeamNow' | rdTranslate }}</p>
+                </div>
+              }
             }
 
             @if (needsDupReview(req)) {
@@ -618,13 +638,6 @@
               </div>
             </div>
           }
-
-          @if (isHoax(req) && !isCompleted(req) && !isDispatched(req)) {
-            <label class="hoax-override">
-              <input type="checkbox" [checked]="hoaxOverride()" (change)="hoaxOverride.set($any($event.target).checked)" />
-              {{ 'coord.reviewHoax' | rdTranslate }}
-            </label>
-          }
           @if (isCompleted(req)) {
             <p class="completed-banner-note">{{ 'coord.completedNote' | rdTranslate }}</p>
           } @else if (isDispatched(req)) {
@@ -641,6 +654,12 @@
                 }
                 <button type="button" class="btn-approve" (click)="markCompleted(req)">{{ 'coord.markCompleted' | rdTranslate }}</button>
               </div>
+            </div>
+          } @else if (isHoax(req) && !hoaxOverride()) {
+            <div class="footer-buttons-row hoax-actions">
+              <button type="button" class="btn-approve btn-dismiss-hoax" data-testid="dismiss-hoax" [disabled]="offline() || approving()" (click)="dismissHoax(req)">{{ 'hoax.dismiss' | rdTranslate }}</button>
+              <button type="button" class="btn-sec btn-not-hoax" data-testid="not-hoax" (click)="hoaxOverride.set(true)">{{ 'hoax.notHoax' | rdTranslate }}</button>
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
             </div>
           } @else if (activeProposal(); as prop) {
             <div class="footer-buttons-row">

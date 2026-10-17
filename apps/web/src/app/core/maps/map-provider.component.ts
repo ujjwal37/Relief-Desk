@@ -23,25 +23,6 @@ import { MapProviderService } from './map-provider.service';
 import { computeRoadRoute, RoadRoute, RoutingDeniedError } from './road-route';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 
-/** Dark pine map for the dark coordinator theme; sand labels, deep water. */
-const PINE_DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#173a32' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#e3d3b0' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#0f2a24' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c544a' }] },
-  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0b1f1b' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#7fa79b' }] },
-  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3d6b5f' }] },
-];
-
-function isDarkTheme(): boolean {
-  const root = document.documentElement;
-  return root.dataset['theme'] === 'dark' || root.classList.contains('dark') || root.classList.contains('theme-dark');
-}
-
 /** Points near the median, so one far-off team does not shrink the whole map. Off-frame pins stay drawn at the edge. */
 function mainCluster(points: { lat: number; lng: number }[]): { lat: number; lng: number }[] {
   if (points.length < 4) return points;
@@ -124,7 +105,7 @@ export interface MapLeg {
     .rd-zoom-wrap { position: absolute; inset: 0; transform-origin: 50% 50%; transition: transform .2s ease; }
     .rd-zoom { position: absolute; right: 10px; top: 56px; z-index: 7; display: flex; flex-direction: column; gap: 4px; }
     .rd-zoom button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 18px; font-weight: 700; cursor: pointer; }
-    .rd-zoom button:focus-visible { outline: 2px solid var(--focus, #e3d3b0); }
+    .rd-zoom button:focus-visible { outline: 2px solid var(--focus, #1b3c53); }
     .rd-google-map, .rd-schematic { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 250px; display: block; }
     .rd-map-loading { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size: 200% 100%; animation: rd-map-pulse 1.8s ease-in-out infinite; }
     .rd-map-loading span { background: var(--surface); color: var(--text); padding: 8px 14px; border-radius: 999px; font-size: 13px; }
@@ -132,7 +113,7 @@ export interface MapLeg {
     @media (prefers-reduced-motion: reduce) { .rd-map-loading { animation: none; } }
     .rd-leg { font-size: 13px; font-weight: 700; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
     .rd-route-loading { position: absolute; z-index: 6; top: 10px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--e1); font-size: 12px; font-weight: 600; pointer-events: none; }
-    .rd-route-loading i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand, #047857); animation: rd-spin .8s linear infinite; }
+    .rd-route-loading i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand, #166534); animation: rd-spin .8s linear infinite; }
     @keyframes rd-spin { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .rd-route-loading i { animation: none; } }
   `],
@@ -279,7 +260,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
     const suggested = new Set(this.legs.filter((leg) => leg.suggested).map((leg) => `${leg.to.lat},${leg.to.lng}`));
     return this.pins.map((pin) => {
       const onLeg = suggested.has(`${pin.lat},${pin.lng}`);
-      const fill = pin.tone ? TONE_COLOR[pin.tone] : (onLeg ? '#047857' : '#0f1720');
+      const fill = pin.tone ? TONE_COLOR[pin.tone] : (onLeg ? '#166534' : '#0f1720');
       return {
         id: pin.id,
         ...this.toSvg(pin.lat, pin.lng, frame),
@@ -306,7 +287,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         ly: (from.y + to.y) / 2 - 8,
         title: this.legLabel(leg),
         dash: leg.mode === 'water' ? '8 6' : null,
-        stroke: leg.suggested ? '#047857' : '#6b7280',
+        stroke: leg.suggested ? '#166534' : '#6b7280',
         width: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
       };
     });
@@ -357,7 +338,7 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
-          styles: isDarkTheme() ? PINE_DARK_MAP_STYLE : PINE_SAND_MAP_STYLE,
+          styles: PINE_SAND_MAP_STYLE,
         });
         const ready = () => {
           this.loading.set(false);
@@ -379,13 +360,13 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
         return new maps.Polyline({
           map: this.map,
           path: [leg.from, leg.to],
-          strokeColor: leg.suggested ? '#047857' : '#6b7280',
+          strokeColor: leg.suggested ? '#166534' : '#6b7280',
           strokeWeight: leg.suggested ? (hot ? 6 : 4) : (hot ? 5 : 2),
           geodesic: true,
           visible: !waitForRoad || leg.mode === 'water',
           ...(leg.mode === 'water' ? {
             strokeOpacity: 0,
-            icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, strokeColor: leg.suggested ? '#0e7490' : '#6b7280', scale: leg.suggested ? 4 : 3 }, offset: '0', repeat: '14px' }],
+            icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, strokeColor: leg.suggested ? '#234c6a' : '#6b7280', scale: leg.suggested ? 4 : 3 }, offset: '0', repeat: '14px' }],
           } : {}),
         });
       });

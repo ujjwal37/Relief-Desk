@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 import { LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, SupportedLang } from '../services/language.service';
-import { ThemeMode, ThemeService } from '../services/theme.service';
 
-/** Globe button that opens a bottom sheet (language + theme). Shared by public and coordinator apps. */
+/** Globe button that opens a bottom sheet (language). Shared by public and coordinator apps. */
 @Component({
   selector: 'rd-settings-button',
   standalone: true,
@@ -36,12 +35,6 @@ import { ThemeMode, ThemeService } from '../services/theme.service';
             }
           }
         </div>
-        <h3>{{ 'settings.theme' | rdTranslate }}</h3>
-        <div class="seg" role="group">
-          @for (t of themes; track t.m) {
-            <button type="button" [class.on]="theme.mode() === t.m" [attr.aria-pressed]="theme.mode() === t.m" (click)="theme.setMode(t.m)">{{ t.k | rdTranslate }}</button>
-          }
-        </div>
         <button type="button" class="done" (click)="close()">{{ 'settings.close' | rdTranslate }}</button>
       </div>
     }
@@ -72,13 +65,9 @@ import { ThemeMode, ThemeService } from '../services/theme.service';
 })
 export class SettingsButtonComponent {
   readonly lang = inject(LanguageService);
-  readonly theme = inject(ThemeService);
   readonly primaryLangs = PRIMARY_LANGUAGES;
   readonly moreLangs = MORE_LANGUAGES;
   readonly moreOpen = signal(false);
-  readonly themes: { m: ThemeMode; k: string }[] = [
-    { m: 'system', k: 'settings.themeSystem' }, { m: 'light', k: 'settings.themeLight' }, { m: 'dark', k: 'settings.themeDark' },
-  ];
   readonly isOpen = signal(false);
   private sheet = viewChild<ElementRef<HTMLElement>>('sheet');
   private opener: HTMLElement | null = null;

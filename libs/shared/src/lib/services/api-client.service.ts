@@ -96,6 +96,16 @@ export interface ChatTurnPayload {
   location_pin?: { lat: number; lng: number };
 }
 
+export interface NoTeamPick { team_id: string; team: string; km?: number | null; eta_min?: number | null; free_in_min?: number; job?: string | null; kind?: string }
+export interface NoTeamOptions {
+  request_id: string;
+  reason: 'all_busy' | 'too_far' | 'too_small' | 'none_of_kind';
+  detail: { busy?: number; km?: number; limit?: number; team?: string; seats?: number; need?: number };
+  limit_km: number;
+  kind: string | null;
+  options: { reserve: NoTeamPick | null; road: NoTeamPick | null; wider: NoTeamPick | null; escalate: { available: boolean } };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -266,6 +276,18 @@ export class ApiClientService {
 
   markArrived(id: string): Observable<StoredRequest> {
     return this.http.post<StoredRequest>(`/api/requests/${id}/arrived`, {}, this.getAuthHeaders());
+  }
+
+  getNoTeam(id: string): Observable<NoTeamOptions> {
+    return this.http.get<NoTeamOptions>(`/api/requests/${id}/no-team`, this.getAuthHeaders());
+  }
+
+  chooseNoTeam(id: string, option: string): Observable<{ option: string; sent: boolean }> {
+    return this.http.post<{ option: string; sent: boolean }>(`/api/requests/${id}/no-team`, { option }, this.getAuthHeaders());
+  }
+
+  dismissHoax(id: string): Observable<StoredRequest> {
+    return this.http.post<StoredRequest>(`/api/requests/${id}/dismiss-hoax`, {}, this.getAuthHeaders());
   }
 
   completeRequest(id: string): Observable<StoredRequest> {
