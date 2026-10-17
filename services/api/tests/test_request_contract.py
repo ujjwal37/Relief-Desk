@@ -81,5 +81,9 @@ def test_chat_and_form_emit_byte_identical_request_json():
         # The model call is instant in tests. A 1 ms clock tick is not a different request.
         if isinstance(dumped.get("ai"), dict):
             dumped["ai"]["latency_ms"] = 0
+        queue = dumped.get("ai_queue")
+        if isinstance(queue, dict):
+            queue.pop("started_at", None)
+            queue.pop("elapsed_s", None)
         views.append(json.dumps(dumped, sort_keys=True, separators=(",", ":")))
     assert views[0] == views[1]

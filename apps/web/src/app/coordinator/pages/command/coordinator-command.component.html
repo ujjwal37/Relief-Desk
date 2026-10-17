@@ -138,7 +138,14 @@
           <p class="scenario-visible">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
         </div>
         <div class="queue-tabs" role="tablist" [attr.aria-label]="'queue.tabsLabel' | rdTranslate" (keydown)="onQueueTabKey($event)">
-          <button type="button" role="tab" class="qtab" data-testid="tab-waiting" [class.on]="queueTab() === 'waiting'" [attr.aria-selected]="queueTab() === 'waiting'" [attr.tabindex]="queueTab() === 'waiting' ? 0 : -1" (click)="setQueueTab('waiting')" [attr.aria-label]="'batch.waiting' | rdTranslate"><span class="ql-full">{{ 'batch.waiting' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabWaiting' | rdTranslate }}</span> <b class="seg-pill">{{ batch().waiting }}</b></button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-waiting" [class.on]="queueTab() === 'waiting'" [attr.aria-selected]="queueTab() === 'waiting'" [attr.tabindex]="queueTab() === 'waiting' ? 0 : -1" (click)="setQueueTab('waiting')" [attr.aria-label]="queueSplitOn() ? ('aiq.waitingCount' | rdTranslate:{ ready: displayRows().length, n: aiWorkingRows().length }) : ('batch.waiting' | rdTranslate)">
+            @if (queueSplitOn() && aiWorkingRows().length) {
+              <span class="ql-full">{{ 'aiq.waitingCount' | rdTranslate:{ ready: displayRows().length, n: aiWorkingRows().length } }}</span>
+              <span class="ql-short" aria-hidden="true">{{ 'aiq.inAi' | rdTranslate:{ n: aiWorkingRows().length } }}</span>
+            } @else {
+              <span class="ql-full">{{ 'batch.waiting' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabWaiting' | rdTranslate }}</span> <b class="seg-pill">{{ batch().waiting }}</b>
+            }
+          </button>
           <button type="button" role="tab" class="qtab" data-testid="tab-dispatched" [class.on]="queueTab() === 'dispatched'" [attr.aria-selected]="queueTab() === 'dispatched'" [attr.tabindex]="queueTab() === 'dispatched' ? 0 : -1" (click)="setQueueTab('dispatched')" [attr.aria-label]="'coord.filterDispatched' | rdTranslate"><span class="ql-full">{{ 'coord.filterDispatched' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabSent' | rdTranslate }}</span> <b class="seg-pill">{{ counts().dispatched }}</b></button>
           <button type="button" role="tab" class="qtab" data-testid="tab-completed" [class.on]="queueTab() === 'completed'" [attr.aria-selected]="queueTab() === 'completed'" [attr.tabindex]="queueTab() === 'completed' ? 0 : -1" (click)="setQueueTab('completed')" [attr.aria-label]="'coord.filterCompleted' | rdTranslate"><span class="ql-full">{{ 'coord.filterCompleted' | rdTranslate }}</span><span class="ql-short" aria-hidden="true">{{ 'queue.tabDone' | rdTranslate }}</span> <b class="seg-pill">{{ counts().completed }}</b></button>
         </div>
@@ -146,12 +153,84 @@
 
 
       <!-- Case List -->
-      <div class="list case-list-wrap" role="listbox" [attr.aria-label]="'coord.cases' | rdTranslate">
+      <div class="list case-list-wrap" role="listbox" [attr.aria-label]="'coord.cases' | rdTranslate" (scroll)="onCaseListScroll($event)">
         @if (newSinceFreeze() > 0) {
           <button type="button" class="new-pill" data-testid="new-pill" (click)="unfreezeQueue()">{{ 'queue.newPill' | rdTranslate:{ n: newSinceFreeze() } }}</button>
         }
-        @for (req of queueRows(); track req.id) {
-          @if (isAnalysisFailed(req)) {
+        @if (parkedReady().length) {
+          <button type="button" class="aiq-new" data-testid="new-ready" (click)="releaseParked()">{{ 'aiq.newReady' | rdTranslate:{ n: parkedReady().length } }}</button>
+        }
+        @if (queueTab() === 'waiting' && queueSplitOn()) {
+          @if (aiWorkingRows().length) {
+            <p class="aiq-flow">{{ (narrow() ? 'aiq.flowShort' : 'aiq.flow') | rdTranslate }}</p>
+            <section class="aiq-strip" data-testid="ai-queue" [class.open]="stripOpen()">
+              <button type="button" class="aiq-head" (click)="toggleStrip()" [attr.aria-expanded]="stripOpen()">
+                <span class="aiq-pulse" [class.off]="!readingCount()" aria-hidden="true"></span>
+                <span class="aiq-head-title">{{ 'aiq.working' | rdTranslate }}</span>
+                <b class="aiq-count">{{ aiWorkingRows().length }}</b>
+                @if (geminiPausedHonest()) { <span class="aiq-pause" aria-hidden="true">||</span> }
+                <span class="aiq-summary">{{ 'aiq.readingLine' | rdTranslate:{ reading: readingCount(), queued: queuedCount() } }}</span>
+                <span class="aiq-chev" aria-hidden="true">{{ stripOpen() ? '▾' : '▸' }}</span>
+              </button>
+              @if (stripOpen()) {
+                @if (geminiPausedHonest() && pausedCount() >= 3) {
+                  <p class="aiq-banner"><strong>{{ 'aiq.pausedBanner' | rdTranslate }}</strong></p>
+                }
+                @for (req of stripShown(); track req.id) {
+                  <button type="button" class="aiq-row" [class.sel]="selectedRequestId() === req.id" [class.queued]="req.ai_queue?.status === 'queued'" [class.late]="elapsedSec(req) >= 30 && !tookTooLong(req)" data-testid="ai-row" (click)="freezeQueue(); selectRequest(req.id, true)">
+                    <span class="aiq-dots" [attr.aria-label]="stepAria(req)">
+                      @for (step of aiSteps; track step) {
+                        <span class="aiq-dot" [class.done]="dotState(req, step) === 'done'" [class.active]="dotState(req, step) === 'active'" [class.gem]="dotState(req, step) === 'active' && req.ai_queue?.engine === 'gemini'"></span>
+                      }
+                    </span>
+                    <span class="aiq-row-main">
+                      <span class="aiq-title">{{ caseTitle(req) }}</span>
+                      <span class="aiq-meta">
+                        @if (tookTooLong(req)) {
+                          {{ 'aiq.timeout' | rdTranslate }}
+                        } @else {
+                          {{ shortId(req.id, req.public_code) }} · <b>{{ activeStepKey(req) | rdTranslate }}</b> · {{ clockOf(req) }}
+                        }
+                      </span>
+                      @if (req.ai_queue?.flags?.includes('paused')) {
+                        <span class="aiq-status"><span aria-hidden="true">||</span> {{ 'aiq.paused' | rdTranslate }}</span>
+                      }
+                    </span>
+                    @if (req.ai_queue?.status === 'queued' && req.ai_queue?.queue_pos) {
+                      <span class="aiq-pos">{{ lineKey(req.ai_queue?.queue_pos || 0) | rdTranslate:{ n: req.ai_queue?.queue_pos } }}</span>
+                    }
+                  </button>
+                }
+                @if (stripMore() > 0) {
+                  <button type="button" class="aiq-more" (click)="stripAll.set(true)">{{ 'aiq.more' | rdTranslate:{ n: stripMore() } }}</button>
+                }
+              }
+            </section>
+            <p class="aiq-hint">{{ 'aiq.slideHint' | rdTranslate }}</p>
+          }
+          <div class="aiq-ready-head">
+            <span>{{ 'aiq.ready' | rdTranslate }}</span>
+            <b>{{ displayRows().length }}</b>
+            <span class="aiq-decide">{{ 'aiq.youDecide' | rdTranslate }}</span>
+          </div>
+        }
+        @for (req of displayRows(); track req.id) {
+          @if (queueSplitOn() && caseLifeThreat(req)) {
+            <article class="aiq-life" [class.sel]="selectedRequestId() === req.id" data-testid="life-threat-card" [attr.aria-live]="'assertive'">
+              <p class="aiq-life-label">{{ 'aiq.lifeThreat' | rdTranslate }}</p>
+              <button type="button" class="aiq-life-title" (click)="freezeQueue(); selectRequest(req.id, true)">{{ req.place_text || caseTitle(req) }}</button>
+              <p class="aiq-life-quote">“{{ getOriginalQuote(req) }}”</p>
+              @if (req.ai_queue?.life_phrase) { <p class="aiq-life-phrase">{{ req.ai_queue?.life_phrase }}</p> }
+              @if (req.ai_queue?.place_unverified) { <span class="aiq-unverified">{{ 'aiq.place' | rdTranslate }} · {{ 'aiq.unverified' | rdTranslate }}</span> }
+              <p class="aiq-life-meta">{{ shortId(req.id, req.public_code) }} · @if (caseAiBlocked(req)) { {{ 'aiq.stillChecking' | rdTranslate }} } @else if (engineLabelKey(req); as ek) { <span [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span> }</p>
+              <div class="aiq-life-actions">
+                <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="$event.stopPropagation(); sendNearestBoat(req)">{{ 'aiq.sendBoat' | rdTranslate }}</button>
+                <button type="button" class="btn-sec" (click)="$event.stopPropagation(); callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
+                <a class="btn-sec aiq-call" href="tel:112">{{ 'aiq.call112' | rdTranslate }}</a>
+              </div>
+              <p class="sr-only">{{ 'aiq.lifeAnnounce' | rdTranslate:{ place: req.place_text || shortId(req.id, req.public_code) } }}</p>
+            </article>
+          } @else if (isAnalysisFailed(req)) {
             <article class="case-wrap failed">
               <p class="title">{{ getTranslationText(req) || ('ux.notRecorded' | rdTranslate) }}</p>
               <app-agent-badge source="fallback" />
@@ -163,6 +242,7 @@
               [class.sel]="selectedRequestId() === req.id"
               [class.row-flash]="flashIds().has(req.id)"
               [class.moved-up]="isMovedUp(req)"
+              [class.aiq-enter]="isJustReady(req)"
               [attr.data-case-id]="req.id"
             >
               <button
@@ -206,7 +286,12 @@
                 <div class="card-line-meta">
                   <span class="card-meta-text">
                     {{ shortId(req.id, req.public_code) }} · {{ peopleLabel(req.people_count, req.flags) }}@if (wardName(req); as wn) { · {{ wn }} }
+                    @if (engineLabelKey(req); as ek) {
+                      · <span class="aiq-engine" data-testid="ai-engine" [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span>
+                    }
+                    @if (tookTooLong(req)) { · {{ 'aiq.tookTooLong' | rdTranslate }} }
                   </span>
+                  @if (isJustReady(req)) { <span class="aiq-just">{{ 'aiq.justReady' | rdTranslate }}</span> }
                   <div class="card-meta-chips">
                     @if ((req.merged_count || 1) > 1) {
                       <span class="merged-count-tag">+{{ (req.merged_count || 1) - 1 }} {{ 'alerts.reports' | rdTranslate }}</span>
@@ -235,6 +320,7 @@
             </div>
           }
         } @empty {
+          @if (!(queueTab() === 'waiting' && aiWorkingRows().length)) {
           <p class="empty" data-testid="filter-empty">
             @if (queueTab() === 'dispatched' && bandFilter() === 'all') {
               {{ 'queue.nothingSent' | rdTranslate }}
@@ -245,6 +331,7 @@
               <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button>
             }
           </p>
+          }
         }
       </div>
       <details class="full-queue" data-testid="full-queue">
@@ -428,8 +515,32 @@
             }
             <p class="dec-case-sub">
               <span [attr.title]="req.id">{{ shortId(req.id, req.public_code) }}</span> · {{ getWardText(req) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
+              @if (engineLabelKey(req); as ek) {
+                · <span class="aiq-engine" data-testid="ai-engine-panel" [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span>
+              }
+              @if (tookTooLong(req)) { · {{ 'aiq.provenanceTimeout' | rdTranslate }} }
             </p>
+            @if (caseAiBlocked(req)) {
+              <span class="aiq-work-badge">{{ 'aiq.workingBadge' | rdTranslate:{ t: clockOf(req) } }}</span>
+            }
           </div>
+          @if (caseAiBlocked(req)) {
+            <div class="aiq-notice" data-testid="ai-notice">
+              <p>{{ 'aiq.stillWorking' | rdTranslate:{ step: stepNumberOf(req), name: (activeStepKey(req) | rdTranslate) } }}</p>
+              @if (geminiPausedHonest()) { <p>{{ 'aiq.pausedNote' | rdTranslate }}</p> }
+            </div>
+            <div class="aiq-fields" data-testid="ai-fields">
+              <div class="aiq-field"><span>{{ 'aiq.what' | rdTranslate }}</span><span>{{ getNeedText(req) }}</span>@if (stepChecked(req, 'read')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.place' | rdTranslate }}</span><span>{{ req.place_text || ('dec.notStated' | rdTranslate) }}</span>@if (req.ai_queue?.place_unverified || !stepChecked(req, 'read')) { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> } @else { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.duplicates' | rdTranslate }}</span><span>@if (stepChecked(req, 'duplicates')) { {{ duplicateLine(req) }} } @else { {{ 'aiq.checking' | rdTranslate }} }</span>@if (stepChecked(req, 'duplicates')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.people' | rdTranslate }}</span><span>{{ peopleLabel(req.people_count, req.flags) }}</span>@if (stepChecked(req, 'urgency')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.urgency' | rdTranslate }}</span><span>@if (stepChecked(req, 'urgency')) { {{ Math.round(req.urgency_score) }} } @else { {{ 'aiq.beingRated' | rdTranslate }} }</span>@if (stepChecked(req, 'urgency')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+              <div class="aiq-field"><span>{{ 'aiq.team' | rdTranslate }}</span><span>@if (stepChecked(req, 'team')) { {{ activeProposal()?.resource_name || ('aiq.notChosen' | rdTranslate) }} } @else { {{ 'aiq.notChosen' | rdTranslate }} }</span>@if (stepChecked(req, 'team')) { <b class="ok">{{ 'aiq.checked' | rdTranslate }}</b> } @else { <b class="wait">{{ 'aiq.unverified' | rdTranslate }}</b> }</div>
+            </div>
+            @for (row of diffEntries(req); track row.field) {
+              <p class="aiq-diff">{{ 'aiq.diffLine' | rdTranslate:{ field: row.field, from: row.from, to: row.to } }}</p>
+            }
+          }
 
           <div class="case-steps">
           <!-- Compact 5-Step Horizontal AI Stepper Under Map -->
@@ -698,6 +809,25 @@
               <button type="button" class="btn-sec btn-not-hoax" data-testid="not-hoax" (click)="hoaxOverride.set(true)">{{ 'hoax.notHoax' | rdTranslate }}</button>
               <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
             </div>
+          } @else if (caseLifeThreat(req)) {
+            <div class="footer-buttons-row aiq-life-actions">
+              <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="sendNearestBoat(req)">{{ 'aiq.sendBoat' | rdTranslate }}</button>
+              <button type="button" class="btn-sec" (click)="callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
+              <a class="btn-sec aiq-call" href="tel:112">{{ 'aiq.call112' | rdTranslate }}</a>
+            </div>
+            <p class="aiq-foot">{{ 'aiq.footnote' | rdTranslate }}</p>
+          } @else if (caseAiBlocked(req)) {
+            <div class="footer-buttons-row">
+              <button type="button" class="btn-approve is-locked" data-testid="approve-locked" disabled aria-disabled="true">{{ 'aiq.approveLocked' | rdTranslate }}</button>
+              @if (hoaxAsk()) {
+                <input type="text" class="aiq-hoax-word" [(ngModel)]="hoaxWord" [placeholder]="'aiq.hoaxWordPh' | rdTranslate" [attr.aria-label]="'aiq.hoaxWord' | rdTranslate" (keydown.enter)="confirmHoaxWord(req)" />
+                <button type="button" class="btn-sec" (click)="confirmHoaxWord(req)">{{ 'aiq.markHoax' | rdTranslate }}</button>
+              } @else {
+                <button type="button" class="btn-sec btn-dismiss-hoax" data-testid="dismiss-hoax" (click)="askHoax(req)">{{ 'aiq.markHoax' | rdTranslate }}</button>
+              }
+              <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'aiq.nextReady' | rdTranslate }}</button>
+            </div>
+            <p class="aiq-foot">{{ 'aiq.footnote' | rdTranslate }}</p>
           } @else if (activeProposal(); as prop) {
             <div class="footer-buttons-row">
               <button

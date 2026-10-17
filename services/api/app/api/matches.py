@@ -98,6 +98,11 @@ def approve_match(
     user: CoordinatorUser = Depends(get_current_coordinator),
 ):
     match = storage_service._matches.get(id)
+    if match is not None:
+        from app.tools.case_queue import approve_blocked
+        case = storage_service.get_request(match.request_id)
+        if case is not None and approve_blocked(case):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "ai_not_finished"})
     if match is not None and payload.check_take and not payload.confirm_take and match.state.value == "proposed":
         taken = _would_take_from(match)
         if taken:
@@ -204,6 +209,10 @@ def choose_no_team(id: str, payload: NoTeamChoice, user: CoordinatorUser = Depen
     return {"request_id": req.id, "option": payload.option, "chosen": chosen, "sent": False}
 
 
+class DismissHoaxRequest(BaseModel):
+    reason: Optional[str] = None
+
+
 @router.post(
     "/requests/{id}/dismiss-hoax",
     response_model=StoredRequest,
@@ -211,10 +220,43 @@ def choose_no_team(id: str, payload: NoTeamChoice, user: CoordinatorUser = Depen
 )
 def dismiss_hoax(
     id: str,
+    payload: DismissHoaxRequest = DismissHoaxRequest(),
     user: CoordinatorUser = Depends(get_current_coordinator),
 ):
     try:
-        return storage_service.dismiss_hoax(id, actor=user.email)
+        return storage_service.dismiss_hoax(id, actor=user.email, reason=payload.reason)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.post(
+    "/requests/{id}/send-nearest-boat",
+    response_model=StoredMatch,
+    summary="One tap from a life-threat card: send the nearest free boat",
+)
+def send_nearest_boat(
+    id: str,
+    user: CoordinatorUser = Depends(get_current_coordinator),
+):
+    """A person presses this. Matching stays deterministic. The AI may still be checking."""
+    from app.tools.case_queue import is_life_threat
+    req = storage_service.get_request(id)
+    if req is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
+    if not is_life_threat(req):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"code": "not_life_threat"})
+    if req.status in ("dispatched", "approved", "in_progress", "completed"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already sent")
+    # A life-threat send is a boat even when the report was read as medical.
+    from app.models.schemas import IncidentType
+    as_rescue = req if req.type == IncidentType.RESCUE else req.model_copy(update={"type": IncidentType.RESCUE})
+    proposals = matching_agent.find_matches(as_rescue, top_n=5, save_to_storage=True)
+    boats = [p for p in proposals if getattr(p.resource_kind, "value", p.resource_kind) == "boat"]
+    if not boats:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "no_boat"})
+    nearest = min(boats, key=lambda p: (p.breakdown.distance_km if p.breakdown else 1e9, p.resource_id))
+    try:
+        return storage_service.approve_match(nearest.match_id, approved_by=user.email)
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
 

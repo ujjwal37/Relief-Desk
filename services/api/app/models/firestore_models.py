@@ -67,6 +67,30 @@ class PossibleDuplicate(BaseModel):
     note: str = ""
 
 
+class AiQueueState(BaseModel):
+    """One case moving through Read, Duplicates, Urgency, and Team.
+
+    `engine` is the only label the desk shows: gemini, rules, or gemini_rechecked.
+    """
+
+    status: str = "queued"  # queued | processing | ready
+    step: Optional[str] = None
+    steps: Dict[str, str] = Field(default_factory=lambda: {
+        "read": "pending",
+        "duplicates": "pending",
+        "urgency": "pending",
+        "team": "pending",
+    })
+    engine: str = "rules"
+    started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    elapsed_s: int = 0
+    flags: List[str] = Field(default_factory=list)
+    queue_pos: Optional[int] = None
+    life_phrase: Optional[str] = None
+    place_unverified: bool = False
+    recheck_diff: Optional[Dict[str, Any]] = None
+
+
 class StoredRequest(BaseModel):
     id: str
     event_id: str = "event_kerala_flood"
@@ -116,6 +140,7 @@ class StoredRequest(BaseModel):
     translation_confidence: float = 1.0
     merged_count: int = 1
     analysis_status: str = "complete"
+    ai_queue: Optional[AiQueueState] = None
     analysis: Dict[str, Any] = Field(default_factory=dict)
     trace: List[Dict[str, Any]] = Field(default_factory=list)
     self_check: Optional[Dict[str, Any]] = None

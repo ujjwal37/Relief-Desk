@@ -1566,3 +1566,40 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
   - Browser check on the demo desk (rules mode): approving Kainakary RD-7692 stayed on that case, and the toast and the on-the-way line both named Kainakary Mobile Medical Van (Ambulance). Escape then showed "No case selected." Dog attack is not in the scenario switcher. Five older command-component unit specs still fail on copy that this branch already shipped (Gemini reading label, district polygons, Google Maps in the trace). They were not part of this fix.
   - A live Gemini key was not used. The eight live-Gemini failures are covered on the rules fallback path.
 - Next (suggested task id): none
+
+### 2026-10-17 15:30 IST — AQ-01 — Cursor
+- What changed: Each new case carries an AI queue: Read, Duplicates, Urgency, Team, elapsed time, engine (gemini / rules / gemini_rechecked), and queue position. A 45s cap abandons the model call and finishes on rules. Life-threat phrases (English, Hindi, Manglish, Malayalam) skip the strip and land in Ready, with the place marked unverified. Send nearest boat is a person tap that approves the nearest free boat, including when the report was read as medical. Other approves stay blocked until the four steps finish or rules take over. When the Gemini circuit is closed, rules-fallback cases are rechecked Critical first, about 10 a minute, and the diff is stored. The Waiting tab shows the strip and a Ready list sorted by urgency (life-threat first). Motion is removed under prefers-reduced-motion. Copy is in en, hi, hinglish, and ml. A hoax marked before the AI finishes asks for one word. The next-ready button has no keyboard letter.
+- Files:
+  - `services/api/app/tools/case_queue.py`
+  - `services/api/app/models/firestore_models.py`
+  - `services/api/app/agents/pipeline.py`
+  - `services/api/app/api/reports.py`
+  - `services/api/app/api/matches.py`
+  - `services/api/app/api/clusters.py`
+  - `services/api/app/tools/storage.py`
+  - `services/api/tests/test_ai_queue.py`
+  - `services/api/tests/test_request_contract.py`
+  - `services/api/tests/test_slow_llm_load.py`
+  - `apps/web/src/app/coordinator/pages/command/ai-queue.ts`
+  - `apps/web/src/app/coordinator/pages/command/ai-queue.spec.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss`
+  - `libs/shared/src/lib/models/request.model.ts`
+  - `libs/shared/src/lib/services/api-client.service.ts`
+  - `libs/shared/src/lib/i18n/en.json`
+  - `libs/shared/src/lib/i18n/hi.json`
+  - `libs/shared/src/lib/i18n/hinglish.json`
+  - `libs/shared/src/lib/i18n/ml.json`
+  - `TASKS.md`
+- How verified (commands / screenshots):
+  - `python3 -m pytest` in `services/api` — 359 passed, 1 skipped, including `tests/test_ai_queue.py`. No test calls Gemini.
+  - `npx ng build web` — passed (existing findingTeam duplicate-key warning and NG8107 warnings).
+  - `node scripts/check-i18n.mjs` — PASSED, 1283 keys.
+  - `CI=true npx ng test web --watch=false --browsers=ChromeHeadless --include=ai-queue.spec.ts` — 4 passed (urgency order, just-ready is not a sort key, one engine field, 1.2s timeout hold).
+  - Demo desk in the browser, rules mode: the Veliyanad life-threat card was first under Ready for you, labelled life threat, place unverified, engine Rules. Send nearest boat stayed on that case. The toast and the on-the-way line both named Motorized Rescue Boat.
+- Notes / risks / not done:
+  - In rules mode the pipeline finishes in well under a second, so the AI working strip is empty on a quiet desk. It shows while a case is still queued or processing.
+  - Recheck runs only when Gemini is live and the circuit is closed. Tests drive it with a fake client.
+  - A live Gemini key was not used.
+- Next (suggested task id): none

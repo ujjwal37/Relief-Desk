@@ -899,7 +899,7 @@ class StorageService:
             self._resources[resource_id] = res
         return req
 
-    def dismiss_hoax(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
+    def dismiss_hoax(self, request_id: str, actor: str = "coordinator", reason: str | None = None) -> StoredRequest:
         """Coordinator confirms a flagged report is a hoax: close it. Nothing is sent; the audit log keeps it."""
         req = self._requests.get(request_id)
         if not req:
@@ -909,6 +909,9 @@ class StorageService:
         before = req.model_dump()
         req.status = RequestStatus.DISMISSED_HOAX
         req.flags = sorted(set((req.flags or []) + ["dismissed_hoax"]))
+        word = (reason or "").strip().split()
+        if word:
+            req.hoax_reason = word[0][:40]
         req.updated_at = datetime.now(timezone.utc).isoformat()
         self._requests[req.id] = req
         self.record_audit(actor=actor, action="dismiss_hoax", target=req.id, before=before, after=req.model_dump())

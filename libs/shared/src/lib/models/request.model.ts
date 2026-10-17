@@ -200,7 +200,21 @@ export interface StoredRequest {
   assigned_resource_id?: string | null;
   reserved_people?: number | null;
   merged_count?: number;
-  analysis_status?: 'analysing' | 'complete';
+  analysis_status?: 'analysing' | 'complete' | 'failed';
+  /** Per-step AI queue. `engine` is the only Gemini / Rules / Gemini rechecked label. */
+  ai_queue?: {
+    status?: 'queued' | 'processing' | 'ready' | string;
+    step?: string | null;
+    steps?: Record<string, 'pending' | 'active' | 'done' | string>;
+    engine?: 'gemini' | 'rules' | 'gemini_rechecked' | string;
+    started_at?: string;
+    elapsed_s?: number;
+    flags?: string[];
+    queue_pos?: number | null;
+    life_phrase?: string | null;
+    place_unverified?: boolean;
+    recheck_diff?: Record<string, { from?: unknown; to?: unknown }> | null;
+  } | null;
   water_depth?: { band?: string; quote?: string | null; source?: string } | null;
   self_check?: { verdict?: string; provider?: string; model?: string | null; latency_ms?: number; changes?: Array<{ field: string; from: unknown; to: unknown }>; evidence?: string; reason?: string } | null;
   trace?: Array<{

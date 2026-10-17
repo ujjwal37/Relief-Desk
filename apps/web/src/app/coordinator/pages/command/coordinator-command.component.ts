@@ -38,6 +38,19 @@ import { StepDetailDialogComponent } from '../../agents/step-detail-dialog.compo
 import { WhyThisTeamDialogComponent, DroppedTeamRow } from './why-this-team-dialog.component';
 import { peopleText } from '../../../core/people-text';
 import {
+  AI_STEPS,
+  aiNotFinished,
+  clockText,
+  engineKey,
+  inWorkingStrip,
+  isLifeThreat,
+  ordinalKey,
+  sortReady,
+  stepLabelKey,
+  stepNumber,
+  stepsDone,
+} from './ai-queue';
+import {
   ApiClientService,
   NoTeamOptions,
   LiveDemoState,
@@ -861,8 +874,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const key = e.key.toLowerCase();
     if (e.key === '?') { e.preventDefault(); this.helpOpen.set(!this.helpOpen()); return; }
     if (key === 'a') {
+      const sel = this.selectedRequest();
+      if (sel && this.caseAiBlocked(sel) && !isLifeThreat(sel)) {
+        e.preventDefault();
+        this.actionToast.set({ text: this.langService.translate('aiq.approveToast'), type: 'warning' });
+        return;
+      }
       // A sends the suggested team only; it never dismisses a hoax or picks a no-team option.
-      const btn = document.querySelector('.footer-buttons-row .btn-approve:not(.btn-dismiss-hoax):not(.nt-go):not(.btn-reject-go)') as HTMLButtonElement | null;
+      const btn = document.querySelector('.footer-buttons-row .btn-approve:not(.btn-dismiss-hoax):not(.nt-go):not(.btn-reject-go):not(.btn-send-boat)') as HTMLButtonElement | null;
       if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
     }
     if (e.key === 'Enter' && !(t?.tagName === 'BUTTON')) {
@@ -886,6 +905,55 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** First-visit keyboard tip, dismissed for good in localStorage. */
   readonly tipOpen = signal((() => { try { return localStorage.getItem('rd.tip.keys') !== '1'; } catch { return false; } })());
   dismissTip(): void { this.tipOpen.set(false); try { localStorage.setItem('rd.tip.keys', '1'); } catch { /* ignore */ } }
+
+  /** Ticks while cases are in the AI strip so elapsed time and the 1.2s timeout hold stay real. */
+  readonly queueClock = signal(Date.now());
+  private queueTimer?: ReturnType<typeof setInterval>;
+  private readonly timeoutSeen = new Map<string, number>();
+  readonly stripOpen = signal(true);
+  readonly stripAll = signal(false);
+  readonly parkedReady = signal<string[]>([]);
+  readonly listScrolled = signal(false);
+  readonly justReadyUntil = signal<Record<string, number>>({});
+  readonly hoaxAsk = signal(false);
+  hoaxWord = '';
+  readonly aiSteps = AI_STEPS;
+
+  private timeoutAt(req: StoredRequest): number | undefined {
+    if (!req.ai_queue?.flags?.includes('timedOut')) return undefined;
+    if (!this.timeoutSeen.has(req.id)) this.timeoutSeen.set(req.id, this.queueClock());
+    return this.timeoutSeen.get(req.id);
+  }
+
+  readonly aiWorkingRows = computed(() => {
+    const now = this.queueClock();
+    if (this.queueTab() !== 'waiting') return [];
+    return this.queueRows().filter((req) => inWorkingStrip(req, now, this.timeoutAt(req)));
+  });
+
+  readonly queueSplitOn = computed(() => {
+    if (this.queueTab() !== 'waiting') return false;
+    return this.aiWorkingRows().length > 0 || this.queueRows().some((req) => isLifeThreat(req));
+  });
+
+  readonly displayRows = computed(() => {
+    if (!this.queueSplitOn()) return this.queueRows();
+    const parked = new Set(this.parkedReady());
+    const ready = this.queueRows().filter((req) => !inWorkingStrip(req, this.queueClock(), this.timeoutAt(req)) && !parked.has(req.id));
+    return sortReady(ready);
+  });
+
+  readonly stripShown = computed(() => {
+    const rows = this.aiWorkingRows();
+    if (this.stripAll()) return rows;
+    return rows.slice(0, this.narrow() ? 2 : 3);
+  });
+
+  readonly stripMore = computed(() => Math.max(0, this.aiWorkingRows().length - this.stripShown().length));
+
+  readonly readingCount = computed(() => this.aiWorkingRows().filter((req) => req.ai_queue?.status === 'processing').length);
+  readonly queuedCount = computed(() => this.aiWorkingRows().filter((req) => req.ai_queue?.status === 'queued').length);
+  readonly pausedCount = computed(() => this.aiWorkingRows().filter((req) => req.ai_queue?.flags?.includes('paused')).length);
 
   /** Queue order frozen while a case is open, so rows do not jump under the cursor. */
   private readonly frozenOrder = signal<string[] | null>(null);
@@ -1025,6 +1093,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       next[event.request_id] = list;
       this.pipelineById.set(next);
     });
+    this.queueTimer = setInterval(() => this.queueClock.set(Date.now()), 250);
+    try {
+      if (sessionStorage.getItem('rd.aiq.open') === '0') this.stripOpen.set(false);
+      else if (window.matchMedia('(max-width: 700px)').matches) this.stripOpen.set(false);
+    } catch { /* session storage can be blocked */ }
     this.refreshLive();
     // Landing "watch the AI" link: start the shared live run once, then drop the flag from the URL.
     if (new URLSearchParams(location.search).get('live') === '1' && !this.startFromLink) {
@@ -1052,6 +1125,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.liveChannel?.close();
     this.stopLivePoll();
     this.stopPipeline?.();
+    if (this.queueTimer) clearInterval(this.queueTimer);
     if (this.analysedTimer) clearTimeout(this.analysedTimer);
     for (const timer of this.flashTimers.values()) clearTimeout(timer);
     this.flashTimers.clear();
@@ -1430,9 +1504,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const now = Date.now();
     for (const row of next) {
       if (previous.get(row.id) === 'analysing' && row.analysis_status === 'complete') {
-        const text = this.analysedText(row);
+        const text = row.ai_queue
+          ? this.langService.translate('aiq.readyAnnounce', { ref: row.public_code || this.shortId(row.id, row.public_code) })
+          : this.analysedText(row);
         notes[row.id] = { until: now + 10000, text };
         live = text;
+        if (row.ai_queue) {
+          this.justReadyUntil.update((map) => ({ ...map, [row.id]: now + 60000 }));
+          if (this.listScrolled()) this.parkedReady.update((ids) => ids.includes(row.id) ? ids : [...ids, row.id]);
+        }
       }
     }
     for (const id of Object.keys(notes)) {
@@ -1517,6 +1597,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.choseTeam.set(false);
     this.approving.set(false);
     this.hoaxOverride.set(false);
+    this.hoaxAsk.set(false);
+    this.hoaxWord = '';
+    if (this.justReadyUntil()[id]) {
+      this.justReadyUntil.update((map) => {
+        const next = { ...map };
+        delete next[id];
+        return next;
+      });
+    }
     this.loadMatches(id);
     if (openSheet && this.narrow()) this.sheetOpen.set(true);
   }
@@ -2087,9 +2176,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return !!req.hoax_reason || flags.includes('likely_hoax') || flags.includes('hoax');
   }
 
-  dismissHoax(req: StoredRequest): void {
+  dismissHoax(req: StoredRequest, reason?: string): void {
     this.approving.set(true);
-    this.apiClient.dismissHoax(req.id).subscribe({
+    this.hoaxAsk.set(false);
+    this.apiClient.dismissHoax(req.id, reason).subscribe({
       next: (row) => {
         this.approving.set(false);
         this.requests.update((rows) => rows.map((r) => (r.id === row.id ? row : r)));
@@ -2345,6 +2435,164 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   getOriginalQuote(req: StoredRequest): string {
     return req.raw_text || req.place_text || '';
+  }
+
+  caseAiBlocked(req: StoredRequest): boolean {
+    return aiNotFinished(req);
+  }
+
+  caseLifeThreat(req: StoredRequest): boolean {
+    return isLifeThreat(req);
+  }
+
+  geminiPausedHonest(): boolean {
+    if (this.ui.aiHealth()?.provider === 'gemini-paused') return true;
+    return this.pausedCount() > 0;
+  }
+
+  toggleStrip(): void {
+    this.stripOpen.update((open) => !open);
+    try { sessionStorage.setItem('rd.aiq.open', this.stripOpen() ? '1' : '0'); } catch { /* ignore */ }
+  }
+
+  elapsedSec(req: StoredRequest): number {
+    this.queueClock();
+    const started = Date.parse(req.ai_queue?.started_at || '');
+    if (!Number.isFinite(started)) return req.ai_queue?.elapsed_s || 0;
+    return Math.max(0, Math.floor((this.queueClock() - started) / 1000));
+  }
+
+  clockOf(req: StoredRequest): string {
+    return clockText(this.elapsedSec(req));
+  }
+
+  engineLabelKey(req: StoredRequest): string | null {
+    return engineKey(req.ai_queue?.engine);
+  }
+
+  engineIsGemini(req: StoredRequest): boolean {
+    const engine = req.ai_queue?.engine;
+    return engine === 'gemini' || engine === 'gemini_rechecked';
+  }
+
+  tookTooLong(req: StoredRequest): boolean {
+    return !!req.ai_queue?.flags?.includes('timedOut');
+  }
+
+  isJustReady(req: StoredRequest): boolean {
+    const until = this.justReadyUntil()[req.id] || 0;
+    return until > this.queueClock();
+  }
+
+  dotState(req: StoredRequest, step: string): string {
+    return req.ai_queue?.steps?.[step] || 'pending';
+  }
+
+  activeStepKey(req: StoredRequest): string {
+    const steps = req.ai_queue?.steps || {};
+    const active = AI_STEPS.find((step) => steps[step] === 'active') || req.ai_queue?.step;
+    return stepLabelKey(active);
+  }
+
+  stepNumberOf(req: StoredRequest): number {
+    const steps = req.ai_queue?.steps || {};
+    const active = AI_STEPS.find((step) => steps[step] === 'active') || req.ai_queue?.step;
+    return stepNumber(active);
+  }
+
+  stepAria(req: StoredRequest): string {
+    const steps = req.ai_queue?.steps || {};
+    const active = AI_STEPS.find((step) => steps[step] === 'active') || req.ai_queue?.step || 'read';
+    const state = steps[active] || 'pending';
+    const stateKey = state === 'done' ? 'aiq.stateDone' : state === 'active' ? 'aiq.stateActive' : 'aiq.statePending';
+    return this.langService.translate('aiq.stepOf', {
+      n: stepNumber(active),
+      name: this.langService.translate(stepLabelKey(active)),
+      state: this.langService.translate(stateKey),
+    });
+  }
+
+  lineKey(pos: number): string {
+    return ordinalKey(pos);
+  }
+
+  onCaseListScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    this.listScrolled.set((el?.scrollTop || 0) > 80);
+  }
+
+  releaseParked(): void {
+    this.parkedReady.set([]);
+    document.querySelector('.case-list-wrap')?.scrollTo({ top: 0 });
+  }
+
+  askHoax(req: StoredRequest): void {
+    if (this.caseAiBlocked(req)) {
+      this.hoaxAsk.set(true);
+      this.hoaxWord = '';
+      return;
+    }
+    this.dismissHoax(req);
+  }
+
+  confirmHoaxWord(req: StoredRequest): void {
+    const word = this.hoaxWord.trim().split(/\s+/)[0];
+    if (!word) return;
+    this.dismissHoax(req, word);
+  }
+
+  sendNearestBoat(req: StoredRequest): void {
+    if (this.approving()) return;
+    this.selectRequest(req.id);
+    this.approving.set(true);
+    this.apiClient.sendNearestBoat(req.id).subscribe({
+      next: (match) => {
+        this.approving.set(false);
+        const team = this.resources().find((row) => row.id === match.resource_id);
+        const name = team?.name || match.resource_id;
+        this.actionToast.set({
+          text: this.langService.translate('coord.dispatchApproved').replace('{team}', name),
+          type: 'success',
+          undo: true,
+        });
+        this.lastSentId.set(req.id);
+        this.lastSentMatchId.set(match.id);
+        this.requests.update((rows) => rows.map((row) => row.id === req.id
+          ? { ...row, status: 'dispatched' as const, assigned_resource_id: match.resource_id }
+          : row));
+        this.pickedMatch.set(req.id, match.id);
+        this.loadMatches(req.id);
+      },
+      error: () => {
+        this.approving.set(false);
+        this.actionToast.set({ text: this.langService.translate('aiq.noBoat'), type: 'warning' });
+      },
+    });
+  }
+
+  callReporter(): void {
+    this.actionToast.set({ text: this.langService.translate('aiq.noPhone'), type: 'warning' });
+  }
+
+  stepChecked(req: StoredRequest, step: string): boolean {
+    return req.ai_queue?.steps?.[step] === 'done' || stepsDone(req);
+  }
+
+  duplicateLine(req: StoredRequest): string {
+    if ((req.merged_count || 1) > 1 || req.merged_into) {
+      return this.langService.translate('aiq.joined', { ref: req.public_code || req.merged_into || '' });
+    }
+    return this.langService.translate('aiq.noneFound');
+  }
+
+  diffEntries(req: StoredRequest): { field: string; from: string; to: string }[] {
+    const diff = req.ai_queue?.recheck_diff;
+    if (!diff) return [];
+    return Object.entries(diff).map(([field, change]) => ({
+      field: this.langService.translate(field === 'people_count' ? 'aiq.people' : field === 'place_text' ? 'aiq.place' : field === 'urgency_score' ? 'aiq.urgency' : 'aiq.what'),
+      from: String(change?.from ?? ''),
+      to: String(change?.to ?? ''),
+    }));
   }
 }
 

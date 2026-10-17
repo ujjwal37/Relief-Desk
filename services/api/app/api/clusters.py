@@ -309,6 +309,9 @@ def list_requests(
 
     closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED, RequestStatus.DISMISSED_HOAX}
     from app.agents.pipeline import ensure_trace
+    from app.tools.case_queue import refresh_queue, recheck_if_live
+    capped = set(refresh_queue(reqs))
+    rechecked = recheck_if_live(reqs)
     refreshed = []
     from app.api.public import public_code_for
     for req in reqs:
@@ -326,8 +329,10 @@ def list_requests(
             req.wait_points = result.breakdown.get("wait_points")
             req.wait_minutes = int(result.breakdown.get("wait_minutes") or 0)
         score_changed = req.urgency_score != before
-        if _changed_since(req, updated_since) or score_changed:
+        if _changed_since(req, updated_since) or score_changed or req.id in capped:
             refreshed.append(req)
+            if req.id in capped or req.id == rechecked:
+                storage_service.save_request(req, actor="ai_queue")
 
     if sort == "urgency":
         refreshed = sorted(refreshed, key=lambda r: r.urgency_score, reverse=True)
@@ -364,6 +369,9 @@ def get_request_detail(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Request '{id}' not found"
         )
+    from app.tools.case_queue import refresh_queue
+    if refresh_queue([req]):
+        storage_service.save_request(req, actor="ai_queue")
     return req
 
 
