@@ -331,10 +331,22 @@ def run_filters(requests: Iterable[Any], f: Dict[str, Any], limit: int = 12) -> 
     return hits[:limit], len(hits)
 
 
+def _ref(r: Any) -> str:
+    code = getattr(r, "public_code", None)
+    if code:
+        return code
+    try:
+        from app.api.public import public_code_for
+        return public_code_for(r.id)
+    except Exception:
+        return r.id
+
+
 def card(r: Any) -> Dict[str, Any]:
     text = (r.translations or {}).get("en") or r.ai_translation or r.summary or r.raw_text or ""
     return {
         "id": r.id,
+        "ref": _ref(r),
         "type": r.type.value,
         "ward_id": r.ward_id,
         "ward_name": _wards().get(r.ward_id or "", {}).get("name_en"),

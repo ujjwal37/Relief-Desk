@@ -83,7 +83,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
               @for (c of turn.answer.cases; track c.id) {
                 <li>
                   <button type="button" class="case case-link" (click)="picked.emit(c.id)">
-                    <span class="id">{{ c.id }}</span>
+                    <span class="id" [attr.title]="c.id">{{ $any(c).ref || c.id }}</span>
                     <span class="type">{{ ('incidentType.' + c.type) | rdTranslate }}</span>
                     @if (c.ward_name) { <span class="ward">{{ c.ward_name }}</span> }
                     @if (c.people_count) { <span class="ppl">{{ peopleText(c.people_count) }}</span> }

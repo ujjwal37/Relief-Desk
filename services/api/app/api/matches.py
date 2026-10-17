@@ -66,6 +66,14 @@ def approve_match(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
 
 
+@router.post("/matches/{id}/undo", response_model=StoredMatch, summary="Undo a just-approved dispatch")
+def undo_match(id: str, user: CoordinatorUser = Depends(get_current_coordinator)):
+    try:
+        return storage_service.undo_approval(match_id=id, actor=user.email)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
 @router.post(
     "/matches/{id}/reject",
     response_model=StoredMatch,

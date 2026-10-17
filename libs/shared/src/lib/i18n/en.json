@@ -535,7 +535,9 @@
     "verifyHint": "The report is unclear. Priority was kept, not lowered. Please confirm the details.",
     "reviewHoax": "I reviewed this flag",
     "capacityShort": "Team has {left} seats for {need} people — approving will ask you to confirm.",
-    "aiChecking": "Checking…"
+    "aiChecking": "Checking…",
+    "undone": "Dispatch undone. The case is back in Waiting.",
+    "undoFailed": "Could not undo. The team may already be working the case."
   },
   "tour": {
     "next": "Next",

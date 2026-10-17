@@ -266,6 +266,13 @@ export class ApiClientService {
     return this.http.get<MatchProposal[]>(`/api/requests/${id}/matches?top_n=${topN}`, this.getAuthHeaders());
   }
 
+  undoMatch(matchId: string): Observable<any> {
+
+    return this.http.post<any>(`/api/matches/${matchId}/undo`, {}, this.getAuthHeaders());
+
+  }
+
+
   approveMatch(id: string, allowOvercommit = false): Observable<any> {
     return this.http.post<any>(
       `/api/matches/${id}/approve`,

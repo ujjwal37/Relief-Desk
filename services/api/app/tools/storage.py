@@ -782,6 +782,50 @@ class StorageService:
         )
         return match
 
+    def undo_approval(self, match_id: str, actor: str = "coordinator") -> StoredMatch:
+        """Undo a dispatch a few seconds after Approve: give back seats and supplies,
+        stop the simulated move, put the case back in Waiting. Audited."""
+        with self._hold_lock:
+            match = self._matches.get(match_id)
+            if not match:
+                raise ValueError(f"Match {match_id} not found")
+            if match.state == MatchState.PROPOSED:
+                return match  # retry-safe
+            if match.state != MatchState.APPROVED:
+                raise ValueError("Only an approved dispatch can be undone")
+            req = self._requests.get(match.request_id)
+            if req and req.status not in (RequestStatus.DISPATCHED, RequestStatus.APPROVED):
+                raise ValueError("The team is already working this case; it cannot be undone")
+            res = self._resources.get(match.resource_id)
+            amount = (req.reserved_people if req and req.reserved_people else None) or (req.people_count if req and req.people_count else 1)
+            if res is not None:
+                if res.simulated and res.sim_origin_lat is not None and res.sim_origin_lng is not None:
+                    res.lat, res.lng = res.sim_origin_lat, res.sim_origin_lng
+                res.simulated = False
+                res.sim_step = 0
+                if req and req.required_supplies:
+                    for supply, n in req.required_supplies.items():
+                        res.supplies[supply] = res.supplies.get(supply, 0) + n
+                if res.assigned_request_id == match.request_id:
+                    res.assigned_request_id = None
+                self._resources[res.id] = res
+                self.release_capacity(res.id, amount, actor=actor)
+            before = match.model_dump()
+            match.state = MatchState.PROPOSED
+            match.approved_by = None
+            match.updated_at = datetime.now(timezone.utc).isoformat()
+            self._matches[match_id] = match
+            if req:
+                before_req = req.model_dump()
+                req.status = RequestStatus.MATCHED
+                req.assigned_resource_id = None
+                req.reserved_people = None
+                req.updated_at = match.updated_at
+                self._requests[req.id] = req
+                self.record_audit(actor=actor, action="status_change", target=req.id, before=before_req, after=req.model_dump())
+            self.record_audit(actor=actor, action="match_undone", target=match_id, before=before, after=match.model_dump())
+            return match
+
     def mark_arrived(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
         """Coordinator marks the team on scene. Audited. Does not change capacity."""
         req = self._requests.get(request_id)

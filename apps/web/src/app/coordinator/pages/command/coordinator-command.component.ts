@@ -268,6 +268,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly isRejectModalOpen = signal<boolean>(false);
   readonly actionToast = signal<{ text: string; type: 'success' | 'warning'; undo?: boolean } | null>(null);
   readonly lastSentId = signal<string | null>(null);
+  readonly lastSentMatchId = signal<string | null>(null);
   readonly selectedTranslationLang = signal<'en' | 'hi'>('en');
 
   private initialSelectDone = false;
@@ -1575,6 +1576,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       next: (approved) => {
         this.approving.set(false);
         this.lastSentId.set(prop.request_id);
+        this.lastSentMatchId.set(prop.match_id);
         this.actionToast.set({
           text: this.langService.translate('coord.dispatchApproved').replace('{team}', prop.resource_name),
           type: 'success',
@@ -1738,8 +1740,21 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
   undoLastSend(): void {
     const id = this.lastSentId();
+    const matchId = this.lastSentMatchId();
     this.clearToast();
-    if (id) this.selectRequest(id);
+    if (!matchId) { if (id) this.selectRequest(id); return; }
+    this.apiClient.undoMatch(matchId).subscribe({
+      next: () => {
+        this.lastSentMatchId.set(null);
+        this.actionToast.set({ text: this.langService.translate('coord.undone'), type: 'success' });
+        setTimeout(() => this.clearToast(), 5000);
+        this.loadRequests();
+        if (id) setTimeout(() => this.selectRequest(id), 400);
+      },
+      error: (err) => {
+        this.actionToast.set({ text: err?.error?.detail || this.langService.translate('coord.undoFailed'), type: 'warning' });
+      },
+    });
   }
 
   splitCluster(requestId: string): void {

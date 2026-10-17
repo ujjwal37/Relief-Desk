@@ -29,7 +29,7 @@ export interface StepDetailData {
   imports: [RdTranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="step-dialog" role="dialog" aria-modal="true" data-testid="step-details" [attr.aria-label]="data.stepNameKey | rdTranslate">
+    <div class="step-dialog" data-testid="step-details" [attr.aria-label]="data.stepNameKey | rdTranslate">
       <header class="dialog-header">
         <div class="h-left">
           <span class="step-num-badge" aria-hidden="true">{{ data.stepIndex + 1 }}</span>

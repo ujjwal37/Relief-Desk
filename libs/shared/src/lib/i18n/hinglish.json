@@ -535,7 +535,9 @@
     "verifyHint": "Report saaf nahi hai. Priority kam nahi ki gayi. Details confirm karein.",
     "reviewHoax": "Maine yeh flag dekh liya",
     "capacityShort": "Team mein {need} logon ke liye sirf {left} seats hain — approve karne par confirm karna hoga.",
-    "aiChecking": "Check ho raha hai…"
+    "aiChecking": "Check ho raha hai…",
+    "undone": "Dispatch undo ho gaya. Case wapas Waiting mein hai.",
+    "undoFailed": "Undo nahi ho paya. Team shayad case par kaam shuru kar chuki hai."
   },
   "tour": {
     "next": "Aage",
