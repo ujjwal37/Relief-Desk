@@ -324,14 +324,18 @@ export interface StepStatusInfo {
       justify-content: center;
       gap: 4px;
       flex-wrap: wrap;
+      max-width: 100%;
+      min-width: 0;
     }
     .node-title {
-      font-size: 12px;
+      min-width: 0;
+      max-width: 100%;
+      font-size: 11.5px;
       font-weight: 600;
       color: var(--text, #e8f0ec);
       line-height: 1.25;
       white-space: normal;
-      overflow-wrap: break-word;
+      overflow-wrap: anywhere;
       hyphens: auto;
     }
     .tag-parallel {
@@ -351,8 +355,11 @@ export interface StepStatusInfo {
       line-height: 1.25;
       max-width: 100%;
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
     }
     .node-badge { margin-top: 4px; font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font-variant-numeric: tabular-nums; }
     .node-badge.gem { color: var(--gemini, #6d28d9); background: color-mix(in srgb, var(--gemini, #6d28d9) 14%, transparent); }

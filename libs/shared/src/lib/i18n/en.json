@@ -1278,7 +1278,8 @@
     "notStated": "People: not stated",
     "one": "1 person",
     "many": "{n} people",
-    "provisional": "(unconfirmed)"
+    "provisional": "(unconfirmed)",
+    "none": "No one reported at risk"
   },
   "hoax": {
     "dismiss": "Dismiss as hoax",

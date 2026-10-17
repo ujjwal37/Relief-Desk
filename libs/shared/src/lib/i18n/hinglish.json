@@ -1278,7 +1278,8 @@
     "notStated": "Log: nahi bataya",
     "one": "1 vyakti",
     "many": "{n} log",
-    "provisional": "(pakka nahi)"
+    "provisional": "(pakka nahi)",
+    "none": "Koi phansa hua nahi bataya"
   },
   "hoax": {
     "dismiss": "Hoax maan ke band karo",

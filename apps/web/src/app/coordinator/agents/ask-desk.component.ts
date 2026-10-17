@@ -86,7 +86,7 @@ const STEP_KEYS = ['ux.deskStepUnderstand', 'ux.deskStepSearch'];
                     <span class="id" [attr.title]="c.id">{{ $any(c).ref || c.id }}</span>
                     <span class="type">{{ ('incidentType.' + c.type) | rdTranslate }}</span>
                     @if (c.ward_name) { <span class="ward">{{ c.ward_name }}</span> }
-                    @if (c.people_count) { <span class="ppl">{{ peopleText(c.people_count) }}</span> }
+                    <span class="ppl">{{ peopleText(c.people_count) }}</span>
                     <span class="sum">{{ c.summary }}</span>
                   </button>
                 </li>
@@ -303,8 +303,9 @@ export class AskDeskComponent {
     return this.lang.translate('ux.deskMatches').replace('{n}', String(n));
   }
 
-  peopleText(n: number): string {
+  peopleText(n: number | null): string {
     this.lang.currentLang();
+    if (n == null) return this.lang.translate('people.notStated');
     return this.lang.translate('ux.deskPeople').replace('{n}', String(n));
   }
 
