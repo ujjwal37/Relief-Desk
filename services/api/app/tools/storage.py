@@ -810,6 +810,14 @@ class StorageService:
                     res.assigned_request_id = None
                 self._resources[res.id] = res
                 self.release_capacity(res.id, amount, actor=actor)
+            # Re-open the other offers this approval had closed, so Change still works.
+            for other in self._matches.values():
+                if (other.id != match.id and other.request_id == match.request_id
+                        and other.state == MatchState.REJECTED
+                        and other.rejected_reason == "Another team was dispatched"):
+                    other.state = MatchState.PROPOSED
+                    other.rejected_reason = None
+                    other.updated_at = datetime.now(timezone.utc).isoformat()
             before = match.model_dump()
             match.state = MatchState.PROPOSED
             match.approved_by = None

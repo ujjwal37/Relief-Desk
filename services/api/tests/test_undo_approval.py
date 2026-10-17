@@ -34,6 +34,9 @@ def test_undo_gives_back_seats_and_returns_case_to_waiting():
     res = storage_service._resources[prop.resource_id]
     assert res.capacity_remaining > seats_after_approve
     assert res.assigned_request_id != req.id and not res.simulated
+    others = [x for x in storage_service._matches.values() if x.request_id == req.id and x.id != prop.match_id]
+    assert all(x.state == MatchState.PROPOSED for x in others if x.rejected_reason is None)
+    assert not any(x.rejected_reason == "Another team was dispatched" for x in others)
     # retry-safe, and it can be approved again
     storage_service.undo_approval(prop.match_id, actor="t")
     assert storage_service.approve_match(prop.match_id, approved_by="t").state == MatchState.APPROVED
