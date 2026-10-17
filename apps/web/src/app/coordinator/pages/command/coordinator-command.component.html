@@ -480,7 +480,10 @@
     </section>
 
     <!-- RIGHT COLUMN: DECISION PANEL -->
-    <aside class="detail decision-panel" [attr.aria-label]="'coord.decision' | rdTranslate">
+    <aside class="detail decision-panel" [class.case-sheet]="narrow() && sheetOpen()" [attr.aria-label]="'coord.decision' | rdTranslate">
+      @if (narrow() && sheetOpen()) {
+        <button type="button" class="sheet-back" data-testid="back-to-list" (click)="closeSheet()">{{ 'coord.backToList' | rdTranslate }}</button>
+      }
       @if (selectedRequest(); as req) {
         <div class="decision-scroll-content">
           <!-- 1. Case Header -->
@@ -868,6 +871,9 @@
             </div>
           } @else if (noTeam(); as nt) {
             <div class="footer-buttons-row">
+              @if (canCloseInfo(req)) {
+                <button type="button" class="btn-sec" data-testid="close-info" [disabled]="offline() || approving()" (click)="closeInfo(req)">{{ 'coord.closeInfo' | rdTranslate }}</button>
+              }
               <button type="button" class="btn-approve nt-go" data-testid="no-team-go" [disabled]="!!noTeamDone() || offline()" (click)="noTeamGo(req, nt)">
                 <span class="btn-label">{{ noTeamGoLabel(nt) }}</span> <kbd>↵</kbd>
               </button>
@@ -875,6 +881,9 @@
             </div>
           } @else {
             <div class="footer-buttons-row">
+              @if (canCloseInfo(req)) {
+                <button type="button" class="btn-sec" data-testid="close-info" [disabled]="offline() || approving()" (click)="closeInfo(req)">{{ 'coord.closeInfo' | rdTranslate }}</button>
+              }
               <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'batch.next' | rdTranslate }} <kbd>N</kbd></button>
             </div>
           }

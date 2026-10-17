@@ -11,12 +11,14 @@ from app.models.schemas import (
     PeopleInfo,
 )
 from app.agents.intake import intake_agent
-from app.agents.summary import summary_from_report
 from app.tools.scenario_loader import scenario_registry
 from app.tools.gazetteer import gazetteer
+from app.agents.summary import short_faithful_summary
 from app.tools.nlu_rules import (
     extract_place,
     infer_incident_type,
+    is_nobody_stranded,
+    known_place,
     need_from_reply,
     parse_people_reply,
     people_count,
@@ -211,6 +213,12 @@ class ChatIntakeAgent:
         )
         hoax_reason = hoax_reason_for(full_text)
         self._fill_slots(state, user_message, full_text, lang, lang_override, location_pin)
+        # One try per question. A reply that does not fill the slot moves on.
+        self._give_up_unanswered(state)
+
+        if is_nobody_stranded(full_text):
+            self._mark_nobody(state)
+            return self._finish(state, scenario, lang, full_text, hoax_reason)
 
         # A scam is filed once, held, and never turned into a follow-up whose last word becomes the summary.
         if hoax_reason or not self._missing_slots(state) or state.turn_count >= 4:
@@ -248,19 +256,17 @@ class ChatIntakeAgent:
                 setattr(current.vulnerable, flag, True)
 
         if not state.slot_location:
-            place = place_from_answer(full_text) if state.awaiting_slot == "location" else None
+            place = place_from_answer(message) if state.awaiting_slot == "location" else None
             if not place:
                 place = extract_place(full_text)
+            named = known_place(full_text)
+            if named and (not place or named.lower() not in place.lower()):
+                place = named
             if place and place_is_usable(place):
                 current.place_text = place
                 state.slot_location = True
             elif location_pin and location_pin.get("lat") is not None and location_pin.get("lng") is not None and not current.place_text:
                 current.place_text = f"Pin ({location_pin['lat']:.4f}, {location_pin['lng']:.4f})"
-                state.slot_location = True
-        if state.awaiting_slot == "location" and not state.slot_location:
-            answered = place_from_answer(message)
-            if answered and place_is_usable(answered):
-                current.place_text = answered
                 state.slot_location = True
 
         if not state.slot_people:
@@ -314,6 +320,35 @@ class ChatIntakeAgent:
         if current.people.count is not None and current.people.count <= 0:
             current.people.count = None
 
+    def _give_up_unanswered(self, state: ChatTurnState) -> None:
+        slot = state.awaiting_slot
+        if not slot or slot not in self._missing_slots(state):
+            return
+        current = state.extracted_so_far
+        if slot == "location":
+            state.slot_location = True
+            if not place_is_usable(current.place_text):
+                current.place_text = None
+        elif slot == "people_count":
+            state.slot_people = True
+            state.people_unknown = True
+        elif slot == "need":
+            state.slot_need = True
+        elif slot == "water":
+            state.slot_water = True
+
+    def _mark_nobody(self, state: ChatTurnState) -> None:
+        current = state.extracted_so_far
+        current.type = IncidentType.INFO
+        current.hazard = HazardType.NONE
+        current.people.count = None
+        state.slot_need = True
+        state.slot_people = True
+        state.people_unknown = True
+        state.slot_water = True
+        if not place_is_usable(current.place_text):
+            current.place_text = None
+
     def _missing_slots(self, state: ChatTurnState) -> List[str]:
         missing: List[str] = []
         if not state.slot_location:
@@ -340,10 +375,11 @@ class ChatIntakeAgent:
         people = current.people.count if state.slot_people and not state.people_unknown else None
         if people is not None and people <= 0:
             people = None
-        summary = summary_from_report(full_text)
-        if hoax_reason:
+        summary = short_faithful_summary(full_text)
+        quiet = bool(hoax_reason) or current.type == IncidentType.INFO
+        if quiet:
             line = scenario_registry.get_safety_line("call_112", lang=lang)
-            bot_msg = f"{_HOAX_HELD.get(lang, _HOAX_HELD['en'])} {line}".strip()
+            bot_msg = f"{_HOAX_HELD.get(lang, _HOAX_HELD['en'])} {line}".strip() if hoax_reason else _READY.get(lang, _READY["en"])
         else:
             line = pack_notice(scenario, lang)
             bot_msg = _READY.get(lang, _READY["en"])

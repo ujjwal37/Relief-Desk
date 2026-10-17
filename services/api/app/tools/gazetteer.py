@@ -104,6 +104,18 @@ class Gazetteer:
         "स्कूल", "घाट", "पुल", "मंदिर", "जेट्टी",
     }
 
+    def _fuzzy_name_agrees(self, query: str, alias: str) -> bool:
+        """Fuzzy match only when a real name token agrees, not a generic suffix."""
+        left = self._specific_tokens(query)
+        right = self._specific_tokens(alias)
+        for token in left:
+            for other in right:
+                if token == other:
+                    return True
+                if difflib.SequenceMatcher(None, token, other).ratio() >= 0.8:
+                    return True
+        return False
+
     def _specific_tokens(self, text: str) -> List[str]:
         raw = self._clean_query(text or "")
         tokens = re.findall(r"[a-z0-9\u0900-\u097f\u0d00-\u0d7f]{2,}", raw)
@@ -150,9 +162,10 @@ class Gazetteer:
             elif cleaned and len(cleaned) >= 4 and cleaned in alias:
                 score = 0.85
             else:
-                # 2. Fuzzy similarity ratio
+                # A shared ending such as "school" is not the same place.
+                # "Gandhi school" must not pin Anthikad School.
                 ratio = difflib.SequenceMatcher(None, cleaned, alias).ratio()
-                score = round(ratio, 3)
+                score = round(ratio, 3) if self._fuzzy_name_agrees(cleaned or raw_lower, alias) else 0.0
 
             longer = (
                 best_match is not None

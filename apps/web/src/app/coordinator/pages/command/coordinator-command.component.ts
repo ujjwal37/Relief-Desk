@@ -124,7 +124,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly mapPins = computed<MapPin[]>(() => {
     const pins: MapPin[] = [];
     for (const req of this.requests()) {
-      if (req.lat == null || req.lng == null) {
+      if (req.lat == null || req.lng == null || req.status === 'info_closed') {
         continue;
       }
       pins.push({
@@ -385,7 +385,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const points = focused
       ? [{ lat: req.lat as number, lng: req.lng as number }, ...teams.map((team) => ({ lat: team.lat, lng: team.lng }))]
       : this.requests()
-          .filter((row) => row.lat != null && row.lng != null && !this.isCompleted(row) && !this.isDismissedHoax(row))
+          .filter((row) => row.lat != null && row.lng != null && !this.isCompleted(row) && !this.isDismissedHoax(row) && !this.isInfoClosed(row))
           .map((row) => ({ lat: row.lat as number, lng: row.lng as number }));
     if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
     const lats = points.map((point) => point.lat);
@@ -438,7 +438,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }),
   );
   readonly svgPins = computed(() => {
-    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r) && !this.isDismissedHoax(r));
+    const open = this.requests().filter((r) => r.lat != null && r.lng != null && !this.isCompleted(r) && !this.isDismissedHoax(r) && !this.isInfoClosed(r));
     const res = this.resources();
     return [
       ...res.map((r) => {
@@ -627,9 +627,21 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   isCompleted(r: StoredRequest): boolean {
     return r.status === 'completed' || r.status === 'resolved' || r.status === 'closed';
   }
+  isInfoClosed(r: StoredRequest): boolean {
+    return r.status === 'info_closed' || (r.flags || []).includes('info_closed');
+  }
+  /** Information, a vague place, or an injection. A person closes it. It is not a rescue. */
+  canCloseInfo(r: StoredRequest): boolean {
+    if (this.isDispatched(r) || this.isCompleted(r) || this.isInfoClosed(r) || isLifeThreat(r)) return false;
+    if (r.type === 'info') return true;
+    const place = (r.place_text || '').trim();
+    if (!place || r.lat == null || r.lng == null) return true;
+    const blob = `${r.raw_text || ''} ${r.summary || ''}`;
+    return /ignore (?:all )?previous instructions|system prompt|jailbreak/i.test(blob);
+  }
   /** Waiting queue: not sent, not finished, and not a dismissed hoax. */
   isWaiting(r: StoredRequest): boolean {
-    return !this.isDispatched(r) && !this.isCompleted(r) && !this.isDismissedHoax(r);
+    return !this.isDispatched(r) && !this.isCompleted(r) && !this.isDismissedHoax(r) && !this.isInfoClosed(r);
   }
   dispatchStep(r: StoredRequest): number {
     const status = String(r.status);
@@ -2174,6 +2186,19 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   isHoax(req: StoredRequest): boolean {
     const flags = req.flags || [];
     return !!req.hoax_reason || flags.includes('likely_hoax') || flags.includes('hoax');
+  }
+
+  closeInfo(req: StoredRequest): void {
+    this.approving.set(true);
+    this.apiClient.closeInfo(req.id).subscribe({
+      next: (row) => {
+        this.approving.set(false);
+        this.requests.update((rows) => rows.map((item) => (item.id === row.id ? row : item)));
+        this.actionToast.set({ text: this.langService.translate('coord.closeInfoDone'), type: 'warning' });
+        this.closeSheet();
+      },
+      error: () => this.approving.set(false),
+    });
   }
 
   dismissHoax(req: StoredRequest, reason?: string): void {

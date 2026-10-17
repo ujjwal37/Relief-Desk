@@ -116,16 +116,43 @@ def _ascii_digits(text: str) -> str:
     return text.translate(_DEVA_DIGITS)
 
 
+# A place name, not a sentence. "the bridge" and "asdf" are not places.
+_SENTENCE_WORD = re.compile(
+    r"(?<![a-z])(?:is|are|was|were|am|please|needed|stranded|coming|help|want|chahiye)(?![a-z])|है|हैं|।",
+    re.IGNORECASE,
+)
+_PLACE_TAIL = re.compile(
+    r"(?<![a-z])[\w\u0900-\u097F\u0D00-\u0D7F]{3,}\s+(?:road|rd|lane|street|nagar|church|temple|school|hospital|jetty|ghat)\b",
+    re.IGNORECASE,
+)
+
+
 def place_is_usable(place: Optional[str]) -> bool:
-    """Reject URL crumbs and yes/no replies. 'bit' from bit.ly is not a village."""
+    """A landmark, street, or ward. Not a sentence, a URL crumb, or a generic word."""
     if not place or not str(place).strip():
         return False
-    token = str(place).strip().strip(".,;:").lower()
+    raw = str(place).strip().strip(".,;:")
+    token = raw.lower()
     if token in _JUNK_PLACES:
         return False
     if re.search(r"https?://|bit\.ly|\bwww\.", token, flags=re.IGNORECASE):
         return False
-    return True
+    if len(token) > 60 or token.count(" ") > 6:
+        return False
+    known = known_place(raw)
+    if known and (known.lower() == token or len(known) >= max(4, int(len(raw) * 0.6))):
+        return True
+    if re.match(r"^(?:the|a|an|near|at|people)\b", token):
+        return False
+    if re.search(r"(?:ward|वार्ड|വാർഡ്)\s*\d+", raw, flags=re.IGNORECASE):
+        return True
+    if _SENTENCE_WORD.search(raw):
+        return False
+    if _PLACE_TAIL.search(raw):
+        return True
+    if re.fullmatch(r"[A-Za-z][\w-]{2,}\d\w*", raw):
+        return True
+    return False
 
 
 def known_place(text: str) -> Optional[str]:
@@ -189,6 +216,16 @@ def extract_place(text: str) -> Optional[str]:
         return None
     original = text
     text = _ascii_digits(text)
+    # "Gandhi school ke paas" names the place before paas, not the words after it.
+    before = re.search(
+        r"([A-Za-z][\w.'-]{2,}(?:\s+[A-Za-z][\w.'-]{2,}){0,3})\s+(?:ke\s+)?(?:paas|near)\b",
+        original,
+        flags=re.IGNORECASE,
+    )
+    if before:
+        chunk = before.group(1).strip(" ,.")
+        if place_is_usable(chunk):
+            return chunk
     ward = re.search(
         r"((?:ward|वार्ड|വാർഡ്)\s*\d+\b(?:\s+[\w\u0900-\u097F\u0D00-\u0D7F.]{2,}){0,4})",
         text,
@@ -202,7 +239,10 @@ def extract_place(text: str) -> Optional[str]:
                 break
             kept.append(token.strip(".,"))
         place = " ".join(kept).strip(" ,.")
-        if place:
+        named = known_place(original)
+        if named and named.lower() not in place.lower():
+            return named
+        if place and place_is_usable(place):
             return place
 
     street = re.search(
@@ -211,7 +251,14 @@ def extract_place(text: str) -> Optional[str]:
         flags=re.IGNORECASE,
     )
     if street:
-        return street.group(1).strip(" ,.")
+        chunk = street.group(1).strip(" ,.")
+        named = known_place(original) or known_place(chunk)
+        if named and named.lower() != chunk.lower() and re.search(r"\b(?:people|person|near|at)\b", chunk, flags=re.IGNORECASE):
+            return named
+        if place_is_usable(chunk):
+            return chunk
+        if named and place_is_usable(named):
+            return named
 
     landmark = re.search(
         r"(?:(?:^|(?<=\s))(?:near|at|paas)|के पास|पास|അടുത്ത്|സമീപം)\s+([A-Za-z0-9\u0900-\u097F\u0D00-\u0D7F][^,.]{2,48})",
@@ -512,11 +559,16 @@ def infer_incident_type(text: str) -> Optional[str]:
                 rescue_negated = True
             else:
                 rescue_hit = True
+    # "boat venam" / "boat chahiye" is a rescue ask. "near the boat jetty" is a place.
+    if not rescue_hit and has_latin("boat", "boats") and has_latin("venam", "bhejo", "chahiye") and not cue_negated(text, "boat"):
+        rescue_hit = True
     if rescue_hit:
         return "rescue"
     if has_latin("beghar", "tarpaulin") or has_phrase(
         "जगह चाहिए", "jagah chahiye", "घर डूब", "ghar doob", "roof collapsed",
-        "emergency shelter", "need shelter", "temporary shelter", "आश्रय", "बेघर",
+        "emergency shelter", "need shelter", "temporary shelter", "shelter needed",
+        "shelter for", "shelters for", "need a shelter", "needs shelter", "looking for shelter",
+        "आश्रय", "बेघर", "ashray chahiye",
         "വീട് മുങ്ങി", "താമസിക്കാൻ സ്ഥലം", "അഭയം"
     ):
         return "shelter"
@@ -628,9 +680,28 @@ def place_from_answer(text: str) -> Optional[str]:
         return ruled
     if re.fullmatch(r"[\d\s?.!-]+", raw):
         return None
-    if len(raw) < 3 or len(raw) > 80:
-        return None
-    return raw.strip(" .,")
+    if place_is_usable(raw) and not _place_is_weak(raw):
+        return raw.strip(" .,")
+    return None
+
+
+def is_nobody_stranded(text: str) -> bool:
+    """A status update that nobody needs rescue. It is not a headcount question."""
+    if not text or people_count(text):
+        return False
+    lowered = text.lower()
+    phrases = (
+        "nobody is stranded", "nobody stranded", "no one is stranded", "no one stranded",
+        "koi stranded nahi", "koi bhi stranded nahi",
+        "कोई फंसा नहीं", "कोई नहीं फंसा", "कोई फंसे नहीं",
+    )
+    if any(phrase in lowered or phrase in text for phrase in phrases):
+        return True
+    if infer_incident_type(text) == "info" and (
+        cue_negated(text, "stranded") or cue_negated(text, "trapped") or "ആരും" in text or "ആരുമില്ല" in text
+    ):
+        return True
+    return False
 
 
 def water_from_answer(text: str) -> Optional[str]:

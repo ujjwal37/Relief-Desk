@@ -23,6 +23,8 @@ CLOSED = {
     RequestStatus.CLOSED,
     RequestStatus.APPROVED,
     RequestStatus.IN_PROGRESS,
+    RequestStatus.INFO_CLOSED,
+    RequestStatus.DISMISSED_HOAX,
 }
 
 

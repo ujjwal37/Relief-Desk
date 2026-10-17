@@ -551,6 +551,14 @@ def _refine_with_model(
             analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
         ai_usage = llm_client.last_ai.model_copy()
     trans_res = _translation_for(report_text, analysis, ai_usage)
+    source_words = citizen_text or report_text
+    from app.tools.translation import faithful_english, translation_drops_facts
+    if trans_res.text_en and translation_drops_facts(source_words, trans_res.text_en):
+        fixed = faithful_english(source_words)
+        trans_res.text_en = fixed
+        trans_res.translations["en"] = fixed
+    from app.agents.intake import union_with_rules
+    union_with_rules(analysis, source_words, trans_res.text_en or "")
     if (payload.source_id or "") == "judge_input" and ai_usage.provider == "cache":
         ai_usage.provider = "fallback"
         ai_usage.cached = False

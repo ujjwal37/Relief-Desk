@@ -23,7 +23,7 @@ def reset_calls() -> None:
 def list_open_cases() -> list:
     """Open cases that are not dispatched."""
     _calls.append("list_open_cases")
-    closed = {RequestStatus.DISPATCHED, RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED}
+    closed = {RequestStatus.DISPATCHED, RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED, RequestStatus.INFO_CLOSED, RequestStatus.DISMISSED_HOAX}
     rows = []
     for req in storage_service.list_requests():
         if req.merged_into or req.status in closed:

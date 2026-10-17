@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.api.auth import CoordinatorUser, get_current_coordinator
-from app.tools.anomaly import acknowledge, collect_alerts
+from app.tools.anomaly import acknowledge, collect_alerts, unacknowledge
 from app.tools.storage import storage_service
 
 router = APIRouter(prefix="/api", tags=["Alerts"])
@@ -50,4 +50,18 @@ def acknowledge_alert(
     if found is None:
         from fastapi import HTTPException, status
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+    return _with_clock(found)
+
+
+@router.post("/alerts/{alert_id}/unacknowledge", response_model=AlertResponse)
+def unacknowledge_alert(
+    alert_id: str,
+    coordinator: CoordinatorUser = Depends(get_current_coordinator),
+):
+    alerts = {item.id: item for item in collect_alerts(storage_service)}
+    if alert_id not in alerts:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+    unacknowledge(alert_id)
+    found = {item.id: item for item in collect_alerts(storage_service)}[alert_id]
     return _with_clock(found)

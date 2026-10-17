@@ -148,11 +148,16 @@ export class CoordinatorAlertsComponent implements OnInit {
   });
 
   readonly googlePins = computed<MapPin[]>(() =>
-    this.items().filter((i) => i.at).map((i) => ({ id: i.alert.id, ...this.latlng(i), title: `${i.n}. ${i.alert.title}` })),
+    this.items().filter((i) => i.ward).map((i) => ({
+      id: i.alert.id,
+      lat: i.ward!.lat,
+      lng: i.ward!.lng,
+      title: `${i.n}. ${i.alert.title}`,
+    })),
   );
   readonly center = computed(() => {
-    const s = this.selected();
-    return s?.at ? this.latlng(s) : { lat: 10.50, lng: 76.30 };
+    const ward = this.selected()?.ward;
+    return ward ? { lat: ward.lat, lng: ward.lng } : { lat: 10.50, lng: 76.30 };
   });
 
   isSample(alert: AnomalyAlert): boolean {
@@ -248,12 +253,11 @@ export class CoordinatorAlertsComponent implements OnInit {
     const again = this.listOnly() && this.selectedId() === alert.id;
     this.selectedId.set(again ? null : alert.id);
     const item = this.items().find((i) => i.alert.id === alert.id);
-    if (again || !item || (!item.ward && !item.at)) {
+    if (again || !item?.ward) {
       this.focus.emit(null);
       return;
     }
-    const at = this.latlng(item);
-    this.focus.emit({ id: alert.id, ward_id: item.ward?.id ?? alert.ward_id ?? null, lat: at.lat, lng: at.lng });
+    this.focus.emit({ id: alert.id, ward_id: item.ward.id, lat: item.ward.lat, lng: item.ward.lng });
   }
 
   /** Focus the map on this alert, including when the row was already selected. */
@@ -269,10 +273,10 @@ export class CoordinatorAlertsComponent implements OnInit {
     });
   }
 
-  private latlng(i: MapAlert): { lat: number; lng: number } {
-    if (i.ward) return { lat: i.ward.lat, lng: i.ward.lng };
-    const at = i.at as Pt;
-    return { lat: LAT_MAX - at.y / 230, lng: LNG_MIN + at.x / 1100 };
+  unacknowledge(alert: AnomalyAlert): void {
+    this.api.unacknowledgeAlert(alert.id).subscribe({
+      next: (updated) => this.alerts.update((rows) => rows.map((row) => (row.id === updated.id ? updated : row))),
+    });
   }
 
   private kindOf(a: AnomalyAlert): Kind {
@@ -299,11 +303,10 @@ export class CoordinatorAlertsComponent implements OnInit {
       if (r) item.claims = [r[1], r[2]];
     }
     if (kind === 'resource_gap') {
-      const pins = this.medical().length ? this.medical() : FALLBACK_MEDICAL;
-      const free = pins.filter((p) => p.free);
-      const base = (free.length ? free : pins).map((p) => proj(p.lat, p.lng));
-      item.at = { x: base.reduce((s, p) => s + p.x, 0) / base.length, y: base.reduce((s, p) => s + p.y, 0) / base.length };
       item.demand = alert.reason;
+    }
+    if (!item.ward) {
+      item.at = null;
     }
     return item;
   }

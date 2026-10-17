@@ -917,6 +917,28 @@ class StorageService:
         self.record_audit(actor=actor, action="dismiss_hoax", target=req.id, before=before, after=req.model_dump())
         return req
 
+    def close_as_info(self, request_id: str, actor: str = "coordinator") -> StoredRequest:
+        """Close a report that needs no team. It is not a rescue and not a dispatch."""
+        req = self._requests.get(request_id)
+        if not req:
+            raise ValueError(f"Request {request_id} not found")
+        if req.status in (
+            RequestStatus.DISPATCHED,
+            RequestStatus.APPROVED,
+            RequestStatus.IN_PROGRESS,
+            RequestStatus.COMPLETED,
+        ):
+            raise ValueError(f"Request {request_id} is already with a team")
+        if req.status == RequestStatus.INFO_CLOSED:
+            return req
+        before = req.model_dump()
+        req.status = RequestStatus.INFO_CLOSED
+        req.flags = sorted(set((req.flags or []) + ["info_closed"]))
+        req.updated_at = datetime.now(timezone.utc).isoformat()
+        self._requests[req.id] = req
+        self.record_audit(actor=actor, action="close_info", target=req.id, before=before, after=req.model_dump())
+        return req
+
     def reject_match(
         self, match_id: str, reason: str, actor: str = "coordinator"
     ) -> StoredMatch:

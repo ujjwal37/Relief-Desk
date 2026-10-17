@@ -365,4 +365,12 @@ export class ApiClientService {
   acknowledgeAlert(id: string): Observable<AnomalyAlert> {
     return this.http.post<AnomalyAlert>(`/api/alerts/${id}/acknowledge`, {}, this.getAuthHeaders());
   }
+
+  unacknowledgeAlert(id: string): Observable<AnomalyAlert> {
+    return this.http.post<AnomalyAlert>(`/api/alerts/${id}/unacknowledge`, {}, this.getAuthHeaders());
+  }
+
+  closeInfo(id: string): Observable<StoredRequest> {
+    return this.http.post<StoredRequest>(`/api/requests/${id}/close-info`, {}, this.getAuthHeaders());
+  }
 }

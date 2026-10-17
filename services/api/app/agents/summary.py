@@ -66,6 +66,31 @@ def guard_summary(source: str, summary: str) -> str:
     return candidate
 
 
+_QUICK_REPLY = re.compile(
+    r"^(?:none of these|no|yes|ok|okay|not sure|i am not sure\b.*|i'?m not sure\b.*|"
+    r"mujhe (?:nahi|nahin) pata\b.*|pata nahi\b.*|how many people\b.*)$",
+    re.IGNORECASE,
+)
+
+
+def short_faithful_summary(report_text: str) -> str:
+    """One short line from what the citizen reported. Quick replies are not the summary."""
+    lines = [line.strip() for line in (report_text or "").splitlines() if line.strip()]
+    kept = [line for line in lines if not _QUICK_REPLY.match(line) and not _BARE_REPLY.match(line)]
+    text = " ".join(kept or lines)
+    text = " ".join(text.split())
+    if not text:
+        return ""
+    parts = re.split(r"(?<=[.!?।])\s+", text)
+    summary = parts[0]
+    if len(summary) < 40 and len(parts) > 1:
+        summary = " ".join(parts[:2])
+    if len(summary) > 180:
+        cut = summary[:177].rsplit(" ", 1)[0]
+        summary = (cut or summary[:177]) + "…"
+    return summary
+
+
 def summary_from_report(report_text: str, card_summary: Optional[str] = None) -> str:
     """Build the case summary from the report, never from a lone last chat answer."""
     report = " ".join((report_text or "").split())
@@ -78,4 +103,6 @@ def summary_from_report(report_text: str, card_summary: Optional[str] = None) ->
     bare_last = bool(lines) and (_BARE_REPLY.match(last) or len(last) <= 3)
     if _BARE_REPLY.match(chosen) or (bare_last and chosen == last and len(lines) >= 2 and len(chosen) < len(report)):
         chosen = report
+    if any(_QUICK_REPLY.match(line) or _BARE_REPLY.match(line) for line in (chosen.splitlines() or [chosen])):
+        chosen = short_faithful_summary(chosen)
     return guard_summary(report or chosen, chosen)

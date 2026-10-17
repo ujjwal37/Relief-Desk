@@ -1603,3 +1603,48 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
   - Recheck runs only when Gemini is live and the circuit is closed. Tests drive it with a fake client.
   - A live Gemini key was not used.
 - Next (suggested task id): none
+
+### 2026-10-17 16:05 IST — QR3-01 — Cursor
+- What changed:
+  - Phone chat asks each slot once, accepts a typed answer, and asks where the person is when no place was parsed. "Nobody is stranded" ends as information, with no headcount loop and no "move to higher ground" line. The card summary is the report, and the place field is a place name.
+  - English "shelter for 12, including a pregnant woman" is shelter with 12 people. Rising water with people present floors at Urgent, and a translation that drops the count or place is replaced with a faithful English line.
+  - An alert with no ward is not pinned. The row says "Place unknown". A coordinator can un-acknowledge an alert.
+  - Info-only cases have "Close · info only". That status is `info_closed` and is not a completed rescue. On a phone, opening a case covers the screen and keeps Approve on screen, with Back to cases.
+  - "Gandhi school" no longer fuzzy-matches Anthikad School, so the hero duplicate still joins Gandhi High School.
+- Files:
+  - `services/api/app/agents/chat_intake.py`
+  - `services/api/app/agents/summary.py`
+  - `services/api/app/agents/intake.py`
+  - `services/api/app/tools/nlu_rules.py`
+  - `services/api/app/tools/scoring.py`
+  - `services/api/app/tools/translation.py`
+  - `services/api/app/tools/gazetteer.py`
+  - `services/api/app/tools/anomaly.py`
+  - `services/api/app/tools/storage.py`
+  - `services/api/app/api/reports.py`
+  - `services/api/app/api/alerts.py`
+  - `services/api/app/api/matches.py`
+  - `services/api/app/models/firestore_models.py`
+  - `services/api/tests/test_qa_r3.py`
+  - `services/api/tests/test_geo_gazetteer.py`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.html`
+  - `apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss`
+  - `apps/web/src/app/coordinator/pages/alerts/coordinator-alerts.component.ts`
+  - `apps/web/src/app/coordinator/pages/alerts/coordinator-alerts.component.html`
+  - `apps/web/src/styles.scss`
+  - `libs/shared/src/lib/i18n/en.json`
+  - `libs/shared/src/lib/i18n/hi.json`
+  - `libs/shared/src/lib/i18n/hinglish.json`
+  - `libs/shared/src/lib/i18n/ml.json`
+  - `TASKS.md`
+- How verified (commands / screenshots):
+  - `python3 -m pytest` in `services/api` — 368 passed, 1 skipped, including `tests/test_qa_r3.py`. No test calls Gemini.
+  - `npx ng build web --configuration=development` — passed (existing findingTeam duplicate-key warning and NG8107 warnings).
+  - `node scripts/check-i18n.mjs` — PASSED, 1286 keys. Template lint passed.
+  - `CI=true npx ng test web --watch=false --browsers=ChromeHeadless` for the alerts and command specs — 37 passed. The same 5 older command specs still fail on pre-existing copy (Gemini reading label, district names, Google Maps in the trace).
+  - Phone viewport 390×844: opening a case covers the screen, Back to cases is at the top, Approve and send sits on screen. Back returns to the list. Close · info only on "Nobody is stranded" toasts "Closed as information. No team was sent." and leaves the waiting list. The no-ward alert says Place unknown; Un-acknowledge clears it.
+- Notes / risks / not done:
+  - The five older command-component copy specs were left as they were.
+  - A live Gemini key was not used.
+- Next (suggested task id): none

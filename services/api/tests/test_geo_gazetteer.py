@@ -35,6 +35,14 @@ def test_hindi_script_champakulam_school_resolves():
     assert match.ward_id == "ward_2"
 
 
+def test_a_school_that_only_shares_the_word_school_is_not_pinned():
+    # "Gandhi school" used to fuzzy-match Anthikad School on the shared suffix.
+    match = gazetteer.lookup("Gandhi school")
+    assert match.is_low_confidence is True
+    assert match.landmark_id is None
+    assert match.ward_id is None
+
+
 def test_unknown_place_flags_low_confidence():
     # Hero acceptance criteria: unknown place -> low confidence flag
     match = gazetteer.lookup("some random imaginary unknown alien place xyz 123")

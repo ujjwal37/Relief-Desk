@@ -484,6 +484,21 @@ app-ai-stepper {
 /* ========================================================
    RIGHT COLUMN: DECISION PANEL
    ======================================================== */
+.sheet-back {
+  flex: none;
+  min-height: 44px;
+  margin: 8px 8px 0;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
 .decision-panel {
   display: flex;
   flex-direction: column;
@@ -1304,6 +1319,16 @@ app-ai-stepper {
   .queue-col, .decision-panel {
     border-radius: 12px;
     border: 1px solid var(--border, #1a2f24);
+  }
+
+  .decision-panel.case-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    background: var(--surface, #fff);
   }
 
   .map-card-wrapper {
