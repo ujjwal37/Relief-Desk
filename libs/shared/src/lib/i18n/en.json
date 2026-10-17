@@ -1396,6 +1396,7 @@
     "which": "Rejecting {team} for this case. Why?"
   },
   "aiq": {
+    "sendTeam": "Send {team} now",
     "working": "AI working",
     "ready": "Ready for you",
     "flow": "New reports → AI working → Ready for you → you approve",
@@ -1471,5 +1472,9 @@
     "lifeTag": "Life threat",
     "sendAmbulance": "Send nearest ambulance now",
     "lockReason": "Approve unlocks after {step} · {done} of {n} AI steps done (or rules after 45 s)."
+  },
+  "dup": {
+    "levelHigh": "Confidence: high",
+    "levelMedium": "Confidence: medium"
   }
 }

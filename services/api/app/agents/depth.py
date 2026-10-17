@@ -70,7 +70,7 @@ _RULES = [
     ("roof", r"water (?:is |was )?(?:up |over )?(?:to )?(?:the )?(?:roof|terrace|rooftop)|(?:roof|terrace)[- ]deep|छत तक(?: पानी)?|വെള്ളം.{0,16}മേൽക്കൂര"),
     ("floor", r"water (?:up )?to (?:the )?(?:first|upper|second) floor|first floor (?:is |was )?(?:under|flooded|submerged)|पहली मंजिल तक"),
     ("floor", r"ground floor (?:is |was |fully )?(?:under(?: water)?|flooded|submerged|drowned)|house (?:is )?(?:fully )?submerged"),
-    ("chest", r"chest[- ]deep|up to (?:our |my |the )?(?:chest|neck)|neck[- ]deep|छाती तक|सीने तक|नेक तक|nenju vare|നെഞ്ച്"),
+    ("chest", r"chest[- ](?:deep|level|high)|up to (?:our |my |the )?(?:chest|neck)|neck[- ]deep|छाती तक|सीने तक|नेक तक|nenju vare|നെഞ്ച്"),
     ("waist", r"waist[- ]deep|up to (?:our |my |the )?waist|कमर तक|aravattam|അരയോളം|at the windows?|window level"),
     ("knee", r"knee[- ]deep|up to (?:our |my |the )?knees?|घुटने तक|മുട്ടോളം"),
     ("ankle", r"ankle[- ]deep|up to (?:our |my |the )?ankles?|टखने तक"),
@@ -87,10 +87,25 @@ def depth_from_text(raw_text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+# "Water came in" says nothing about how deep it is. A model band quoting only these words is dropped.
+_ENTERED_ONLY = re.compile(r"^\W*(?:വെള്ളം\s*)?(?:കയറി|കയറുന്നു|കേറി)\W*$|^\W*(?:water\s+)?(?:entered|came in|is coming in|got in)\W*$|^\W*(?:paani\s+|पानी\s+)?(?:aa gaya|ghus gaya|आ गया|घुस गया)\W*$", re.I)
+
+
+def _quote_of(request: Any) -> str:
+    wd = getattr(request, "water_depth", None)
+    if isinstance(wd, dict):
+        return str(wd.get("quote") or "")
+    return str(getattr(wd, "quote", "") or "")
+
+
 def fill_depth(request: Any) -> None:
     """Keep a quoted model band; otherwise read the report words. Unknown stays unknown."""
     if band_of(request) != "unknown":
-        return
+        quote = _quote_of(request).strip()
+        if quote and _ENTERED_ONLY.search(quote) and not depth_from_text(quote):
+            request.water_depth = {"band": "unknown", "quote": None, "source": "rules"}
+        else:
+            return
     texts = [getattr(request, "raw_text", None) or ""]
     for q in getattr(request, "report_quotes", None) or []:
         texts.append(getattr(q, "text", "") or "")

@@ -1,6 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { API } from './ports';
-import { openDedupeDetails, openHowItDecided, openTechnical } from './desk-ui';
 import { resetDemo } from './reset-demo';
 
 const PIN = { lat: 8.11, lng: 77.21 };
@@ -23,7 +22,7 @@ async function submit(request: APIRequestContext, text: string, pin: { lat: numb
   expect(response.ok(), await response.text()).toBeTruthy();
 }
 
-test('three reworded reports become one case, and conflicting counts keep the higher number', async ({ browser, request }) => {
+test('three reworded reports are flagged as possible duplicates, never merged, and conflicting counts keep the higher number', async ({ browser, request }) => {
   const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
   await context.addInitScript(() => localStorage.setItem('rd_tour_v2_off', '1'));
   const desk = await context.newPage();
@@ -42,25 +41,15 @@ test('three reworded reports become one case, and conflicting counts keep the hi
   const row = desk.getByRole('option', { name: new RegExp(place) });
   await expect(row).toHaveCount(1, { timeout: 20_000 });
   await submit(request, wordings[1], PIN, `e2e-rw-${place}-1`);
-  const merged = desk.locator('.case-wrap').filter({ hasText: place });
-  await expect(merged.getByRole('button', { name: '2 reports', exact: true })).toBeVisible({ timeout: 20_000 });
   await submit(request, wordings[2], PIN, `e2e-rw-${place}-2`);
-  await expect(row).toHaveCount(1, { timeout: 20_000 });
-  await expect(merged.getByRole('button', { name: '3 reports', exact: true })).toBeVisible();
-  await row.click();
-  await merged.getByRole('button', { name: '3 reports', exact: true }).click();
-  const quotes = desk.getByRole('dialog', { name: 'Reports merged into this case' });
-  await expect(quotes).toBeVisible();
-  await expect(quotes.locator('blockquote')).toHaveCount(3);
-  await expect(quotes).toContainText('roof');
-  await expect(quotes).toContainText(place);
-  await desk.keyboard.press('Escape');
-  await expect(quotes).toBeHidden();
-  const firstTrace = await openHowItDecided(desk);
-  await openTechnical(firstTrace);
-  const firstDup = await openDedupeDetails(firstTrace);
-  await expect(firstDup).toContainText('Match evidence');
-  await desk.keyboard.press('Escape');
+  // Never auto-merged: three open cards, the two repeats flagged for a person.
+  await expect(row).toHaveCount(3, { timeout: 20_000 });
+  const cards = desk.locator('.case-wrap').filter({ hasText: place });
+  await expect(cards.getByTestId('dup-chip')).toHaveCount(2, { timeout: 20_000 });
+  await cards.filter({ has: desk.getByTestId('dup-chip') }).first().getByRole('option').click();
+  await expect(desk.getByTestId('dup-review')).toBeVisible();
+  await expect(desk.getByTestId('merge-dup')).toBeVisible();
+  await expect(desk.getByTestId('keep-dup')).toBeVisible();
 
   await context.close();
 });

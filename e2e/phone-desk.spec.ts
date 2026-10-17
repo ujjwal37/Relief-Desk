@@ -1,3 +1,4 @@
+import { API } from './ports';
 import { expect, test, type Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
@@ -13,7 +14,7 @@ async function shot(page: Page, name: string): Promise<void> {
   await page.screenshot({ path: path.join(SHOTS, `${name}.png`), fullPage: false });
 }
 
-test('a phone report reaches the desk, merges, and comes back approved', async ({ browser }) => {
+test('a phone report reaches the desk, a repeat is flagged (not merged), and it comes back approved', async ({ browser }) => {
   fs.mkdirSync(SHOTS, { recursive: true });
   fs.mkdirSync('/opt/cursor/artifacts/videos', { recursive: true });
   const tag = `Demo ${Date.now().toString().slice(-6)}`;
@@ -67,11 +68,22 @@ test('a phone report reaches the desk, merges, and comes back approved', async (
   await phone.getByRole('button', { name: 'Send now' }).click();
   await phone.waitForURL(/\/status/);
 
-  const merged = desk.locator('.case-wrap').filter({ hasText: tag }).getByRole('button', { name: '2 reports', exact: true });
-  await expect(merged).toBeVisible({ timeout: 20_000 });
+  // Never auto-merged: the repeat is its own card with a Possible duplicate chip.
+  await expect.poll(async () => {
+    const rows = await (await context.request.get(`${API}/api/requests`, { headers: { Authorization: 'Bearer demo-coordinator-token' } })).json();
+    const mine = (rows as { raw_text?: string; merged_into?: string; possible_duplicate?: { target_id?: string } }[])
+      .filter((r) => (r.raw_text || '').includes(tag));
+    return [mine.length, mine.filter((r) => r.merged_into).length, mine.filter((r) => r.possible_duplicate?.target_id).length].join('/');
+  }, { timeout: 20_000 }).toBe('2/0/1');
   await shot(desk, 'phone-desk-merged');
 
   const approve = desk.getByRole('button', { name: 'Approve and send' });
+  // Approve the phone's own (original) case; the flagged repeat waits for a person.
+  const rows = await (await context.request.get(`${API}/api/requests`, { headers: { Authorization: 'Bearer demo-coordinator-token' } })).json();
+  const original = (rows as { raw_text?: string; public_code?: string; possible_duplicate?: { target_id?: string } }[])
+    .find((r) => (r.raw_text || '').includes(tag) && !r.possible_duplicate?.target_id);
+  await desk.locator('#coord-search').fill(original?.public_code || tag);
+  await desk.getByRole('option', { name: new RegExp(original?.public_code || tag) }).first().click();
   await expect(approve).toBeEnabled({ timeout: 20_000 });
   await shot(desk, 'phone-desk-suggest');
   await approve.click();

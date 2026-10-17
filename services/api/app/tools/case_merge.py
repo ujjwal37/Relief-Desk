@@ -1,4 +1,4 @@
-"""Fold one open case into another. Auto-merge and the coordinator's Merge button share this."""
+"""Fold one open case into another. Only a person's Merge click calls this; reports are never auto-merged."""
 from __future__ import annotations
 
 from typing import List, Optional

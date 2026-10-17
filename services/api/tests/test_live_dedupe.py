@@ -47,9 +47,10 @@ def test_reworded_hinglish_pair_merges_and_the_card_says_two_reports():
         if token.lower() in (row.get("place_text") or "").lower()
         or token.lower() in (row.get("raw_text") or "").lower()
     ]
-    assert len(cards) == 1
-    assert cards[0]["merged_count"] == 2
-    assert not cards[0].get("merged_into")
+    assert len(cards) == 2
+    assert all(not c.get("merged_into") for c in cards)
+    flagged = [c for c in cards if (c.get("possible_duplicate") or {}).get("target_id")]
+    assert len(flagged) == 1
 
     label = json.loads(EN.read_text(encoding="utf-8"))["coord"]["sameIncident"].replace("{n}", "2")
     assert "2 reports" in label

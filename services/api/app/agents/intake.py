@@ -52,7 +52,7 @@ EXAMPLES (input -> "type", "secondary_needs"):
 - "ഞങ്ങൾ വീടിന്റെ മുകളിൽ കുടുങ്ങി, വെള്ളം ഉയരുന്നു, ബോട്ട് വേണം" -> "rescue", []
 - "ക്യാമ്പ് നിറഞ്ഞു, ഇനി ആളുകളെ എടുക്കില്ല" -> "info", []
 
-Set "water_depth" only from words in the report (for example "knee-deep" -> "knee", "water up to our chest" -> "chest", "water up to the first floor" or "ground floor submerged" -> "floor", "water over the roof" -> "roof"). Where people are standing ("on the roof", "छत पर", "on the first floor") is NOT a water depth. Copy the water words into "water_depth_quote". If the report does not say how deep the water is, use "unknown" and null.
+Set "water_depth" only from words in the report (for example "knee-deep" -> "knee", "water up to our chest" -> "chest", "water up to the first floor" or "ground floor submerged" -> "floor", "water over the roof" -> "roof"). Where people are standing ("on the roof", "छत पर", "on the first floor") is NOT a water depth. Copy the water words into "water_depth_quote". If the report does not say how deep the water is, use "unknown" and null. "Water came in" ("വെള്ളം കയറി", "paani aa gaya", "water entered") gives no depth: use "unknown".
 
 "text_en" and "notes" must not add, upgrade, or rename a medical condition. Repeat only the condition words written in the report. If the report says "severe diabetic emergency", text_en must say "severe diabetic emergency" and must not say "insulin shock", "acute insulin shock", "ketoacidosis", "hypoglycemia", or any other condition that is not in the report. A negated line is not a request: "Nobody is stranded" is not a rescue. Do not read a URL host such as "bit.ly" as a place name. Leave people.count null when the report does not state a number. Never invent 0 or 1.
 

@@ -705,6 +705,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const id = hint ? this.shortId(hint.target_id, hint.target_code || this.requests().find((row) => row.id === hint.target_id)?.public_code) : '';
     return this.langService.translate('xfactor.dupMatch').replace('{id}', id);
   }
+  /** The matched signals in plain words (landmark, distance, minutes, shared facts), from the duplicate check. */
+  dupReasons(r: StoredRequest): string {
+    const note = r.possible_duplicate?.signals?.length ? r.possible_duplicate.note || '' : '';
+    const i = note.indexOf('Match evidence: ');
+    if (i < 0) return '';
+    return note.slice(i + 16).split('. Differences:')[0];
+  }
   showGeminiChip(req: StoredRequest): boolean {
     const kind = this.aiKind(req);
     return kind === 'gemini' || kind === 'recorded';
@@ -1848,7 +1855,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         const people = target?.people_count || 1;
         const updatedList = this.requests().map((r) =>
           r.id === prop.request_id
-            ? { ...r, status: 'dispatched' as const, assigned_resource_id: prop.resource_id, reserved_people: people }
+            ? {
+                ...r, status: 'dispatched' as const, assigned_resource_id: prop.resource_id, reserved_people: people,
+                // Frozen at Approve: the numbers the coordinator just approved, never a later re-match.
+                dispatch: r.dispatch || {
+                  match_id: prop.match_id, resource_id: prop.resource_id, resource_name: prop.resource_name,
+                  resource_kind: prop.resource_kind, distance_km: this.distanceKm(prop), eta_minutes: prop.eta_minutes ?? null,
+                  seats: prop.capacity_remaining ?? null, approved_at: new Date().toISOString(),
+                },
+              }
             : r
         );
         this.requests.set(updatedList);
@@ -2498,6 +2513,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const parts: string[] = [];
     if (d.eta_minutes != null) parts.push(`~${d.eta_minutes} min`);
     if (d.distance_km != null) parts.push(`${Number(d.distance_km).toFixed(1)} km`);
+    const seats = d.seats;
+    if (seats != null) parts.push(this.langService.translate('queue.seats', { n: seats }));
     return parts.join(' · ');
   }
 
@@ -2655,6 +2672,25 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const word = this.hoaxWord.trim().split(/\s+/)[0];
     if (!word) return;
     this.dismissHoax(req, word);
+  }
+
+  /** The life button names the team it will actually send (nearest free team of the engine's pick). */
+  lifeSendLabel(req: StoredRequest): string {
+    this.langService.currentLang();
+    const pick = req.ai_queue?.life_pick === 'medical' ? 'medical' : 'boat';
+    const fallback = this.langService.translate(pick === 'medical' ? 'aiq.sendAmbulance' : 'aiq.sendBoat');
+    if (req.lat == null || req.lng == null) return fallback;
+    let best: StoredResource | null = null;
+    let bestKm = Infinity;
+    for (const t of this.resources()) {
+      if (t.kind !== pick || t.status !== 'available' || (t.capacity_remaining ?? 0) <= 0 || t.lat == null || t.lng == null) continue;
+      const rad = (d: number) => (d * Math.PI) / 180;
+      const dLat = rad(t.lat - req.lat), dLng = rad(t.lng - req.lng);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(req.lat)) * Math.cos(rad(t.lat)) * Math.sin(dLng / 2) ** 2;
+      const km = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      if (km < bestKm) { bestKm = km; best = t; }
+    }
+    return best ? this.langService.translate('aiq.sendTeam', { team: best.name }) : fallback;
   }
 
   sendNearestBoat(req: StoredRequest): void {

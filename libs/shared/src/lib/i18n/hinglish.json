@@ -1396,6 +1396,7 @@
     "which": "Is case ke liye {team} reject kar rahe hain. Kyon?"
   },
   "aiq": {
+    "sendTeam": "{team} abhi bhejo",
     "working": "AI kaam par",
     "ready": "Aapke liye taiyaar",
     "flow": "Nayi report → AI kaam par → aapke liye taiyaar → aap manzoor karein",
@@ -1474,5 +1475,9 @@
   },
   "teams": {
     "sub": "{a} khaali · {b} vyast"
+  },
+  "dup": {
+    "levelHigh": "Bharosa: high",
+    "levelMedium": "Bharosa: medium"
   }
 }

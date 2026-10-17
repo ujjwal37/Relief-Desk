@@ -417,6 +417,61 @@ def note_dedupe(req: StoredRequest) -> None:
     emit_pipeline_step(req.id, "dedupe", "complete", _dedupe_output(req), extra)
 
 
+def _tier_for(score: float) -> str:
+    from app.tools.scoring import TIER_IMMEDIATE, TIER_URGENT
+    return "immediate" if score >= TIER_IMMEDIATE else "urgent" if score >= TIER_URGENT else "standard"
+
+
+def link_structured_twin(req: StoredRequest) -> None:
+    """Re-run the duplicate check on the structured record (English gist, landmark, pin, facts)."""
+    from app.agents.structured_dupe import compare, find_structured_twin
+    if req.merged_into:
+        return
+    hint = req.possible_duplicate
+    if hint is None:
+        hint = find_structured_twin(req, storage_service.list_requests())
+    elif not hint.signals:
+        twin = storage_service.get_request(hint.target_id)
+        got = compare(req, twin) if twin is not None else None
+        if got:
+            hint = got[1]
+    if hint is None:
+        return
+    req.possible_duplicate = hint
+    req.dedupe_trace = hint.note
+    people = next((d for d in hint.differences if "plan for" in d), None)
+    if people:
+        code = hint.target_code or hint.target_id
+        req.count_note = (f"Counts differ: {people}" if " vs " in people else people) + f" · possible duplicate of {code}"
+
+
+def plan_for_the_worse_twin(req: StoredRequest, scored):
+    """Two reports of one situation are rated from the merged facts and stay within 5 points.
+
+    Merged facts: most people, every vulnerability, the worst quoted depth. The flagged report
+    never scores lower than its match; a lower open match is raised to the same score.
+    """
+    hint = req.possible_duplicate
+    twin = storage_service.get_request(hint.target_id) if hint and hint.target_id else None
+    if twin is None or twin.merged_into or twin.urgency_score is None:
+        return scored
+    from app.api.public import case_code
+    from app.agents.structured_dupe import merged_facts
+    code = case_code(twin)
+    merged = scoring_engine.compute_urgency(merged_facts(req, twin))
+    final = max(float(scored.score), float(merged.score), float(twin.urgency_score))
+    out = scored
+    if final - float(scored.score) > 0.05:
+        reason = f"{scored.reason} Rated from the facts of both reports (with {code}): {round(final)}."
+        out = scored.model_copy(update={"score": final, "reason": reason, "tier": _tier_for(final)})
+    if final - float(twin.urgency_score) > 5 and str(getattr(twin.status, "value", twin.status)) in ("new", "needs_recheck", "matched"):
+        raised = twin.model_copy(deep=True)
+        raised.urgency_score = final
+        raised.urgency_reason = f"{twin.urgency_reason or ''} Rated from the facts of both reports (with {case_code(req)}): {round(final)}.".strip()
+        storage_service.save_request(raised, actor="dedupe_agent")
+    return out
+
+
 def finish(request_id: str) -> None:
     """Run the deterministic tools. A live model is not required for the case to complete."""
     req = storage_service.get_request(request_id)
@@ -424,6 +479,8 @@ def finish(request_id: str) -> None:
         return
     req = req.model_copy(deep=True)
     started = time.perf_counter()
+    from app.tools.place_names import english_place
+    req.place_text = english_place(req.place_text)
     from app.tools.case_queue import abandon_if_capped, mark_steps_done, note_progress
     capped = abandon_if_capped(req)
     # Second Gemini pass on the extraction; corrections need a quote from the report.
@@ -442,7 +499,9 @@ def finish(request_id: str) -> None:
         req.self_check = checked
         emit_pipeline_step(request_id, "selfcheck", "complete", checked.get("reason") or checked.get("verdict", ""),
                            {"verdict": checked.get("verdict"), "changes": checked.get("changes")})
+    link_structured_twin(req)
     scored = scoring_engine.compute_urgency(req)
+    scored = plan_for_the_worse_twin(req, scored)
     triage_at = time.perf_counter()
     req.urgency_score = scored.score
     req.urgency_reason = scored.reason
@@ -582,6 +641,16 @@ def finish(request_id: str) -> None:
                 latest.people_count = req.people_count
                 latest.place_text = req.place_text
                 latest.urgency_score = req.urgency_score
+                latest.urgency_reason = req.urgency_reason
+        if not latest.merged_into:
+            # The structured duplicate pass and the merged-fact rating belong to the analysis.
+            latest.possible_duplicate = req.possible_duplicate
+            latest.dedupe_trace = req.dedupe_trace
+            latest.count_note = req.count_note
+            latest.place_text = req.place_text
+            if str(getattr(latest.status, "value", latest.status)) in ("new", "needs_recheck", "matched"):
+                latest.urgency_score = max(float(latest.urgency_score or 0), float(req.urgency_score or 0)) \
+                    if req.possible_duplicate else req.urgency_score
                 latest.urgency_reason = req.urgency_reason
         storage_service.save_request(latest, actor="pipeline")
     emit_pipeline_step(

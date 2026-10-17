@@ -70,6 +70,11 @@ class PossibleDuplicate(BaseModel):
     distance_km: Optional[float] = None
     minutes: Optional[float] = None
     note: str = ""
+    # Which signals matched (gps, landmark, gist), the level in words, and what differs.
+    signals: List[str] = Field(default_factory=list)
+    level: Optional[str] = None
+    differences: List[str] = Field(default_factory=list)
+    plan_people: Optional[int] = None
 
 
 class AiQueueState(BaseModel):

@@ -42,7 +42,14 @@ def _cards(token: str) -> list:
     ]
 
 
-def test_three_reworded_reports_merge_into_one_case():
+def _flagged_pair(cards):
+    """Never auto-merged: every card stays open and later ones point at the first."""
+    assert all(not c.get("merged_into") for c in cards)
+    flagged = [c for c in cards if (c.get("possible_duplicate") or {}).get("target_id")]
+    return flagged
+
+
+def test_three_reworded_reports_are_flagged_never_merged():
     token = f"Bramble{uuid.uuid4().hex[:6]}"
     texts = [
         f"4 people stranded on the roof at {token} jetty, send a boat",
@@ -54,14 +61,12 @@ def test_three_reworded_reports_merge_into_one_case():
         decisions.append(_post(text, PIN, f"rw-{token}-{index}")["dedupe_decision"])
     assert decisions == ["new", "duplicate", "duplicate"]
     cards = _cards(token)
-    assert len(cards) == 1
-    assert cards[0]["merged_count"] == 3
-    quotes = [quote["text"] for quote in cards[0]["report_quotes"]]
-    assert len(quotes) == 3
-    assert all(any(piece in quote for quote in quotes) for piece in ("roof", "rescue boat", "Still stranded"))
-    dedupe = next(step["output"] for step in cards[0]["trace"] if step["agent"] == "Dedupe")
-    assert "Match evidence" in dedupe
-    assert "km" in dedupe
+    assert len(cards) == 3
+    flagged = _flagged_pair(cards)
+    assert len(flagged) == 2
+    ids = {c["id"] for c in cards}
+    assert all(c["possible_duplicate"]["target_id"] in ids for c in flagged)
+    assert all("Possible duplicate" in (c.get("dedupe_trace") or "") for c in flagged)
 
 
 def test_conflicting_people_ranges_use_the_higher_bound_and_keep_both_texts():

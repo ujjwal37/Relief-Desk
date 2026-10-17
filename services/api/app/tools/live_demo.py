@@ -91,8 +91,9 @@ def _apply_case(request_id: str, sample_id: str) -> None:
             row = storage_service.get_request(cid)
             if row is None:
                 continue
+            if row.merged_into or (row.possible_duplicate and row.possible_duplicate.target_id):
+                joined += 1  # merged by a person, or flagged as a possible duplicate
             if row.merged_into:
-                joined += 1
                 row = storage_service.get_request(row.merged_into) or row
             flags = row.flags or []
             if any(flag in flags for flag in ("hoax", "likely_hoax", "hoax_or_flood")):

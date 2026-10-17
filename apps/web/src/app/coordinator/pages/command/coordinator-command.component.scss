@@ -1449,3 +1449,6 @@ app-ai-stepper {
 .skel-card { height:72px; border-radius:var(--r3, 12px); border:1px solid var(--border); background:linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size:200% 100%; animation:skel 1.6s ease-in-out infinite; }
 @keyframes skel { to { background-position:-200% 0; } }
 @media (prefers-reduced-motion: reduce) { .skel-card { animation:none; } }
+
+.dup-chip { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; background:var(--warn-tint, #fff4e0); color:var(--warn, #8a5a00); font-size:12px; font-weight:600; }
+.dup-why { margin:4px 0; font-size:13px; color:var(--text-2); }

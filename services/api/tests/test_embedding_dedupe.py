@@ -191,6 +191,15 @@ def test_merge_and_undo_are_audited():
     assert second.json()["dedupe_decision"] == "duplicate"
     listed = client.get("/api/requests", headers=AUTH)
     cards = [row for row in listed.json() if token.lower() in (row.get("raw_text") or "").lower()]
+    # Flagged, not merged. A person then clicks Merge.
+    assert len(cards) == 2 and all(not c.get("merged_into") for c in cards)
+    flagged = next(c for c in cards if (c.get("possible_duplicate") or {}).get("target_id"))
+    primary_id = flagged["possible_duplicate"]["target_id"]
+    merged = client.post(f"/api/requests/{primary_id}/merge", headers=AUTH,
+                         json={"secondary_request_id": flagged["id"], "evidence": ["Coordinator merge"], "merged_by": "coordinator"})
+    assert merged.status_code == 200, merged.text
+    listed = client.get("/api/requests", headers=AUTH)
+    cards = [row for row in listed.json() if token.lower() in (row.get("raw_text") or "").lower() and not row.get("merged_into")]
     assert len(cards) == 1
     assert cards[0]["merged_count"] == 2
     cluster_id = cards[0]["cluster_id"]

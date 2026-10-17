@@ -26,6 +26,14 @@ def public_code_for(report_id: str) -> str:
     return f"RD-{1000 + (digest % 9000)}"
 
 
+def case_code(req) -> str:
+    """The RD number the desk shows for a case."""
+    if getattr(req, "public_code", None):
+        return req.public_code
+    ids = getattr(req, "report_ids", None) or []
+    return public_code_for(ids[0]) if ids else req.id
+
+
 def _format_km(km: float) -> str:
     text = f"{km:.2f}".rstrip("0").rstrip(".")
     return text or "0"

@@ -770,9 +770,8 @@ def _demo_hindi_target_id(exclude_id: str) -> Optional[str]:
 
 
 def _apply_dedupe(req_obj: StoredRequest, decision, source_id: str = "") -> None:
-    """Auto-merge above the threshold. Otherwise leave a review suggestion on this case."""
+    """Never merges. A likely duplicate or update leaves a review flag on this case."""
     from app.models.schemas import DedupeDecisionType
-    from app.tools.case_merge import fold_case
     from app.tools.nlu_rules import counts_note
 
     if (source_id or "").startswith("demo_sample_duplicate"):
@@ -784,26 +783,10 @@ def _apply_dedupe(req_obj: StoredRequest, decision, source_id: str = "") -> None
             if not decision.similarity:
                 decision.similarity = 0.62
 
-    merged = False
-    if decision.decision.value == "duplicate" and decision.target_request_id:
-        target = storage_service.get_request(decision.target_request_id)
-        if target is not None and target.id != req_obj.id and not target.merged_into:
-            fold_case(target.id, req_obj.id, decision.evidence, merged_by="auto_suggest")
-            merged = True
-            target = storage_service.get_request(target.id) or target
-            fresh = storage_service.get_request(req_obj.id) or req_obj
-            line = _trace_for(decision, target.count_note, True)
-            target.dedupe_trace = line
-            fresh.dedupe_trace = line
-            fresh.merged_into = target.id
-            for code in (fresh.id, fresh.public_code, *fresh.alias_codes):
-                if code and code != target.id and code not in target.alias_codes:
-                    target.alias_codes.append(code)
-            req_obj.merged_into = target.id
-            req_obj.merged_count = target.merged_count
-            storage_service.save_request(target, actor="dedupe_agent")
-            storage_service.save_request(fresh, actor="dedupe_agent")
-            return
+    # Never auto-merge. A likely duplicate or "now N people" update is flagged
+    # for a person to Merge / Keep separate; scoring plans for the merged facts.
+    if decision.decision.value in ("duplicate", "update") and decision.target_request_id:
+        decision.review = True
     if decision.review and decision.target_request_id:
         target = storage_service.get_request(decision.target_request_id)
         if target is not None:
@@ -814,6 +797,11 @@ def _apply_dedupe(req_obj: StoredRequest, decision, source_id: str = "") -> None
                     spans.append(val)
             req_obj.count_spans = spans
             req_obj.count_note = counts_note(spans)
+            nums = [int(v) for v in spans if str(v).isdigit()]
+            if len(nums) == 2 and nums[0] != nums[1]:
+                from app.api.public import case_code
+                code = case_code(target)
+                req_obj.count_note = f"Counts differ: {nums[0]} vs {nums[1]} people → plan for {max(nums)} · possible duplicate of {code}"
         line = _trace_for(decision, req_obj.count_note, False)
         req_obj.possible_duplicate = PossibleDuplicate(
             target_id=decision.target_request_id,
@@ -826,7 +814,7 @@ def _apply_dedupe(req_obj: StoredRequest, decision, source_id: str = "") -> None
         )
         req_obj.dedupe_trace = line
     else:
-        req_obj.dedupe_trace = _trace_for(decision, req_obj.count_note, merged)
+        req_obj.dedupe_trace = _trace_for(decision, req_obj.count_note, False)
     storage_service.save_request(req_obj, actor="dedupe_agent")
 
 

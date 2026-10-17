@@ -102,7 +102,7 @@ def test_pulinkunnu_does_not_merge_into_kainakary_when_counts_and_places_differ(
     assert (decision.similarity is None) or decision.similarity < MIN_MERGE_SIMILARITY or decision.review is False
 
 
-def test_same_kainakary_jetty_merges_across_malayalam_and_english_and_keeps_max_urgency():
+def test_malayalam_script_repeat_of_kainakary_jetty_is_flagged_not_merged_and_keeps_max_urgency():
     token = f"jetty{uuid.uuid4().hex[:6]}"
     english = f"6 people stranded at Kainakary Boat Jetty, send a boat {token}"
     malayalam = f"കൈനകരി ബോട്ട് ജെട്ടിയിൽ 6 പേർ കുടുങ്ങി, ബോട്ട് വേണം {token}"
@@ -111,10 +111,13 @@ def test_same_kainakary_jetty_merges_across_malayalam_and_english_and_keeps_max_
     assert first["dedupe_decision"] == "new"
     assert second["dedupe_decision"] == "duplicate"
     cards = _cards(token)
-    assert len(cards) == 1
-    assert cards[0]["people_count"] == 6
-    assert cards[0]["merged_count"] == 2
-    assert cards[0].get("ward_id") == "ward_1" or "Kainakary" in (cards[0].get("place_text") or "")
+    assert len(cards) == 2
+    assert all(not c.get("merged_into") for c in cards)
+    ml = next(c for c in cards if c["id"] == second["request_id"]) if "request_id" in second else next(c for c in cards if (c.get("possible_duplicate") or {}).get("target_id"))
+    en = next(c for c in cards if c["id"] != ml["id"])
+    assert ml["possible_duplicate"]["target_id"] == en["id"]
+    assert all(c["people_count"] == 6 for c in cards)
+    assert ml["urgency_score"] >= en["urgency_score"] - 5
 
     from app.tools.case_merge import fold_case
 

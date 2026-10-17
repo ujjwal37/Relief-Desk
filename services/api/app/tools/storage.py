@@ -793,6 +793,7 @@ class StorageService:
                 "distance_km": km,
                 "eta_minutes": eta_for_distance(km, mode) if km is not None else None,
                 "travel_mode": mode,
+                "seats": (sent.capacity_remaining + (people_needed or 0)) if sent else None,
                 "approved_at": datetime.now(timezone.utc).isoformat(),
             }
             req.reserved_people = people_needed

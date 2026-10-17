@@ -49,6 +49,13 @@ _LIFE_PATTERNS = [
     r"\bbodham\s*(?:illa|kettu|poyi)\b", r"\bbodhamilla\b", r"\banakkam\s*illa\b", r"\banakkamilla\b",
     r"\b(?:kutti|kunju|achan|amma|mon|mol|chettan)\b[^.]{0,15}\bmung(?:i|unnu)\w*", r"\bmungi\s*thazhunnu\b", r"\bnenju\s*vedana\b", r"\bchora\s*(?:pokunnu|varunnu)\b",
     r"\b(?:kutti|kunju|mon|mol)\b[^.]{0,15}\bvellathil\b",
+    # Oxygen running out and active labour (all five languages)
+    r"\boxygen\b[^.]{0,30}\b(?:running out|run out|ran out|finished|over|empty|almost gone)\b", r"\b(?:running out of|out of|no more) oxygen\b",
+    r"\b(?:in|having|started|gone into) (?:active )?labou?r\b", r"\blabou?r pains?\b", r"\b(?:her )?water(?:s)? (?:has |have )?broken\b",
+    r"ऑक्सीजन[^।.]{0,20}(?:खत्म|ख़त्म|खतम|नहीं|ना\s*के\s*बराबर)", r"प्रसव\s*पीड़ा", r"लेबर\s*पेन", r"दर्द\s*शुरू[^।.]{0,15}(?:डिलीवरी|प्रसव)",
+    r"\boxygen\s*(?:khatam|khatm|khtm|khatma|nahi\s*bacha)\b", r"\b(?:labou?r|delivery)\s*(?:pain|dard)\b", r"\bprasav\s*(?:pida|peeda|dard)\b",
+    r"ഓക്സിജൻ[^.]{0,20}(?:തീർ|തീരാ|ഇല്ല|കഴിഞ്ഞ)", r"പ്രസവ\s*വേദന|പ്രസവവേദന",
+    r"\boxygen\s*(?:theernnu|theerarayi|theerunnu|kazhinju|illa)\b", r"\bprasava\s*vedana\b",
 ]
 _LIFE_RE = [re.compile(p, re.IGNORECASE) for p in _LIFE_PATTERNS]
 # "not breathing well yesterday, now ok": a recovered past state is not a life threat.

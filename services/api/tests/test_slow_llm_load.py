@@ -101,6 +101,12 @@ def _merged_into(request_id: str):
     return req.merged_into if req else None
 
 
+def _flag_target(request_id: str):
+    req = storage_service.get_request(request_id)
+    dup = req.possible_duplicate if req else None
+    return dup.target_id if dup else None
+
+
 def _wait_for(check, timeout: float) -> float:
     started = time.perf_counter()
     while time.perf_counter() - started < timeout:
@@ -158,14 +164,15 @@ def test_five_reports_against_a_slow_local_model(monkeypatch, tmp_path):
                 phone = threading.Thread(target=_phone_stream, args=(body["request_id"], frames, stop), daemon=True)
                 phone.start()
             if index in (1, 3):
-                primary = bodies[0]["request_id"]
+                earlier = {b["request_id"] for b in bodies[:-1]}
                 shell = body["request_id"]
-                took = _wait_for(lambda: _merged_into(shell) == primary, 5.0)
+                took = _wait_for(lambda: _flag_target(shell) in earlier and not _merged_into(shell), 5.0)
                 assert took < 5.0
         assert time.perf_counter() - t0 < 10.0
 
         primary = storage_service.get_request(bodies[0]["request_id"])
-        assert primary is not None and primary.merged_count == 3
+        # Flagged for a person, never auto-merged.
+        assert primary is not None and (primary.merged_count or 1) == 1
         merged_events = []
         while True:
             try:
@@ -174,7 +181,7 @@ def test_five_reports_against_a_slow_local_model(monkeypatch, tmp_path):
                 break
             if event["type"] == "case.merged" and primary.id in (event.get("request_ids") or []):
                 merged_events.append(event)
-        assert len(merged_events) >= 2
+        assert merged_events == []
 
         waiting = storage_service.get_request(bodies[2]["request_id"])
         assert waiting is not None and waiting.analysis_status == "analysing"
@@ -218,8 +225,8 @@ def test_five_reports_against_a_slow_local_model(monkeypatch, tmp_path):
         llm_client.guard.slots.resize(size_before)
 
     reports = [report for _, report in started_calls]
-    assert len(reports) == 3, reports
-    assert not any("Still stranded" in text or "above the water" in text for text in reports)
+    # Flagged repeats stay open cases, so each gets its own model read.
+    assert len(reports) == 5, reports
     for body in (bodies[0], bodies[2], bodies[4]):
         done = storage_service.get_request(body["request_id"])
         assert done is not None

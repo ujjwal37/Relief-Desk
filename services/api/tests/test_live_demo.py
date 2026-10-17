@@ -47,12 +47,10 @@ def test_live_run_merges_duplicates_flags_hoax_and_ranks_the_critical_case(monke
     six = next(row for row in temple if "6 people" in (row.raw_text or "").lower())
     assert not four.merged_into
     assert not six.merged_into
-    duplicates = [row for row in temple if row.merged_into]
-    assert len(duplicates) == 1
-    primary = storage_service.get_request(duplicates[0].merged_into)
-    assert primary is not None
-    assert primary.id in {four.id, six.id}
-    assert (primary.merged_count or 1) >= 2
+    assert not any(row.merged_into for row in temple)
+    flagged = [row for row in temple if row.possible_duplicate and row.possible_duplicate.target_id]
+    assert len(flagged) >= 1
+    assert any(row.possible_duplicate.target_id in {four.id, six.id} for row in flagged)
 
     hoax = next(row for row in rows if "nasa announced" in (row.raw_text or "").lower() or "likely_hoax" in (row.flags or []))
     visible = storage_service.get_request(hoax.merged_into) if hoax.merged_into else hoax

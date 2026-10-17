@@ -22,7 +22,7 @@ REVIEW_CONFIDENCE = 0.50
 RETRIEVE_COSINE = 0.70
 # An update phrase with no landmark match only attaches to a case this close.
 UPDATE_NEAR_KM = 0.3
-# Measured similarity under this does not auto-merge, unless it is the same gazetteer landmark.
+# Measured similarity under this is not a high-confidence duplicate, unless it is the same gazetteer landmark.
 MIN_MERGE_SIMILARITY = 0.60
 # Different landmarks merge only when the reports are nearly the same text.
 VERY_HIGH_SIMILARITY = 0.85
@@ -509,7 +509,7 @@ class DedupeAgent:
         return best
 
     def _should_duplicate(self, facts: dict) -> bool:
-        """Auto-merge only for the same place with compatible head counts."""
+        """High-confidence duplicate: same place, compatible counts. Flagged for review, never merged automatically."""
         if not facts or facts.get("place_missing") or facts.get("counts_conflict"):
             return False
         if facts.get("places_differ") and facts.get("similarity", 0) < VERY_HIGH_SIMILARITY:

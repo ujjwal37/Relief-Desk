@@ -184,7 +184,7 @@
               </div>
               <p class="aiq-life-meta">{{ shortId(req.id, req.public_code) }} · @if (caseAiBlocked(req)) { {{ 'aiq.stillChecking' | rdTranslate }} } @else if (engineLabelKey(req); as ek) { <span [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span> }</p>
               <div class="aiq-life-actions">
-                <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="$event.stopPropagation(); markLifeHandled(req.id); sendNearestBoat(req)">{{ (req.ai_queue?.life_pick === 'medical' ? 'aiq.sendAmbulance' : 'aiq.sendBoat') | rdTranslate }}</button>
+                <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="$event.stopPropagation(); markLifeHandled(req.id); sendNearestBoat(req)">{{ lifeSendLabel(req) }}</button>
                 <button type="button" class="btn-sec" (click)="$event.stopPropagation(); markLifeHandled(req.id); callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
                 <a class="b112" data-testid="call-112" href="tel:112" (click)="markLifeHandled(req.id)">{{ 'aiq.call112' | rdTranslate }}</a>
               </div>
@@ -240,7 +240,8 @@
                   @if (isHoax(req)) {
                     <span class="hoax-chip" data-testid="hoax-chip">{{ hoaxLine(req) }}</span>
                   }
-                  <span class="sr-only">{{ getTranslationText(req) }}</span>
+                  @if (needsDupReview(req)) { <span class="dup-chip" data-testid="dup-chip">{{ dupAiLine(req) }}</span> }
+                      <span class="sr-only">{{ getTranslationText(req) }}</span>
                 </div>
 
                 <!-- Line 3: Meta & chips -->
@@ -604,8 +605,8 @@
                     <svg viewBox="0 0 24 24" width="22" height="22"><path [attr.d]="vehiclePath(prop.resource_kind)" fill="currentColor"/></svg>
                   </span>
                   <div class="team-name-line">
-                    <strong class="team-name">{{ isDispatched(req) ? (req.dispatch?.resource_name || assignedTeam(req)?.name || prop.resource_name) : prop.resource_name }}</strong>
-                    <span class="team-specs">{{ isDispatched(req) && req.dispatch ? dispatchSubline(req) : propEtaSubline(prop) }}</span>
+                    <strong class="team-name">{{ isDispatched(req) ? (req.dispatch?.resource_name || assignedTeam(req)?.name || '') : prop.resource_name }}</strong>
+                    <span class="team-specs">{{ isDispatched(req) ? dispatchSubline(req) : propEtaSubline(prop) }}</span>
                   </div>
                 </div>
                 @if (prop.is_fallback && prop.fallback_label) {
@@ -690,7 +691,9 @@
 
             @if (needsDupReview(req)) {
               <div class="dup-review" data-testid="dup-review">
-                <p>{{ dupAiLine(req) }}</p>
+                <p>{{ dupAiLine(req) }}@if (req.possible_duplicate?.level; as lvl) { · <strong data-testid="dup-level">{{ ('dup.level' + lvl) | rdTranslate }}</strong> }</p>
+              @if (dupReasons(req); as why) { <p class="dup-why" data-testid="dup-why">{{ why }}</p> }
+              @for (d of req.possible_duplicate?.differences || []; track d) { <p class="count-note" data-testid="dup-diff">{{ d }}</p> }
                 @if (req.count_note) { <p class="count-note" data-testid="counts-differ">{{ req.count_note }}</p> }
                 <button type="button" data-testid="merge-dup" (click)="confirmMerge(req)">{{ 'coord.mergeReports' | rdTranslate }}</button>
                 <button type="button" data-testid="keep-dup" (click)="keepSeparate(req)">{{ 'coord.keepSeparate' | rdTranslate }}</button>
@@ -789,7 +792,7 @@
             </div>
           } @else if (caseLifeThreat(req)) {
             <div class="footer-buttons-row aiq-life-actions">
-              <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="sendNearestBoat(req)">{{ (req.ai_queue?.life_pick === 'medical' ? 'aiq.sendAmbulance' : 'aiq.sendBoat') | rdTranslate }}</button>
+              <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="sendNearestBoat(req)">{{ lifeSendLabel(req) }}</button>
               <a class="b112" href="tel:112">{{ 'aiq.call112' | rdTranslate }}</a>
               <button type="button" class="btn-sec" (click)="callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
             </div>

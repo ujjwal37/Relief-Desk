@@ -104,7 +104,10 @@ test('surge, medical stock scenario and arrival/completion status updates', asyn
   await phone.goto(`/status?id=${report.report_id}&token=${report.status_token}`);
   const matches = await (await request.get(`${API}/api/requests/${report.request_id}/matches`, { headers: AUTH })).json();
   expect(matches.length).toBeGreaterThan(0);
-  expect((await request.post(`${API}/api/matches/${matches[0].match_id}/approve`, { headers: AUTH, data: {} })).ok()).toBeTruthy();
+  // Flagged repeats are no longer folded away, so each surge report gets its own read first.
+  await expect.poll(async () => (await (await request.get(`${API}/api/requests/${report.request_id}`, { headers: AUTH })).json()).analysis_status, { timeout: 60000 }).not.toBe('analysing');
+  const approved = await request.post(`${API}/api/matches/${matches[0].match_id}/approve`, { headers: AUTH, data: {} });
+  expect(approved.ok(), await approved.text()).toBeTruthy();
   await expect(phone.locator('.hero-title')).toContainText('A team is on the way', { timeout: 30000 });
   expect((await request.post(`${API}/api/requests/${report.request_id}/arrived`, { headers: AUTH })).ok()).toBeTruthy();
   await expect(phone.locator('.steps li').nth(2)).toHaveClass(/done/, { timeout: 10000 });

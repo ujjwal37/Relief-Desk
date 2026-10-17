@@ -43,13 +43,20 @@ WAIT_TAU_MIN = 180.0
 
 _IN_WATER = re.compile(
     r"in the water|into the water|water (?:is )?(?:inside|entering|coming in|in the house|in our house)|"
-    r"(?:neck|chest|waist)[- ]deep|swept away|drowning|being carried|"
+    r"(?:neck|chest|waist)[- ](?:deep|level|high)|(?:up )?to (?:the |our |my )?(?:neck|chest|waist)|swept away|drowning|being carried|"
     r"\u092a\u093e\u0928\u0940 \u0918\u0930 \u092e\u0947\u0902|doob|ghar mein paani|andar paani|"
     # Same depth words in the reporter's own language, so ML/HI reports score like English.
     r"നെഞ്ചോളം|കഴുത്തോളം|അരയോളം|nenjolam|kazhutholam|arayolam|"
     r"\u091b\u093e\u0924\u0940 \u0924\u0915|\u0917\u0932\u0947 \u0924\u0915|\u0915\u092e\u0930 \u0924\u0915|chhati tak|gale tak|kamar tak",
     re.I,
 )
+def _deep_quoted(req) -> bool:
+    """The structured depth (Gemini or rules), when it quotes the report: waist, chest, floor or roof means in the water."""
+    from app.agents.depth import DEEP, band_of
+    wd = getattr(req, "water_depth", None) or {}
+    return band_of(req) in DEEP and bool(isinstance(wd, dict) and wd.get("quote"))
+
+
 _TRAPPED = re.compile(r"trapped|stuck|can'?t get out|cannot get out|unable to (?:leave|get out|move)|phanse|phas", re.I)
 _SEVERE_INJURY = re.compile(r"bleeding|unconscious|not breathing|can'?t breathe|breathing (?:difficulty|problem)|unresponsive|fainted|\u0d36\u0d4d\u0d35\u0d3e\u0d38\u0d02 (?:\u0d0e\u0d1f\u0d41\u0d15\u0d4d\u0d15\u0d41\u0d28\u0d4d\u0d28\u0d3f\u0d32\u0d4d\u0d32|\u0d07\u0d32\u0d4d\u0d32)|\u0d2c\u0d4b\u0d27\u0d02 \u0d07\u0d32\u0d4d\u0d32|\u0938\u093e\u0901?\u0902?\u0938 \u0928\u0939\u0940\u0902|\u092c\u0947\u0939\u094b\u0936|saa?ns nahi|sans nahi|behosh|swasam (?:edukkunnilla|illa)|shwasam illa|bodham illa", re.I)
 _LIFE_SUPPORT = re.compile(r"oxygen|dialysis|insulin|ventilator|\u0911\u0915\u094d\u0938\u0940\u091c\u0928", re.I)
@@ -121,7 +128,7 @@ class ScoringEngine:
         phrase = life_phrase(getattr(req, "raw_text", None)) or life_phrase(getattr(req, "ai_translation", None))
         if phrase:
             return "immediate", f"life threat reported: \u201c{phrase}\u201d"
-        in_water = bool(_IN_WATER.search(_reported_text(req, text)))
+        in_water = bool(_IN_WATER.search(_reported_text(req, text))) or _deep_quoted(req)
         if in_water:
             return "immediate", "people are in the water or water is entering the home"
         if req.hazard == HazardType.WATER_RISING and _TRAPPED.search(text):
@@ -196,7 +203,7 @@ class ScoringEngine:
         reasons_parts.append("people not stated" if not req.people_count else f"{count} person{'s' if count != 1 else ''}")
 
         # Hazard. "In the water" only from what the reporter said.
-        in_water = bool(_IN_WATER.search(_reported_text(req, text)))
+        in_water = bool(_IN_WATER.search(_reported_text(req, text))) or _deep_quoted(req)
         hazard_map = {
             HazardType.WATER_RISING: (0.9, "water rising"),
             HazardType.INJURY: (0.85, "injury"),

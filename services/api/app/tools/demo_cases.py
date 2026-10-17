@@ -209,6 +209,11 @@ def _link_possible_duplicates(storage) -> None:
             target_id=target.id, target_code=code, confidence=0.7, similarity=0.6,
             distance_km=km, minutes=minutes, note=note,
         )
+        from app.agents.structured_dupe import compare
+        got = compare(req, target)
+        if got:
+            req.possible_duplicate = got[1].model_copy(update={"target_code": code})
+            note = got[1].note
         req.dedupe_trace = note
         storage._requests[req.id] = req
 
