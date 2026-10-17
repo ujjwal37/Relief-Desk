@@ -489,6 +489,8 @@ body:has(.cmd) .top-strip{display:none}
   html body .cmd .coordinator-grid:has(.map-stepper-col:not(.map-open)) { grid-template-columns: 320px minmax(540px, 1fr) 360px !important; }
   html body .cmd .map-stepper-col,
   html body .cmd .map-stepper-col:not(.map-open) { display: flex !important; }
+  html body .cmd .map-stepper-col .map-card-wrapper,
+  html body .cmd .map-stepper-col:not(.map-open) .map-card-wrapper { display: block !important; flex: 1 1 auto; min-height: 420px !important; }
   html body .cmd .map-toggle { display: none !important; }
 }
 /* P0-2: queue tabs never clip; pills never shrink; short labels for long languages. */
