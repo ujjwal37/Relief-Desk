@@ -59,8 +59,7 @@ test('phone report is approved and the reporter sees help on the way', async ({ 
   await approve.click();
   await expect(desk.locator('.toast')).toContainText('Dispatch approved');
 
-  await desk.locator('details.full-queue > summary').click();
-  await desk.getByTestId('filter-dispatched').click();
+  await desk.getByTestId('tab-dispatched').click();
   await expect(desk.locator('.card-place-title, .card-line-mid').filter({ hasText: new RegExp(marker) }).first()).toBeVisible();
 
   await expect(phone.getByText('A team is on the way.')).toBeVisible({ timeout: 20_000 });

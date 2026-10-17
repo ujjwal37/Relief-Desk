@@ -134,6 +134,11 @@
           <h2 id="cases-h" class="cases-heading">{{ 'coord.cases' | rdTranslate }}</h2>
           <p class="scenario-visible">{{ 'coord.scenarioLabel' | rdTranslate }}</p>
         </div>
+        <div class="queue-tabs" role="tablist" [attr.aria-label]="'queue.tabsLabel' | rdTranslate" (keydown)="onQueueTabKey($event)">
+          <button type="button" role="tab" class="qtab" data-testid="tab-waiting" [class.on]="queueTab() === 'waiting'" [attr.aria-selected]="queueTab() === 'waiting'" [attr.tabindex]="queueTab() === 'waiting' ? 0 : -1" (click)="setQueueTab('waiting')">{{ 'batch.waiting' | rdTranslate }} <b>{{ batch().waiting }}</b></button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-dispatched" [class.on]="queueTab() === 'dispatched'" [attr.aria-selected]="queueTab() === 'dispatched'" [attr.tabindex]="queueTab() === 'dispatched' ? 0 : -1" (click)="setQueueTab('dispatched')">{{ 'coord.filterDispatched' | rdTranslate }} <b>{{ counts().dispatched }}</b></button>
+          <button type="button" role="tab" class="qtab" data-testid="tab-completed" [class.on]="queueTab() === 'completed'" [attr.aria-selected]="queueTab() === 'completed'" [attr.tabindex]="queueTab() === 'completed' ? 0 : -1" (click)="setQueueTab('completed')">{{ 'coord.filterCompleted' | rdTranslate }} <b>{{ counts().completed }}</b></button>
+        </div>
       </div>
 
 

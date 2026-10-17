@@ -431,6 +431,30 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   });
   /** Zoom the district diagram onto the open case and its three teams. */
+  /** Queue tabs: Waiting (default) / Dispatched / Completed. Severity chips stay in "View full queue". */
+  readonly queueTab = computed<'waiting' | 'dispatched' | 'completed'>(() => {
+    const f = this.bandFilter();
+    return f === 'dispatched' || f === 'completed' ? f : 'waiting';
+  });
+  setQueueTab(tab: 'waiting' | 'dispatched' | 'completed'): void {
+    this.setBandFilter(tab === 'waiting' ? 'all' : tab);
+  }
+  onQueueTabKey(event: KeyboardEvent): void {
+    const order = ['waiting', 'dispatched', 'completed'] as const;
+    const i = order.indexOf(this.queueTab());
+    let next = -1;
+    if (event.key === 'ArrowRight') next = (i + 1) % 3;
+    else if (event.key === 'ArrowLeft') next = (i + 2) % 3;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = 2;
+    if (next < 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.setQueueTab(order[next]);
+    const host = event.currentTarget as HTMLElement | null;
+    setTimeout(() => (host?.querySelectorAll<HTMLButtonElement>('.qtab')[next])?.focus());
+  }
+
   readonly mapViewBox = computed(() => {
     const legs = this.focusLegs();
     if (!legs.length) return '0 0 600 480';

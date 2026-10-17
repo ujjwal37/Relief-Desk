@@ -356,3 +356,10 @@ body:has(.cmd) .top-strip{display:none}
 }
 .cmd .case-steps .step-node .node-title{word-break:normal !important;overflow-wrap:normal !important;hyphens:none;font-size:11.5px}
 .cmd .case-steps .step-node{min-width:0;flex:1 1 0}
+
+/* queue tabs */
+.cmd .queue-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;margin:8px 0 4px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border)}
+.cmd .queue-tabs .qtab{min-height:32px;border:0;border-radius:8px;background:transparent;color:var(--text-2,var(--muted));font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;padding:0 4px}
+.cmd .queue-tabs .qtab b{font-weight:800;margin-left:2px}
+.cmd .queue-tabs .qtab.on{background:var(--brand);color:var(--on-brand)}
+.cmd .queue-tabs .qtab:focus-visible{outline:2px solid var(--focus,#e3d3b0);outline-offset:1px}

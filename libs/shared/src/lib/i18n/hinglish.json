@@ -168,7 +168,8 @@
     "seats": "{n} seats",
     "offline": "Aap offline hain. Connection wapas aane tak approvals rukenge.",
     "viewFull": "Poori queue dekhein",
-    "showReport": "Report dikhayein"
+    "showReport": "Report dikhayein",
+    "tabsLabel": "Queue ka view"
   },
   "alerts": {
     "title": "Alerts",
