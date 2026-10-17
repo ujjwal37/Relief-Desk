@@ -58,3 +58,10 @@ h1 { margin:8px 0 8px; font-size:28px; line-height:1.1; font-weight: 600; letter
   .foot { display:flex; justify-content:space-between; align-items:center; text-align:left; }
   .foot rd-quiet-footer { text-align:left; } .cup { display:block; }
 }
+
+.hero-line{font-size:18px;line-height:1.45;color:var(--text);margin:12px 0 18px;max-width:34em;font-weight:500}
+.try-desk{display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 26px;border-radius:12px;background:var(--brand);color:var(--on-brand);font-weight:800;font-size:17px;text-decoration:none;box-shadow:0 6px 18px rgba(4,120,87,.25);margin-bottom:10px}
+.try-desk:hover{filter:brightness(1.07)}
+.try-desk:focus-visible{outline:3px solid var(--focus,#047857);outline-offset:3px}
+.cards{grid-template-columns:1fr !important}
+.trust-line{font-size:13px;color:var(--muted);margin-top:12px}

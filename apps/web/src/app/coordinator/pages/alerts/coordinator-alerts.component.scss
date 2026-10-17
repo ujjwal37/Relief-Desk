@@ -73,3 +73,7 @@ h1 { margin:0; font:var(--t-page); letter-spacing:var(--t-page-ls); } .sub { mar
 .pin.on .pn { font-size:14px; }
 .wname { font-size:11px; }
 .alert-row.selected { border-color:var(--brand); box-shadow:0 0 0 1px var(--brand) inset; }
+
+/* declutter: unselected pins smaller, ward names quieter */
+.pin:not(.on) .drop, .pin:not(.on) .pn { transform-box:fill-box; transform-origin:50% 100%; transform:scale(.8); }
+.wname { opacity:.7; } .wname.dim { opacity:.35; }

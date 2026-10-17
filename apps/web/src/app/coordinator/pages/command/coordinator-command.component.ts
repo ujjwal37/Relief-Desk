@@ -440,7 +440,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const minY = Math.max(0, Math.min(...ys) - 80);
     const maxX = Math.min(600, Math.max(...xs) + 80);
     const maxY = Math.min(480, Math.max(...ys) + 80);
-    return `${minX} ${minY} ${Math.max(120, maxX - minX)} ${Math.max(120, maxY - minY)}`;
+    // Never zoom in so far that pins and labels balloon: keep at least 380x320 map units, centred.
+    const w = Math.max(380, maxX - minX); const h = Math.max(320, maxY - minY);
+    const cx = (minX + maxX) / 2; const cy = (minY + maxY) / 2;
+    const x0 = Math.min(Math.max(0, cx - w / 2), Math.max(0, 600 - w)); const y0 = Math.min(Math.max(0, cy - h / 2), Math.max(0, 480 - h));
+    return `${x0} ${y0} ${w} ${h}`;
   });
   readonly focusLegs = computed(() => {
     const req = this.selectedRequest();

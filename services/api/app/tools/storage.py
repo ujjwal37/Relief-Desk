@@ -1133,6 +1133,11 @@ def simulate_demo_checkins(resources, now=None):
             continue
         h = zlib.crc32(res.id.encode("utf-8"))
         if h % 5 == 0:
+            # About one in five synthetic teams shows a late check-in (simulated), so the
+            # 'Not updated' state is visible. Done once; flagged simulated.
+            if not getattr(res, 'simulated', False):
+                res.location_updated_at = (now - timedelta(minutes=150 + h % 60)).isoformat()
+                res.simulated = True
             continue
         try:
             last = datetime.fromisoformat(str(res.location_updated_at).replace("Z", "+00:00"))

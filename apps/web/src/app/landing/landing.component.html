@@ -15,8 +15,8 @@
         <span>{{ 'landing.deskLine2' | rdTranslate }}</span>
         <span class="accent">{{ 'landing.deskLine3' | rdTranslate }}</span>
       </h1>
-      <p class="judge problem">{{ 'landing.problem' | rdTranslate }}</p>
-      <p class="judge does">{{ 'landing.does' | rdTranslate }}</p>
+      <p class="hero-line">{{ 'landing.heroLine' | rdTranslate }}</p>
+      <a href="#" class="try-desk" data-testid="try-desk" (click)="openDemo($event, true)">{{ 'landing.tryDesk' | rdTranslate }} <span aria-hidden="true">→</span></a>
       <p class="scenario">{{ 'landing.scenarioLabel' | rdTranslate }}</p>
 
       <div class="cards">
@@ -28,11 +28,6 @@
           <span class="sos-foot">{{ 'landing.voiceText' | rdTranslate }} <span aria-hidden="true">→</span></span>
         </a>
 
-        <a routerLink="/coordinator/login" class="coord">
-          <span class="chip">{{ 'landing.signIn' | rdTranslate }}</span>
-          <span class="coord-title">{{ 'landing.coordCard' | rdTranslate }}</span>
-          <span class="coord-sub">{{ 'landing.coordCardSub' | rdTranslate }} <span aria-hidden="true">→</span></span>
-        </a>
       </div>
 
       <div class="rows">
@@ -40,14 +35,7 @@
         <a routerLink="/nearby" class="row"><span>{{ 'landing.alertsNear' | rdTranslate }}</span><span aria-hidden="true">›</span></a>
       </div>
 
-      <a href="#" class="judge-desk" (click)="openDemo($event, true)">{{ 'landing.judgeLink' | rdTranslate }}</a>
-      <p class="judge does">{{ 'landing.aiProof' | rdTranslate }}</p>
-
-      <ul class="trust">
-        <li>{{ 'landing.trustOffline' | rdTranslate }}</li>
-        <li>{{ 'landing.trustLang' | rdTranslate }}</li>
-        <li>{{ 'landing.trustArea' | rdTranslate }}</li>
-      </ul>
+      <p class="trust-line">{{ 'landing.trustOffline' | rdTranslate }} · {{ 'landing.trustLang' | rdTranslate }}</p>
     </section>
 
     <aside class="right" aria-hidden="true">

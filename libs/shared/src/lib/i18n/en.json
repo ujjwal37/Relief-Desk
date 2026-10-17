@@ -60,7 +60,9 @@
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
     "problem": "In Kerala floods, help requests arrive scattered and duplicated, and coordinators can't see who to send first.",
     "does": "Relief Desk puts them in one queue, merges the duplicates, and suggests who to send first. A person approves every dispatch.",
-    "aiProof": "Every step shows the real Gemini prompt, answer and timing. A person approves every dispatch."
+    "aiProof": "Every step shows the real Gemini prompt, answer and timing. A person approves every dispatch.",
+    "heroLine": "Floods bury coordinators in messy reports in many languages. Relief Desk reads, merges and ranks them, and suggests the nearest right team — a human approves every dispatch.",
+    "tryDesk": "Try the desk"
   },
   "report": {
     "title": "Emergency Crisis Report",

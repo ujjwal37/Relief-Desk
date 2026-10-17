@@ -31,12 +31,12 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
         <div class="tiles">@for (i of [1,2,3,4,5,6]; track i) { <div class="tile skel"></div> }</div>
       } @else {
         <div class="tiles" data-testid="sit-tiles">
-          <div class="tile"><b>{{ stats().perMin }}</b><span>{{ 'sit.perMin' | rdTranslate }}</span></div>
           <div class="tile"><b>{{ stats().waiting }}</b><span>{{ 'batch.waiting' | rdTranslate }}</span></div>
           <div class="tile"><b>{{ stats().dispatched }}</b><span>{{ 'batch.dispatched' | rdTranslate }}</span></div>
           <div class="tile"><b>{{ stats().completed }}</b><span>{{ 'sit.completed' | rdTranslate }}</span></div>
           <div class="tile"><b>{{ stats().merged }}</b><span>{{ 'sit.merged' | rdTranslate }}</span></div>
           <div class="tile"><b>{{ stats().hoax }}</b><span>{{ 'sit.hoax' | rdTranslate }}</span></div>
+          <div class="tile"><b>{{ stats().perMin }}</b><span>{{ 'sit.perMin' | rdTranslate }}</span></div>
         </div>
       }
 
@@ -45,6 +45,16 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
           <rd-map-provider [pins]="pins()" [legs]="[]" [center]="{ lat: 10.3, lng: 76.33 }" [cluster]="true" [fitAll]="true" (pinSelect)="openCase($event)"></rd-map-provider>
         </section>
         <div class="side">
+          <section class="panel brief" data-testid="sit-brief">
+            <div class="brief-head">
+              <h2>{{ 'sit.brief' | rdTranslate }}</h2>
+              @if (brief(); as b) { <span class="badge" [class.gemini]="briefSource() === 'gemini'">{{ briefBadge() }}</span> }
+              <button type="button" class="ghost" [disabled]="briefBusy() || !canRefresh()" (click)="loadBrief(true)">{{ 'sit.refresh' | rdTranslate }}</button>
+            </div>
+            @if (briefBusy()) { <p class="empty">{{ 'sit.briefLoading' | rdTranslate }}</p> }
+            @else if (brief(); as b) { <p class="brief-text">{{ b.brief }}</p> }
+            @else if (briefError()) { <p class="empty">{{ 'sit.briefError' | rdTranslate }}</p> }
+          </section>
           <section class="panel">
             <h2>{{ 'sit.topAreas' | rdTranslate }}</h2>
             @if (areas().length === 0) {
@@ -70,16 +80,6 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
               }
             </ul>
           </section>
-          <section class="panel brief" data-testid="sit-brief">
-            <div class="brief-head">
-              <h2>{{ 'sit.brief' | rdTranslate }}</h2>
-              @if (brief(); as b) { <span class="badge" [class.gemini]="briefSource() === 'gemini'">{{ briefBadge() }}</span> }
-              <button type="button" class="ghost" [disabled]="briefBusy() || !canRefresh()" (click)="loadBrief(true)">{{ 'sit.refresh' | rdTranslate }}</button>
-            </div>
-            @if (briefBusy()) { <p class="empty">{{ 'sit.briefLoading' | rdTranslate }}</p> }
-            @else if (brief(); as b) { <p class="brief-text">{{ b.brief }}</p> }
-            @else if (briefError()) { <p class="empty">{{ 'sit.briefError' | rdTranslate }}</p> }
-          </section>
         </div>
       </div>
     </div>
@@ -97,6 +97,8 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
     .ghost:hover:not(:disabled) { background:var(--brand-tint); }
     button:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
     button:disabled { opacity:.55; cursor:not-allowed; }
+    .panel.brief { border-color:var(--gemini, #a78bfa); background:color-mix(in srgb, var(--gemini, #a78bfa) 8%, var(--card)); }
+    .panel.brief .brief-text { font-size:15px; line-height:1.55; color:var(--text); }
     .tiles { display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:12px; }
     .tile { background:var(--card); border:1px solid var(--border); border-radius:var(--r3, 12px); padding:12px 14px; display:flex; flex-direction:column; gap:2px; min-height:64px; }
     .tile b { font-size:24px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
