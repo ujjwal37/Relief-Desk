@@ -187,6 +187,7 @@
     "silent": "Silent zone",
     "spike": "Report spike",
     "ackDone": "Acknowledged",
+    "unack": "Un-acknowledge",
     "k": {
       "spike": "Report spike",
       "silent_zone": "Silent zone",
@@ -195,7 +196,7 @@
       "stale": "Stale requests"
     },
     "key": "Key",
-    "noPin": "Not tied to one place",
+    "noPin": "Place unknown",
     "mapAria": "Map of Kerala wards with alert pins",
     "river": "River",
     "noReports": "No reports in",
@@ -474,6 +475,8 @@
     "decision": "Decision",
     "reasoning": "Reasoning",
     "noSelection": "No case selected. Pick one from the queue.",
+    "closeInfo": "Close · info only",
+    "closeInfoDone": "Closed as information. No team was sent.",
     "showOriginal": "Show original",
     "showTranslation": "Show translation",
     "lowTrans": "Check translation",

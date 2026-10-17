@@ -1,7 +1,7 @@
 export type IncidentType = 'rescue' | 'food' | 'medical' | 'shelter' | 'info' | 'animal_attack' | 'other';
 export type UrgencyBand = 'critical' | 'high' | 'medium' | 'low';
 export type HazardType = 'water_rising' | 'stranded' | 'injury' | 'none' | 'unknown';
-export type RequestStatus = 'new' | 'needs_recheck' | 'matched' | 'approved' | 'dispatched' | 'in_progress' | 'resolved' | 'completed' | 'closed' | 'dismissed_hoax';
+export type RequestStatus = 'new' | 'needs_recheck' | 'matched' | 'approved' | 'dispatched' | 'in_progress' | 'resolved' | 'completed' | 'closed' | 'info_closed' | 'dismissed_hoax';
 
 export interface VulnerableFlags {
   child: boolean;

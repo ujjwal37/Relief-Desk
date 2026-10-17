@@ -24,6 +24,7 @@ class RequestStatus(str, Enum):
     RESOLVED = "resolved"
     COMPLETED = "completed"
     CLOSED = "closed"
+    INFO_CLOSED = "info_closed"
     DISMISSED_HOAX = "dismissed_hoax"
 
 

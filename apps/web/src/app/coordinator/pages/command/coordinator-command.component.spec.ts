@@ -775,4 +775,24 @@ describe('CoordinatorCommandComponent', () => {
     (fixture.nativeElement.querySelector('[data-testid="keep-dup"]') as HTMLButtonElement).click();
     expect(apiClientSpy.keepSeparate).toHaveBeenCalledWith('INC-DUP');
   });
+
+  it('opens the case as a sheet with a way back on a phone', () => {
+    component.narrow.set(true);
+    component.sheetOpen.set(true);
+    fixture.detectChanges();
+    const back = fixture.nativeElement.querySelector('[data-testid="back-to-list"]') as HTMLButtonElement;
+    expect(back).toBeTruthy();
+    expect(back.textContent).toContain('Back to cases');
+    expect(fixture.nativeElement.querySelector('.decision-panel.case-sheet')).toBeTruthy();
+    const approve = fixture.nativeElement.querySelector('.decision-pinned-footer .btn-approve') as HTMLElement;
+    expect(approve).toBeTruthy();
+    back.click();
+    expect(component.sheetOpen()).toBeFalse();
+  });
+
+  it('offers close info only for an information case and not for a rescue', () => {
+    expect(component.canCloseInfo({ ...mockRequests[0], type: 'info', status: 'new' })).toBeTrue();
+    expect(component.canCloseInfo(mockRequests[0])).toBeFalse();
+    expect(component.canCloseInfo({ ...mockRequests[0], status: 'info_closed' })).toBeFalse();
+  });
 });

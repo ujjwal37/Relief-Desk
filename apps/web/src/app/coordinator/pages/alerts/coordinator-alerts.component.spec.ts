@@ -8,7 +8,7 @@ describe('CoordinatorAlertsComponent', () => {
   let fixture: ComponentFixture<CoordinatorAlertsComponent>;
 
   beforeEach(async () => {
-    const api = jasmine.createSpyObj('ApiClientService', ['getAlerts', 'acknowledgeAlert']);
+    const api = jasmine.createSpyObj('ApiClientService', ['getAlerts', 'acknowledgeAlert', 'unacknowledgeAlert']);
     api.getAlerts.and.returnValue(of([
       {
         id: 'spike-ward-7',
@@ -127,5 +127,13 @@ describe('CoordinatorAlertsComponent', () => {
     expect(text).toContain('Silent zone');
     expect(text).toContain('0 reports in 3 h');
     expect(text).toContain('Nothing is deleted');
+  });
+
+  it('does not pin an alert that has no place', () => {
+    const gap = fixture.componentInstance.items().find((item) => item.alert.id === 'gap-medical');
+    expect(gap?.at).toBeNull();
+    expect(gap?.ward).toBeUndefined();
+    expect(fixture.componentInstance.googlePins().some((pin) => pin.id === 'gap-medical')).toBeFalse();
+    expect(fixture.nativeElement.textContent).toContain('Place unknown');
   });
 });

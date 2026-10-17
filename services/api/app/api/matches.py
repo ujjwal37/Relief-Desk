@@ -230,6 +230,21 @@ def dismiss_hoax(
 
 
 @router.post(
+    "/requests/{id}/close-info",
+    response_model=StoredRequest,
+    summary="Close an information report without sending a team",
+)
+def close_info(
+    id: str,
+    user: CoordinatorUser = Depends(get_current_coordinator),
+):
+    try:
+        return storage_service.close_as_info(id, actor=user.email)
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
+
+@router.post(
     "/requests/{id}/send-nearest-boat",
     response_model=StoredMatch,
     summary="One tap from a life-threat card: send the nearest free boat",

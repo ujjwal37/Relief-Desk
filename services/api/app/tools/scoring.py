@@ -124,6 +124,15 @@ class ScoringEngine:
             return "urgent", "boat rescue requested"
         if _NO_SUPPLY.search(text) and (wait_minutes >= 720 or _LONG.search(text)):
             return "urgent", "no water or food for over 12 hours"
+        rising = (
+            req.hazard == HazardType.WATER_RISING
+            or bool(_WINDOW_WATER.search(text))
+            or "vellam kood" in text.lower()
+            or "വെള്ളം കൂടുന്നു" in text
+            or "വെള്ളം ഉയരുന്നു" in text
+        )
+        if (req.people_count or 0) >= 1 and rising:
+            return "urgent", "people are present and the water is rising"
         return "standard", ""
 
     def compute_urgency(

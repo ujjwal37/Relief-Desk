@@ -221,3 +221,8 @@ Core demo (~2:45): public report → intake agent → dedupe merge → vulnerabi
 | ID | Task | Owner | Status | Depends | Acceptance criteria |
 |---|---|---|---|---|---|
 | AQ-01 | AI working strip and Ready for you: per-step status, 45s rules cap, life-threat pre-filter, Gemini recheck when the circuit closes, approve blocked until steps finish | C | DONE | JC-01 | `python3 -m pytest` in `services/api` passes including `tests/test_ai_queue.py` with no Gemini calls; `npx ng build web` and `node scripts/check-i18n.mjs` pass. A person still approves every dispatch. |
+
+## QA round 3 (17 Oct)
+| ID | Task | Owner | Status | Depends | Acceptance criteria |
+|---|---|---|---|---|---|
+| QR3-01 | Phone chat asks once and keeps a real place; nobody-stranded ends cleanly; English shelter-for-12 and rising water stay urgent; no-place alerts stay unpinned and can be un-acknowledged; info-only close is not a rescue; a 390 case opens as a sheet with the action on screen | C | DONE | AQ-01 | `python3 -m pytest` in `services/api` passes including `tests/test_qa_r3.py` with no Gemini calls; `npx ng build web` and `node scripts/check-i18n.mjs` pass. A person still approves every dispatch. |

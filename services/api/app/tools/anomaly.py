@@ -345,3 +345,8 @@ def collect_alerts(storage=None) -> List[AnomalyAlert]:
 def acknowledge(alert_id: str) -> bool:
     ACKNOWLEDGED.add(alert_id)
     return True
+
+
+def unacknowledge(alert_id: str) -> bool:
+    ACKNOWLEDGED.discard(alert_id)
+    return True

@@ -187,6 +187,7 @@
     "silent": "Shaant zone",
     "spike": "Reports mein uchhal",
     "ackDone": "Acknowledge ho gaya",
+    "unack": "Acknowledge hatao",
     "k": {
       "spike": "Reports ki baadh",
       "silent_zone": "Chup ilaaka",
@@ -195,7 +196,7 @@
       "stale": "Purani requests"
     },
     "key": "Sanket",
-    "noPin": "Kisi ek jagah se juda nahi",
+    "noPin": "Jagah pata nahi",
     "mapAria": "Kerala ke wards ka naksha, alert pins ke saath",
     "river": "Nadi",
     "noReports": "Koi report nahi, pichhle",
@@ -474,6 +475,8 @@
     "decision": "Faisla",
     "reasoning": "Reason",
     "noSelection": "Koi case select nahi. Queue se ek chunein.",
+    "closeInfo": "Band karein · sirf jaankari",
+    "closeInfoDone": "Jaankari ke roop mein band. Koi team nahi bheji gayi.",
     "showOriginal": "Asli shabd dikhayein",
     "showTranslation": "Anuvad dikhayein",
     "lowTrans": "Anuvad jaanchein",

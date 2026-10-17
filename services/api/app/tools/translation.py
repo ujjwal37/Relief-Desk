@@ -210,6 +210,8 @@ Return strictly JSON matching this schema:
             en_text = text
             hi_text = "आपातकालीन रिपोर्ट"
 
+        if translation_drops_facts(text, en_text):
+            en_text = faithful_english(text)
         return TranslationResult(
             text_en=en_text,
             text_hi=hi_text,
@@ -226,6 +228,46 @@ Return strictly JSON matching this schema:
                 f.write(result.model_dump_json(indent=2))
         except Exception:
             pass
+
+
+def translation_drops_facts(source: str, translated: str) -> bool:
+    """True when the English line drops a headcount or a named place from the report."""
+    from app.tools.nlu_rules import _ascii_digits, _words_for_count, known_place, people_count
+
+    if not (source or "").strip() or not (translated or "").strip():
+        return False
+    count = people_count(source)
+    if count:
+        words = _words_for_count(count)
+        lowered = translated.lower()
+        if str(count) not in _ascii_digits(translated) and not any(word in lowered or word in translated for word in words):
+            return True
+    place = known_place(source)
+    if place:
+        latin = re.findall(r"[a-z]{4,}", place.lower())
+        if latin and not any(token in translated.lower() for token in latin):
+            return True
+    return False
+
+
+def faithful_english(source: str) -> str:
+    """A short English line that keeps the count and the place the report named."""
+    from app.tools.nlu_rules import extract_place, hazard_name, known_place, people_count, place_is_usable
+
+    count = people_count(source)
+    place = known_place(source) or extract_place(source)
+    if place and not place_is_usable(place):
+        place = known_place(source)
+    parts: List[str] = []
+    if count:
+        parts.append(f"{count} people")
+    if hazard_name(source) == "water_rising":
+        parts.append("water rising")
+    if place and place_is_usable(place):
+        parts.append(place if re.match(r"(?i)ward\s*\d+", place) else f"near {place}")
+    if not parts:
+        return " ".join((source or "").split())[:240]
+    return ", ".join(parts) + "."
 
 
 translation_service = TranslationService()

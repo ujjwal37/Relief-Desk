@@ -250,6 +250,27 @@ def extract_with_rules(raw_text: str) -> ExtractedRequest:
     return _repair_with_rules(ExtractedRequest(), raw_text or "", model_ok=False)
 
 
+def union_with_rules(extracted: ExtractedRequest, *texts: str) -> ExtractedRequest:
+    """Fill empty fields from the rules reading of the report and of its English line."""
+    for text in texts:
+        if not (text or "").strip():
+            continue
+        ruled = extract_with_rules(text)
+        if extracted.type == IncidentType.OTHER and ruled.type != IncidentType.OTHER:
+            extracted.type = ruled.type
+        if (extracted.people.count is None or extracted.people.count <= 0) and ruled.people.count:
+            extracted.people.count = ruled.people.count
+            extracted.people.confidence = max(extracted.people.confidence, ruled.people.confidence)
+        for name in ("child", "elderly", "disabled", "pregnant", "medical_need"):
+            if getattr(ruled.vulnerable, name):
+                setattr(extracted.vulnerable, name, True)
+        if extracted.hazard in (HazardType.NONE, HazardType.UNKNOWN) and ruled.hazard not in (HazardType.NONE, HazardType.UNKNOWN):
+            extracted.hazard = ruled.hazard
+        if not place_is_usable(extracted.place_text) and place_is_usable(ruled.place_text):
+            extracted.place_text = ruled.place_text
+    return extracted
+
+
 import re as _re
 _LIFE_THREAT = _re.compile(r"oxygen|dialysis|insulin|bleeding|unconscious|not breathing|can'?t breathe|ऑक्सीजन|डायलिसिस|इंसुलिन|साँस", _re.I)
 

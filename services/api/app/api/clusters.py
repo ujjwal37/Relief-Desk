@@ -307,7 +307,7 @@ def list_requests(
     from app.models.firestore_models import RequestStatus
     from app.tools.scoring import scoring_engine
 
-    closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED, RequestStatus.DISMISSED_HOAX}
+    closed = {RequestStatus.COMPLETED, RequestStatus.RESOLVED, RequestStatus.CLOSED, RequestStatus.DISMISSED_HOAX, RequestStatus.INFO_CLOSED}
     from app.agents.pipeline import ensure_trace
     from app.tools.case_queue import refresh_queue, recheck_if_live
     capped = set(refresh_queue(reqs))
