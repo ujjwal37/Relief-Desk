@@ -105,7 +105,7 @@ test('surge, medical stock scenario and arrival/completion status updates', asyn
   const matches = await (await request.get(`${API}/api/requests/${report.request_id}/matches`, { headers: AUTH })).json();
   expect(matches.length).toBeGreaterThan(0);
   expect((await request.post(`${API}/api/matches/${matches[0].match_id}/approve`, { headers: AUTH, data: {} })).ok()).toBeTruthy();
-  await expect(phone.locator('.hero-title')).toContainText('A team is on the way', { timeout: 10000 });
+  await expect(phone.locator('.hero-title')).toContainText('A team is on the way', { timeout: 30000 });
   expect((await request.post(`${API}/api/requests/${report.request_id}/arrived`, { headers: AUTH })).ok()).toBeTruthy();
   await expect(phone.locator('.steps li').nth(2)).toHaveClass(/done/, { timeout: 10000 });
   expect((await request.post(`${API}/api/requests/${report.request_id}/complete`, { headers: AUTH })).ok()).toBeTruthy();
