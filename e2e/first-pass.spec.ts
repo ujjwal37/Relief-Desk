@@ -333,10 +333,12 @@ async function exhaustBoats(request: APIRequestContext): Promise<void> {
     const boat = matches.find((row) => row.resource_kind === 'boat' && !row.is_fallback);
     // A remaining boat that matching will not offer for a rooftop rescue cannot fill the gap case.
     if (!boat) return;
-    const approved = await request.post(`${API}/api/matches/${boat!.match_id}/approve`, {
-      headers: AUTH,
-      data: {},
-    });
+    // Approve stays locked until the AI steps finish (or the 45 s rules cap lands).
+    let approved = await request.post(`${API}/api/matches/${boat!.match_id}/approve`, { headers: AUTH, data: {} });
+    for (let tries = 0; tries < 30 && approved.status() === 409; tries++) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      approved = await request.post(`${API}/api/matches/${boat!.match_id}/approve`, { headers: AUTH, data: {} });
+    }
     expect(approved.ok(), await approved.text()).toBeTruthy();
   }
   throw new Error('Boats were still free after repeated dispatch');

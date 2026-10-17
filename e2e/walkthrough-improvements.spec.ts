@@ -77,7 +77,7 @@ test('recorded traces, nearby single line, fallback preview and Hindi screenshot
   await page.locator('.menu').getByRole('button', { name: 'Hindi', exact: true }).click();
   await page.keyboard.press('Escape');
   await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
-  await expect(page.locator('.best-team-banner .team-specs').first()).not.toContainText('67.81');
+  await expect(page.locator('.decision-panel').first()).not.toContainText('67.81');
   await page.screenshot({ path: path.join(SHOTS, 'coordinator-hindi.png') });
   await page.setViewportSize({ width: 390, height: 844 });
   await fits(page);

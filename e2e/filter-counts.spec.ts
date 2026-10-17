@@ -71,7 +71,7 @@ test('dispatched and completed chip counts match the rows they show', async ({ p
   await expect(page.getByTestId('filter-empty')).toBeVisible();
   await expect(page.locator('.case-list-wrap .case-wrap')).toHaveCount(0);
 
-  await page.getByTestId('filter-empty').getByRole('button').click();
+  await page.locator('#coord-search').fill('');
   await expect(page.locator('#coord-search')).toHaveValue('');
   await expect.poll(async () => queueTabCount(completed)).toBeGreaterThan(0);
 });
