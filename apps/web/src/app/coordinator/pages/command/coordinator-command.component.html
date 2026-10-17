@@ -322,12 +322,12 @@
         } @empty {
           @if (!(queueTab() === 'waiting' && aiWorkingRows().length)) {
           <p class="empty" data-testid="filter-empty">
-            @if (queueTab() === 'dispatched' && bandFilter() === 'all') {
+            @if (queueTab() === 'dispatched') {
               {{ 'queue.nothingSent' | rdTranslate }}
             } @else {
               {{ (counts().dispatched + counts().completed > 0 && !filteredRequests().length && bandFilter() === 'all' ? 'queue.allCaughtUp' : 'coord.noFilterMatch') | rdTranslate }}
             }
-            @if (bandFilter() !== 'all') {
+            @if (bandFilter() !== 'all' && bandFilter() !== 'dispatched' && bandFilter() !== 'completed') {
               <button type="button" (click)="clearFilters()">{{ 'coord.clearFilters' | rdTranslate }}</button>
             }
           </p>
@@ -726,13 +726,13 @@
 
         <!-- 6. Pinned Footer Actions -->
         <footer class="decision-pinned-footer" data-tour="actions">
-          @if (tipOpen()) {
+          @if (tipOpen() && !(selectedRequest() && (isDispatched(selectedRequest()!) || isCompleted(selectedRequest()!)))) {
             <p class="key-tip" role="note" data-testid="key-tip">{{ tipKey() | rdTranslate }} <button type="button" (click)="dismissTip()">{{ 'coord.guideDismiss' | rdTranslate }}</button></p>
           }
           @if (!isDispatched(req) && !isCompleted(req)) {
             <p class="you-decide-msg">{{ 'coord.youDecide' | rdTranslate }}</p>
           }
-          @if (takeNotice(); as tw) {
+          @if (!isDispatched(req) && !isCompleted(req) && takeNotice(); as tw) {
             <div class="take-warn" role="alert" data-testid="take-warning">
               <p>⚠ {{ takeWarnText(tw) }}</p>
               @if (takeWarn()) {

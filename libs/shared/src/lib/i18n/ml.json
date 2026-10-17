@@ -305,6 +305,7 @@
     "close": "കഴിഞ്ഞു"
   },
   "coord": {
+    "noPlaceGiven": "സ്ഥലം പറഞ്ഞിട്ടില്ല",
     "findingTeam": "ഏറ്റവും അടുത്ത ടീമിനെ തിരയുന്നു…",
     "cases": "കേസുകൾ",
     "home": "ഹോം",
@@ -1259,17 +1260,17 @@
   },
   "steps": {
     "gemini": "✨ Gemini 5 ഘട്ടങ്ങൾ പരിശോധിച്ചു",
-    "recorded": "റെക്കോർഡ് ചെയ്തത് (Gemini) · 5 ഘട്ടങ്ങൾ",
+    "recorded": "Gemini · റെക്കോർഡ്",
     "rules": "നിയമങ്ങൾ 5 ഘട്ടങ്ങൾ പരിശോധിച്ചു",
     "see": "എങ്ങനെ എന്ന് കാണുക",
     "hide": "ഘട്ടങ്ങൾ മറയ്ക്കുക",
     "badgeRules": "നിയമങ്ങൾ",
-    "badgeRecorded": "റെക്കോർഡ് ചെയ്തത്",
-    "short.intake": "റിപ്പോർട്ട് വായിച്ചു",
-    "short.dedupe": "ആവർത്തനം",
-    "short.urgency": "അടിയന്തരത",
+    "badgeRecorded": "Gemini · റെക്കോർഡ്",
+    "short.intake": "വായന",
+    "short.dedupe": "ഇരട്ട",
+    "short.urgency": "അടിയന്തരം",
     "short.maps": "ടീം",
-    "short.explain": "വിശദീകരിച്ചു",
+    "short.explain": "കാരണം",
     "short.you": "നിങ്ങൾ",
     "youShort": "നിങ്ങൾ അംഗീകരിക്കുക"
   },

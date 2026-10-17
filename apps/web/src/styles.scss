@@ -586,3 +586,18 @@ app-merged-chip .pop .undo{position:sticky;bottom:0;z-index:1}
 .cmd .team-finding .tf-bar.short{width:60%}
 .cmd .team-finding p{margin:4px 0 0;font:600 13px/1.4 var(--rd-font-family);color:var(--muted)}
 @keyframes tfPulse{50%{opacity:.45}}
+/* P1-1 (real element): the suggested-team card on white */
+.cmd .best-team-banner{background:var(--surface,#fff) !important;border:1px solid var(--line,#ddd1c8) !important;border-radius:12px !important}
+/* P1-14. 390 header on one row: logo, AI pill, Ask (icon only), menu */
+@media (max-width:480px){
+  .coordinator-shell .top-nav{display:flex !important;flex-wrap:nowrap !important;align-items:center;gap:6px !important;min-height:52px}
+  .coordinator-shell .top-nav .brand .name{display:none}
+  .coordinator-shell .top-nav .tabs{display:flex !important;flex:none;flex-wrap:nowrap;gap:0;order:2}
+  .coordinator-shell .top-nav .tabs > a,.coordinator-shell .top-nav .tabs .more-tab{display:none !important}
+  .coordinator-shell .top-nav .btn-ask-desk{width:36px;height:36px;padding:0 !important;font-size:0 !important;justify-content:center}
+  .coordinator-shell .top-nav .btn-ask-desk .sparkle{font-size:16px}
+  .coordinator-shell .top-nav .search{display:none !important}
+  .coordinator-shell .top-nav .right{flex:1 1 auto;min-width:0;display:flex;justify-content:flex-end;gap:6px;order:3}
+  .coordinator-shell .top-nav .ai-pill{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .coordinator-shell .top-nav .ai-calls{display:none}
+}

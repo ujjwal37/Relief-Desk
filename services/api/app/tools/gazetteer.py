@@ -12,6 +12,8 @@ logger = logging.getLogger("relief_desk.gazetteer")
 GAZETTEER_FILE = Path(__file__).resolve().parents[4] / "data" / "gazetteer" / "kerala_gazetteer.json"
 
 
+_FILLER = {"boat", "bus", "govt", "government", "public", "main"}
+
 class GazetteerMatch(BaseModel):
     landmark_id: Optional[str] = None
     landmark_name: Optional[str] = None
@@ -61,6 +63,10 @@ class Gazetteer:
             # Add English aliases
             for alias in lm.get("aliases_en", []):
                 self._alias_index.append({**entry_base, "alias": alias.lower()})
+            # Reporters drop filler words: "Kainakary jetty" for "Kainakary Boat Jetty".
+            short = " ".join(w for w in lm["name"].lower().split() if w not in _FILLER)
+            if short != lm["name"].lower() and len(short.split()) >= 2:
+                self._alias_index.append({**entry_base, "alias": short})
             # Add Hindi and Malayalam aliases
             for alias in lm.get("aliases_hi", []):
                 self._alias_index.append({**entry_base, "alias": alias.lower()})

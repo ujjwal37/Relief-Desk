@@ -305,6 +305,7 @@
     "close": "Done"
   },
   "coord": {
+    "noPlaceGiven": "no place given",
     "findingTeam": "Finding the closest team…",
     "cases": "Cases",
     "home": "Home",
@@ -1259,12 +1260,12 @@
   },
   "steps": {
     "gemini": "✨ Gemini checked 5 steps",
-    "recorded": "Recorded (Gemini) · 5 steps",
+    "recorded": "Gemini · recorded",
     "rules": "Rules checked 5 steps",
     "see": "See how",
     "hide": "Hide steps",
     "badgeRules": "Rules",
-    "badgeRecorded": "Recorded replay",
+    "badgeRecorded": "Gemini · recorded",
     "short.intake": "Read",
     "short.dedupe": "Duplicates",
     "short.urgency": "Urgency",
