@@ -328,7 +328,8 @@ class ScoringEngine:
 
         # 1. Distance score (max 30 pts)
         if req.lat is not None and req.lng is not None:
-            dist_km = haversine_distance(req.lat, req.lng, res.lat, res.lng)
+            from app.tools.geo import team_distance_km
+            dist_km = team_distance_km(req, res)
         else:
             # No location: distance is unknown, so no team is offered on a made-up distance.
             return None

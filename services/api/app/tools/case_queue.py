@@ -88,6 +88,21 @@ def life_phrase(text: str | None) -> Optional[str]:
     return None
 
 
+_WATER_WORDS = re.compile(
+    r"water|flood|drown|boat|roof|jetty|river|canal|വെള്ള|മുങ്ങ|ബോട്ട്|vellam|पानी|बाढ़|डूब|नाव|paani|pani|baadh|doob|naav",
+    re.I,
+)
+
+
+def life_pick_kind(req: StoredRequest, text: str | None = None) -> str:
+    """Boat when water is part of the report, otherwise the nearest medical team (ambulance)."""
+    words = " ".join(x for x in (text, req.raw_text, req.ai_translation) if x)
+    hazard = getattr(req.hazard, "value", req.hazard) or ""
+    if _WATER_WORDS.search(words) or hazard in ("water_rising", "stranded"):
+        return "boat"
+    return "medical"
+
+
 def promote_life_threat(req: StoredRequest, text: str | None) -> bool:
     """Second path: the model's English translation hits a trigger the original words missed."""
     queue = req.ai_queue
@@ -99,6 +114,7 @@ def promote_life_threat(req: StoredRequest, text: str | None) -> bool:
     queue.flags = list(queue.flags or []) + ["lifeThreat"]
     if not queue.life_phrase:
         queue.life_phrase = phrase
+    queue.life_pick = life_pick_kind(req, text)
     return True
 
 
@@ -203,6 +219,8 @@ def begin_case(req: StoredRequest, text: str | None, *, now: datetime | None = N
         life_phrase=phrase,
         place_unverified=bool(phrase),
     )
+    if phrase:
+        req.ai_queue.life_pick = life_pick_kind(req, text)
     return req.ai_queue
 
 

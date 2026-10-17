@@ -191,7 +191,8 @@ def test_water_already_stated_is_not_asked_again():
     assert "pulincunnu" in (resp.confirmation_card.place_text or "").lower()
     assert resp.confirmation_card.hazard == "water_rising"
     assert resp.confirmation_card.summary.strip() != "No"
-    assert "vellam koodunnu" in resp.confirmation_card.summary.lower()
+    # A short summary built from what the reporter said, not the transcript.
+    assert "4" in resp.confirmation_card.summary and "pulincunnu" in resp.confirmation_card.summary.lower()
 
 
 def test_summary_uses_the_report_not_the_last_reply():

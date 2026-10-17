@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     GEMINI_ENABLED: bool = True
     GEMINI_DAILY_CALL_CAP: int = 2000
     GEMINI_TIMEOUT_S: float = 20.0
+    # Rupees per 1M Gemini tokens for the Accuracy cost line. Unset: the ₹ line is hidden (no guessed prices).
+    GEMINI_INR_PER_1M_TOKENS: float | None = None
     # Model calls that may run at once (Gemini or a local model). Extra calls wait in a
     # priority queue, critical cases first. Set 1 for a local model that serves one call at a time.
     AI_CONCURRENCY: int = 2

@@ -325,6 +325,29 @@ class DedupeAgent:
         if pair is None:
             return decision
         facts, cand = pair
+        is_dup = decision.decision == DedupeDecisionType.DUPLICATE
+        if decision.review and not is_dup:
+            # No suggestion at 0% with no shared landmark, and none when the counts are far apart.
+            if facts.get("counts_far") or (not facts.get("similarity") and not facts.get("same_landmark")):
+                return DedupeDecision(
+                    decision=DedupeDecisionType.NEW,
+                    target_request_id=None,
+                    changed_fields={},
+                    evidence=[confidence_phrase(facts["similarity"], facts["distance_km"], facts["minutes"]), "Not the same incident."],
+                    confidence=facts["confidence"],
+                    similarity=facts["similarity"],
+                    distance_km=facts["distance_km"],
+                    minutes_apart=facts["minutes"],
+                )
+        elif not is_dup and not decision.review:
+            # Same landmark, close counts, within 30 minutes: the coordinator sees "Possible duplicate".
+            near_time = facts.get("minutes") is None or facts["minutes"] <= 30
+            if facts.get("same_landmark") and near_time and not facts.get("counts_far") and not facts.get("place_missing"):
+                review = self._review_decision(cand, facts)
+                note = facts.get("counts_note")
+                if note and note not in review.evidence:
+                    review.evidence.append(note)
+                return review
         if not facts.get("counts_conflict"):
             return decision
         if decision.decision != DedupeDecisionType.DUPLICATE and not decision.review:
@@ -443,6 +466,8 @@ class DedupeAgent:
         new_count, old_count = new_req.people.count, cand.people_count
         counts_conflict = bool(new_count and old_count and int(new_count) != int(old_count))
         counts_note = f"Counts differ: {old_count} vs {new_count}" if counts_conflict else None
+        # Far apart (4 vs 12): a different group, never even suggested as a duplicate.
+        counts_far = bool(counts_conflict and max(int(new_count), int(old_count)) >= 2 * min(int(new_count), int(old_count)))
         # Show the measured similarity, not a floor.
         shown = round(overlap, 2)
         return {
@@ -458,6 +483,7 @@ class DedupeAgent:
             "distinctive": bool(distinctive),
             "counts_conflict": counts_conflict,
             "counts_note": counts_note,
+            "counts_far": counts_far,
         }
 
     def _best_pair(

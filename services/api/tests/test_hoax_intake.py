@@ -51,3 +51,25 @@ def test_hoax_flag_caps_a_score_that_would_otherwise_need_help():
     assert capped.score <= 40
     assert capped.score < NEEDS_HELP
     assert "hoax" in capped.reason or "spam" in capped.reason
+
+
+def test_seeded_hoax_is_caught_by_rules_with_gemini_off(monkeypatch):
+    """The demo-pack hoax is flagged by the rule phrases alone, so a Gemini miss or outage cannot let it through."""
+    from app.config import settings
+    from app.tools.demo_seed import build_demo_reports
+    from app.tools.trust import hoax_reason_for
+
+    monkeypatch.setattr(settings, "GEMINI_ENABLED", False, raising=False)
+    seeded = next(row["text"] for row in build_demo_reports() if row.get("kind") == "hoax")
+    assert hoax_reason_for(seeded)
+    token = uuid.uuid4().hex[:8]
+    response = client.post(
+        "/api/reports",
+        json={"text": seeded, "lang": "en", "channel": "text", "idempotency_key": f"hoax-seed-{token}",
+              "location_pin": {"lat": 9.45, "lng": 76.39}},
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert "hoax" in body["flags"]
+    stored = storage_service.get_request(body["request_id"])
+    assert stored is not None and stored.urgency_score < NEEDS_HELP

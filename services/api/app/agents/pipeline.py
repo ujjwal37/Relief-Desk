@@ -301,7 +301,8 @@ def _km_between(req: StoredRequest, best) -> Optional[float]:
     if resource is None or resource.lat is None or resource.lng is None:
         return None
     from app.tools.geo import haversine_distance
-    return round(haversine_distance(float(req.lat), float(req.lng), float(resource.lat), float(resource.lng)), 2)
+    from app.tools.geo import team_distance_km
+    return team_distance_km(req, resource)
 
 
 def _matching_payload(req: StoredRequest, best, kind: str) -> str:

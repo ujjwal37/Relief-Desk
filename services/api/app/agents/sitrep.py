@@ -26,6 +26,8 @@ OPEN = {
     RequestStatus.APPROVED,
 }
 
+WAITING = {RequestStatus.NEW, RequestStatus.NEEDS_RECHECK, RequestStatus.MATCHED}
+
 _cache_lock = threading.Lock()
 _cache: Dict[str, "SitrepResponse"] = {}
 _last_at = 0.0
@@ -95,7 +97,9 @@ def _open_cases() -> List[StoredRequest]:
     return [
         req
         for req in storage_service.list_requests()
-        if req.status in OPEN and not req.merged_into
+        # Same "waiting" as the Command queue: not sent, not closed as information, not a dismissed hoax.
+        if req.status in WAITING and not req.merged_into
+        and not ({"info_closed", "dismissed_hoax"} & set(req.flags or []))
     ]
 
 

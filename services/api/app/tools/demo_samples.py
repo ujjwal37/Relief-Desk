@@ -15,7 +15,7 @@ VOICE_TEXT = (
 )
 DUP_TEXT = (
     "Second caller: 6 people are stuck on the terrace by Pulinkunnu temple. "
-    "Flood water is at the windows. We need a rescue boat. Different wording from the first report."
+    "Flood water is at the windows. We need a rescue boat."
 )
 PHOTO_CAPTION = (
     "Synthetic flood photo near a Kerala house: water at window level, two people on the roof. "

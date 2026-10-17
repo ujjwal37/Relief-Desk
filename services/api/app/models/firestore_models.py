@@ -61,6 +61,8 @@ class ReportQuote(BaseModel):
 
 class PossibleDuplicate(BaseModel):
     target_id: str
+    # The reporter-facing code (RD-1234) of the other case; the desk never shows a raw req_ id.
+    target_code: Optional[str] = None
     confidence: float = 0.0
     similarity: float = 0.0
     distance_km: Optional[float] = None
@@ -83,6 +85,8 @@ class AiQueueState(BaseModel):
         "team": "pending",
     })
     engine: str = "rules"
+    # The life-threat lane's one-tap team: "boat" or "medical". The button text follows it.
+    life_pick: Optional[str] = None
     started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     elapsed_s: int = 0
     flags: List[str] = Field(default_factory=list)

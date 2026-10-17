@@ -87,6 +87,31 @@ _LIFE_112 = {
 }
 
 
+_NEED_WORDS = {
+    "en": {"rescue": "Rescue needed", "medical": "Medical help needed", "food": "Food and water needed", "shelter": "Shelter needed", "info": "Information"},
+    "hi": {"rescue": "बचाव चाहिए", "medical": "चिकित्सा मदद चाहिए", "food": "खाना-पानी चाहिए", "shelter": "आश्रय चाहिए", "info": "जानकारी"},
+    "hinglish": {"rescue": "Bachav chahiye", "medical": "Medical madad chahiye", "food": "Khana-paani chahiye", "shelter": "Aashray chahiye", "info": "Jaankari"},
+    "ml": {"rescue": "രക്ഷാപ്രവർത്തനം വേണം", "medical": "വൈദ്യസഹായം വേണം", "food": "ഭക്ഷണവും വെള്ളവും വേണം", "shelter": "അഭയം വേണം", "info": "വിവരം"},
+}
+_PEOPLE_WORD = {"en": "{n} people", "hi": "{n} लोग", "hinglish": "{n} log", "ml": "{n} പേർ"}
+
+
+def _slot_summary(kind, people, place, lang: str) -> str:
+    """A short summary in the reporter's language, built from what they told us (never the transcript)."""
+    code = lang if lang in _NEED_WORDS else ("ml" if lang == "manglish" else "en")
+    value = getattr(kind, "value", kind) or ""
+    need = _NEED_WORDS[code].get(value)
+    if not need or value == "info":
+        # Information reports keep the reporter's own words ("nobody is stranded").
+        return ""
+    parts = [need]
+    if people:
+        parts.append(_PEOPLE_WORD[code].format(n=people))
+    if place:
+        parts.append(str(place)[:60])
+    return " · ".join(parts)
+
+
 def injection_pattern(message: str) -> bool:
     return _INJECTION.search(message) is not None
 
@@ -221,11 +246,16 @@ class ChatIntakeAgent:
             message["text"] for message in state.messages_history if message.get("role") == "user" and message.get("text")
         )
         hoax_reason = hoax_reason_for(full_text)
+        type_before = state.extracted_so_far.type
         self._fill_slots(state, user_message, full_text, lang, lang_override, location_pin)
         # One try per question. A reply that does not fill the slot moves on.
         self._give_up_unanswered(state)
 
-        if is_nobody_stranded(full_text):
+        # A rescue or medical report stays one: a later answer (a vague place) never turns it into Information.
+        team_need = type_before in (IncidentType.RESCUE, IncidentType.MEDICAL, IncidentType.FOOD, IncidentType.SHELTER)
+        if team_need and state.extracted_so_far.type == IncidentType.INFO:
+            state.extracted_so_far.type = type_before
+        if is_nobody_stranded(full_text) and not (team_need and not is_nobody_stranded(user_message)):
             self._mark_nobody(state)
             return self._finish(state, scenario, lang, full_text, hoax_reason)
 
@@ -271,7 +301,13 @@ class ChatIntakeAgent:
             named = known_place(full_text)
             if named and (not place or named.lower() not in place.lower()):
                 place = named
-            if place and place_is_usable(place):
+            if not place and state.awaiting_slot == "location":
+                # Keep what the reporter typed for "where are you?" even when it is vague; the desk verifies it.
+                typed = (message or "").strip(" .,!?\n\t")
+                status, _n = parse_people_reply(typed)
+                if 3 <= len(typed) and status != "unknown" and not re.fullmatch(r"[\d\s?.!-]+", typed):
+                    place = typed[:60]
+            if place and (place_is_usable(place) or state.awaiting_slot == "location"):
                 current.place_text = place
                 state.slot_location = True
             elif location_pin and location_pin.get("lat") is not None and location_pin.get("lng") is not None and not current.place_text:
@@ -305,6 +341,8 @@ class ChatIntakeAgent:
         kind = infer_incident_type(full_text)
         if not kind and state.awaiting_slot == "need":
             kind = need_from_reply(message)
+        if kind == "info" and current.type in (IncidentType.RESCUE, IncidentType.MEDICAL, IncidentType.FOOD, IncidentType.SHELTER):
+            kind = None  # never downgrade a team need to Information on a later turn
         if kind and kind != "other":
             current.type = IncidentType(kind)
             state.slot_need = True
@@ -324,7 +362,7 @@ class ChatIntakeAgent:
             elif stated not in ("rising", "none") and current.hazard == HazardType.UNKNOWN:
                 current.hazard = HazardType.WATER_RISING
         # A junk place reopens the question. A question already given up on stays closed.
-        if current.place_text and not place_is_usable(current.place_text):
+        if current.place_text and not place_is_usable(current.place_text) and not state.slot_location:
             current.place_text = None
             state.slot_location = False
         if current.people.count is not None and current.people.count <= 0:
@@ -385,7 +423,7 @@ class ChatIntakeAgent:
         people = current.people.count if state.slot_people and not state.people_unknown else None
         if people is not None and people <= 0:
             people = None
-        summary = short_faithful_summary(full_text)
+        summary = (_slot_summary(current.type, people, current.place_text, lang) if not hoax_reason else "") or short_faithful_summary(full_text)
         quiet = bool(hoax_reason) or current.type == IncidentType.INFO
         if quiet:
             line = scenario_registry.get_safety_line("call_112", lang=lang)

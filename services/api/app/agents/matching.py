@@ -100,6 +100,13 @@ class MatchingAgent:
         resources = sorted(resources, key=lambda res: res.id)
         # A team already sent to another case is busy: never offered again until it is free.
         resources = [r for r in resources if not (getattr(r, "assigned_request_id", None) and r.assigned_request_id != request.id)]
+        # A possible duplicate never gets the same team its twin is already being offered.
+        twin_hint = getattr(request, "possible_duplicate", None)
+        if twin_hint is not None and twin_hint.target_id:
+            twin_matches = [m for m in storage_service.list_matches_for_request(twin_hint.target_id) if m.resource_id]
+            if twin_matches:
+                twin_best = max(twin_matches, key=lambda m: m.score).resource_id
+                resources = [r for r in resources if r.id != twin_best]
 
         scored_candidates = []
         people_needed = request.people_count if request.people_count else 1
@@ -384,7 +391,8 @@ def _nearest_finish(request: StoredRequest, resources: List[StoredResource]):
     def distance(res: StoredResource) -> float:
         if request.lat is None or request.lng is None:
             return 0.0
-        return haversine_distance(request.lat, request.lng, res.lat, res.lng)
+        from app.tools.geo import team_distance_km
+        return team_distance_km(request, res) or 0.0
 
     nearest = min(busy, key=distance)
     if distance(nearest) > NEARBY_KM:

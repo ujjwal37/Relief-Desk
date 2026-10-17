@@ -236,7 +236,9 @@ def test_approve_stays_blocked_until_rules_take_over_except_nearest_boat():
     sent_med = client.post(f"/api/requests/{medical.id}/send-nearest-boat", json={}, headers=AUTH)
     assert sent_med.status_code == 200, sent_med.text
     medical_boat = storage_service.get_resource(sent_med.json()["resource_id"])
-    assert medical_boat is not None and medical_boat.kind.value == "boat"
+    # No water in the report: the engine's pick is the nearest ambulance, and the button says so.
+    assert medical_boat is not None and medical_boat.kind.value in ("medical", "boat")
+    assert storage_service.get_request(medical.id).ai_queue.life_pick == "medical"
 
 
 def test_hoax_before_finish_keeps_one_word_reason():

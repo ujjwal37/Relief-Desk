@@ -262,11 +262,19 @@ def send_nearest_boat(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"code": "not_life_threat"})
     if req.status in ("dispatched", "approved", "in_progress", "completed"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already sent")
-    # A life-threat send is a boat even when the report was read as medical.
+    # The engine's pick (boat when water is involved, else the nearest medical team) is what the button says.
     from app.models.schemas import IncidentType
-    as_rescue = req if req.type == IncidentType.RESCUE else req.model_copy(update={"type": IncidentType.RESCUE})
-    proposals = matching_agent.find_matches(as_rescue, top_n=5, save_to_storage=True)
-    boats = [p for p in proposals if getattr(p.resource_kind, "value", p.resource_kind) == "boat"]
+    from app.tools.case_queue import life_pick_kind
+    pick = (req.ai_queue.life_pick if req.ai_queue else None) or life_pick_kind(req)
+    want = IncidentType.RESCUE if pick == "boat" else IncidentType.MEDICAL
+    as_case = req if req.type == want else req.model_copy(update={"type": want})
+    proposals = matching_agent.find_matches(as_case, top_n=5, save_to_storage=True)
+    boats = [p for p in proposals if getattr(p.resource_kind, "value", p.resource_kind) == pick]
+    if not boats and pick == "medical":
+        # No ambulance nearby: fall back to the nearest boat rather than send nothing.
+        as_case = req.model_copy(update={"type": IncidentType.RESCUE})
+        proposals = matching_agent.find_matches(as_case, top_n=5, save_to_storage=True)
+        boats = [p for p in proposals if getattr(p.resource_kind, "value", p.resource_kind) == "boat"]
     if not boats:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "no_boat"})
     nearest = min(boats, key=lambda p: (p.breakdown.distance_km if p.breakdown else 1e9, p.resource_id))

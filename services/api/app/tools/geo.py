@@ -20,6 +20,14 @@ def haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> fl
     return round(EARTH_RADIUS_KM * c, 3)
 
 
+def team_distance_km(req, res) -> "float | None":
+    """The one case-to-team distance used by matching, the case panel, Teams and the trace.
+    Straight line from the case pin to the team's current position, rounded to 10 m."""
+    if None in (getattr(req, "lat", None), getattr(req, "lng", None), getattr(res, "lat", None), getattr(res, "lng", None)):
+        return None
+    return round(haversine_distance(float(req.lat), float(req.lng), float(res.lat), float(res.lng)), 2)
+
+
 def grid_cell_id(lat: float, lng: float, cell_size_km: float = 0.5) -> str:
     """Maps (lat, lng) to an area-level ~500 m grid cell ID.
     Zero exact PII is leaked when publishing area cells."""

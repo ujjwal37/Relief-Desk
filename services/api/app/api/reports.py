@@ -791,6 +791,7 @@ def _apply_dedupe(req_obj: StoredRequest, decision, source_id: str = "") -> None
         line = _trace_for(decision, req_obj.count_note, False)
         req_obj.possible_duplicate = PossibleDuplicate(
             target_id=decision.target_request_id,
+            target_code=getattr(target, "public_code", None) if target is not None else None,
             confidence=float(decision.confidence or 0),
             similarity=float(decision.similarity or 0),
             distance_km=decision.distance_km,

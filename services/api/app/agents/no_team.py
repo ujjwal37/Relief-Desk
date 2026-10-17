@@ -17,7 +17,8 @@ OPTIONS = ("call112", "reserve", "road", "wider", "escalate", "share")
 def _km(req: StoredRequest, res: StoredResource) -> Optional[float]:
     if req.lat is None or req.lng is None or res.lat is None or res.lng is None:
         return None
-    return round(haversine_distance(req.lat, req.lng, res.lat, res.lng), 2)
+    from app.tools.geo import team_distance_km
+    return team_distance_km(req, res)
 
 
 def _eta(km: Optional[float], res: StoredResource) -> Optional[int]:
