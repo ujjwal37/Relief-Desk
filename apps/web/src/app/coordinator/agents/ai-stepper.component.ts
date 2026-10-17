@@ -427,12 +427,15 @@ export class AiStepperComponent {
   readonly urgencyResult = computed<string>(() => {
     const req = this.request();
     if (!req) return '—';
+    if (this.hoax(req)) return this.lang.translate('hoax.held');
     const score = Math.round(req.urgency_score);
     const band = score >= 80 ? this.lang.translate('band.critical') : this.lang.translate('band.urgent');
     return `${score} · ${band}`;
   });
 
   readonly matchingResult = computed<string>(() => {
+    const r0 = this.request();
+    if (r0 && this.hoax(r0)) return this.lang.translate('hoax.notMatched');
     const prop = this.activeProposal();
     if (!prop) return '—';
     const kind = prop.resource_kind === 'boat' ? 'Boat' : 'Team';
@@ -440,6 +443,10 @@ export class AiStepperComponent {
     if (km == null || Number.isNaN(Number(km))) return kind;
     return `${kind} · ${km} km`;
   });
+
+  private hoax(req: { hoax_reason?: string | null; flags?: string[] | null }): boolean {
+    return !!req.hoax_reason || !!req.flags?.some((f) => f === 'hoax' || f === 'likely_hoax');
+  }
 
   readonly explainResult = computed<string>(() => {
     const req = this.request();

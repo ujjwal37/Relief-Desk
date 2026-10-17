@@ -202,7 +202,7 @@
                 <!-- Line 3: Meta & chips -->
                 <div class="card-line-meta">
                   <span class="card-meta-text">
-                    {{ shortId(req.id, req.public_code) }} · {{ peopleLabel(req.people_count) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
+                    {{ shortId(req.id, req.public_code) }} · {{ peopleLabel(req.people_count, req.flags) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
                   </span>
                   <div class="card-meta-chips">
                     @if ((req.merged_count || 1) > 1) {

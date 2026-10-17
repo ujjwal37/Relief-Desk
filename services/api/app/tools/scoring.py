@@ -290,7 +290,8 @@ class ScoringEngine:
         if req.lat is not None and req.lng is not None:
             dist_km = haversine_distance(req.lat, req.lng, res.lat, res.lng)
         else:
-            dist_km = 2.5
+            # No location: distance is unknown, so no team is offered on a made-up distance.
+            return None
 
         if dist_km <= 0.5:
             dist_score = 30.0

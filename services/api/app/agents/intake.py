@@ -248,7 +248,7 @@ _LIFE_THREAT = _re.compile(r"oxygen|dialysis|insulin|bleeding|unconscious|not br
 TYPE_TRUST = 0.6
 
 
-def _repair_with_rules(extracted: ExtractedRequest, raw_text: str, model_ok: bool = False) -> ExtractedRequest:
+def _repair_with_rules_core(extracted: ExtractedRequest, raw_text: str, model_ok: bool = False) -> ExtractedRequest:
     """Gemini's answer wins. Rules only fill what the model left empty or was unsure about."""
     place = extract_place(raw_text)
     if place and (not model_ok or not extracted.place_text or extracted.confidence.place < TYPE_TRUST):
@@ -283,3 +283,17 @@ def _repair_with_rules(extracted: ExtractedRequest, raw_text: str, model_ok: boo
 
 
 intake_agent = IntakeAgent()
+
+
+_TRAPPED = _re.compile(r"trapped|stuck|marooned|roof|terrace|water (?:is )?(?:rising|inside)|flood|chest|neck|waist|phas|fas[ae]|vellam|\u0d35\u0d46\u0d33\u0d4d\u0d33|\u092a\u093e\u0928\u0940", _re.I)
+
+
+def _repair_with_rules(extracted: ExtractedRequest, raw_text: str, model_ok: bool = False) -> ExtractedRequest:
+    extracted = _repair_with_rules_core(extracted, raw_text, model_ok)
+    # A medical emergency inside flood water is also a rescue: the patient has to be got out first.
+    kind = getattr(extracted.type, "value", extracted.type)
+    if kind == "medical" and _LIFE_THREAT.search(raw_text or "") and _TRAPPED.search(raw_text or ""):
+        from app.models.schemas import IncidentType as _IT
+        if _IT.RESCUE not in (extracted.secondary_needs or []):
+            extracted.secondary_needs = list(extracted.secondary_needs or []) + [_IT.RESCUE]
+    return extracted

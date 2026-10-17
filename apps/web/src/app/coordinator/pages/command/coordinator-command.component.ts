@@ -682,7 +682,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (code) return code;
     return id.startsWith('req_') ? `Report ${id.slice(-4)}` : id.length > 10 ? id.slice(0, 8) : id;
   }
-  peopleLabel(n: number | null | undefined): string {
+  peopleLabel(n: number | null | undefined, flags?: string[] | null): string {
+    if (flags?.includes('count_provisional') && n) return peopleText(n, (k) => this.langService.translate(k)) + ' ' + this.langService.translate('people.provisional');
     this.langService.currentLang();
     return peopleText(n, (k) => this.langService.translate(k));
   }
@@ -1144,7 +1145,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return t('noTeam.reason.' + n.reason).replace('{n}', String(d.busy ?? '')).replace('{km}', String(d.km ?? '')).replace('{limit}', String(d.limit ?? n.limit_km)).replace('{seats}', String(d.seats ?? '')).replace('{need}', String(d.need ?? '')).replace('{team}', d.team || '');
   }
   noTeamOptionKeys(n: NoTeamOptions): string[] {
-    return (['reserve', 'road', 'wider', 'escalate'] as const).filter((k) => k === 'escalate' || !!n.options[k]);
+    const opts = n.options as Record<string, unknown>;
+    if (n.reason === 'info_only') return ['share'];
+    return ['call112', 'reserve', 'road', 'wider', 'escalate'].filter((k) => k === 'escalate' || !!opts[k]);
   }
   noTeamLine(n: NoTeamOptions, k: string): string {
     const t = (key: string) => this.langService.translate(key);
@@ -2110,7 +2113,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   getPeopleText(req: StoredRequest): string {
     this.langService.currentLang();
-    const n = this.peopleLabel(req.people_count);
+    const n = this.peopleLabel(req.people_count, req.flags);
     const flags = req.vulnerable;
     const parts: string[] = [];
     if (flags?.elderly) parts.push(this.langService.translate('coord.metaElderly'));

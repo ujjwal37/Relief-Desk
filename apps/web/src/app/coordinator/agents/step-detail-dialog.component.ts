@@ -329,6 +329,17 @@ export class StepDetailDialogComponent {
 
   /** A blank "— km" is filled from the measured distance. It is never left as a dash. */
   private withKm(text: string): string {
+    return this.oneScore(this.withKmRaw(text));
+  }
+
+  /** The urgency step shows the case's current score (re-scored after merges), the same number as the card. */
+  private oneScore(text: string): string {
+    if (this.data.stepIndex !== 2 || !text) return text;
+    const now = Math.round(this.data.request?.urgency_score || 0);
+    return text.replace(/((?:score|urgency)["']?\s*[:=]?\s*)(\d+(?:\.\d+)?)/gi, (_m, pre) => `${pre}${now}`);
+  }
+
+  private withKmRaw(text: string): string {
     const km = this.data.distanceKm;
     if (!text || !text.includes('—')) return text;
     if (km == null || !Number.isFinite(km)) return text.replace(/\s*:?\s*—\s*km/g, '').trim();

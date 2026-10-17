@@ -99,7 +99,7 @@ export interface ChatTurnPayload {
 export interface NoTeamPick { team_id: string; team: string; km?: number | null; eta_min?: number | null; free_in_min?: number; job?: string | null; kind?: string }
 export interface NoTeamOptions {
   request_id: string;
-  reason: 'all_busy' | 'too_far' | 'too_small' | 'none_of_kind';
+  reason: 'all_busy' | 'too_far' | 'too_small' | 'none_of_kind' | 'info_only' | 'no_location';
   detail: { busy?: number; km?: number; limit?: number; team?: string; seats?: number; need?: number };
   limit_km: number;
   kind: string | null;

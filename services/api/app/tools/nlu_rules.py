@@ -259,7 +259,7 @@ def infer_incident_type(text: str) -> Optional[str]:
         return "animal_attack"
     # Medical before food: "needs oxygen, also no khana" is a medical case (life threat first).
     if has_latin("bimar", "bimaar", "dawa", "dawai", "oxygen", "insulin", "dialysis", "doctor", "medicine", "medical",
-                 "bleeding", "unconscious", "ambulance") or has_phrase(
+                 "bleeding", "unconscious", "ambulance", "unresponsive", "fainted") or has_phrase("not breathing", "stopped breathing", "no pulse") or has_phrase(
         "बीमार", "दवा", "ऑक्सीजन", "इंसुलिन", "डॉक्टर", "दवाइ", "डायलिसिस", "can't breathe", "cannot breathe", "साँस",
         "രോഗി", "ഓക്സിജൻ", "മരുന്ന്", "ആശുപത്രി", "ശ്വാസം", "ഡയാലിസിസ്"
     ):
@@ -269,7 +269,7 @@ def infer_incident_type(text: str) -> Optional[str]:
         "ഭക്ഷണം", "ഭക്ഷണപ്പൊതി", "കഴിക്കാൻ", "വിശപ്പ്"
     ):
         return "food"
-    if has_latin("bachao", "rescue", "stranded", "fanse", "rooftop") or has_phrase(
+    if has_latin("bachao", "rescue", "stranded", "fanse", "rooftop", "trapped", "marooned", "stuck") or has_phrase("on the roof", "on roof", "chest deep", "chest-deep", "neck deep") or has_phrase(
         "chat par", "chhat par", "छत", "फंसे", "फँसे", "फंस", "fas gaye",
         "boat bhejo", "boat needed", "rescue boat", "send a boat", "boat chahiye",
         "नाव", "बचाओ", "बचाव",
@@ -282,7 +282,7 @@ def infer_incident_type(text: str) -> Optional[str]:
         "വീട് മുങ്ങി", "താമസിക്കാൻ സ്ഥലം", "അഭയം"
     ):
         return "shelter"
-    if has_phrase("waterlogging", "traffic stopped", "road is blocked", "road blocked", "रास्ता बंद", "റോഡ് തടസ്സപ്പെട്ടു"):
+    if not has_latin("help", "need", "needs", "bachao", "madad", "please", "entering", "inside") and has_phrase("waterlogging", "traffic stopped", "road is blocked", "road blocked", "रास्ता बंद", "റോഡ് തടസ്സപ്പെട്ടു"):
         return "info"
     return None
 

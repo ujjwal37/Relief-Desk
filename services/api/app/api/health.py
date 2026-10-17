@@ -26,7 +26,17 @@ def ai_health():
     rate = (llm_client.cache_hits / looked) if looked else 0.0
     from app.llm import antigravity as ag
 
-    if ag.antigravity_enabled():
+    import os
+    from urllib.parse import urlparse
+    base = os.environ.get("GOOGLE_GEMINI_BASE_URL") or os.environ.get("GEMINI_BASE_URL") or ""
+    try:
+        # Where the SDK will really send calls (env or SDK config). A localhost base is the local test AI, not Gemini.
+        import google.genai as _genai  # type: ignore
+        base = base or str(_genai.Client(api_key="unused")._api_client._http_options.base_url or "")
+    except Exception:
+        pass
+    local_base = (urlparse(base).hostname or "") in ("127.0.0.1", "localhost", "0.0.0.0")
+    if ag.antigravity_enabled() or local_base:
         # Local test mode (off by default, never production): calls go to the local CLI, not Gemini.
         provider, model, label = "antigravity-local", "local", "Local test AI"
     elif oc.enabled():

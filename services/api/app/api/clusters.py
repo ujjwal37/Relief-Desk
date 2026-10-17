@@ -249,7 +249,7 @@ def case_merge(
         for quote in req.report_quotes:
             linked = storage_service.get_report(quote.report_id)
             reports.append({
-                "id": quote.report_id,
+                "id": public_code_for(quote.report_id), "internal_id": quote.report_id,
                 "text": quote.text,
                 "at": linked.created_at if linked else req.created_at,
                 "channel": linked.channel if linked else None,
@@ -261,7 +261,7 @@ def case_merge(
             member = storage_service.get_request(rid)
             linked = next((row for row in storage_service.list_reports() if row.request_id == rid), None)
             reports.append({
-                "id": rid,
+                "id": public_code_for(rid), "internal_id": rid,
                 "text": (member.raw_text if member else None) or (linked.raw_text if linked else None),
                 "at": member.created_at if member else (linked.created_at if linked else None),
                 "channel": linked.channel if linked else None,

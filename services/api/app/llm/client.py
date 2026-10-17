@@ -354,7 +354,7 @@ class LLMClient:
                         )
                         continue
                 usage = AiCall(
-                    provider="gemini",
+                    provider=("antigravity-local" if ag.gemini_base_is_local() else "gemini"),
                     model=settings.GEMINI_MODEL,
                     latency_ms=int((time.perf_counter() - started) * 1000),
                     tokens=self._last_tokens,

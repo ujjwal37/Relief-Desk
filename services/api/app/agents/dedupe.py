@@ -297,8 +297,27 @@ class DedupeAgent:
 
         pair = self._best_pair(raw_text, new_req, candidates, new_lat, new_lng)
         if live is not None:
-            return self._gate_model_duplicate(live, pair)
-        return self._decision_from_score(pair)
+            decision = self._gate_model_duplicate(live, pair)
+        else:
+            decision = self._decision_from_score(pair)
+        return self._count_guard(decision, pair, new_req)
+
+    def _count_guard(self, decision: DedupeDecision, pair, new_req: ExtractedRequest) -> DedupeDecision:
+        """Different head counts: note it; with no confirmed shared place too, ask for review instead of merging."""
+        if pair is None or decision.decision != DedupeDecisionType.DUPLICATE:
+            return decision
+        facts, cand = pair
+        new_count, old_count = new_req.people.count, cand.people_count
+        if not new_count or not old_count or new_count == old_count:
+            return decision
+        note = f"Counts differ: {old_count} vs {new_count} people"
+        if not facts.get("confirmed"):
+            review = self._review_decision(cand, facts)
+            review.evidence.append(note)
+            return review
+        if note not in decision.evidence:
+            decision.evidence.append(note)
+        return decision
 
     def _nearest_within(self, candidates, lat, lng, km):
         if lat is None or lng is None:

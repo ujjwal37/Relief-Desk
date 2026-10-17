@@ -1257,14 +1257,17 @@
   "people": {
     "notStated": "People: not stated",
     "one": "1 person",
-    "many": "{n} people"
+    "many": "{n} people",
+    "provisional": "(unconfirmed)"
   },
   "hoax": {
     "dismiss": "Dismiss as hoax",
     "notHoax": "Not a hoax",
     "dismissed": "Closed as hoax. Nothing was sent.",
     "likely": "Likely hoax",
-    "tipD": "Press D to dismiss"
+    "tipD": "Press D to dismiss",
+    "held": "Held · likely hoax",
+    "notMatched": "Not matched"
   },
   "noTeam": {
     "title": {
@@ -1278,7 +1281,8 @@
       "all_busy": "All {n} teams of this kind are busy on other cases.",
       "too_far": "Nearest free team ({team}) is {km} km away (limit {limit} km).",
       "too_small": "Only free team ({team}) has {seats} seats; {need} people need help.",
-      "none_of_kind": "There is no team of this kind in the area."
+      "none_of_kind": "There is no team of this kind in the area.",
+      "no_location": "No location yet, so distance to any team is unknown. Ask the reporter for a landmark or pin."
     },
     "stays": "Priority stays. The case keeps its place in the queue.",
     "yourOptions": "Your options",
@@ -1286,13 +1290,17 @@
       "reserve": "Reserve the next free team: {team}, free in about {free} min, arrives in about {eta} min",
       "road": "Send a road team now to check and guide: {team}, {km} km, about {eta} min. It cannot do water rescue.",
       "wider": "Search beyond {limit} km: {team}, {km} km, about {eta} min",
-      "escalate": "Escalate to the district control room"
+      "escalate": "Escalate to the district control room",
+      "call112": "Call 112 now (ambulance / fire). Nearest boat is too far for a life threat.",
+      "share": "Share as an alert to the area"
     },
     "go": {
       "reserve": "Reserve next free team",
       "road": "Send road team",
       "wider": "Use the farther team",
-      "escalate": "Escalate"
+      "escalate": "Escalate",
+      "call112": "Call 112",
+      "share": "Share as alert"
     },
     "logged": {
       "reserve": "Reserved. It will be proposed when the team is free. Nothing was sent.",

@@ -1257,14 +1257,17 @@
   "people": {
     "notStated": "Log: nahi bataya",
     "one": "1 vyakti",
-    "many": "{n} log"
+    "many": "{n} log",
+    "provisional": "(pakka nahi)"
   },
   "hoax": {
     "dismiss": "Hoax maan ke band karo",
     "notHoax": "Hoax nahi hai",
     "dismissed": "Hoax maan ke band kiya. Kuch nahi bheja gaya.",
     "likely": "Shayad hoax",
-    "tipD": "Dismiss ke liye D dabayein"
+    "tipD": "Dismiss ke liye D dabayein",
+    "held": "Roka gaya · shayad hoax",
+    "notMatched": "Match nahi kiya"
   },
   "noTeam": {
     "title": {
@@ -1278,7 +1281,8 @@
       "all_busy": "Is type ki saari {n} teams doosre cases par busy hain.",
       "too_far": "Sabse paas ki free team ({team}) {km} km door hai (limit {limit} km).",
       "too_small": "Akeli free team ({team}) mein {seats} seats hain; {need} logon ko madad chahiye.",
-      "none_of_kind": "Is area mein is type ki koi team nahi hai."
+      "none_of_kind": "Is area mein is type ki koi team nahi hai.",
+      "no_location": "Location abhi nahi hai, isliye team ki doori pata nahi. Reporter se landmark ya pin maangein."
     },
     "stays": "Priority wahi rahegi. Case queue mein apni jagah par rahega.",
     "yourOptions": "Aapke options",
@@ -1286,13 +1290,17 @@
       "reserve": "Agli free team reserve karo: {team}, lagbhag {free} min mein free, lagbhag {eta} min mein pahunchegi",
       "road": "Abhi road team bhejo jaanch ke liye: {team}, {km} km, lagbhag {eta} min. Ye paani mein rescue nahi kar sakti.",
       "wider": "{limit} km se aage dhoondo: {team}, {km} km, lagbhag {eta} min",
-      "escalate": "District control room ko escalate karo"
+      "escalate": "District control room ko escalate karo",
+      "call112": "Abhi 112 call karein (ambulance / fire). Sabse paas ki boat bahut door hai.",
+      "share": "Area ko alert bhejein"
     },
     "go": {
       "reserve": "Agli free team reserve karo",
       "road": "Road team bhejo",
       "wider": "Door wali team lo",
-      "escalate": "Escalate karo"
+      "escalate": "Escalate karo",
+      "call112": "112 call karein",
+      "share": "Alert share karein"
     },
     "logged": {
       "reserve": "Reserve ho gaya. Team free hote hi propose hogi. Kuch nahi bheja gaya.",

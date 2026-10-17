@@ -10,7 +10,7 @@ from app.agents.matching import (
 from app.models.firestore_models import ResourceStatus, StoredRequest, StoredResource
 from app.tools.geo import haversine_distance
 
-OPTIONS = ("reserve", "road", "wider", "escalate", "share")
+OPTIONS = ("call112", "reserve", "road", "wider", "escalate", "share")
 
 
 def _km(req: StoredRequest, res: StoredResource) -> Optional[float]:
@@ -38,8 +38,12 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
     limit = BOAT_MAX_KM if any(k.value == "boat" for k in kinds) else NEARBY_KM
 
     reason, detail = "none_of_kind", {}
+    if req.lat is None or req.lng is None:
+        reason = "no_location"
     far = sorted([(r, _km(req, r)) for r in free if _km(req, r) is not None], key=lambda x: x[1])
-    if not right:
+    if reason == "no_location":
+        pass
+    elif not right:
         reason = "none_of_kind"
     elif far and far[0][1] > limit:
         reason, detail = "too_far", {"km": far[0][1], "limit": limit, "team": far[0][0].name}
@@ -73,4 +77,11 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
 
     return {"request_id": req.id, "reason": reason, "detail": detail, "limit_km": limit,
             "kind": kinds[0].value if kinds else None,
-            "options": {"reserve": reserve, "road": road, "wider": wider, "escalate": {"available": True}, "share": None}}
+            "options": {"call112": {"available": True} if _life_threat(req) else None,
+                        "reserve": reserve, "road": road, "wider": wider, "escalate": {"available": True}, "share": None}}
+
+
+def _life_threat(req: StoredRequest) -> bool:
+    from app.agents.intake import _LIFE_THREAT
+    kind = getattr(req.type, "value", req.type)
+    return kind == "medical" or bool(_LIFE_THREAT.search(req.raw_text or ""))

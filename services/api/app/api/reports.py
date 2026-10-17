@@ -564,7 +564,14 @@ def _refine_with_model(
     depth = validate_depth(getattr(analysis, "water_depth", None), getattr(analysis, "water_depth_quote", None), citizen_text or report_text, ai_source)
     if depth is not None or not joined:
         req_obj.water_depth = depth
-    req_obj.flags = sorted(set(req_obj.flags) | set(flags))
+    flags = set(flags)
+    # Two readings of the head count disagree: keep the larger, mark it provisional for the coordinator.
+    model_count = analysis.people.count
+    if model_count and bounds and not (bounds[0] <= model_count <= bounds[1]):
+        flags.add("count_provisional")
+    if any(getattr(n, "value", n) == "rescue" for n in (getattr(analysis, "secondary_needs", None) or [])):
+        flags.add("also_rescue")
+    req_obj.flags = sorted(set(req_obj.flags) | flags)
     if model_reason and not req_obj.hoax_reason:
         req_obj.hoax_reason = model_reason[:300]
     req_obj.summary = machine_summary or req_obj.summary
