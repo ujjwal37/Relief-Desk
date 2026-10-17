@@ -51,7 +51,7 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
               @if (brief(); as b) { <span class="badge" [class.gemini]="briefSource() === 'gemini'">{{ briefBadge() }}</span> }
               <button type="button" class="ghost" [disabled]="briefBusy() || !canRefresh()" (click)="loadBrief(true)">{{ 'sit.refresh' | rdTranslate }}</button>
             </div>
-            @if (briefBusy()) { <p class="empty">{{ 'sit.briefLoading' | rdTranslate }}</p> }
+            @if (briefBusy() || (!brief() && !briefError())) { <div class="brief-skel" role="status" [attr.aria-label]="'sit.briefLoading' | rdTranslate"><i></i><i></i><i></i></div> }
             @else if (brief(); as b) { <p class="brief-text">{{ b.brief }}</p> }
             @else if (briefError()) { <p class="empty">{{ 'sit.briefError' | rdTranslate }}</p> }
           </section>
@@ -108,6 +108,11 @@ interface Area { ward: string; label: string; critical: number; urgent: number; 
     @media (prefers-reduced-motion: reduce) { .skel { animation:none; } }
     .grid { display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:16px; min-height:520px; }
     .panel { background:var(--card); border:1px solid var(--border); border-radius:var(--r3, 12px); padding:14px 16px; }
+    .brief-skel { display:flex; flex-direction:column; gap:8px; padding:4px 0; }
+    .brief-skel i { display:block; height:12px; border-radius:6px; background:linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size:200% 100%; animation:bsk 1.6s ease-in-out infinite; }
+    .brief-skel i:nth-child(2) { width:85%; } .brief-skel i:nth-child(3) { width:60%; }
+    @keyframes bsk { to { background-position:-200% 0; } }
+    @media (prefers-reduced-motion: reduce) { .brief-skel i { animation:none; } }
     .map { padding:0; overflow:hidden; min-height:520px; position:relative; }
     .map rd-map-provider { display:block; width:100%; height:100%; min-height:520px; }
     .side { display:flex; flex-direction:column; gap:16px; }

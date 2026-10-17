@@ -45,7 +45,7 @@ export interface StepStatusInfo {
               }
             </span>
           </div>
-          <span class="node-title">{{ 'flow.intake' | rdTranslate }}</span>
+          <span class="node-title">{{ 'steps.short.intake' | rdTranslate }}</span>
           <span class="node-result">{{ intakeResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(0).gemini">{{ stepBadge(0).text }}</span>
         </button>
@@ -75,7 +75,7 @@ export interface StepStatusInfo {
             </span>
           </div>
           <div class="node-title-wrap">
-            <span class="node-title">{{ 'flow.dedupe' | rdTranslate }}</span>
+            <span class="node-title">{{ 'steps.short.dedupe' | rdTranslate }}</span>
             <span class="tag-parallel">{{ 'step.parallel' | rdTranslate }}</span>
           </div>
           <span class="node-result">{{ dedupeResult() }}</span>
@@ -107,7 +107,7 @@ export interface StepStatusInfo {
             </span>
           </div>
           <div class="node-title-wrap">
-            <span class="node-title">{{ 'flow.urgency' | rdTranslate }}</span>
+            <span class="node-title">{{ 'steps.short.urgency' | rdTranslate }}</span>
             <span class="tag-parallel">{{ 'step.parallel' | rdTranslate }}</span>
           </div>
           <span class="node-result">{{ urgencyResult() }}</span>
@@ -138,7 +138,7 @@ export interface StepStatusInfo {
               }
             </span>
           </div>
-          <span class="node-title">{{ 'flow.badgeTool' | rdTranslate }}</span>
+          <span class="node-title">{{ 'steps.short.maps' | rdTranslate }}</span>
           <span class="node-result">{{ matchingResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(3).gemini">{{ stepBadge(3).text }}</span>
         </button>
@@ -167,7 +167,7 @@ export interface StepStatusInfo {
               }
             </span>
           </div>
-          <span class="node-title">{{ 'flow.explain' | rdTranslate }}</span>
+          <span class="node-title">{{ 'steps.short.explain' | rdTranslate }}</span>
           <span class="node-result">{{ explainResult() }}</span>
           <span class="node-badge" [class.gem]="stepBadge(4).gemini">{{ stepBadge(4).text }}</span>
         </button>
@@ -190,7 +190,7 @@ export interface StepStatusInfo {
               }
             </span>
           </div>
-          <span class="node-title">{{ 'flow.badgeYou' | rdTranslate }}</span>
+          <span class="node-title">{{ 'steps.short.you' | rdTranslate }}</span>
           <span class="node-result">{{ 'coord.youDecide' | rdTranslate }}</span>
         </button>
       </div>

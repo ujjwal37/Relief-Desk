@@ -18,6 +18,7 @@ export class LandingComponent {
 
   async openDemo(event?: Event, live = false): Promise<void> {
     event?.preventDefault();
+    try { window.localStorage.setItem('rd.demo', '1'); } catch { /* storage off */ }
     if (await this.auth.loginDemo()) {
       await this.router.navigateByUrl(live ? '/coordinator/command?live=1' : '/coordinator/command');
     }

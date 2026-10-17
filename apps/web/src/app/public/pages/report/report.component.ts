@@ -76,6 +76,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   readonly sessionId = signal<string>(`sess_${Math.random().toString(36).substring(2, 9)}`);
   readonly mode = signal<'chat' | 'form'>('chat');
+  /** Sample buttons are demo tools: shown with ?demo=1 or after 'Try the desk', never to real reporters. */
+  readonly demoTools = typeof window !== 'undefined' && (new URLSearchParams(window.location.search).has('demo') || window.localStorage?.getItem('rd.demo') === '1');
   readonly userInput = signal<string>('');
   readonly isRecording = signal<boolean>(false);
   readonly voiceOpen = signal<boolean>(false);

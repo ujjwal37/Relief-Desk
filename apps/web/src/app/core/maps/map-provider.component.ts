@@ -42,6 +42,17 @@ function isDarkTheme(): boolean {
   return root.dataset['theme'] === 'dark' || root.classList.contains('dark') || root.classList.contains('theme-dark');
 }
 
+/** Points near the median, so one far-off team does not shrink the whole map. Off-frame pins stay drawn at the edge. */
+function mainCluster(points: { lat: number; lng: number }[]): { lat: number; lng: number }[] {
+  if (points.length < 4) return points;
+  const med = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
+  const mLat = med(points.map((p) => p.lat)); const mLng = med(points.map((p) => p.lng));
+  const dist = points.map((p) => Math.hypot(p.lat - mLat, p.lng - mLng));
+  const cut = Math.max(0.15, med(dist) * 2.5);
+  const kept = points.filter((_, i) => dist[i] <= cut);
+  return kept.length >= 2 ? kept : points;
+}
+
 /** Road route for one team->case pair. Shared by every map so a leg is routed once. */
 const ROUTES = new Map<string, Promise<RoadRoute | null>>();
 let routingBroken = false;
@@ -93,7 +104,7 @@ export interface MapLeg {
           }
           @for (pin of schematicPins(); track pin.id) {
             <g [attr.transform]="'translate(' + pin.x + ' ' + pin.y + ')'" [attr.opacity]="pin.opacity">
-              <circle r="11" [attr.fill]="pin.fill" stroke="#fff" stroke-width="2"/>
+              <circle r="16" [attr.fill]="pin.fill" stroke="#fff" stroke-width="2.5"/>
               @if (pin.path) {
                 <path [attr.d]="pin.path" fill="#fff" transform="translate(-12 -12)"/>
               }
@@ -109,7 +120,7 @@ export interface MapLeg {
     }
   `,
   styles: [`
-    :host { display: block; width: 100%; height: 100%; min-height: 250px; position: relative; overflow: hidden; }
+    :host { display: block; width: 100%; height: 100%; min-height: 250px; position: relative; overflow: hidden; background: var(--map-bg, #efeae0); }
     .rd-zoom-wrap { position: absolute; inset: 0; transform-origin: 50% 50%; transition: transform .2s ease; }
     .rd-zoom { position: absolute; right: 10px; top: 56px; z-index: 7; display: flex; flex-direction: column; gap: 4px; }
     .rd-zoom button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 18px; font-weight: 700; cursor: pointer; }
@@ -310,8 +321,9 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
           ...this.legs.flatMap((leg) => [leg.from, leg.to]),
         ];
     if (!points.length) return { minLa: 9.2, maxLa: 11.9, minLo: 75.85, maxLo: 76.85 };
-    const lats = points.map((point) => point.lat);
-    const lngs = points.map((point) => point.lng);
+    const cluster = focused ? points : mainCluster(points);
+    const lats = cluster.map((point) => point.lat);
+    const lngs = cluster.map((point) => point.lng);
     const minLa = Math.min(...lats);
     const maxLa = Math.max(...lats);
     const minLo = Math.min(...lngs);
@@ -322,10 +334,9 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   }
 
   private toSvg(lat: number, lng: number, frame: { minLa: number; maxLa: number; minLo: number; maxLo: number }): { x: number; y: number } {
-    return {
-      x: 28 + ((lng - frame.minLo) / Math.max(1e-6, frame.maxLo - frame.minLo)) * 544,
-      y: 28 + (1 - (lat - frame.minLa) / Math.max(1e-6, frame.maxLa - frame.minLa)) * 424,
-    };
+    const x = 28 + ((lng - frame.minLo) / Math.max(1e-6, frame.maxLo - frame.minLo)) * 544;
+    const y = 28 + (1 - (lat - frame.minLa) / Math.max(1e-6, frame.maxLa - frame.minLa)) * 424;
+    return { x: Math.min(584, Math.max(16, x)), y: Math.min(464, Math.max(16, y)) };
   }
 
   private draw(): void {

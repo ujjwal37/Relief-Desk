@@ -1227,7 +1227,13 @@
     "see": "Kaise, dekhein",
     "hide": "Steps chhupayein",
     "badgeRules": "Rules",
-    "badgeRecorded": "Recorded (Gemini)"
+    "badgeRecorded": "Recorded (Gemini)",
+    "short.intake": "Report padhi",
+    "short.dedupe": "Duplicates check",
+    "short.urgency": "Urgency rating",
+    "short.maps": "Maps check",
+    "short.explain": "Samjhaya",
+    "short.you": "Aap"
   },
   "keys": {
     "title": "Keyboard shortcuts",

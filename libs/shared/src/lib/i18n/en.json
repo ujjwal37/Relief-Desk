@@ -1227,7 +1227,13 @@
     "see": "See how",
     "hide": "Hide steps",
     "badgeRules": "Rules",
-    "badgeRecorded": "Recorded (Gemini)"
+    "badgeRecorded": "Recorded (Gemini)",
+    "short.intake": "Read report",
+    "short.dedupe": "Duplicates",
+    "short.urgency": "Urgency",
+    "short.maps": "Maps",
+    "short.explain": "Explained",
+    "short.you": "You"
   },
   "keys": {
     "title": "Keyboard shortcuts",

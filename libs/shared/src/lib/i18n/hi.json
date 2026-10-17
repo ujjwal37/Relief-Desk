@@ -1227,7 +1227,13 @@
     "see": "कैसे, देखें",
     "hide": "चरण छिपाएँ",
     "badgeRules": "नियम",
-    "badgeRecorded": "रिकॉर्डेड (Gemini)"
+    "badgeRecorded": "रिकॉर्डेड (Gemini)",
+    "short.intake": "रिपोर्ट पढ़ी",
+    "short.dedupe": "डुप्लिकेट",
+    "short.urgency": "तात्कालिकता",
+    "short.maps": "नक्शा",
+    "short.explain": "समझाया",
+    "short.you": "आप"
   },
   "keys": {
     "title": "कीबोर्ड शॉर्टकट",

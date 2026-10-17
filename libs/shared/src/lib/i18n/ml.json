@@ -1227,7 +1227,13 @@
     "see": "എങ്ങനെ എന്ന് കാണുക",
     "hide": "ഘട്ടങ്ങൾ മറയ്ക്കുക",
     "badgeRules": "നിയമങ്ങൾ",
-    "badgeRecorded": "റെക്കോർഡ് ചെയ്തത് (Gemini)"
+    "badgeRecorded": "റെക്കോർഡ് ചെയ്തത് (Gemini)",
+    "short.intake": "റിപ്പോർട്ട് വായിച്ചു",
+    "short.dedupe": "ആവർത്തനം",
+    "short.urgency": "അടിയന്തരത",
+    "short.maps": "മാപ്പ്",
+    "short.explain": "വിശദീകരിച്ചു",
+    "short.you": "നിങ്ങൾ"
   },
   "keys": {
     "title": "കീബോർഡ് കുറുക്കുവഴികൾ",
