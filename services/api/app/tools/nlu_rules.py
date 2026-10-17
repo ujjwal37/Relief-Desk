@@ -35,7 +35,10 @@ _STOP = {
 _JUNK_PLACES = {"bit", "bit.ly", "www", "http", "https", "otp", "ly", "com", "html", "no", "yes", "ok", "okay"}
 
 # Kuttanad panchayats drawn on the offline map (apps/web kuttanad-base) that are not all gazetteer wards.
-_KUTTANAD_PLACES = ("Pulincunnu", "Kavalam")
+_KUTTANAD_PLACES = (
+    "Pulincunnu", "Pulinkunnu", "Kavalam", "Kuttanad", "Ramankari", "Ramankary", "Mankombu", "Thakazhy", "Thakazhi",
+    "Edathua", "Thalavady", "Muttar", "Veliyanad", "Kidangara", "Neelamperoor", "Thottappally", "Moncompu",
+)
 
 _NEGATION = re.compile(
     r"(?<![a-z])(?:nobody|no[\s-]*one|none|not|never|nahi|nahin)(?![a-z])|n['’]t|"
@@ -139,6 +142,10 @@ def place_is_usable(place: Optional[str]) -> bool:
         return False
     if len(token) > 60 or token.count(" ") > 6:
         return False
+    # "Kuttanad, Ramankari": every part is a place on its own.
+    parts = [part.strip() for part in raw.split(",") if part.strip()]
+    if len(parts) > 1 and all(place_is_usable(part) for part in parts):
+        return True
     known = known_place(raw)
     if known and (known.lower() == token or len(known) >= max(4, int(len(raw) * 0.6))):
         return True
