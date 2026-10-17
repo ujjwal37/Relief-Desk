@@ -449,3 +449,11 @@ body:has(.cmd) .top-strip{display:none}
 .cmd .no-team-card .nt-go:disabled{opacity:.5;cursor:default}
 .cmd aside.decision-panel:has(.btn-dismiss-hoax) .decision-block{display:none}
 .cmd aside.decision-panel .dec-place-title{max-height:calc(2 * 1.3em);overflow:hidden !important}
+
+/* Decision facts: depth + self-check, always visible on the case header */
+.cmd .dec-facts { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; margin:6px 0 2px; font-size:13px; }
+.cmd .dec-facts > div { display:flex; gap:6px; min-width:0; }
+.cmd .dec-facts dt { color:var(--muted); font-weight:600; flex:none; }
+.cmd .dec-facts dd { margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cmd .dec-facts dd.flag { color:#a35c00; font-weight:600; }
+.cmd .dec-depth { display:none; }

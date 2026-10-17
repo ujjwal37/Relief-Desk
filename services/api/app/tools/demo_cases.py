@@ -26,7 +26,15 @@ DEMO_CASES: List[Dict[str, Any]] = [
         "place": "Champakulam church road",
         "en": "5 people on the first floor near Champakulam church road, water rising fast, grandmother cannot walk.",
         "hi": "चंपक्कुलम चर्च रोड के पास 5 लोग पहली मंज़िल पर हैं, पानी तेज़ी से बढ़ रहा है, दादी चल नहीं सकतीं।",
-        "raw": "hi",
+        "raw": "ml",
+        "ml": "ചമ്പക്കുളം പള്ളി റോഡിന് സമീപം ഒന്നാം നിലയിൽ 5 പേർ കുടുങ്ങി, വെള്ളം വേഗത്തിൽ ഉയരുന്നു, അമ്മൂമ്മയ്ക്ക് നടക്കാൻ കഴിയില്ല. ദയവായി ബോട്ട് അയയ്ക്കൂ.",
+        # The hero case: one Malayalam SOS and two reworded reports of the same house, merged by the desk.
+        "merged": [
+            {"minutes": 5, "lang": "ml", "channel": "voice",
+             "text": "Champakulam church road il 5 per first floor il und, vellam koodunnu, ammachi nadakkan pattilla"},
+            {"minutes": 3, "lang": "en", "channel": "text",
+             "text": "Family of five stuck upstairs by Champakulam church, grandmother can't walk, water coming up fast."},
+        ],
     },
     {
         "id": "DEMO-102", "minutes": 15, "type": "medical", "ward_id": "ward_1", "lat": 9.472, "lng": 76.392,
@@ -101,7 +109,7 @@ def load_demo_cases(storage) -> int:
         if storage.get_request(row["id"]) is not None:
             continue
         stamp = (now - timedelta(minutes=row["minutes"])).isoformat()
-        raw = row["hi"] if row["raw"] == "hi" else row["en"]
+        raw = row.get(row["raw"]) or row["en"]
         req = StoredRequest(
             id=row["id"],
             type=IncidentType(row["type"]),
@@ -118,7 +126,7 @@ def load_demo_cases(storage) -> int:
             raw_text=raw,
             ai_translation=row["en"],
             summary=row["en"],
-            translations={"en": row["en"], "hi": row["hi"]},
+            translations={k: row[k] for k in ("en", "hi", "ml") if row.get(k)},
             translation_confidence=0.9,
             confidence=FieldConfidences(type=0.9, place=0.85, people=0.85, vulnerable=0.85, urgency=0.85),
             report_ids=[f"{row['id']}-R1"],
@@ -127,6 +135,8 @@ def load_demo_cases(storage) -> int:
             updated_at=stamp,
             ai_source="offline_fallback",
         )
+        if row.get("merged"):
+            _attach_merged(storage, req, row, now)
         scored = scoring_engine.compute_urgency(req)
         req.urgency_score = scored.score
         req.urgency_reason = scored.reason
@@ -139,3 +149,26 @@ def load_demo_cases(storage) -> int:
         if req is not None and not req.trace:
             ensure_trace(req)
     return added
+
+
+def _attach_merged(storage, req, row, now) -> None:
+    """Store the first report and its reworded duplicates as real reports, merged into one case."""
+    from app.models.firestore_models import ReportQuote, StoredReport
+
+    rows = [{"minutes": row["minutes"], "lang": row["raw"], "channel": "text", "text": req.raw_text}] + list(row["merged"])
+    ids, quotes = [], []
+    for i, item in enumerate(rows, start=1):
+        rid = f"{row['id']}-R{i}"
+        at = (now - timedelta(minutes=item["minutes"])).isoformat()
+        storage._reports[rid] = StoredReport(
+            id=rid, raw_text=item["text"], channel=item["channel"], lang=item["lang"], request_id=req.id,
+            case_id=req.id, joined_existing=i > 1, incident_type=req.type.value, place_text=req.place_text,
+            ward_id=req.ward_id, synthetic=True, flags=["synthetic"], created_at=at,
+        )
+        ids.append(rid)
+        quotes.append(ReportQuote(report_id=rid, text=item["text"], people_span="5" if i < 3 else "five"))
+    req.report_ids = ids
+    req.report_quotes = quotes
+    req.merged_count = len(ids)
+    req.dedupe_trace = ("Same house: all three name Champakulam church road, 5 people (five), "
+                        "an elderly woman who cannot walk and rising water, within 4 minutes. Counts agree.")

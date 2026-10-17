@@ -1310,5 +1310,11 @@
     },
     "failed": "Choice save nahi hua. Dobara try karo.",
     "footer": "Aapke approve karne tak kuch nahi bheja jaata. Samay seedhi doori ka andaaza hai."
+  },
+  "dec": {
+    "depth": "Gehrai",
+    "selfCheck": "Self-check",
+    "notStated": "nahi bataya",
+    "notRun": "abhi nahi chala"
   }
 }

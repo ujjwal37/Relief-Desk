@@ -1310,5 +1310,11 @@
     },
     "failed": "Could not save that choice. Try again.",
     "footer": "Nothing is sent until you approve. Times are straight-line estimates."
+  },
+  "dec": {
+    "depth": "Depth",
+    "selfCheck": "Self-check",
+    "notStated": "not stated",
+    "notRun": "not run yet"
   }
 }

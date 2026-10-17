@@ -404,6 +404,12 @@
             @if (depthChip(req); as dc) {
               <p class="dec-depth" data-testid="depth-chip">{{ dc }}</p>
             }
+            @if (!isHoax(req)) {
+              <dl class="dec-facts" data-testid="dec-facts">
+                <div><dt>{{ 'dec.depth' | rdTranslate }}</dt><dd data-testid="dec-depth-row">{{ depthChip(req) || ('dec.notStated' | rdTranslate) }}</dd></div>
+                <div><dt>{{ 'dec.selfCheck' | rdTranslate }}</dt><dd data-testid="dec-selfcheck-row" [class.flag]="req.self_check?.verdict && req.self_check?.verdict !== 'pass'">{{ (req.self_check && selfCheckLine($any(req.self_check))) || ('dec.notRun' | rdTranslate) }}</dd></div>
+              </dl>
+            }
             <p class="dec-case-sub">
               <span [attr.title]="req.id">{{ shortId(req.id, req.public_code) }}</span> · {{ getWardText(req) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
             </p>
