@@ -389,6 +389,7 @@
     "tracePending": "കാത്തിരിക്കുന്നു",
     "traceComplete": "കഴിഞ്ഞു",
     "aiGemini": "Gemini",
+    "aiPaused": "Gemini താൽക്കാലികമായി നിർത്തി · ഇപ്പോൾ നിയമങ്ങൾ",
     "aiOffline": "റൂൾസ് മോഡ്",
     "aiRecorded": "റെക്കോർഡ് ചെയ്തത്",
     "updateLocation": "സ്ഥാനം പുതുക്കുക",

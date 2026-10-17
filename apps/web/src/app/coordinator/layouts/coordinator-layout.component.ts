@@ -199,6 +199,7 @@ export class CoordinatorLayoutComponent implements OnDestroy {
       if (!h.quota?.calls) return this.lang.translate('coord.aiChecking');
       return this.lang.translate('coord.aiOffline');
     }
+    if (h?.provider === 'gemini-paused') return this.lang.translate('coord.aiPaused');
     if (this.aiHealth()?.provider === 'antigravity-local') return this.lang.translate('xfactor.localTestAi');
     return this.lang.translate('coord.aiOffline');
   }

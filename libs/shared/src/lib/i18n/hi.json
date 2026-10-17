@@ -389,6 +389,7 @@
     "tracePending": "इंतज़ार",
     "traceComplete": "पूरा",
     "aiGemini": "जेमिनी",
+    "aiPaused": "Gemini रुका है · अभी नियम",
     "aiOffline": "नियम मोड",
     "aiRecorded": "रिकॉर्ड किया हुआ",
     "updateLocation": "स्थान बदलें",

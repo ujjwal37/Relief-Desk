@@ -323,6 +323,10 @@ def test_quota_and_invalid_json_fall_back(live_gemini, monkeypatch):
     assert calls["n"] == 1
     assert llm_client.last_ai.provider == "fallback"
     assert llm_client.last_ai.fallback_reason == "quota"
+    # A per-minute 429 pauses Gemini for the retry window (60 s when no retryDelay is given).
+    assert llm_client.guard.circuit_open()
+    llm_client.guard.failures = 0
+    llm_client.guard.open_for = llm_client.guard.base_open
 
     def bad_json(system, user, timeout_s=12.0):
         calls["n"] += 1
@@ -369,3 +373,20 @@ def test_live_gemini_smoke():
     )
     assert text.strip()
     assert live.last_ai.provider == "gemini"
+
+
+def test_quota_429_pauses_for_retry_delay_then_recovers(live_gemini, monkeypatch):
+    from app.llm.client import _retry_delay_s
+    assert _retry_delay_s(RuntimeError("429 RESOURCE_EXHAUSTED {'retryDelay': '49s'}")) == 49.0
+    clock = {"t": 1000.0}
+    monkeypatch.setattr(llm_client.guard, "now", lambda: clock["t"])
+
+    def quota(system, user, timeout_s=12.0):
+        raise RuntimeError("429 RESOURCE_EXHAUSTED {'retryDelay': '20s'}")
+
+    monkeypatch.setattr(llm_client, "_call_gemini", quota)
+    intake_agent.parse_report(f"ZXRPM{uuid.uuid4().hex[:8]} send a boat")
+    assert llm_client.guard.circuit_open()
+    clock["t"] += 23.0
+    assert not llm_client.guard.circuit_open()
+    llm_client.guard.failures = 0

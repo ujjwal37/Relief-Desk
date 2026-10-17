@@ -68,12 +68,21 @@ class PrioritySlots:
             self._size = max(1, int(size))
             self._cond.notify_all()
 
-    def acquire(self, priority: float | None = None) -> None:
+    def acquire(self, priority: float | None = None, timeout: float | None = None) -> None:
+        """Wait for a slot. With `timeout`, give up after that many seconds (TimeoutError)."""
+        import time as _time
         mine = (current_priority() if priority is None else float(priority), next(self._seq))
+        deadline = None if timeout is None else _time.monotonic() + max(0.0, timeout)
         with self._cond:
             heapq.heappush(self._waiting, mine)
             while not (self._busy < self._size and self._waiting[0] == mine):
-                self._cond.wait()
+                left = None if deadline is None else deadline - _time.monotonic()
+                if left is not None and left <= 0:
+                    self._waiting.remove(mine)
+                    heapq.heapify(self._waiting)
+                    self._cond.notify_all()
+                    raise TimeoutError("No free model slot in time")
+                self._cond.wait(timeout=left)
             heapq.heappop(self._waiting)
             self._busy += 1
             self.served.append(mine[0])

@@ -389,6 +389,7 @@
     "tracePending": "Intezar",
     "traceComplete": "Ho gaya",
     "aiGemini": "Gemini",
+    "aiPaused": "Gemini paused · abhi rules",
     "aiOffline": "Rules mode",
     "aiRecorded": "Recorded replay",
     "updateLocation": "Location badlein",

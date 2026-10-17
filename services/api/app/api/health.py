@@ -47,6 +47,12 @@ def ai_health():
         and not (llm_client.guard.circuit_open() or llm_client.guard.failing())
     ):
         provider, model, label = "gemini", settings.GEMINI_MODEL, "Gemini live"
+    elif (
+        llm_client.gemini_live()
+        and bool(llm_client.guard.last_success_at)
+        and llm_client.guard.circuit_open()
+    ):
+        provider, model, label = "gemini-paused", settings.GEMINI_MODEL, "Gemini paused, rules for now"
     else:
         provider, model, label = "fallback", settings.GEMINI_MODEL, "Gemini unavailable, built-in rules used"
     return {
@@ -60,6 +66,8 @@ def ai_health():
             "daily_cap": llm_client.daily_cap,
             "calls": llm_client.call_count,
             "circuit": "open" if llm_client.guard.circuit_open() else "closed",
+            "resume_in_s": max(0, round(llm_client.guard.open_for - (llm_client.guard.now() - llm_client.guard.opened_at)))
+            if llm_client.guard.circuit_open() else 0,
             "last_success": bool(llm_client.guard.last_success_at),
             "last_failure": llm_client.guard.last_failure_reason or None if llm_client.guard.failing() else None,
         },

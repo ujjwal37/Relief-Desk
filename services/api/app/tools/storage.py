@@ -1160,6 +1160,27 @@ def _attach_recorded(storage) -> None:
         logger.warning("Could not attach recorded Gemini readings: %s", exc)
 
 
+def _seed_place(item: dict) -> Optional[str]:
+    """Short place for a seeded case: its landmark name, else a 'near X' span, else None."""
+    import re as _re
+    from app.tools.gazetteer import landmark_name
+    name = landmark_name(item.get("landmark_id"))
+    if name:
+        return name
+    m = _re.search(r"\b(?:near|at|in)\s+((?:[A-Z][\w'-]+\s?){1,4})", item.get("description") or "")
+    return m.group(1).strip() if m else None
+
+
+def _seed_ward(item: dict) -> Optional[str]:
+    """Ward from the case's coordinates; falls back to the seed ward only when there are none."""
+    from app.tools.gazetteer import ward_for_point
+    lat, lng = item.get("lat"), item.get("lng")
+    if lat is not None and lng is not None:
+        return ward_for_point(float(lat), float(lng))
+    return item.get("ward_id")
+
+
+
 # Singleton instance
 storage_service = StorageService()
 # Auto-load seed resources and incidents
@@ -1221,22 +1242,3 @@ def simulate_demo_checkins(resources, now=None):
         changed += 1
     return changed
 
-
-def _seed_place(item: dict) -> Optional[str]:
-    """Short place for a seeded case: its landmark name, else a 'near X' span, else None."""
-    import re as _re
-    from app.tools.gazetteer import landmark_name
-    name = landmark_name(item.get("landmark_id"))
-    if name:
-        return name
-    m = _re.search(r"\b(?:near|at|in)\s+((?:[A-Z][\w'-]+\s?){1,4})", item.get("description") or "")
-    return m.group(1).strip() if m else None
-
-
-def _seed_ward(item: dict) -> Optional[str]:
-    """Ward from the case's coordinates; falls back to the seed ward only when there are none."""
-    from app.tools.gazetteer import ward_for_point
-    lat, lng = item.get("lat"), item.get("lng")
-    if lat is not None and lng is not None:
-        return ward_for_point(float(lat), float(lng))
-    return item.get("ward_id")

@@ -20,7 +20,7 @@ class GeminiPacer:
         self._next = 0.0
         self.waiting = 0
 
-    def acquire(self) -> int:
+    def acquire(self, max_wait: Optional[float] = None) -> int:
         """Block until this call may start. Returns the queue position it held (1 = next)."""
         rpm = int(getattr(settings, "GEMINI_RPM", 8) or 8)
         if rpm <= 0:
@@ -36,6 +36,8 @@ class GeminiPacer:
                     if delay <= 0:
                         self._next = now + gap
                         return position
+                    if max_wait is not None and delay > max_wait:
+                        raise TimeoutError(LIMIT_MESSAGE)
                     self._cond.wait(timeout=delay)
             finally:
                 self.waiting = max(0, self.waiting - 1)

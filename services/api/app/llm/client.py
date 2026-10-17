@@ -28,6 +28,21 @@ _GEMINI_POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="gemini")
 _PLACEHOLDER_KEYS = {"", "replace-me", "synthetic-demo-gemini-key"}
 
 
+def _queue_budget() -> float:
+    """Longest a step waits for its turn before using the rules reading instead."""
+    import os
+    try:
+        return float(os.environ.get("GEMINI_QUEUE_BUDGET_S") or 15.0)
+    except ValueError:
+        return 15.0
+
+
+def _retry_delay_s(exc: BaseException) -> float:
+    """The 429's retryDelay in seconds (e.g. '49s'); 60 when absent."""
+    m = re.search(r"retryDelay['\"]?:\s*['\"]?(\d+(?:\.\d+)?)s", str(exc))
+    return min(120.0, float(m.group(1))) if m else 60.0
+
+
 def _is_quota(exc: BaseException) -> bool:
     status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
     if status == 429:
@@ -85,7 +100,8 @@ class LLMClient:
         self._memory_source: Dict[str, str] = {}
         self._memory_meta: Dict[str, Dict[str, Any]] = {}
         self._sent_prompts: Dict[str, str] = {}
-        self.guard = Guard(max_in_flight=settings.AI_CONCURRENCY)
+        # Free tier: stay under the per-minute request limit for all callers together.
+        self.guard = Guard(per_minute=float(settings.GEMINI_RPM_ALL), max_in_flight=settings.AI_CONCURRENCY)
         self._local_cache: Dict[str, str] = {}
         self.cache_hits = 0
         self.cache_misses = 0
@@ -391,9 +407,15 @@ class LLMClient:
             self.guard.trip(seconds_until_pacific_midnight())
             logger.warning("Gemini daily quota is exhausted. Circuit open until the Pacific midnight reset.")
             return "quota"
-        self.guard.record_failure()
+        if isinstance(exc, TimeoutError) and "Gemini timed out" not in str(exc):
+            # Our own queue/pacing budget ran out: the step used rules. Gemini did not fail.
+            return "queue_wait"
         if _is_quota(exc):
+            # Per-minute limit: pause for exactly the server's retry delay, then try again.
+            self.guard.trip(_retry_delay_s(exc) + 2.0)
+            logger.warning("Gemini per-minute limit hit; paused for the retry window.")
             return "quota"
+        self.guard.record_failure()
         if isinstance(exc, TimeoutError):
             return "timeout"
         return "error"
@@ -496,7 +518,7 @@ class LLMClient:
             from app.tools.events import publish
 
             if should_pace():
-                position = gemini_pacer.acquire()
+                position = gemini_pacer.acquire(max_wait=_queue_budget())
                 if position > 1 or gemini_pacer.waiting:
                     publish({
                         "type": "demo.progress",
@@ -552,9 +574,9 @@ class LLMClient:
         json_output = "json" in system_instruction.lower()
         model_name = settings.GEMINI_MODEL
         self._last_tokens = None
-        self.guard.slots.acquire()
+        self.guard.slots.acquire(timeout=_queue_budget())
         try:
-            self.guard.wait_turn()
+            self.guard.wait_turn(max_wait=_queue_budget())
         except BaseException:
             self.guard.slots.release()
             raise

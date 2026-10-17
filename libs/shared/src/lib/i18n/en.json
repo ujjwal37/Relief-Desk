@@ -389,6 +389,7 @@
     "tracePending": "Waiting",
     "traceComplete": "Done",
     "aiGemini": "Gemini",
+    "aiPaused": "Gemini paused · rules for now",
     "aiOffline": "Rules mode",
     "aiRecorded": "Recorded replay",
     "updateLocation": "Update location",
