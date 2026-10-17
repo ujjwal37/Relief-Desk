@@ -43,7 +43,6 @@
             <span class="run-long">{{ 'demo.run' | rdTranslate }}</span><span class="run-short">{{ 'demo.runShort' | rdTranslate }}</span>
           }
         </button>
-        @if (geminiCalls() != null) { <span class="gem-calls" data-testid="gem-calls-chip">{{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }
       </div>
       @if (liveDemo(); as live) {
         @if (live.status !== 'idle') {
@@ -57,7 +56,6 @@
             }
             @if (live.running && liveStepKey(); as stepKey) { · <span data-testid="demo-now">{{ 'demo.now' | rdTranslate:{ step: (stepKey | rdTranslate) } }}</span> }
             @if (live.status === 'done') { · {{ 'demo.done' | rdTranslate }} }
-            @if (geminiCalls() != null) { · <span data-testid="demo-gemini-calls">{{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }
           </p>
         }
       }
@@ -227,7 +225,7 @@
               </div>
               <p class="aiq-life-meta">{{ shortId(req.id, req.public_code) }} · @if (caseAiBlocked(req)) { {{ 'aiq.stillChecking' | rdTranslate }} } @else if (engineLabelKey(req); as ek) { <span [class.gem]="engineIsGemini(req)">{{ ek | rdTranslate }}</span> }</p>
               <div class="aiq-life-actions">
-                <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="$event.stopPropagation(); markLifeHandled(req.id); sendNearestBoat(req)">{{ 'aiq.sendBoat' | rdTranslate }}</button>
+                <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="$event.stopPropagation(); markLifeHandled(req.id); sendNearestBoat(req)">{{ (req.ai_queue?.life_pick === 'medical' ? 'aiq.sendAmbulance' : 'aiq.sendBoat') | rdTranslate }}</button>
                 <button type="button" class="btn-sec" (click)="$event.stopPropagation(); markLifeHandled(req.id); callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
                 <a class="b112" data-testid="call-112" href="tel:112" (click)="markLifeHandled(req.id)">{{ 'aiq.call112' | rdTranslate }}</a>
               </div>
@@ -827,9 +825,9 @@
             </div>
           } @else if (caseLifeThreat(req)) {
             <div class="footer-buttons-row aiq-life-actions">
-              <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="sendNearestBoat(req)">{{ 'aiq.sendBoat' | rdTranslate }}</button>
+              <button type="button" class="btn-send-boat" data-testid="send-boat" [disabled]="offline() || approving()" (click)="sendNearestBoat(req)">{{ (req.ai_queue?.life_pick === 'medical' ? 'aiq.sendAmbulance' : 'aiq.sendBoat') | rdTranslate }}</button>
+              <a class="b112" href="tel:112">{{ 'aiq.call112' | rdTranslate }}</a>
               <button type="button" class="btn-sec" (click)="callReporter()">{{ 'aiq.callReporter' | rdTranslate }}</button>
-              <a class="btn-sec aiq-call" href="tel:112">{{ 'aiq.call112' | rdTranslate }}</a>
             </div>
             <p class="aiq-foot">{{ 'aiq.footnote' | rdTranslate }}</p>
           } @else if (caseAiBlocked(req)) {
@@ -843,7 +841,7 @@
               }
               <button type="button" class="btn-sec btn-next" data-testid="next-case" (click)="nextCase()">{{ 'aiq.nextReady' | rdTranslate }}</button>
             </div>
-            <p class="aiq-foot">{{ 'aiq.footnote' | rdTranslate }}</p>
+            <p class="aiq-foot" data-testid="lock-reason">{{ lockReason(req) }}</p>
           } @else if (activeProposal(); as prop) {
             <div class="footer-buttons-row">
               <button

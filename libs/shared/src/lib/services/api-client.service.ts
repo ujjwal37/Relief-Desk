@@ -358,6 +358,10 @@ export class ApiClientService {
     return this.http.get<AnomalyAlert[]>('/api/alerts', this.getAuthHeaders());
   }
 
+  getMeasuredCost(): Observable<{ measured: boolean; reports: number; tokens: number; tokens_per_report: number | null; inr_per_report: number | null; inr_per_1000_reports: number | null }> {
+    return this.http.get<any>('/api/benchmark/cost', this.getAuthHeaders());
+  }
+
   getBenchmark(): Observable<Record<string, unknown>> {
     return this.http.get<Record<string, unknown>>('/api/benchmark/latest', this.getAuthHeaders());
   }

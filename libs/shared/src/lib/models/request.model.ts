@@ -158,6 +158,7 @@ export interface StoredRequest {
   dedupe_trace?: string | null;
   possible_duplicate?: {
     target_id: string;
+    target_code?: string | null;
     confidence: number;
     similarity: number;
     distance_km?: number | null;
@@ -215,6 +216,7 @@ export interface StoredRequest {
     flags?: string[];
     queue_pos?: number | null;
     life_phrase?: string | null;
+    life_pick?: 'boat' | 'medical' | null;
     place_unverified?: boolean;
     recheck_diff?: Record<string, { from?: unknown; to?: unknown }> | null;
   } | null;

@@ -6,6 +6,9 @@ import { urgencyBand } from '@rd/shared';
 /** Steps in the strip: Read, Duplicates, Urgency, Team, Explained, You. The drawer uses the same number. */
 export const STEP_COUNT = 6;
 
+/** The AI steps every label counts (Read, Duplicates, Urgency, Team). One number on every surface. */
+export const AI_STEP_COUNT = 4;
+
 /** The one public ID a coordinator sees for a case (RD-xxxx). Internal ids stay in the audit log. */
 export function caseRef(req: Pick<StoredRequest, 'id' | 'public_code'> | null | undefined): string {
   if (!req) return '';

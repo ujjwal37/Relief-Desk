@@ -5,7 +5,7 @@ import { testProviderWord } from './provider-label';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
 import { peopleText } from '../../core/people-text';
 import { StepDetailDialogComponent } from './step-detail-dialog.component';
-import { STEP_COUNT, caseRef, joinedCount } from '../case-facts';
+import { AI_STEP_COUNT, STEP_COUNT, caseRef, joinedCount } from '../case-facts';
 
 const outputText = (value: unknown) => typeof value === 'string' ? value : '';
 
@@ -116,7 +116,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   readonly headline = computed(() => {
     this.lang.currentLang();
     // Same count as the strip on the case: 5 AI steps plus You.
-    return this.lang.translate('flow.headline').replace('{n}', String(STEP_COUNT));
+    return this.lang.translate('flow.headline').replace('{n}', String(AI_STEP_COUNT));
   });
 
   readonly contextLine = computed(() => {
@@ -391,7 +391,10 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
 
   private dupId(raw?: NonNullable<StoredRequest['trace']>[number]): string {
     const parsed = this.parse(raw?.output);
-    return String(parsed['id'] || this.request().possible_duplicate?.target_id || '');
+    const hint = this.request().possible_duplicate;
+    const id = String(parsed['id'] || hint?.target_id || '');
+    if (hint?.target_code && (id === hint.target_id || !id)) return hint.target_code;
+    return id.startsWith('req_') ? `Report ${id.slice(-4)}` : id;
   }
 
   private parse(output: unknown): Record<string, string> {

@@ -739,7 +739,8 @@
     "runGemini": "Gemini ({model}) ഉപയോഗിച്ച് അളന്നു",
     "runRules": "റൂൾസ് മാത്രം അടിസ്ഥാനം (ഈ റണ്ണിൽ Gemini ഇല്ല)",
     "testN": "ടെസ്റ്റ് സെറ്റ് n = {n} സന്ദേശങ്ങൾ",
-    "smallSet": "ചെറിയ ടെസ്റ്റ് സെറ്റ് (n = {n}); ഉറപ്പല്ല"
+    "smallSet": "ചെറിയ ടെസ്റ്റ് സെറ്റ് (n = {n}); ഉറപ്പല്ല",
+    "costMeasured": "അളന്ന ചെലവ്: ഒരു റിപ്പോർട്ടിന് ₹{r} (1,000-ന് ₹{k}) · {n} തത്സമയ Gemini റിപ്പോർട്ടുകളിൽ ഒന്നിന് {t} ടോക്കൺ."
   },
   "home": {
     "title": "ഞങ്ങൾക്ക് എങ്ങനെ സഹായിക്കാം?",
@@ -1069,7 +1070,7 @@
     "restartTour": "Restart tour",
     "originalReport": "Original report",
     "aiEnglish": "AI English",
-    "dupMatch": "AI found this matches {id} ({pct}% similar)",
+    "dupMatch": "{id} ന്റെ ഇരട്ടിപ്പ് ആകാം",
     "sitrepButton": "SITREP",
     "problemLine": "Flood reports in. AI ranks. You decide.",
     "sampleBusy": "Sending sample…",
@@ -1171,7 +1172,7 @@
     "headlineJoined": "ഈ കേസിൽ {n} റിപ്പോർട്ടുകൾ കൂടി ചേർന്നു.",
     "headlineUrgency": "അടിയന്തരത {score}. {reason}",
     "headlineMatch": "{team} {km} കി.മീ അകലെയാണ്.",
-    "matchNoKm": "{team} ഏറ്റവും അടുത്തുള്ള ഒഴിവുള്ള ടീമാണ്.",
+    "matchNoKm": "ഏറ്റവും അടുത്ത ഒഴിവുള്ള ടീം: {team}.",
     "noTeam": "മതിയായ അടുത്ത് ഒഴിവുള്ള ടീം ഇല്ല.",
     "whyMatch": "{team} അവരെ കൊണ്ടുപോകാൻ കഴിയുന്ന ഏറ്റവും അടുത്ത ടീമാണ്, {km} കി.മീ അകലെ.",
     "why": "എന്തുകൊണ്ട്",
@@ -1265,9 +1266,9 @@
     "notUpdated": "പുതുക്കിയിട്ടില്ല"
   },
   "steps": {
-    "gemini": "✨ Gemini 5 ഘട്ടങ്ങൾ പരിശോധിച്ചു",
+    "gemini": "✨ Gemini 4 ഘട്ടങ്ങൾ പരിശോധിച്ചു",
     "recorded": "Gemini · റെക്കോർഡ്",
-    "rules": "നിയമങ്ങൾ 5 ഘട്ടങ്ങൾ പരിശോധിച്ചു",
+    "rules": "നിയമങ്ങൾ 4 ഘട്ടങ്ങൾ പരിശോധിച്ചു",
     "see": "എങ്ങനെ എന്ന് കാണുക",
     "hide": "ഘട്ടങ്ങൾ മറയ്ക്കുക",
     "badgeRules": "നിയമങ്ങൾ",
@@ -1455,6 +1456,8 @@
     "diffLine": "{field}: {from} → {to}",
     "newReport": "പുതിയ റിപ്പോർട്ട് · {ref}",
     "matched": "കണ്ടെത്തി: {p}",
-    "lifeTag": "ജീവന് ഭീഷണി"
+    "lifeTag": "ജീവന് ഭീഷണി",
+    "sendAmbulance": "ഏറ്റവും അടുത്ത ആംബുലൻസ് ഇപ്പോൾ അയയ്ക്കുക",
+    "lockReason": "{step} കഴിഞ്ഞാൽ Approve തുറക്കും · {n}-ൽ {done} AI ഘട്ടങ്ങൾ പൂർത്തിയായി."
   }
 }

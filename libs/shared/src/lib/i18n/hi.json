@@ -739,7 +739,8 @@
     "runGemini": "Gemini ({model}) से मापा",
     "runRules": "केवल नियम आधार (इस रन में Gemini नहीं)",
     "testN": "टेस्ट सेट n = {n} संदेश",
-    "smallSet": "छोटा टेस्ट सेट (n = {n}); गारंटी नहीं"
+    "smallSet": "छोटा टेस्ट सेट (n = {n}); गारंटी नहीं",
+    "costMeasured": "मापी गई लागत: ₹{r} प्रति रिपोर्ट (₹{k} प्रति 1,000) · {n} लाइव Gemini रिपोर्टों में {t} टोकन प्रति रिपोर्ट।"
   },
   "home": {
     "title": "हम कैसे मदद करें?",
@@ -1069,7 +1070,7 @@
     "restartTour": "टूर फिर से चलाएँ",
     "originalReport": "मूल रिपोर्ट",
     "aiEnglish": "एआई अंग्रेज़ी",
-    "dupMatch": "एआई ने इसे {id} से मिलाया ({pct}% समान)",
+    "dupMatch": "{id} का संभावित डुप्लिकेट",
     "sitrepButton": "सिट्रेप",
     "problemLine": "बाढ़ रिपोर्टें आईं। एआई क्रम देता है। फ़ैसला आपका।",
     "sampleBusy": "नमूना भेज रहा है…",
@@ -1171,7 +1172,7 @@
     "headlineJoined": "इस केस में {n} और रिपोर्ट जुड़ीं।",
     "headlineUrgency": "तात्कालिकता {score}। {reason}",
     "headlineMatch": "{team} {km} किमी दूर है।",
-    "matchNoKm": "{team} सबसे नज़दीकी खाली टीम है।",
+    "matchNoKm": "सबसे पास की खाली टीम: {team}।",
     "noTeam": "काफी नज़दीक कोई खाली टीम नहीं है।",
     "whyMatch": "{team} उन्हें ले जा सकती है, {km} किमी दूर।",
     "why": "क्यों",
@@ -1265,9 +1266,9 @@
     "notUpdated": "अपडेट नहीं"
   },
   "steps": {
-    "gemini": "✨ Gemini ने 5 चरण जाँचे",
+    "gemini": "✨ Gemini ने 4 चरण जाँचे",
     "recorded": "Gemini · रिकॉर्डेड",
-    "rules": "नियमों ने 5 चरण जाँचे",
+    "rules": "नियमों ने 4 चरण जाँचे",
     "see": "कैसे, देखें",
     "hide": "चरण छिपाएँ",
     "badgeRules": "नियम",
@@ -1455,6 +1456,8 @@
     "diffLine": "{field} — {from} से {to}",
     "newReport": "नई रिपोर्ट · {ref}",
     "matched": "मिला: {p}",
-    "lifeTag": "जान का खतरा"
+    "lifeTag": "जान का खतरा",
+    "sendAmbulance": "सबसे नज़दीकी एम्बुलेंस अभी भेजें",
+    "lockReason": "{step} के बाद Approve खुलेगा · {n} में से {done} AI चरण पूरे (या 45 सेकंड बाद नियम)।"
   }
 }

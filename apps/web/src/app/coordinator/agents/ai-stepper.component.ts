@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { peopleText } from '../../core/people-text';
 import { LanguageService, MatchProposal, RdTranslatePipe, StoredRequest } from '@rd/shared';
-import { STEP_COUNT, bandKey, joinedCount, urgencyNumber } from '../case-facts';
+import { AI_STEP_COUNT, bandKey, joinedCount, urgencyNumber } from '../case-facts';
 
 export interface StepStatusInfo {
   agent: 'Intake' | 'Dedupe' | 'Triage' | 'Matching' | 'Explainer';
@@ -444,7 +444,7 @@ export class AiStepperComponent {
     return `${need} · ${peopleText(req.people_count, t)}`;
   });
 
-  readonly stepCount = STEP_COUNT;
+  readonly stepCount = AI_STEP_COUNT;
 
   readonly dedupeResult = computed<string>(() => {
     const req = this.request();

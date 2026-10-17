@@ -739,7 +739,8 @@
     "runGemini": "Gemini ({model}) se naapa",
     "runRules": "Sirf rules baseline (is run me Gemini nahi)",
     "testN": "test set n = {n} sandesh",
-    "smallSet": "Chhota test set (n = {n}); guarantee nahi"
+    "smallSet": "Chhota test set (n = {n}); guarantee nahi",
+    "costMeasured": "Measured lagat: ₹{r} har report (₹{k} har 1,000) · {n} live Gemini reports mein {t} tokens har report."
   },
   "home": {
     "title": "Hum kaise madad karein?",
@@ -1069,7 +1070,7 @@
     "restartTour": "Tour dobara chalao",
     "originalReport": "Asli report",
     "aiEnglish": "AI ki English",
-    "dupMatch": "AI ne isko {id} se milaya ({pct}% similar)",
+    "dupMatch": "{id} ka possible duplicate",
     "sitrepButton": "SITREP kholo",
     "problemLine": "Flood reports aayi. AI rank karta hai. Faisla aapka.",
     "sampleBusy": "Sample bhej raha hai…",
@@ -1171,7 +1172,7 @@
     "headlineJoined": "Is case mein {n} aur reports judi.",
     "headlineUrgency": "Urgency {score}. {reason}",
     "headlineMatch": "{team} {km} km door hai.",
-    "matchNoKm": "{team} sabse nazdeek ki free team hai.",
+    "matchNoKm": "Sabse paas ki free team: {team}.",
     "noTeam": "Kaafi nazdeek koi free team nahi hai.",
     "whyMatch": "{team} unhe le ja sakti hai, {km} km door.",
     "why": "Kyun",
@@ -1265,9 +1266,9 @@
     "notUpdated": "update nahi"
   },
   "steps": {
-    "gemini": "✨ Gemini ne 5 steps check kiye",
+    "gemini": "✨ Gemini ne 4 steps check kiye",
     "recorded": "Gemini · recorded",
-    "rules": "Rules ne 5 steps check kiye",
+    "rules": "Rules ne 4 steps check kiye",
     "see": "Kaise, dekhein",
     "hide": "Steps chhupayein",
     "badgeRules": "Rules",
@@ -1455,7 +1456,9 @@
     "diffLine": "{field}: {from} → {to}",
     "newReport": "Nayi report · {ref}",
     "matched": "Mila: {p}",
-    "lifeTag": "Jaan ka khatra"
+    "lifeTag": "Jaan ka khatra",
+    "sendAmbulance": "Sabse nazdeeki ambulance abhi bhejein",
+    "lockReason": "{step} ke baad Approve khulega · {n} mein se {done} AI steps poore (ya 45 sec baad rules)."
   },
   "teams": {
     "sub": "{a} khaali · {b} vyast"

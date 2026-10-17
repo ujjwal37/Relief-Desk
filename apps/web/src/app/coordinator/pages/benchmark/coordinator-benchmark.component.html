@@ -9,6 +9,11 @@
         @if (gemini(); as g) { · {{ (g.measured ? 'bench.geminiMeasured' : 'bench.geminiNotInRun') | rdTranslate }} }
       </p>
     }
+    @if (cost(); as c) {
+      @if (c.measured && c.inr_per_report != null) {
+        <p class="run-line" data-testid="bench-cost">{{ 'bench.costMeasured' | rdTranslate:{ r: c.inr_per_report, k: c.inr_per_1000_reports, t: c.tokens_per_report, n: c.reports } }}</p>
+      }
+    }
     <p class="run-line" data-testid="bench-run-line">
       @if (gemini()?.measured) { {{ 'bench.runGemini' | rdTranslate:{ model: gemini()?.model || '' } }} } @else { {{ 'bench.runRules' | rdTranslate }} }
       @if (testN()) { · {{ 'bench.testN' | rdTranslate:{ n: testN() } }} }

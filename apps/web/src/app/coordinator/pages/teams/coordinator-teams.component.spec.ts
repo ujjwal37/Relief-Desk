@@ -80,7 +80,7 @@ describe('CoordinatorTeamsComponent', () => {
       { id: 'done', lat: 12, lng: 76.2, status: 'completed' } as StoredRequest,
     ]);
     fixture.detectChanges();
-    expect(cmp.leg(rows[2])).toBe('1.11 km · about 3 min');
+    expect(cmp.leg(rows[2])).toBe('near · 1.11 km · about 3 min');
     expect(cmp.leg(rows[1])).toContain('No nearby team');
     expect(cmp.leg(rows[1])).toContain('km');
   });

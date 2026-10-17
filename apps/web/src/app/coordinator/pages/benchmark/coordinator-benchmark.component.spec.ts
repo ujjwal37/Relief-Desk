@@ -31,7 +31,8 @@ describe('CoordinatorBenchmarkComponent', () => {
   let fixture: ComponentFixture<CoordinatorBenchmarkComponent>;
 
   beforeEach(async () => {
-    const api = jasmine.createSpyObj('ApiClientService', ['getBenchmark']);
+    const api = jasmine.createSpyObj('ApiClientService', ['getBenchmark', 'getMeasuredCost']);
+    api.getMeasuredCost.and.returnValue(of({ measured: false, reports: 0, tokens: 0, tokens_per_report: null, inr_per_report: null, inr_per_1000_reports: null }));
     api.getBenchmark.and.returnValue(of(FIXTURE));
     await TestBed.configureTestingModule({
       imports: [CoordinatorBenchmarkComponent],

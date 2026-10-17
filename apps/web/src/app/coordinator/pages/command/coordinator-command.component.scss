@@ -1428,14 +1428,16 @@ app-ai-stepper {
 .aiq-diff { margin: 4px 0; font-size: 12px; color: var(--text); }
 .aiq-foot { margin: 6px 0 0; font-size: 12px; font-weight: 500; color: var(--muted); }
 .btn-approve.is-locked, .btn-approve.is-locked:disabled { background: var(--surface-2); color: #8a9aa6; border: 1px solid var(--border); }
-.btn-send-boat { background: var(--sev-crit); color: #fff; border: 0; border-radius: 8px; min-height: 36px; padding: 0 12px; font-weight: 700; cursor: pointer; }
+.btn-send-boat { background: var(--sev-crit); color: #fff; border: 1.5px solid var(--sev-crit); border-radius: 8px; min-height: 40px; padding: 0 14px; font-size: 14px; font-weight: 700; cursor: pointer; }
+/* Call 112 matches the send button: same height, padding and type, red outline. */
+.aiq-life .b112 { min-height: 40px; height: auto; padding: 0 14px; border-width: 1.5px; justify-content: center; }
 .aiq-call { display: inline-flex; align-items: center; text-decoration: none; }
 .aiq-hoax-word { min-height: 36px; border: 1px solid var(--border); border-radius: 8px; padding: 0 8px; }
 .aiq-new { margin: 0 0 8px; border: 0; border-radius: 999px; background: var(--primary); color: #fff; font-size: 12px; font-weight: 600; padding: 4px 10px; cursor: pointer; }
 @keyframes aiq-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgb(35 76 106 / 15%); } 50% { box-shadow: 0 0 0 3px rgb(35 76 106 / 35%); } }
 @keyframes aiq-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 @media (max-width: 420px) {
-  .btn-send-boat { min-height: 44px; }
+  .btn-send-boat, .aiq-life .b112 { min-height: 44px; }
   .aiq-decide { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {

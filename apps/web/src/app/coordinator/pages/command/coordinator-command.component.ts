@@ -28,6 +28,7 @@ import { LIVE_CHANNEL } from '../../../core/live-report';
 import { DeskStore } from '../../../core/desk-store';
 import { LiveEventsService } from '../../../core/live-events.service';
 import { caseMatches } from '../../case-search';
+import { AI_STEP_COUNT } from '../../case-facts';
 import { ScenarioService } from '../../../core/services/scenario.service';
 import { Dialog } from '@angular/cdk/dialog';
 import { MapLeg, MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
@@ -699,10 +700,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   dupAiLine(r: StoredRequest): string {
     this.langService.currentLang();
     const hint = r.possible_duplicate;
-    const pct = hint?.similarity != null ? Math.round(hint.similarity * 100) : 0;
-    return this.langService.translate('xfactor.dupMatch')
-      .replace('{id}', hint?.target_id || '')
-      .replace('{pct}', String(pct));
+    const id = hint ? this.shortId(hint.target_id, hint.target_code || this.requests().find((row) => row.id === hint.target_id)?.public_code) : '';
+    return this.langService.translate('xfactor.dupMatch').replace('{id}', id);
   }
   showGeminiChip(req: StoredRequest): boolean {
     const kind = this.aiKind(req);
@@ -740,11 +739,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (!hint) return '';
     this.langService.currentLang();
     const parts: string[] = [];
-    if (hint.similarity != null && hint.similarity > 0) parts.push(`${Math.round(hint.similarity * 100)}%`);
+
     if (hint.distance_km != null && hint.distance_km > 0) parts.push(`${Number(hint.distance_km).toFixed(1)} km`);
     if (hint.minutes != null && hint.minutes > 0) parts.push(`${Math.round(hint.minutes)} min`);
     return parts.join(' · ');
   }
+  /** Why Approve is locked, with the real step count: "Approve unlocks after Urgency · 2 of 4 AI steps done." */
+  lockReason(req: StoredRequest): string {
+    this.langService.currentLang();
+    const order = ['read', 'duplicates', 'urgency', 'team'] as const;
+    const names: Record<string, string> = { read: 'aiq.stepRead', duplicates: 'aiq.stepDuplicates', urgency: 'aiq.stepUrgency', team: 'aiq.stepTeam' };
+    const steps = (req.ai_queue?.steps || {}) as Record<string, string>;
+    const done = order.filter((s) => steps[s] === 'done').length;
+    const next = order.find((s) => steps[s] !== 'done') || 'team';
+    return this.langService.translate('aiq.lockReason', { step: this.langService.translate(names[next]), done, n: AI_STEP_COUNT });
+  }
+
   /** Short, human ID for cards: never a raw req_ hash. */
   shortId(id: string, code?: string | null): string {
     if (code) return code;
@@ -901,7 +911,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       const sel = this.selectedRequest();
       if (sel && this.caseAiBlocked(sel) && !isLifeThreat(sel)) {
         e.preventDefault();
-        this.actionToast.set({ text: this.langService.translate('aiq.approveToast'), type: 'warning' });
+        this.actionToast.set({ text: this.lockReason(sel), type: 'warning' });
         return;
       }
       // A sends the suggested team only; it never dismisses a hoax or picks a no-team option.
@@ -1099,7 +1109,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.watchViewport();
     this.stopPipeline = this.live.onEvent((event) => {
       if (event.type === 'case.created' && event.request_id) {
-        this.focusRequestId = event.request_id;
+        // A new case never steals the selection from the case being read; it flashes in the queue instead.
+        const current = this.selectedRequest();
+        if (!current || !this.isWaiting(current)) this.focusRequestId = event.request_id;
         this.loadRequests(false);
       } else if (event.type === 'case.updated' || event.type === 'case.merged') {
         this.loadRequests(true);

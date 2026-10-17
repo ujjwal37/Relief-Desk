@@ -74,12 +74,16 @@ export class CoordinatorBenchmarkComponent implements OnInit {
     baseWard: string;
   } | null>(null);
 
+  /** Measured Gemini cost (tokens from live calls). The ₹ line shows only with a configured rate. */
+  readonly cost = signal<{ measured: boolean; reports: number; tokens_per_report: number | null; inr_per_report: number | null; inr_per_1000_reports: number | null } | null>(null);
+
   ngOnInit(): void {
     this.reload();
   }
 
   reload(): void {
     this.error.set(null);
+    this.api.getMeasuredCost().subscribe({ next: (c) => this.cost.set(c), error: () => this.cost.set(null) });
     this.api.getBenchmark().subscribe({
       next: (payload) => this.apply(payload),
       error: () => this.error.set('Could not load bench/results/latest.json'),

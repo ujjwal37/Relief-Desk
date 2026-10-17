@@ -144,7 +144,7 @@ export class CoordinatorTeamsComponent implements OnInit {
     if (this.bucket(team) === 'busy' && team.assigned_request_id) {
       const req = this.requests().find((row) => row.id === team.assigned_request_id);
       const km = req?.lat != null && req.lng != null
-        ? Math.min(50, Math.round(haversineKm(req.lat, req.lng, team.lat, team.lng)))
+        ? Math.min(50, haversineKm(req.lat, req.lng, team.lat, team.lng))
         : 0;
       return this.lang.translate('coord.onCaseKm').replace('{id}', team.assigned_request_id).replace('{d}', String(km));
     }
@@ -152,7 +152,15 @@ export class CoordinatorTeamsComponent implements OnInit {
     if (drawn) return drawn.title;
     const quote = this.nearestQuote(team);
     if (!quote) return this.area(team);
-    return legTitle(quote, (key) => this.lang.translate(key));
+    // Name the case the distance is to, so it is never read as the distance to a different case.
+    const near = this.nearestCase(team);
+    const title = legTitle(quote, (key) => this.lang.translate(key));
+    return near ? `${near.public_code || near.id} · ${title}` : title;
+  }
+
+  private nearestCase(team: StoredResource): StoredRequest | null {
+    const open = this.requests().filter((row) => row.lat != null && row.lng != null && !row.merged_into && !CLOSED.has(row.status));
+    return [...open].sort((a, b) => haversineKm(a.lat as number, a.lng as number, team.lat, team.lng) - haversineKm(b.lat as number, b.lng as number, team.lat, team.lng))[0] ?? null;
   }
 
   private nearestQuote(team: StoredResource): TravelQuote | null {

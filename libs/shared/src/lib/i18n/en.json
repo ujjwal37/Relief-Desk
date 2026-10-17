@@ -739,7 +739,8 @@
     "runGemini": "Measured with Gemini ({model})",
     "runRules": "Rules-only baseline (Gemini not in this run)",
     "testN": "test set n = {n} messages",
-    "smallSet": "Small test set (n = {n}); not a guarantee"
+    "smallSet": "Small test set (n = {n}); not a guarantee",
+    "costMeasured": "Measured cost: ₹{r} per report (₹{k} per 1,000) · {t} tokens per report over {n} live Gemini reports."
   },
   "home": {
     "title": "How can we help?",
@@ -1069,7 +1070,7 @@
     "restartTour": "Restart tour",
     "originalReport": "Original report",
     "aiEnglish": "AI English",
-    "dupMatch": "AI found this matches {id} ({pct}% similar)",
+    "dupMatch": "Possible duplicate of {id}",
     "sitrepButton": "SITREP",
     "problemLine": "Flood reports in. AI ranks. You decide.",
     "sampleBusy": "Sending sample…",
@@ -1171,7 +1172,7 @@
     "headlineJoined": "{n} more reports joined this case.",
     "headlineUrgency": "Urgency {score}. {reason}",
     "headlineMatch": "{team} is {km} km away.",
-    "matchNoKm": "{team} is the closest free team.",
+    "matchNoKm": "Closest free team: {team}.",
     "noTeam": "No free team is close enough.",
     "whyMatch": "{team} is the nearest free team that can take them, {km} km away.",
     "why": "Why",
@@ -1265,9 +1266,9 @@
     "notUpdated": "not updated"
   },
   "steps": {
-    "gemini": "✨ Gemini checked 5 steps",
+    "gemini": "✨ Gemini checked 4 steps",
     "recorded": "Gemini · recorded",
-    "rules": "Rules checked 5 steps",
+    "rules": "Rules checked 4 steps",
     "see": "See how",
     "hide": "Hide steps",
     "badgeRules": "Rules",
@@ -1455,6 +1456,8 @@
     "diffLine": "{field}: {from} → {to}",
     "newReport": "New report · {ref}",
     "matched": "Matched: {p}",
-    "lifeTag": "Life threat"
+    "lifeTag": "Life threat",
+    "sendAmbulance": "Send nearest ambulance now",
+    "lockReason": "Approve unlocks after {step} · {done} of {n} AI steps done (or rules after 45 s)."
   }
 }

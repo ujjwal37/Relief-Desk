@@ -766,7 +766,7 @@ describe('CoordinatorCommandComponent', () => {
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Counts differ: 2-3 vs 4-5');
-    expect(text).toContain('AI found this matches INC-001 (55% similar)');
+    expect(text).toContain('Possible duplicate of INC-001');
     expect(text).not.toContain('ux.none');
     expect(fixture.nativeElement.querySelector('[data-testid="dup-review"]')).not.toBeNull();
     (fixture.nativeElement.querySelector('[data-testid="merge-dup"]') as HTMLButtonElement).click();

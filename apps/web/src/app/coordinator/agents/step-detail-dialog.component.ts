@@ -34,7 +34,7 @@ export interface StepDetailData {
       <header class="dialog-header">
         <div class="h-left">
           <div class="title-wrap">
-            <h2>{{ data.stepNameKey | rdTranslate }} · {{ 'step.ofN' | rdTranslate:{ k: data.stepIndex + 1, n: stepCount } }}</h2>
+            <h2>{{ data.stepNameKey | rdTranslate }}</h2>
             <p class="case-sub">{{ 'flow.forCase' | rdTranslate:{ id: ref, title: data.request.place_text || '' } }}</p>
           </div>
         </div>
