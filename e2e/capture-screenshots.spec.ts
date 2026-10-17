@@ -3,10 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import { resetDemo } from './reset-demo';
 
-const ARTIFACT_DIR = 'C:/Users/aggar/.gemini/antigravity/brain/3e0ebfa0-87f4-4a84-a7a2-814a0a7a9c86';
 const SHOTS_DIRS = [
   path.join(process.cwd(), 'e2e', 'screenshots'),
-  ARTIFACT_DIR,
+  '/opt/cursor/artifacts/screenshots',
 ];
 
 for (const dir of SHOTS_DIRS) {
@@ -29,36 +28,25 @@ test('capture required screenshots at 1440x900', async ({ page, request }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.addInitScript(() => localStorage.setItem('rd_tour_done', '1'));
 
-  // 1. Home idle (English, Dark)
+  // Light theme only. Dark mode was removed, so these shots are the light desk.
   await page.goto('/coordinator/login');
   await expect(page.getByRole('button', { name: 'Enter as demo coordinator' })).toBeVisible();
   await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await page.waitForURL(/\/coordinator\/command/);
   await expect(page.getByRole('heading', { name: 'Cases' })).toBeVisible();
 
-  // Explicitly ensure Dark mode
-  const moreBtn = page.locator('.more-btn');
+  const moreBtn = page.locator('button.avatar');
   await moreBtn.click();
-  await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
-  await noHorizontalOverflow(page);
-  await shot(page, 'home-idle-dark-en.png');
-
-  // 2. Home idle (English, Light)
-  await moreBtn.click();
+  await expect(page.getByRole('button', { name: 'Dark', exact: true })).toHaveCount(0);
   await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
   await noHorizontalOverflow(page);
   await shot(page, 'home-idle-light-en.png');
 
-  // Switch back to Dark for remaining screenshots
-  await moreBtn.click();
-  await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
-
-  // 3. Home idle (Hindi, Dark)
   await moreBtn.click();
   await page.getByRole('button', { name: 'Hindi', exact: true }).click();
   await page.locator('.menu-back').click({ position: { x: 4, y: 4 } });
   await noHorizontalOverflow(page);
-  await shot(page, 'home-idle-dark-hi.png');
+  await shot(page, 'home-idle-light-hi.png');
 
   // Switch back to English
   await moreBtn.click();
@@ -71,7 +59,7 @@ test('capture required screenshots at 1440x900', async ({ page, request }) => {
   await hindiCase.click();
 
   // 4. Why this team modal
-  const whyBtn = page.getByRole('button', { name: /More details/i }).first();
+  const whyBtn = page.getByRole('button', { name: /Why this team/i }).first();
   await expect(whyBtn).toBeVisible();
   await whyBtn.click();
   const whyModal = page.locator('[data-testid="why-team-popup"]');
@@ -99,8 +87,9 @@ test('capture required screenshots at 1440x900', async ({ page, request }) => {
   await shot(page, 'teams-page.png');
 
   // 7. Home while a sample is processing
-  await page.locator('nav.tabs a').first().click();
+  await page.locator('nav.tabs').getByRole('link', { name: 'Command', exact: true }).click();
   await page.waitForURL(/\/coordinator\/command/);
+  await page.locator('details.live-own > summary').click();
   const hindiSampleBtn = page.getByTestId('sample-hindi');
   await hindiSampleBtn.click();
   await page.waitForTimeout(400);

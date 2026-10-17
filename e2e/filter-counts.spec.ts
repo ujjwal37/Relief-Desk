@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { queueTabCount } from './desk-ui';
 import { API } from './ports';
 
 const AUTH = { Authorization: 'Bearer demo-coordinator-token' };
@@ -8,7 +9,7 @@ async function login(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('rd_tour_done', '1');
     localStorage.setItem('rd_guide_dismissed', '1');
-    localStorage.setItem('rd_theme', 'dark');
+    localStorage.removeItem('rd_theme');
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/coordinator/login');
@@ -40,12 +41,12 @@ test('dispatched and completed chip counts match the rows they show', async ({ p
   const caseId = await approveOne(request);
   await login(page);
 
-  const dispatched = page.getByTestId('filter-dispatched');
-  const completed = page.getByTestId('filter-completed');
+  const dispatched = page.getByTestId('tab-dispatched');
+  const completed = page.getByTestId('tab-completed');
   await expect(dispatched).toBeVisible();
-  await expect.poll(async () => Number(await dispatched.getAttribute('data-count'))).toBeGreaterThan(0);
+  await expect.poll(async () => queueTabCount(dispatched)).toBeGreaterThan(0);
 
-  const dispatchedCount = Number(await dispatched.getAttribute('data-count'));
+  const dispatchedCount = await queueTabCount(dispatched);
   await dispatched.click();
   await expect(page.getByTestId('filter-empty')).toHaveCount(0);
   await expect(page.locator('.case-list-wrap .case-wrap')).toHaveCount(dispatchedCount);
@@ -58,19 +59,19 @@ test('dispatched and completed chip counts match the rows they show', async ({ p
 
   await expect(page.locator(`[data-case-id="${caseId}"]`)).toHaveCount(0);
   await completed.click();
-  await expect.poll(async () => Number(await completed.getAttribute('data-count'))).toBeGreaterThan(0);
-  const completedCount = Number(await completed.getAttribute('data-count'));
+  await expect.poll(async () => queueTabCount(completed)).toBeGreaterThan(0);
+  const completedCount = await queueTabCount(completed);
   await expect(page.getByTestId('filter-empty')).toHaveCount(0);
   await expect(page.locator('.case-list-wrap .case-wrap')).toHaveCount(completedCount);
   await expect(page.locator(`[data-case-id="${caseId}"]`)).toBeVisible();
 
   await page.locator('#coord-search').fill('zzzz-no-such-case');
-  await expect(completed).toHaveAttribute('data-count', '0');
-  await expect(dispatched).toHaveAttribute('data-count', '0');
+  await expect.poll(async () => queueTabCount(completed)).toBe(0);
+  await expect.poll(async () => queueTabCount(dispatched)).toBe(0);
   await expect(page.getByTestId('filter-empty')).toBeVisible();
   await expect(page.locator('.case-list-wrap .case-wrap')).toHaveCount(0);
 
   await page.getByTestId('filter-empty').getByRole('button').click();
   await expect(page.locator('#coord-search')).toHaveValue('');
-  await expect(completed).not.toHaveAttribute('data-count', '0');
+  await expect.poll(async () => queueTabCount(completed)).toBeGreaterThan(0);
 });
