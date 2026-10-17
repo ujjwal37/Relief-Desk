@@ -123,7 +123,7 @@ _EN_NUMBER_WORDS = {
 }
 _EN_GROUP_NOUNS = (
     r"elderly|old\s+(?:people|persons|men|women)|seniors?|child(?:ren)?|kids?|babies|baby|infants?"
-    r"|people|persons|adults?|women|woman|men|man|girls?|boys?|patients?|students?|family\s+members"
+    r"|people|persons?|adults?|women|woman|men|man|girls?|boys?|patients?|students?|family\s+members"
 )
 
 
@@ -139,10 +139,27 @@ def _group_people_count(text: str) -> Optional[int]:
     return total if found and total > 0 else None
 
 
+_INJECTION = re.compile(
+    r"\b(ignore|disregard|forget|override)\b[^.!?\n]*\b(instruction|instructions|prompt|rules|above|previous)\b"
+    r"|\b(mark|set|rate|classify)\s+(this|it|the case|urgency|priority)\b[^.!?\n]*\b(as|to)\b"
+    r"|\b(system|assistant)\s*:",
+    re.IGNORECASE,
+)
+
+
+def strip_injection(text: str) -> str:
+    """Drop sentences that try to instruct the system. Their numbers are never facts about people."""
+    if not text:
+        return text
+    parts = re.split(r"(?<=[.!?\n])\s+", text)
+    return " ".join(p for p in parts if not _INJECTION.search(p))
+
+
 def people_bounds(text: str) -> Optional[tuple]:
     """(low, high, label) for '4 people' or '2-3 people'. The label keeps the words the citizen used."""
     if not text:
         return None
+    text = strip_injection(text)
     normalized = _ascii_digits(text)
     ranged = re.search(
         r"(\d+)\s*(?:-|–|—|\bto\b)\s*(\d+)\s*(?:log|लोग|people|persons|insaan|व्यक्ति|ആളുകൾ|പേർ|പേര്)(?:ों|ें)?(?!\w)",

@@ -107,7 +107,7 @@
     "saidElderly": "There is an elderly person with us",
     "saidSick": "Someone here is sick",
     "saidNone": "No children, elderly or sick people",
-    "autoPlace": "Chalakudy · Auto-detected"
+    "autoPlace": "Location not shared yet"
   },
   "confirm": {
     "title": "What We Understood",
@@ -385,7 +385,7 @@
     "tracePending": "Waiting",
     "traceComplete": "Done",
     "aiGemini": "Gemini",
-    "aiOffline": "Gemini unavailable, built-in rules used",
+    "aiOffline": "Rules mode",
     "aiRecorded": "Recorded (Gemini)",
     "updateLocation": "Update location",
     "lat": "Latitude",
@@ -534,7 +534,8 @@
     "verify": "Verify",
     "verifyHint": "The report is unclear. Priority was kept, not lowered. Please confirm the details.",
     "reviewHoax": "I reviewed this flag",
-    "capacityShort": "Team has {left} seats for {need} people — approving will ask you to confirm."
+    "capacityShort": "Team has {left} seats for {need} people — approving will ask you to confirm.",
+    "aiChecking": "Checking…"
   },
   "tour": {
     "next": "Next",
@@ -1162,7 +1163,7 @@
   },
   "ward": "Ward {n}",
   "chip": {
-    "likelyHoax": "Likely hoax: {reason}"
+    "likelyHoax": "Held · likely hoax: {reason}"
   },
   "card": {
     "movedUp": "Moved up"
@@ -1262,7 +1263,8 @@
     "dismiss": "Dismiss as hoax",
     "notHoax": "Not a hoax",
     "dismissed": "Closed as hoax. Nothing was sent.",
-    "likely": "Likely hoax"
+    "likely": "Likely hoax",
+    "tipD": "Press D to dismiss"
   },
   "noTeam": {
     "title": {

@@ -86,6 +86,14 @@ class MatchingAgent:
         if not resources:
             storage_service.load_seed_resources()
             resources = storage_service.list_resources(event_id=request.event_id)
+        # Information only (blocked road, status update): nothing to dispatch.
+        if request.type == IncidentType.INFO:
+            return []
+        # Likely hoax: held for the coordinator, never matched, no route.
+        if request.hoax_reason or {"hoax", "likely_hoax"} & set(request.flags or []):
+            return []
+        # A team that has not checked in for 90 min is not offered as available.
+        resources = [r for r in resources if not _stale(r)]
 
         scored_candidates = []
         people_needed = request.people_count if request.people_count else 1
@@ -95,10 +103,23 @@ class MatchingAgent:
             if breakdown is None:
                 continue
             scored_candidates.append((res, breakdown, False))
+        # Medical case cut off by water: a boat is the only way in, so rescue boats are offered too.
+        if request.type == IncidentType.MEDICAL and needs_water_access(request):
+            as_rescue = request.model_copy(update={"type": IncidentType.RESCUE})
+            for res in resources:
+                if travel_mode_for(res) != "water":
+                    continue
+                breakdown = scoring_engine.compute_match_score(as_rescue, res, fallback_ok=False)
+                if breakdown is not None:
+                    scored_candidates.append((res, breakdown, False))
 
         # No suitable free team: offer nothing rather than a busy team or the wrong kind of team.
         # The case card then shows "No suitable free team right now".
         using_fallback = False
+
+        # Deep water (chest-deep or worse, or a roof): only boats can reach them, whatever the need.
+        if deep_water(request):
+            scored_candidates = [c for c in scored_candidates if travel_mode_for(c[0]) == "water"]
 
         # Distance score is 0 past 10 km, so a far team with more seats can outrank a nearer one.
         # Keep teams near the closest suitable team. Boats beyond BOAT_MAX_KM are dropped.
@@ -201,6 +222,8 @@ NEARBY_KM = 30.0
 PRACTICAL_KM = 40.0
 # Rescue boats farther than this are not offered; the card then says no suitable team nearby.
 BOAT_MAX_KM = 25.0
+# Any team kind: farther than this is not offered as the suggestion.
+MAX_OFFER_KM = BOAT_MAX_KM
 
 
 # Land teams: straight-line km at 20 km/h (a road estimate; the map shows the real drive time).
@@ -246,11 +269,46 @@ def route_compare_note(distance_km: float, mode: str) -> Optional[str]:
 NEAR_BAND_KM = 15.0
 
 
+STALE_MIN = 90
+
+
+def _stale(res) -> bool:
+    from datetime import datetime, timezone
+    stamp = getattr(res, "location_updated_at", None)
+    if not stamp:
+        return False
+    try:
+        last = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - last).total_seconds() > STALE_MIN * 60
+
+
+_DEEP_BANDS = {"chest", "neck", "head", "above_head", "roof", "submerged"}
+
+
+def deep_water(request: StoredRequest) -> bool:
+    """Chest-deep or worse, from the depth reading or the report's own words."""
+    depth = getattr(request, "water_depth", None) or {}
+    band = (depth.get("band") if isinstance(depth, dict) else getattr(depth, "band", None)) or ""
+    if band in _DEEP_BANDS:
+        return True
+    text = " ".join(filter(None, [request.raw_text, request.summary, request.ai_translation])).lower()
+    return any(w in text for w in ("chest-deep", "chest deep", "neck-deep", "neck deep", "marooned", "roof", "terrace", "chhat", "chat par"))
+
+
+def needs_water_access(request: StoredRequest) -> bool:
+    """Trapped by water, or the report asks for a boat."""
+    hazard = getattr(getattr(request, "hazard", None), "value", "")
+    text = " ".join(filter(None, [request.raw_text, request.summary, request.ai_translation])).lower()
+    return hazard in ("water_rising", "stranded") or any(w in text for w in ("boat", "naav", "nav bhejo", "trapped", "cut off"))
+
+
 def _keep_nearer(scored: list) -> list:
-    scored = [
-        item for item in scored
-        if not (travel_mode_for(item[0]) == "water" and item[1].distance_km > BOAT_MAX_KM)
-    ]
+    # Never offer a team beyond MAX_OFFER_KM: the no-team options show the farther ones honestly.
+    scored = [item for item in scored if item[1].distance_km <= MAX_OFFER_KM]
     if len(scored) <= 1:
         return scored
     nearest = min(item[1].distance_km for item in scored)

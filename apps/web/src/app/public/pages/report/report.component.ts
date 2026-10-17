@@ -101,7 +101,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     { key: 'landing.chipOther', text: 'Something else' },
   ];
   readonly isLoading = signal<boolean>(false);
-  readonly locationPin = signal<{ lat: number; lng: number }>({ lat: 9.498, lng: 76.339 });
+  readonly locationPin = signal<{ lat: number; lng: number } | null>(null);
   readonly locationText = signal<string>(AUTO_PLACE);
 
   readonly chatMessages = signal<ChatMessage[]>([]);
@@ -305,7 +305,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     return canonicalRequestJson({
       card,
       lang: this.langService.currentLang(),
-      locationPin: this.locationPin(),
+      locationPin: this.locationPin() ?? undefined,
       scenarioId: this.scenarioId(),
     });
   }
@@ -464,7 +464,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
         message: text,
         scenario_id: this.scenarioId(),
         language: this.langService.currentLang(),
-        location_pin: this.locationPin(),
+        location_pin: this.locationPin() ?? undefined,
       })
       .pipe(timeout(CHAT_TURN_TIMEOUT_MS))
       .subscribe({
@@ -526,7 +526,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       raw_text: words,
       channel: this.mode() === 'form' ? 'form' : 'text',
       lang: this.langService.currentLang(),
-      location_pin: this.locationPin(),
+      location_pin: this.locationPin() ?? undefined,
       scenario_id: this.scenarioId(),
       structured: facts,
     };
@@ -608,7 +608,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       raw_text: text,
       channel: 'text',
       lang: this.langService.currentLang(),
-      location_pin: this.locationPin(),
+      location_pin: this.locationPin() ?? undefined,
       scenario_id: this.scenarioId(),
     });
     this.noteQueued();

@@ -10,7 +10,7 @@ from app.agents.matching import (
 from app.models.firestore_models import ResourceStatus, StoredRequest, StoredResource
 from app.tools.geo import haversine_distance
 
-OPTIONS = ("reserve", "road", "wider", "escalate")
+OPTIONS = ("reserve", "road", "wider", "escalate", "share")
 
 
 def _km(req: StoredRequest, res: StoredResource) -> Optional[float]:
@@ -27,6 +27,9 @@ def _eta(km: Optional[float], res: StoredResource) -> Optional[int]:
 
 
 def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict:
+    if getattr(req.type, "value", req.type) == "info":
+        return {"request_id": req.id, "reason": "info_only", "detail": {}, "limit_km": BOAT_MAX_KM, "kind": None,
+                "options": {"reserve": None, "road": None, "wider": None, "escalate": None, "share": {"available": True}}}
     kinds = _PRIMARY.get(req.type, [])
     right = [r for r in resources if r.kind in kinds]
     free = [r for r in right if r.status == ResourceStatus.AVAILABLE and (r.capacity_remaining or 0) > 0]
@@ -70,4 +73,4 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
 
     return {"request_id": req.id, "reason": reason, "detail": detail, "limit_km": limit,
             "kind": kinds[0].value if kinds else None,
-            "options": {"reserve": reserve, "road": road, "wider": wider, "escalate": {"available": True}}}
+            "options": {"reserve": reserve, "road": road, "wider": wider, "escalate": {"available": True}, "share": None}}

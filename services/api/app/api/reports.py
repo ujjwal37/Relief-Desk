@@ -329,8 +329,9 @@ def _apply_card(extracted: ExtractedRequest, payload: ReportSubmitRequest, repor
 
 
 def _pin_for(payload: ReportSubmitRequest, extracted: ExtractedRequest, report_text: str) -> Tuple[float, float, Optional[str]]:
-    pin_lat = payload.location_pin.get("lat") if payload.location_pin else 9.498
-    pin_lng = payload.location_pin.get("lng") if payload.location_pin else 76.339
+    # No pin and no confident place: store no location rather than a made-up default pin.
+    pin_lat = payload.location_pin.get("lat") if payload.location_pin else None
+    pin_lng = payload.location_pin.get("lng") if payload.location_pin else None
     ward_id = _resolve_ward_id(extracted.place_text, report_text)
     geo = gazetteer.lookup(extracted.place_text or report_text or "")
     if not payload.location_pin and geo.lat is not None and geo.lng is not None and not geo.is_low_confidence:

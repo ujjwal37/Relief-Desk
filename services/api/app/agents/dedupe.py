@@ -382,7 +382,8 @@ class DedupeAgent:
             dist_score = max(0.0, 1.0 - (distance / 1.5))
         time_score = 0.95 if minutes is None else max(0.0, 1.0 - (minutes / 120.0))
         confidence = round(min(0.99, 0.5 * sim_for_score + 0.3 * dist_score + 0.2 * time_score), 2)
-        shown = round(max(overlap, 0.88) if confirmed else overlap, 2)
+        # Show the measured similarity, not a floor.
+        shown = round(overlap, 2)
         return {
             "similarity": shown,
             "distance_km": None if distance is None else round(distance, 2),

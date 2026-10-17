@@ -191,7 +191,14 @@ export class CoordinatorLayoutComponent implements OnDestroy {
 
   aiPillText(): string {
     this.lang.currentLang();
-    if (this.aiHealth()?.provider === 'gemini') return this.lang.translate('xfactor.geminiLive');
+    const h = this.aiHealth();
+    if (h?.provider === 'gemini') {
+      // 'Gemini live' only after a real Gemini call succeeded in the last 15 minutes.
+      const at = h.last_success_at ? Date.parse(h.last_success_at) : NaN;
+      if (h.quota?.last_success !== false && !isNaN(at) && Date.now() - at < 15 * 60_000) return this.lang.translate('xfactor.geminiLive');
+      if (!h.quota?.calls) return this.lang.translate('coord.aiChecking');
+      return this.lang.translate('coord.aiOffline');
+    }
     if (this.aiHealth()?.provider === 'antigravity-local') return this.lang.translate('xfactor.localTestAi');
     return this.lang.translate('coord.aiOffline');
   }

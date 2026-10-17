@@ -171,7 +171,7 @@ class ChatIntakeAgent:
         if extracted_turn.place_text:
             current.place_text = extracted_turn.place_text
         elif location_pin and not current.place_text:
-            current.place_text = f"Pin ({location_pin.get('lat', 9.498):.4f}, {location_pin.get('lng', 76.339):.4f})"
+            current.place_text = f"Pin ({location_pin['lat']:.4f}, {location_pin['lng']:.4f})" if location_pin.get('lat') is not None and location_pin.get('lng') is not None else current.place_text
 
         if extracted_turn.people.count is not None:
             current.people = extracted_turn.people

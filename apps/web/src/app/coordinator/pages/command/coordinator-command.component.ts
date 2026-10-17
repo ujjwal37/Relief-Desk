@@ -814,6 +814,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       const btn = document.querySelector('.btn-approve') as HTMLButtonElement | null;
       if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
     }
+    if (key === 'd') {
+      const btn = document.querySelector('.btn-dismiss-hoax') as HTMLButtonElement | null;
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    }
     if (key === 'n') { e.preventDefault(); this.nextCase(); }
     if (key === 'u' && this.actionToast()?.undo) { e.preventDefault(); this.undoLastSend(); }
   }
