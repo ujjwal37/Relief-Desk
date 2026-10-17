@@ -30,6 +30,8 @@ class RequestStatus(str, Enum):
 
 class StoredReport(BaseModel):
     id: str
+    # Chat answers after the first message. raw_text stays the reporter's original sentence.
+    chat_answers: List[str] = Field(default_factory=list)
     event_id: str = "event_kerala_flood"
     pack_id: str = "flood"
     channel: str = "text"  # "text" | "voice"

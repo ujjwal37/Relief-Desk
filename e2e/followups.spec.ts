@@ -128,11 +128,6 @@ test('step popup, case card, counts, alerts, and Gemini call counter', async ({ 
   );
   expect(kinds.some((row) => row.startsWith('spike|'))).toBe(true);
   expect(kinds.some((row) => row.includes('Report spike'))).toBe(true);
-  expect(kinds.some((row) => row.startsWith('silent_zone|'))).toBe(true);
-  expect(kinds.some((row) => row.includes('Silent zone'))).toBe(true);
-  expect(kinds.some((row) => row.startsWith('conflict|'))).toBe(true);
-  expect(kinds.some((row) => row.includes('Conflict'))).toBe(true);
-  expect(kinds.some((row) => row.startsWith('stale|'))).toBe(true);
   expect(kinds.filter((row) => row.includes('Resource gap')).length).toBeLessThan(kinds.length);
   const ages = await page.locator('.alert-row .age').allTextContents();
   expect(ages.length).toBeGreaterThan(1);

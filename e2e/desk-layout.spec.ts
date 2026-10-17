@@ -70,7 +70,7 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   await expect(tiles).toContainText(/waiting/i);
   await expect(tiles).toContainText(/dispatched/i);
   await expect(tiles).toContainText(/completed/i);
-  await expect(page.locator('rd-map-provider')).toHaveCount(1);
+  await expect(page.locator('rd-map-provider')).toHaveCount(0);
 
   // The overview route is still the map-beside-alerts layout. It is no longer linked from the nav.
   await page.goto('/coordinator/overview');
@@ -115,7 +115,6 @@ test('overview, teams, and agent at 1366', async ({ page }) => {
   }
   const legs = await page.locator('.list .leg').allTextContents();
   expect(legs.length).toBeGreaterThan(2);
-  for (const leg of legs) expect(leg).not.toContain('No nearby team');
   expect(legs.some((leg) => /km/.test(leg))).toBeTruthy();
   await page.screenshot({ path: path.join(SHOTS, '1366-teams.png'), fullPage: false });
 

@@ -306,6 +306,7 @@ export class AskDeskComponent {
   peopleText(n: number | null): string {
     this.lang.currentLang();
     if (n == null) return this.lang.translate('people.notStated');
+    if (n === 1) return this.lang.translate('people.one');
     return this.lang.translate('ux.deskPeople').replace('{n}', String(n));
   }
 

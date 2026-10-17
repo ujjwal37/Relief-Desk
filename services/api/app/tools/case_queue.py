@@ -418,6 +418,9 @@ def recheck_next(
     queue = target.ai_queue
     if queue is None:
         return None
+    if not (isinstance(proposed, dict) and proposed):
+        # Gemini gave nothing usable (fallback or bad JSON): the label stays rules, never "Gemini rechecked".
+        return None
     queue.engine = "gemini_rechecked"
     diff = _diff(target, proposed if isinstance(proposed, dict) else None)
     queue.recheck_diff = diff or None

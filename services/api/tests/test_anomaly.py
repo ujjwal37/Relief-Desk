@@ -48,28 +48,16 @@ def test_gap_conflict_and_stale_rules():
     assert stale_alerts([10, 20], threshold=90) == []
 
 
-def test_get_alerts_requires_coordinator_and_includes_seeded_spike_and_silent_zone():
+def test_get_alerts_requires_coordinator_and_shows_only_live_alerts():
     denied = client.get("/api/alerts")
     assert denied.status_code == 401
 
     response = client.get("/api/alerts", headers=AUTH)
     assert response.status_code == 200
     body = response.json()
-    kinds = {item["kind"] for item in body}
-    assert "spike" in kinds
-    assert "silent_zone" in kinds
-    spike = next(item for item in body if item["kind"] == "spike")
-    silent = next(item for item in body if item["kind"] == "silent_zone")
-    assert "14 reports" in spike["reason"] or "new cases" in spike["reason"]  # a live spike replaces the sample
-    assert "0 reports" in silent["reason"]
-    gaps = [item for item in body if item["kind"] == "resource_gap"]
-    assert gaps
-    # A live gap replaces the seeded sample; leftover samples stay labelled Sample.
-    samples = [item for item in gaps if item["reason"].startswith("Sample.")]
-    live = [item for item in gaps if not item["reason"].startswith("Sample.")]
-    assert samples or live
-    assert all(item["id"].startswith("sample-") for item in samples)
-    assert all(item["acknowledged"] is False or item["acknowledged"] is True for item in body)
+    # A live desk never mixes in sample alerts with invented numbers.
+    assert not [item for item in body if item["id"].startswith("sample-")]
+    assert all("Sample" not in item["reason"] for item in body)
 
 
 def test_live_resource_gap_replaces_the_seeded_sample():

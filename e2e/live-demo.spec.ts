@@ -24,8 +24,10 @@ async function login(page: Page) {
 
 test('live demo runs eight reports and opens a human step popup', async ({ page, request }) => {
   await login(page);
-  await expect(page.getByTestId('run-live-demo')).toBeVisible();
-  await page.getByTestId('run-live-demo').click();
+  await expect(page.getByTestId('run-live-demo')).toHaveCount(0);
+  await page.locator('.more-btn').click();
+  await page.getByTestId('menu-live-demo').click();
+  await page.waitForURL(/\/coordinator\/command/);
   await expect(page.getByTestId('demo-progress')).toContainText('Received 8/8', { timeout: 120000 });
   await expect(page.getByTestId('demo-progress')).toContainText('Live demo finished');
 
@@ -56,8 +58,4 @@ test('live demo runs eight reports and opens a human step popup', async ({ page,
   await page.keyboard.press('Escape');
   await expect(step).toBeHidden();
 
-  await page.locator('details.live-own > summary').click();
-  await page.getByTestId('own-report').fill('Judge typed this flood report just now.');
-  await page.getByTestId('send-own').click();
-  await expect(page.getByTestId('own-error')).toContainText('free limit');
 });

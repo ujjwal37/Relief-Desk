@@ -116,6 +116,8 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
 
   // Reactive state signals
   readonly requests = signal<StoredRequest[]>([]);
+  /** False until the first case list arrives: show skeleton cards, never "Waiting 0 · No cases match". */
+  readonly firstLoaded = signal(false);
   readonly selectedRequestId = signal<string>('INC-001');
   readonly mapFocus = signal(0);
   /** Team row under the pointer. Its line draws thicker. */
@@ -1289,6 +1291,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const keep = this.selectedRequestId();
     const moved = keep ? joined[keep] : undefined;
     this.requests.set(next);
+    this.firstLoaded.set(true);
     if (previous.size) {
       for (const row of next) {
         if (!previous.has(row.id)) this.flashRow(row.id);

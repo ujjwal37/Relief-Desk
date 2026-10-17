@@ -71,7 +71,7 @@ SYSTEM = """You write a coordinator situation brief for a Kerala flood desk.
 Use ONLY the numbers in the JSON. Do not invent counts, places, or forecasts.
 Output one JSON object:
 {
-  "brief": "4-8 sentences in English, grouped by triage tier, citing the given numbers",
+  "brief": "exactly 3 short lines joined by \\n, under 240 characters in total: 1) pending total with Critical (immediate), Urgent and Can wait (standard) counts; 2) free boat teams for open rescue cases, and free medical teams; 3) the first gap from gaps, or No resource gap",
   "sms_en": "one SMS under 300 characters",
   "sms_hi": "same SMS in Hindi Devanagari",
   "sms_ml": "same SMS in Malayalam",
@@ -93,13 +93,15 @@ class _SitrepModel(BaseModel):
     whatsapp_ml: str = Field(min_length=8, max_length=700)
 
 
+from app.tools.desk_counts import is_free_team, is_waiting  # noqa: E402
+
+
 def _open_cases() -> List[StoredRequest]:
     return [
         req
         for req in storage_service.list_requests()
         # Same "waiting" as the Command queue: not sent, not closed as information, not a dismissed hoax.
-        if req.status in WAITING and not req.merged_into
-        and not ({"info_closed", "dismissed_hoax"} & set(req.flags or []))
+        if is_waiting(req)
     ]
 
 
@@ -135,21 +137,8 @@ def collect_counts() -> SitrepCounts:
         if _rooftop_like(req):
             rooftop += 1
 
-    def _fresh(res) -> bool:
-        stamp = getattr(res, "location_updated_at", None)
-        if not stamp:
-            return False
-        try:
-            from datetime import datetime, timezone
-            at = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
-            return (datetime.now(timezone.utc) - at).total_seconds() <= 120 * 60
-        except ValueError:
-            return False
-
     def is_free(res) -> bool:
-        # Same rule as the Teams page: not on a case, seats left, checked in within 2 h.
-        return (not res.assigned_request_id and res.status == ResourceStatus.AVAILABLE
-                and (res.capacity_remaining or 0) > 0 and _fresh(res))
+        return is_free_team(res)
 
     def is_busy(res) -> bool:
         return bool(res.assigned_request_id) or res.status != ResourceStatus.AVAILABLE or (res.capacity_remaining or 0) <= 0
@@ -166,7 +155,7 @@ def collect_counts() -> SitrepCounts:
     shelter = free(ResourceKind.SHELTER)
     boat_gap = max(0, rooftop - boats)
     gaps: List[str] = []
-    if rooftop:
+    if rooftop and boat_gap:
         gaps.append(
             f"{rooftop} rooftop/terrace rescue cases, {boats} free boat team(s), gap {boat_gap}"
         )
@@ -259,6 +248,9 @@ def generate_sitrep() -> SitrepResponse:
             if clean.startswith("json"):
                 clean = clean[4:]
         parsed = _SitrepModel.model_validate_json(clean.strip())
+        lines = [line for line in parsed.brief.splitlines() if line.strip()]
+        if len(lines) > 3 or len(parsed.brief) > 300:
+            raise ValueError("sitrep brief longer than 3 lines")
         blob = " ".join(parsed.model_dump().values())
         if not _numbers_ok(blob, counts):
             raise ValueError("sitrep invented a number")

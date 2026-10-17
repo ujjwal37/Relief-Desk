@@ -34,7 +34,6 @@ describe('AgentTraceDrawerComponent', () => {
     expect(text).toContain('Rated urgency');
     expect(text).toContain('Found the closest team');
     expect(text).toContain('Explained the choice');
-    expect(text).toContain('At the same time');
     expect(fixture.nativeElement.querySelector('.run-badge')?.textContent).toContain('Rules mode');
     expect(text).not.toContain('Offline fallback');
     expect(text).not.toContain('ux.none');

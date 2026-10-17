@@ -57,6 +57,12 @@ export interface ConfirmationCardData {
   summary: string;
   safety_line?: string;
   ready_to_submit: boolean;
+  /** The chat stopped asking: show Call 112 first, then one tap to send. */
+  life_threat?: boolean;
+  life_phrase?: string | null;
+  /** The reporter's first message, word for word; later answers sit apart from it. */
+  original_text?: string;
+  answers?: string[];
 }
 
 export interface ChatTurnResponse {
@@ -109,6 +115,8 @@ export interface ReportSubmitRequest {
   idempotency_key?: string;
   /** Citizen's own words, kept separate from the machine summary. */
   raw_text?: string;
+  /** Chat answers after the first message. */
+  chat_answers?: string[];
   voice_note_id?: string;
   audio_base64?: string;
   image_base64?: string;

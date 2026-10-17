@@ -4,6 +4,27 @@ from app.llm.client import llm_client
 
 router = APIRouter(tags=["Health"])
 
+_SHA: str | None = None
+
+
+def git_short_sha() -> str:
+    """The commit this API runs. GIT_SHA from the start script wins; otherwise ask git once."""
+    global _SHA
+    if _SHA is None:
+        import os
+        import subprocess
+
+        sha = (os.environ.get("GIT_SHA") or "").strip()
+        if not sha:
+            try:
+                here = os.path.dirname(os.path.abspath(__file__))
+                sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=here, capture_output=True,
+                                     text=True, timeout=5).stdout.strip()
+            except Exception:
+                sha = ""
+        _SHA = sha or "unknown"
+    return _SHA
+
 @router.get("/healthz")
 @router.get("/api/health")
 def health_check():
@@ -13,7 +34,9 @@ def health_check():
         "app": settings.PROJECT_NAME,
         "version": settings.VERSION,
         "gemini_enabled": settings.GEMINI_ENABLED,
-        "demo_mode": settings.DEMO_MODE
+        "demo_mode": settings.DEMO_MODE,
+        "git_sha": git_short_sha(),
+        "ai_provider": ai_health()["provider"],
     }
 
 

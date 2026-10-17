@@ -107,16 +107,7 @@ test.describe('agents visible', () => {
       await page.keyboard.press('Escape');
       await expect(merge).toBeHidden();
 
-      await clickCoordLink(page, 'Accuracy report');
-      await expect(page.getByRole('heading', { name: 'Accuracy report' })).toBeVisible();
-      await expect(page.getByTestId('bench-summary')).toContainText('Gemini not measured in this run');
-      await page.locator('details.run-details > summary').click();
-      await expect(page.getByText('gemini-3.5-flash-lite')).toBeVisible();
-      await expect(page.getByText('168').first()).toBeVisible();
-      await expect(page.getByText('Example data')).toHaveCount(0);
-      await expect(page.getByText('First come, first served').first()).toBeVisible();
-      await expect(page.getByText('Synthetic reports, our own labels')).toBeVisible();
-      await shot(page, `${viewport.name}-accuracy-bars`);
+      await expect(page.locator('.menu').getByRole('link', { name: 'Accuracy report' })).toHaveCount(0);
       await noHorizontalOverflow(page);
 
       // Single light theme: no theme switch in the account menu.

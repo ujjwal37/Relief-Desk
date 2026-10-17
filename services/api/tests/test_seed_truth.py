@@ -73,7 +73,7 @@ def test_full_desk_is_a_readable_queue_and_keeps_the_demo_cases():
     rows = _seeded("full")
     ids = {r.id for r in rows}
     open_rows = [r for r in rows if getattr(r.status, "value", r.status) not in ("completed", "dispatched")]
-    assert 12 <= len(open_rows) <= 16
+    assert 12 <= len(open_rows) <= 18
     for must in ("INC-001", "DEMO-101", "DEMO-107", "DEMO-108", "DEMO-109"):
         assert must in ids
     assert len(storage_service.get_request("DEMO-101").report_ids) == 3
@@ -101,3 +101,17 @@ def test_seeded_life_threats_are_in_the_lane(mode):
     assert by["DEMO-108"].ai_queue.life_phrase == "not breathing"
     assert by["DEMO-109"].ai_queue.life_phrase == "ശ്വസിക്കുന്നില്ല"
     assert by["DEMO-108"].ai_queue.life_pick == "boat"
+
+
+def test_seeded_near_match_shows_possible_duplicate_and_never_gets_the_twins_team():
+    from app.agents.matching import matching_agent
+
+    _seeded("full")
+    dup = storage_service.get_request("DEMO-110")
+    hero = storage_service.get_request("INC-001")
+    assert dup.possible_duplicate.target_id == "INC-001"
+    assert dup.possible_duplicate.target_code == hero.public_code
+    assert dup.possible_duplicate.target_code.startswith("RD-")
+    dup_best = matching_agent.find_matches(dup, top_n=1, save_to_storage=False)[0].resource_id
+    hero_best = matching_agent.find_matches(hero, top_n=1, save_to_storage=False)[0].resource_id
+    assert dup_best != hero_best

@@ -5,7 +5,7 @@ import { testProviderWord } from './provider-label';
 import { TraceStepComponent, TraceStepView } from './trace-step.component';
 import { peopleText } from '../../core/people-text';
 import { StepDetailDialogComponent } from './step-detail-dialog.component';
-import { AI_STEP_COUNT, STEP_COUNT, caseRef, joinedCount } from '../case-facts';
+import { STEP_COUNT, caseRef, joinedCount } from '../case-facts';
 
 const outputText = (value: unknown) => typeof value === 'string' ? value : '';
 
@@ -116,7 +116,7 @@ export class AgentTraceDrawerComponent implements AfterViewInit, OnDestroy {
   readonly headline = computed(() => {
     this.lang.currentLang();
     // Same count as the strip on the case: 5 AI steps plus You.
-    return this.lang.translate('flow.headline').replace('{n}', String(AI_STEP_COUNT));
+    return this.lang.translate('flow.howTitle');
   });
 
   readonly contextLine = computed(() => {

@@ -513,10 +513,9 @@ app-ai-stepper .node-title, app-ai-stepper .node-result { white-space: normal !i
 .cmd .footer-buttons-row .btn-approve { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 1359px) {
   .cmd .footer-buttons-row kbd { display: none; }
-  .cmd .footer-buttons-row .btn-reject .btn-label, .cmd .footer-buttons-row .btn-change .btn-label { display: none; }
+  .cmd .footer-buttons-row .btn-reject, .cmd .footer-buttons-row .btn-change { padding-left: 10px; padding-right: 10px; }
 }
-:lang(ml) .cmd .footer-buttons-row .btn-reject .btn-label, :lang(hi-Latn) .cmd .footer-buttons-row .btn-reject .btn-label,
-:lang(ml) .cmd .footer-buttons-row .btn-change .btn-label, :lang(hi-Latn) .cmd .footer-buttons-row .btn-change .btn-label { display: none; }
+/* Reject and Change always show their words; Approve shrinks first. */
 :lang(ml) .cmd .footer-buttons-row kbd, :lang(hi-Latn) .cmd .footer-buttons-row kbd { display: none; }
 .cmd .btn-arrived { white-space: nowrap; min-width: 128px; }
 /* P0-5: phone nav is logo · Ask · ☰ (no duplicate More). */

@@ -52,7 +52,7 @@
     "coordCardSub": "Open the live dashboard",
     "judgeLink": "Judge? Watch Gemini sort 8 live flood reports in one click",
     "trustOffline": "Works offline",
-    "trustLang": "4 languages",
+    "trustLang": "Reports in 5 languages (English, Hindi, Hinglish, Malayalam, Manglish)",
     "trustArea": "Area-level public data",
     "noSignup": "No sign-up",
     "cup": "Google Cloud AI Builder Cup 2026",
@@ -71,6 +71,9 @@
     "tryDesk": "Try the desk"
   },
   "report": {
+    "lifeTitle": "This sounds life-threatening. Call 112 now.",
+    "lifeCall": "Call 112",
+    "lifeSend": "Send to the desk now",
     "title": "Emergency Crisis Report",
     "chatTab": "Voice / Chat",
     "formTab": "Form Details",
@@ -312,6 +315,7 @@
     "close": "Done"
   },
   "coord": {
+    "demoTools": "Demo tools",
     "noPlaceGiven": "no place given",
     "findingTeam": "Finding the best team…",
     "cases": "Cases",
@@ -863,7 +867,7 @@
     "badgeGemini": "Gemini",
     "badgeRules": "Rules",
     "badgeOffline": "Gemini unavailable, built-in rules used",
-    "badgeLocal": "Local test model (Antigravity)",
+    "badgeLocal": "Local test model",
     "badgeTest": "Test model ({name})",
     "resetDemo": "Reset demo",
     "resetDemoConfirm": "Reload the two-case demo? Merges, holds and dispatches from this session are undone. The audit log is kept.",
@@ -961,6 +965,7 @@
   "flow": {
     "title": "How it decided",
     "headline": "{n} steps",
+    "howTitle": "How the AI decided",
     "forCase": "For {id} · {title}",
     "parallel": "At the same time",
     "details": "Details",
@@ -1020,7 +1025,7 @@
     "zoom": "Map zoom",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "simplified": "Simplified map (offline)"
+    "simplified": "Simplified Kuttanad map"
   },
   "photo": {
     "add": "Add photo",
@@ -1316,7 +1321,7 @@
   },
   "noTeam": {
     "title": {
-      "boat": "No free boat within {km} km",
+      "boat": "No free boat close enough",
       "medical": "No free medical team nearby",
       "food": "No free food team nearby",
       "shelter": "No free shelter nearby",

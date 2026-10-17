@@ -1444,3 +1444,8 @@ app-ai-stepper {
   .aiq-dot.active, .aiq-enter, .aiq-pulse { animation: none !important; }
   .aiq-enter { transform: none; }
 }
+
+.skel-cards { display:flex; flex-direction:column; gap:8px; padding:4px 0; }
+.skel-card { height:72px; border-radius:var(--r3, 12px); border:1px solid var(--border); background:linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size:200% 100%; animation:skel 1.6s ease-in-out infinite; }
+@keyframes skel { to { background-position:-200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skel-card { animation:none; } }

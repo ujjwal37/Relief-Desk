@@ -104,8 +104,13 @@ class MatchingAgent:
         twin_hint = getattr(request, "possible_duplicate", None)
         if twin_hint is not None and twin_hint.target_id:
             twin_matches = [m for m in storage_service.list_matches_for_request(twin_hint.target_id) if m.resource_id]
-            if twin_matches:
-                twin_best = max(twin_matches, key=lambda m: m.score).resource_id
+            twin_best = max(twin_matches, key=lambda m: m.score).resource_id if twin_matches else None
+            twin = storage_service.get_request(twin_hint.target_id) if twin_best is None else None
+            if twin is not None and getattr(twin, "possible_duplicate", None) is None:
+                # The twin's list was never opened: work out its best team without saving anything.
+                preview = self.find_matches(twin, top_n=1, save_to_storage=False)
+                twin_best = preview[0].resource_id if preview else None
+            if twin_best:
                 resources = [r for r in resources if r.id != twin_best]
 
         scored_candidates = []

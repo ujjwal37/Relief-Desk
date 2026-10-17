@@ -17,7 +17,7 @@ export interface StepStatusInfo {
     <div class="stepper-card">
       <header class="stepper-head">
         <div class="head-left">
-          <span class="step-count-title">{{ 'flow.headline' | rdTranslate:{ n: stepCount } }}</span>
+          
           <span class="run-badge">{{ runBadge() }}</span>
         </div>
         <button type="button" class="how-decided-btn" (click)="howDecided.emit()">
@@ -196,9 +196,6 @@ export interface StepStatusInfo {
         </button>
       </div>
 
-      <p class="same-time-note">
-        {{ 'step.sameTime' | rdTranslate }}
-      </p>
     </div>
   `,
   styles: [`

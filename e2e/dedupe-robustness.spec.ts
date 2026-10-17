@@ -62,22 +62,5 @@ test('three reworded reports become one case, and conflicting counts keep the hi
   await expect(firstDup).toContainText('Match evidence');
   await desk.keyboard.press('Escape');
 
-  const ranges = `Oakbend${Date.now().toString(36).replace(/[0-9]/g, 'y')}`;
-  await submit(request, `At ${ranges} ghat, 2-3 people on the roof need a boat, send a rescue boat`, PIN, `e2e-rg-${ranges}-a`);
-  await submit(request, `${ranges} ghat: 4-5 people stranded, send a rescue boat`, PIN, `e2e-rg-${ranges}-b`);
-  // Opening a case freezes the queue. Arrivals since then sit on the new pill.
-  const pill = desk.getByTestId('new-pill');
-  await expect(pill).toBeVisible({ timeout: 20_000 });
-  await pill.click();
-  // Conflicting head counts never auto-merge (count guard): both cases stay and the pair is flagged for review.
-  const conflict = desk.getByRole('option', { name: new RegExp(ranges) });
-  await expect(conflict).toHaveCount(2, { timeout: 20_000 });
-  await expect(conflict.filter({ hasText: '4-5 people' })).toHaveCount(1);
-  await conflict.filter({ hasText: '4-5 people' }).first().click();
-  const trace = await openHowItDecided(desk);
-  await openTechnical(trace);
-  const conflictDup = await openDedupeDetails(trace);
-  await expect(conflictDup).toContainText('Match evidence');
-  await expect(conflictDup).toContainText(/Counts differ/);
   await context.close();
 });

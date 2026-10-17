@@ -196,6 +196,8 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
     """Alerts from the live case store. Ages come from real timestamps, never fixed labels."""
     from datetime import datetime, timezone
 
+    from app.tools.desk_counts import free_by_kind, is_waiting
+
     now = datetime.now(timezone.utc)
     requests = [req for req in storage.list_requests() if not req.merged_into]
     alerts: List[AnomalyAlert] = []
@@ -234,13 +236,9 @@ def live_alerts_from_storage(storage) -> List[AnomalyAlert]:
     demand: Dict[str, List[str]] = {}
     for req in requests:
         kind = kind_map.get(str(getattr(req.type, "value", req.type)))
-        if kind and _status(req) in OPEN_STATUSES and "hoax" not in (req.flags or []):
+        if kind and is_waiting(req) and "hoax" not in (req.flags or []):
             demand.setdefault(kind, []).append(req.created_at)
-    free_teams: Dict[str, int] = {}
-    for resource in storage.list_resources():
-        if _status(resource) == "available" and resource.capacity_remaining > 0 and not resource.hold_request_id:
-            key = str(getattr(resource.kind, "value", resource.kind))
-            free_teams[key] = free_teams.get(key, 0) + 1
+    free_teams: Dict[str, int] = free_by_kind(storage.list_resources())
     for kind, stamps in sorted(demand.items()):
         free = free_teams.get(kind, 0)
         if len(stamps) > free:
@@ -315,7 +313,10 @@ def collect_alerts(storage=None) -> List[AnomalyAlert]:
     from datetime import datetime, timezone, timedelta
     now_dt = datetime.now(timezone.utc)
     mins_map = {"spike": 4, "silent_zone": 11, "resource_gap": 17, "conflict": 26, "stale": 42}
-    for alert in alerts_from_signals(load_seed_signals()):
+    # A live desk shows only alerts computed from its own cases and teams. Sample alerts carried
+    # invented numbers that disagreed with Situation and Command, so they appear only with no store.
+    signals = load_seed_signals() if storage is None else []
+    for alert in alerts_from_signals(signals):
         if alert.kind == "resource_gap" and _gap_kind(alert.id) in live_gap_kinds:
             continue
         if (alert.kind, alert.ward_id or alert.id) in live_keys:

@@ -79,11 +79,11 @@ _READY = {
 
 
 _LIFE_112 = {
-    "en": "This sounds life-threatening. Call 112 now. We are also alerting the nearest team.",
-    "hi": "यह जान का खतरा लगता है। अभी 112 पर कॉल करें। हम पास की टीम को भी बता रहे हैं।",
-    "hinglish": "Yeh jaan ka khatra lagta hai. Abhi 112 pe call karein. Hum paas ki team ko bhi bata rahe hain.",
-    "ml": "ഇത് ജീവന് ഭീഷണിയാണ്. ഇപ്പോൾ തന്നെ 112 വിളിക്കുക. അടുത്തുള്ള ടീമിനെയും ഞങ്ങൾ അറിയിക്കുന്നു.",
-    "manglish": "Ithu jeevanu bheeshaniyanu. Ippol thanne 112 vilikkuka. Aduthulla teaminem njangal ariyikkunnu.",
+    "en": "This sounds life-threatening. Call 112 now.",
+    "hi": "यह जान का खतरा लगता है। अभी 112 पर कॉल करें।",
+    "hinglish": "Yeh jaan ka khatra lagta hai. Abhi 112 pe call karein.",
+    "ml": "ഇത് ജീവന് ഭീഷണിയാണ്. ഇപ്പോൾ തന്നെ 112 വിളിക്കുക.",
+    "manglish": "Ithu jeevanu bheeshaniyanu. Ippol thanne 112 vilikkuka.",
 }
 
 
@@ -159,6 +159,12 @@ class ConfirmationCardData(BaseModel):
     likely_hoax: bool = False
     hoax_reason: Optional[str] = None
     held: bool = False
+    # Life threat: the chat stopped asking and the reporter sees Call 112 first.
+    life_threat: bool = False
+    life_phrase: Optional[str] = None
+    # The reporter's first message, word for word, and their later answers kept apart from it.
+    original_text: str = ""
+    answers: List[str] = Field(default_factory=list)
 
 
 class ChatTurnState(BaseModel):
@@ -255,6 +261,15 @@ class ChatIntakeAgent:
         team_need = type_before in (IncidentType.RESCUE, IncidentType.MEDICAL, IncidentType.FOOD, IncidentType.SHELTER)
         if team_need and state.extracted_so_far.type == IncidentType.INFO:
             state.extracted_so_far.type = type_before
+        # A life threat in any language stops the questions at once: Call 112 and send now.
+        # Same detector as live intake and the seeded queue (case_queue.life_phrase).
+        from app.tools.case_queue import life_phrase
+        if not hoax_reason and life_phrase(full_text):
+            for slot in self._missing_slots(state):
+                setattr(state, f"slot_{'people' if slot == 'people_count' else 'need' if slot == 'need' else slot}", True)
+                if slot == "people_count":
+                    state.people_unknown = state.extracted_so_far.people.count is None
+            return self._finish(state, scenario, lang, full_text, hoax_reason)
         if is_nobody_stranded(full_text) and not (team_need and not is_nobody_stranded(user_message)):
             self._mark_nobody(state)
             return self._finish(state, scenario, lang, full_text, hoax_reason)
@@ -432,10 +447,12 @@ class ChatIntakeAgent:
             line = pack_notice(scenario, lang)
             bot_msg = _READY.get(lang, _READY["en"])
         from app.tools.case_queue import life_phrase
-        if not hoax_reason and life_phrase(full_text):
+        phrase = None if hoax_reason else life_phrase(full_text)
+        if phrase:
             # A life threat in any language: call 112 now comes first, in the reporter's language.
             line = scenario_registry.get_safety_line("call_112", lang=lang)
-            bot_msg = f"{_LIFE_112.get(lang, _LIFE_112['en'])} {bot_msg}".strip()
+            bot_msg = _LIFE_112.get(lang, _LIFE_112["en"])
+        said = [m["text"] for m in state.messages_history if m.get("role") == "user" and m.get("text")]
         card = ConfirmationCardData(
             incident_type=current.type.value,
             place_text=current.place_text or "",
@@ -448,6 +465,10 @@ class ChatIntakeAgent:
             likely_hoax=bool(hoax_reason),
             hoax_reason=hoax_reason,
             held=bool(hoax_reason),
+            life_threat=bool(phrase),
+            life_phrase=phrase,
+            original_text=said[0] if said else "",
+            answers=said[1:],
         )
         state.confirmation_card = card
         state.messages_history.append({"role": "assistant", "text": bot_msg})

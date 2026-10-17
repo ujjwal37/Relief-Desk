@@ -232,12 +232,6 @@ test.describe('public and coordinator demo', () => {
       await expect(page.getByText('Resource gap').first()).toBeVisible();
       await shot(page, `${viewport.name}-alerts`);
 
-      await clickCoordLink(page, 'Accuracy report');
-      await expect(page.getByRole('heading', { name: 'Accuracy report' })).toBeVisible();
-      await expect(page.getByText('First come, first served').first()).toBeVisible();
-      await expect(page.getByText('Synthetic reports, our own labels')).toBeVisible();
-      await shot(page, `${viewport.name}-accuracy`);
-
       if (viewport.name === 'desktop') {
         await exhaustBoats(request);
         const gapPlace = `E2EGAP${Date.now().toString().slice(-6)}`;

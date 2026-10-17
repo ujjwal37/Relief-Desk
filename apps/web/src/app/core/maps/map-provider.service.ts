@@ -13,7 +13,11 @@ export class MapProviderService {
   /** Set when the browser key is rejected. Later maps stay on the SVG. */
   authFailed = false;
 
+  /** One map style on every page: the Kuttanad schematic. Google tiles mixed two looks across screens. */
+  static readonly ONE_STYLE: MapMode | null = 'svg';
+
   decide(): Promise<MapMode> {
+    if (MapProviderService.ONE_STYLE) return Promise.resolve(MapProviderService.ONE_STYLE);
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       return Promise.resolve('svg');
     }

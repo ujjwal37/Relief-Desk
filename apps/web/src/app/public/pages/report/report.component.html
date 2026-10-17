@@ -61,13 +61,6 @@
               <button type="button" class="chip" (click)="pickSuggestion(s.key)">{{ s.key | rdTranslate }}</button>
             }
           </div>
-          @if (demoTools) {
-          <div class="samples">
-            <button type="button" class="chip" data-testid="sample-voice" [disabled]="sampleBusy()" (click)="sendSample('voice')">{{ 'xfactor.sampleVoice' | rdTranslate }}</button>
-            <button type="button" class="chip" data-testid="sample-photo" [disabled]="sampleBusy()" (click)="sendSample('photo')">{{ 'xfactor.samplePhoto' | rdTranslate }}</button>
-            <button type="button" class="chip" data-testid="sample-duplicate" [disabled]="sampleBusy()" (click)="sendSample('duplicate')">{{ 'xfactor.sampleDuplicate' | rdTranslate }}</button>
-          </div>
-          }
           <button type="button" class="link" (click)="openForm()">{{ 'report.preferForm' | rdTranslate }}</button>
         </section>
       }
@@ -92,7 +85,13 @@
             @if (slow()) { <p class="slow">{{ 'report.takingLonger' | rdTranslate }}</p> }</div></div>
       }
 
-      @if (pendingCard() && !reviewOpen()) {
+      @if (lifeCard() && pendingCard(); as card) {
+        <section class="life-card" role="alert" data-testid="reporter-life-card">
+          <h2>{{ 'report.lifeTitle' | rdTranslate }}</h2>
+          <a class="life-112" href="tel:112" data-testid="reporter-call-112">{{ 'report.lifeCall' | rdTranslate }}</a>
+          <button type="button" class="life-send" data-testid="reporter-life-send" [disabled]="isLoading() && !slow()" (click)="confirmAndSubmit(card)">{{ 'report.lifeSend' | rdTranslate }}</button>
+        </section>
+      } @else if (pendingCard() && !reviewOpen()) {
         <button type="button" class="review-btn" (click)="reviewOpen.set(true)">{{ 'report.reviewSend' | rdTranslate }}</button>
       }
       <div #threadEnd></div>

@@ -6,7 +6,8 @@
   </header>
 
   <h3 class="lead" id="confirm-lead">{{ 'confirm.title' | rdTranslate }}</h3>
-  <h2 class="summary">{{ quote || card.summary }}</h2>
+  <h2 class="summary">{{ card.summary || quote }}</h2>
+  <p class="your-words" *ngIf="quote && card.summary">“{{ quote }}”</p>
   <p class="nothing-sent">{{ 'confirm.nothingSent' | rdTranslate }}</p>
 
   <div class="rows">
@@ -78,7 +79,6 @@
       {{ busy ? ('report.submitting' | rdTranslate) : ('confirm.sendNow' | rdTranslate) }}
     </button>
     <div class="alt">
-      <a class="alt-btn" [href]="smsHref || 'sms:112'">{{ 'report.sendSms' | rdTranslate }}</a>
       <a class="alt-btn call" href="tel:112">{{ 'confirm.callOutline' | rdTranslate }}</a>
     </div>
   </div>

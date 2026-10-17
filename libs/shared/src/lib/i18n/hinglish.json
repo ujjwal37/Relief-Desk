@@ -52,7 +52,7 @@
     "coordCardSub": "Live dashboard kholein",
     "judgeLink": "Judge? Ek click mein dekhiye Gemini 8 live flood reports kaise sort karta hai",
     "trustOffline": "Offline bhi chalta hai",
-    "trustLang": "4 bhashayein",
+    "trustLang": "5 bhashaon mein report (English, Hindi, Hinglish, Malayalam, Manglish)",
     "trustArea": "Sirf area-level public data",
     "noSignup": "Sign-up nahi",
     "cup": "Google Cloud AI Builder Cup 2026",
@@ -71,6 +71,9 @@
     "tryDesk": "Desk try karein"
   },
   "report": {
+    "lifeTitle": "Yeh jaan ka khatra lagta hai. Abhi 112 pe call karein.",
+    "lifeCall": "112 pe call karein",
+    "lifeSend": "Abhi desk ko bhejein",
     "title": "Emergency report bhejein",
     "chatTab": "Bolkar / likhkar",
     "formTab": "Form bharein",
@@ -312,6 +315,7 @@
     "close": "Ho gaya"
   },
   "coord": {
+    "demoTools": "Demo ke tools",
     "noPlaceGiven": "jagah nahi batayi",
     "findingTeam": "Best team dhoondh rahe hain…",
     "cases": "Maamle",
@@ -863,7 +867,7 @@
     "badgeGemini": "Gemini",
     "badgeRules": "Rules",
     "badgeOffline": "Gemini available nahi, built-in rules use hue",
-    "badgeLocal": "Local test model (Antigravity)",
+    "badgeLocal": "Local test model",
     "badgeTest": "Test model ({name})",
     "resetDemo": "Demo reset karo",
     "resetDemoConfirm": "Do cases wala synthetic demo phir se load karein? Is session ke merge, hold aur dispatch undo ho jayenge. Audit log rahega.",
@@ -961,6 +965,7 @@
   "flow": {
     "title": "AI ne kaise decide kiya",
     "headline": "{n} kadam",
+    "howTitle": "AI ne kaise decide kiya",
     "forCase": "{id} · {title} ke liye",
     "parallel": "Ek saath",
     "details": "Poori jaankari",
@@ -1020,7 +1025,7 @@
     "zoom": "Map zoom",
     "zoomIn": "Paas karein",
     "zoomOut": "Door karein",
-    "simplified": "Simple naksha (offline)"
+    "simplified": "Kuttanad ka simple naksha"
   },
   "photo": {
     "add": "Photo jodein",
@@ -1316,7 +1321,7 @@
   },
   "noTeam": {
     "title": {
-      "boat": "{km} km ke andar koi free boat nahi",
+      "boat": "Paas mein koi khaali naav nahi",
       "medical": "Paas mein koi free medical team nahi",
       "food": "Paas mein koi free food team nahi",
       "shelter": "Paas mein koi free shelter nahi",

@@ -33,7 +33,6 @@
       </div>
       <p class="reason">{{ reasonOf(it.alert) }}</p>
       <p class="where" *ngIf="it.ward">{{ it.ward.name }} · {{ it.ward.district }}</p>
-      <p class="where off" *ngIf="!it.at">{{ 'alerts.noPin' | rdTranslate }}</p>
       <div class="actions">
         <button type="button" class="primary" [disabled]="it.alert.acknowledged" (click)="acknowledge(it.alert); $event.stopPropagation()">
           {{ it.alert.acknowledged ? ('alerts.ackDone' | rdTranslate) : ('alerts.acknowledge' | rdTranslate) }}

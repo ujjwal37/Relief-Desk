@@ -89,6 +89,17 @@ DEMO_CASES: List[Dict[str, Any]] = [
         "ml": "അച്ഛൻ ശ്വസിക്കുന്നില്ല, കൈനകരി പഞ്ചായത്ത് ഓഫീസിന് അടുത്ത് വീടിന് ചുറ്റും വെള്ളം. വേഗം വരൂ.",
     },
     {
+        # A near-match of the hero (same jetty, minutes apart, different words). The desk suggests
+        # "Possible duplicate of RD-xxxx" and leaves the merge to the coordinator.
+        "id": "DEMO-110", "minutes": 4, "type": "rescue", "ward_id": "ward_3", "lat": 9.4365, "lng": 76.3985,
+        "people": None, "hazard": "water_rising", "vulnerable": {"child": True},
+        "place": "Nedumudi Boat Jetty",
+        "en": "Water is rising at the house next to Nedumudi Boat Jetty, the family is on the terrace and the children are crying. Please send a boat.",
+        "hi": "नेदुमुडी बोट जेटी के पास वाले घर में पानी बढ़ रहा है, परिवार छत पर है और बच्चे रो रहे हैं। कृपया नाव भेजें।",
+        "raw": "en",
+        "dup_of": "INC-001",
+    },
+    {
         "id": "DEMO-106", "minutes": 110, "type": "info", "ward_id": "ward_2", "lat": 9.414, "lng": 76.415,
         "people": None, "hazard": "none", "vulnerable": {},
         "place": "Champakulam - Alappuzha road",
@@ -172,9 +183,34 @@ def load_demo_cases(storage) -> int:
         req = storage.get_request(row["id"])
         if req is not None and not req.trace:
             ensure_trace(req)
+    _link_possible_duplicates(storage)
     from app.tools.case_queue import mark_seed_life_threats
     mark_seed_life_threats(storage._requests.values())
     return added
+
+
+def _link_possible_duplicates(storage) -> None:
+    from app.api.public import public_code_for
+    from app.models.firestore_models import PossibleDuplicate
+    from app.tools.geo import team_distance_km
+
+    for row in DEMO_CASES:
+        target_id = row.get("dup_of")
+        req = storage.get_request(row["id"])
+        target = storage.get_request(target_id) if target_id else None
+        if req is None or target is None or req.possible_duplicate is not None:
+            continue
+        km = team_distance_km(req, target)
+        code = target.public_code or public_code_for(target.id)
+        minutes = _minutes_apart(req.created_at, target.created_at)
+        apart = f"{minutes} min apart, " if minutes is not None else ""
+        note = f"Same place ({target.place_text}), {apart}different words. A person decides."
+        req.possible_duplicate = PossibleDuplicate(
+            target_id=target.id, target_code=code, confidence=0.7, similarity=0.6,
+            distance_km=km, minutes=minutes, note=note,
+        )
+        req.dedupe_trace = note
+        storage._requests[req.id] = req
 
 
 def _attach_merged(storage, req, row, now) -> None:
@@ -198,3 +234,16 @@ def _attach_merged(storage, req, row, now) -> None:
     req.merged_count = len(ids)
     req.dedupe_trace = ("Same house: all three name Champakulam church road, 5 people (five), "
                         "an elderly woman who cannot walk and rising water, within 4 minutes. Counts agree.")
+
+
+def _minutes_apart(a, b):
+    try:
+        da = datetime.fromisoformat(str(a).replace("Z", "+00:00"))
+        db = datetime.fromisoformat(str(b).replace("Z", "+00:00"))
+        if da.tzinfo is None:
+            da = da.replace(tzinfo=timezone.utc)
+        if db.tzinfo is None:
+            db = db.replace(tzinfo=timezone.utc)
+        return int(round(abs((da - db).total_seconds()) / 60))
+    except (TypeError, ValueError):
+        return None

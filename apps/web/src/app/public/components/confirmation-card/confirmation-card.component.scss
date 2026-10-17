@@ -5,6 +5,7 @@
 .understood-chip { background:var(--brand-tint); color:var(--brand); font-weight: 600; font-size:16px; padding:4px 12px; border-radius:8px; }
 .ai-label { font-size:14px; color:var(--text-2); }
 .summary { margin:4px 0 6px; font:var(--tp-hero); }
+.your-words { margin:0 0 8px; font-size:14px; line-height:1.4; color:var(--text-2); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .nothing-sent { margin:0 0 14px; color:var(--text-2); font-size:16px; }
 .rows { background:var(--card); border:1px solid var(--border); border-radius:var(--r3); padding:8px 20px; box-shadow:var(--e1); }
 .kv { display:flex; align-items:center; gap:10px; min-height:56px; border-bottom:1px solid var(--border); &:last-child { border-bottom:0; } }

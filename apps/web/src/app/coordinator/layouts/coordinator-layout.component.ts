@@ -27,6 +27,8 @@ export class CoordinatorLayoutComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
 
   readonly demoAllowed = signal(false);
+  /** Accuracy is listed only when it has real Gemini-vs-rules numbers. Rules-only runs stay off the nav. */
+  readonly accuracyMeasured = signal(false);
   readonly aiHealth = signal<AiHealthResponse | null>(null);
   readonly sitrepOpen = signal(false);
   readonly sitrepBusy = signal(false);
@@ -86,6 +88,10 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     this.live.connectDesk();
     this.api.getHealth().subscribe({ next: (health) => this.demoAllowed.set(!!health.demo_mode), error: () => this.demoAllowed.set(false) });
     this.refreshAiHealth();
+    this.api.getBenchmark?.()?.subscribe({
+      next: (b) => this.accuracyMeasured.set((b?.['gemini'] as { measured?: boolean } | undefined)?.measured === true),
+      error: () => this.accuracyMeasured.set(false),
+    });
     this.prewarmSitrep();
     // The pill reads "Rules fallback" until the first Gemini call succeeds; keep it current.
     this.aiHealthPoll = setInterval(() => this.refreshAiHealth(), 15000);
@@ -296,6 +302,12 @@ export class CoordinatorLayoutComponent implements OnDestroy {
       },
       error: () => { this.surgeBusy.set(false); this.surgeNotice.set(this.lang.translate('demo.surgeUnavailable')); },
     });
+  }
+
+  /** Backup only: a coordinator starts the 8-report live run from More > Demo tools. Never automatic. */
+  runLiveDemo(): void {
+    this.menuOpen.set(false);
+    window.location.assign('/coordinator/command?live=1');
   }
 
   logout(): void {

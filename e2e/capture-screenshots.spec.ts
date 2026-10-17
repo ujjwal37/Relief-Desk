@@ -86,12 +86,4 @@ test('capture required screenshots at 1440x900', async ({ page, request }) => {
   await noHorizontalOverflow(page);
   await shot(page, 'teams-page.png');
 
-  // 7. Home while a sample is processing
-  await page.locator('nav.tabs').getByRole('link', { name: 'Command', exact: true }).click();
-  await page.waitForURL(/\/coordinator\/command/);
-  await page.locator('details.live-own > summary').click();
-  const hindiSampleBtn = page.getByTestId('sample-hindi');
-  await hindiSampleBtn.click();
-  await page.waitForTimeout(400);
-  await shot(page, 'home-sample-processing.png');
 });

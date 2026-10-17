@@ -61,6 +61,8 @@ class ReportSubmitRequest(BaseModel):
     structured: Optional[StructuredReportFacts] = None
     idempotency_key: Optional[str] = None
     raw_text: Optional[str] = None
+    # Chat answers after the first message, kept apart from the reporter's original sentence.
+    chat_answers: Optional[List[str]] = None
 
 
 class ReportSubmitResponse(BaseModel):
@@ -168,6 +170,11 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         transcript=transcript,
         asr_confidence=asr_confidence,
     )
+    if payload.chat_answers:
+        raw_report.chat_answers = [str(x)[:500] for x in payload.chat_answers[:10]]
+        if payload.raw_text and payload.channel != "voice":
+            # The stored report is the reporter's first sentence; the answers sit beside it.
+            raw_report.raw_text = payload.raw_text.strip()
 
     # Citizen words stay the raw report. Voice uses the live transcript, not a stored caption.
     if payload.channel == "voice" and transcript:
@@ -229,7 +236,9 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
     req_obj.urgency_score = urgency_res.score
     req_obj.urgency_reason = urgency_res.reason
     from app.tools.case_queue import begin_case
-    begin_case(req_obj, citizen_text or report_text, others=storage_service.list_requests())
+    # The life-threat check reads the chat answers too ("my father is not breathing" can come second).
+    lane_text = "\n".join([citizen_text or report_text or ""] + list(payload.chat_answers or []))
+    begin_case(req_obj, lane_text, others=storage_service.list_requests())
     storage_service.save_request(req_obj, actor="intake_pipeline")
     _link_report(raw_report, req_obj, req_id, machine_summary, citizen_text or report_text)
 
@@ -393,6 +402,23 @@ def _link_report(
     raw_report.summary = summary[:160]
 
 
+def _reporter_summary(raw_report: StoredReport, req_obj: StoredRequest) -> str:
+    """What the reporter sees after sending: a short summary in their language, not their own transcript.
+
+    Information and hoax reports keep the faithful text, because there is no need to summarise.
+    """
+    fallback = req_obj.ai_translation or req_obj.summary or ""
+    if req_obj.hoax_reason or "hoax" in (req_obj.flags or []):
+        return fallback
+    try:
+        from app.agents.chat_intake import _slot_summary
+
+        short = _slot_summary(req_obj.type, req_obj.people_count, req_obj.place_text, raw_report.lang or "en")
+    except Exception:
+        short = ""
+    return short or fallback
+
+
 def _response_for(
     raw_report: StoredReport,
     req_obj: StoredRequest,
@@ -406,7 +432,7 @@ def _response_for(
         report_id=raw_report.id,
         request_id=req_obj.id,
         status_token=raw_report.status_token or "",
-        summary="" if reading else (req_obj.ai_translation or req_obj.summary or ""),
+        summary="" if reading else _reporter_summary(raw_report, req_obj),
         urgency_score=req_obj.urgency_score,
         dedupe_decision=decision,
         flags=list(flags),

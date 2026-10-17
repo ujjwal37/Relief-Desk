@@ -12,7 +12,7 @@ async function login(page: Page) {
   await page.goto('/coordinator/login');
   await page.getByRole('button', { name: 'Enter as demo coordinator' }).click();
   await page.waitForURL(/coordinator\/command/);
-  await expect(page.locator('[data-case-id="INC-008"]')).toBeVisible();
+  await expect(page.locator('[data-case-id="INC-001"]')).toBeVisible();
 }
 
 async function fits(page: Page) {
@@ -37,7 +37,7 @@ test('landing report entry works immediately on desktop and mobile', async ({ pa
 test('recorded traces, nearby single line, fallback preview and Hindi screenshots', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await login(page);
-  await page.locator('[data-case-id="INC-008"] button.case').click();
+  await page.locator('[data-case-id="INC-001"] button.case').click();
   await expect(page.locator('.best-team-banner .team-specs').first()).toContainText(/km/);
   await expect(page.locator('.best-team-banner .team-specs').first()).toContainText(/min/);
   await expect(page.locator('.svgmap text.leg')).toHaveCount(1);
@@ -72,7 +72,7 @@ test('recorded traces, nearby single line, fallback preview and Hindi screenshot
   await expect(page.locator('[data-case-id="INC-001"]').getByRole('button', { name: '3 reports', exact: true })).toHaveCount(0);
   await expect(page.locator('.cmd')).not.toContainText('kfermvxnjxct');
   await page.screenshot({ path: path.join(SHOTS, 'phone-desk-merged.png') });
-  await page.locator('[data-case-id="INC-008"] button.case').click();
+  await page.locator('[data-case-id="INC-001"] button.case').click();
   await page.getByRole('button', { name: 'Account menu' }).click();
   await page.locator('.menu').getByRole('button', { name: 'Hindi', exact: true }).click();
   await page.keyboard.press('Escape');

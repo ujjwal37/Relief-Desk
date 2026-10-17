@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { Router } from '@angular/router';
 import { timeout } from 'rxjs';
 import { ApiClientService, LanguageService, RdTranslatePipe, SitrepResponse, StoredRequest, urgencyBand } from '@rd/shared';
-import { MapPin, MapProviderComponent } from '../../../core/maps/map-provider.component';
+import { MapPin } from '../../../core/maps/map-provider.component';
 import { teamTone } from '../../../core/maps/map-markers';
 import { DeskStore } from '../../../core/desk-store';
 
@@ -21,7 +21,7 @@ const WARD_NAME: Record<string, string> = { ward_1: 'Kainakary', ward_2: 'Champa
   selector: 'app-coordinator-situation',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RdTranslatePipe, MapProviderComponent],
+  imports: [RdTranslatePipe],
   template: `
     <div class="sit">
       <header class="sit-head">
@@ -33,22 +33,16 @@ const WARD_NAME: Record<string, string> = { ward_1: 'Kainakary', ward_2: 'Champa
       </header>
 
       @if (!desk.casesReady()) {
-        <div class="tiles">@for (i of [1,2,3,4,5,6]; track i) { <div class="tile skel"></div> }</div>
+        <div class="tiles">@for (i of [1,2,3]; track i) { <div class="tile skel"></div> }</div>
       } @else {
         <div class="tiles" data-testid="sit-tiles">
           <div class="tile"><b>{{ stats().waiting }}</b><span>{{ 'batch.waiting' | rdTranslate }}</span></div>
           <div class="tile"><b>{{ stats().dispatched }}</b><span>{{ 'batch.dispatched' | rdTranslate }}</span></div>
           <div class="tile"><b>{{ stats().completed }}</b><span>{{ 'sit.completed' | rdTranslate }}</span></div>
-          <div class="tile"><b>{{ stats().merged }}</b><span>{{ 'sit.merged' | rdTranslate }}</span></div>
-          <div class="tile"><b>{{ stats().hoax }}</b><span>{{ 'sit.hoax' | rdTranslate }}</span></div>
-          <div class="tile"><b>{{ stats().perMin }}</b><span>{{ 'sit.perMin' | rdTranslate }}</span></div>
         </div>
       }
 
       <div class="grid">
-        <section class="panel map" [attr.aria-label]="'ui.map' | rdTranslate">
-          <rd-map-provider [pins]="pins()" [legs]="[]" [center]="{ lat: 10.3, lng: 76.33 }" [cluster]="true" [fitAll]="true" (pinSelect)="openCase($event)"></rd-map-provider>
-        </section>
         <div class="side">
           <section class="panel brief" data-testid="sit-brief">
             <div class="brief-head">
@@ -66,7 +60,7 @@ const WARD_NAME: Record<string, string> = { ward_1: 'Kainakary', ward_2: 'Champa
               <p class="empty">{{ 'sit.allClear' | rdTranslate }}</p>
             } @else {
               <ol class="areas" data-testid="sit-areas">
-                @for (a of areas(); track a.ward; let i = $index) {
+                @for (a of areas().slice(0, 3); track a.ward; let i = $index) {
                   <li><button type="button" (click)="openArea(a.ward)">
                     <span class="rank">{{ i + 1 }}</span>
                     <span class="name">{{ a.label }}</span>
@@ -113,7 +107,7 @@ const WARD_NAME: Record<string, string> = { ward_1: 'Kainakary', ward_2: 'Champa
     .skel { background:var(--surface-2); animation:pulse 1.2s ease-in-out infinite; }
     @keyframes pulse { 50% { opacity:.5; } }
     @media (prefers-reduced-motion: reduce) { .skel { animation:none; } }
-    .grid { display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:16px; min-height:520px; }
+    .grid { display:block; max-width:760px; }
     .panel { background:var(--card); border:1px solid var(--border); border-radius:var(--r3, 12px); padding:14px 16px; }
     .brief-skel { display:flex; flex-direction:column; gap:8px; padding:4px 0; }
     .brief-skel i { display:block; height:12px; border-radius:6px; background:linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size:200% 100%; animation:bsk 1.6s ease-in-out infinite; }

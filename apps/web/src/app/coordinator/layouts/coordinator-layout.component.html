@@ -24,7 +24,9 @@
       </div>
 
       <div class="right">
+        @if (aiHealth()) {
         <span class="ai-pill" data-testid="ai-health" [class.live]="aiHealth()?.provider === 'gemini'" [class.off]="aiHealth()?.provider !== 'gemini'" [attr.title]="aiHealth()?.model || ''">{{ aiPillText() }}@if (geminiCalls() != null) { <span class="ai-calls" data-testid="gemini-calls"> · {{ 'demo.geminiCalls' | rdTranslate:{ n: geminiCalls() } }}</span> }</span>
+        }
         <div class="menu-wrap">
           <button type="button" class="avatar more-btn" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-haspopup="menu" [attr.aria-label]="'coord.menu' | rdTranslate"><span class="more-word">{{ 'coord.more' | rdTranslate }} ▾</span><span class="burger" aria-hidden="true">☰</span></button>
           @if (menuOpen()) {
@@ -37,13 +39,9 @@
               <a class="item" routerLink="/coordinator/alerts" (click)="menuOpen.set(false)">{{ 'coord.alerts' | rdTranslate }}
                 @if (ui.alerts().length) { <span class="count">{{ ui.alerts().length }}</span> }
               </a>
-              <a class="item judges" routerLink="/coordinator/benchmark" (click)="menuOpen.set(false)"><small>{{ 'sit.forJudges' | rdTranslate }}</small> {{ 'coord.accuracy' | rdTranslate }}</a>
-              <h3>{{ 'coord.scenario' | rdTranslate }}</h3>
-              <div class="seg stack">
-                @for (pack of scenarioService.scenarios(); track pack.id) {
-                  <button type="button" [class.on]="scenarioService.activeId() === pack.id" (click)="selectScenario(pack.id)">{{ pack.title }}</button>
-                }
-              </div>
+              @if (accuracyMeasured()) {
+                <a class="item judges" routerLink="/coordinator/benchmark" (click)="menuOpen.set(false)"><small>{{ 'sit.forJudges' | rdTranslate }}</small> {{ 'coord.accuracy' | rdTranslate }}</a>
+              }
               <h3>{{ 'settings.language' | rdTranslate }}</h3>
               <div class="seg two">
                 @for (l of primaryLangs; track l.code) {
@@ -60,11 +58,10 @@
                   }
                 </div>
               }
-              <button type="button" class="item" (click)="resetDemo()">{{ 'ux.resetDemo' | rdTranslate }}</button>
+              <h3>{{ 'coord.demoTools' | rdTranslate }}</h3>
+              <button type="button" class="item" data-testid="menu-live-demo" (click)="runLiveDemo()">{{ 'demo.run' | rdTranslate }}</button>
               <button type="button" class="item" (click)="loadFullScenario()">{{ 'ux.loadFull' | rdTranslate }}</button>
               <button type="button" class="item" (click)="takeTour()">{{ 'xfactor.restartTour' | rdTranslate }}</button>
-              <button type="button" class="item" (click)="openSitrep()">{{ 'xfactor.sitrepButton' | rdTranslate }}</button>
-              <button type="button" class="item" (click)="openWeights()">{{ 'coord.weights' | rdTranslate }}</button>
               <button type="button" class="item" (click)="toggleDemo()">{{ (showPhone() ? 'demo.hide' : 'coord.demoPhone') | rdTranslate }}</button>
               <button type="button" class="item out" (click)="logout()">{{ 'coord.signOut' | rdTranslate }}</button>
             </div>

@@ -99,7 +99,8 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     const accuracy = Array.from(fixture.nativeElement.querySelectorAll('.menu a')).find((link) =>
       ((link as HTMLElement).textContent || '').includes('Accuracy report'),
     ) as HTMLElement;
-    expect(accuracy).toBeTruthy();
+    // Rules-only runs have no Gemini-vs-rules numbers, so Accuracy stays off the menu.
+    expect(accuracy).toBeFalsy();
     const teams = Array.from(fixture.nativeElement.querySelectorAll('.menu a')).find((link) =>
       ((link as HTMLElement).textContent || '').includes('Teams'),
     ) as HTMLElement;

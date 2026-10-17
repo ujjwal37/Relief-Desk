@@ -96,7 +96,6 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   readonly suggestions = [
     { key: 'landing.chipFlood', text: 'Flood or water rising' },
-    { key: 'landing.chipAnimal', text: 'Animal attack or bite' },
     { key: 'landing.chipHurt', text: 'Someone hurt or sick' },
     { key: 'landing.chipOther', text: 'Something else' },
   ];
@@ -106,6 +105,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   readonly chatMessages = signal<ChatMessage[]>([]);
   readonly pendingCard = signal<ConfirmationCardData | null>(null);
+  readonly lifeCard = signal(false);
   readonly submittedResult = signal<ReportSubmitResponse | null>(null);
   readonly scenarioId = this.scenarioState.activeId;
   readonly tiles = signal<ScenarioTile[]>([
@@ -488,7 +488,9 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
           if (this.slowTimer) clearTimeout(this.slowTimer);
           if (resp.confirmation_card) {
             this.pendingCard.set(resp.confirmation_card);
-            this.reviewOpen.set(true);
+            // A life threat skips the review form: Call 112 and one-tap send come first.
+            if (resp.confirmation_card.life_threat) this.lifeCard.set(true);
+            else this.reviewOpen.set(true);
           }
           const assistantMsg: ChatMessage = {
             id: `ast_${Date.now()}`,
@@ -536,9 +538,14 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     };
 
     const words = [this.citizenWords(), this.photoUsed() ? this.userInput().trim() : ''].filter(Boolean).join('\n') || card.summary;
+    // The desk quotes the reporter's first sentence; chat answers travel separately.
+    const said = this.chatMessages().filter((msg) => msg.role === 'user').map((msg) => msg.text);
+    const original = card.original_text || said[0] || words;
+    const answers = card.answers ?? said.slice(1);
     const payload: ReportSubmitRequest = {
       text: words,
-      raw_text: words,
+      raw_text: this.photoUsed() ? words : original,
+      chat_answers: this.photoUsed() ? [] : answers,
       channel: this.mode() === 'form' ? 'form' : 'text',
       lang: this.langService.currentLang(),
       location_pin: this.locationPin() ?? undefined,

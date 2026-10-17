@@ -134,6 +134,6 @@ describe('CoordinatorAlertsComponent', () => {
     expect(gap?.at).toBeNull();
     expect(gap?.ward).toBeUndefined();
     expect(fixture.componentInstance.googlePins().some((pin) => pin.id === 'gap-medical')).toBeFalse();
-    expect(fixture.nativeElement.textContent).toContain('Place unknown');
+    expect(fixture.nativeElement.textContent).not.toContain('Place unknown');
   });
 });

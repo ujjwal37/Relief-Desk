@@ -64,7 +64,6 @@
             <app-trace-step [step]="step" [nameKey]="techNameKey(step.agent)" [open]="expanded() === step.agent" (toggled)="toggle(step.agent)" (retry)="retry.emit()" />
           }
           <li class="parallel" [attr.aria-label]="'flow.parallel' | rdTranslate">
-            <p class="same">{{ 'flow.parallel' | rdTranslate }}</p>
             @for (side of parallel(); track side.agent) {
               <app-trace-step [step]="side" [nameKey]="techNameKey(side.agent)" [open]="expanded() === side.agent" (toggled)="toggle(side.agent)" (retry)="retry.emit()" />
             }
