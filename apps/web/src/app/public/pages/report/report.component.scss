@@ -203,3 +203,14 @@
   border-radius: 8px;
   padding: 8px 12px;
 }
+
+/* Phone composer: the text box gets its own full-width line, the buttons sit under it. */
+.composer { flex-wrap: wrap; align-items: center; row-gap: 4px; padding: 6px;
+  textarea { order: -1; flex: 1 1 100%; min-height: 52px; max-height: 144px; padding: 8px 10px; overflow-y: auto; } }
+.composer .voice-btn { margin-left: auto; }
+.composer-wrap { padding-top: 8px; }
+.chip-lang-row { align-items: center; flex-wrap: wrap; row-gap: 4px; margin-bottom: 4px; }
+.chip-lang-row .demo-loc-btn { margin-left: auto; white-space: nowrap; }
+.example-chips { padding-bottom: 4px; scrollbar-width: none; }
+.example-chip { min-height: 32px; }
+.legal { margin-bottom: 4px; }

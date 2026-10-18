@@ -111,6 +111,11 @@
         <button type="button" role="tab" class="chip-lang-btn" [class.on]="selectedChipLang() === 'hi'" [attr.aria-selected]="selectedChipLang() === 'hi'" (click)="selectedChipLang.set('hi')">{{ 'report.langHi' | rdTranslate }}</button>
         <button type="button" role="tab" class="chip-lang-btn" [class.on]="selectedChipLang() === 'ml'" [attr.aria-selected]="selectedChipLang() === 'ml'" (click)="selectedChipLang.set('ml')">മലയാളം</button>
         <button type="button" role="tab" class="chip-lang-btn" [class.on]="selectedChipLang() === 'manglish'" [attr.aria-selected]="selectedChipLang() === 'manglish'" (click)="selectedChipLang.set('manglish')">{{ 'report.langManglish' | rdTranslate }}</button>
+        @if (demoTools) {
+          <button type="button" class="demo-loc-btn" data-testid="demo-location-btn" (click)="setDemoLocation()">
+            📍 {{ 'report.demoLocation' | rdTranslate }}
+          </button>
+        }
       </div>
 
       <!-- 4 Guided chips for active language (prefill only) -->
@@ -149,13 +154,7 @@
           @if (gpsShared()) { <span class="gps-tick">✓</span> }
         </button>
 
-        @if (demoTools) {
-          <button type="button" class="demo-loc-btn" data-testid="demo-location-btn" (click)="setDemoLocation()">
-            📍 {{ 'report.demoLocation' | rdTranslate }}
-          </button>
-        }
-
-        <textarea #ta rows="1" [attr.lang]="inputLocale()" [placeholder]="'report.placeholder2' | rdTranslate" [attr.aria-label]="'report.placeholder' | rdTranslate"
+        <textarea #ta rows="2" [attr.lang]="inputLocale()" [placeholder]="'report.placeholder2' | rdTranslate" [attr.aria-label]="'report.placeholder' | rdTranslate"
           [ngModel]="userInput()" (ngModelChange)="userInput.set($event)" [ngModelOptions]="{ standalone: true }" (input)="autoGrow(ta)"
           (keydown.enter)="onEnter($event)"></textarea>
 
