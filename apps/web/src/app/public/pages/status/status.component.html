@@ -49,6 +49,9 @@
         } @else if (locationLabel(); as lbl) {
           <p class="loc-updated-note">📍 {{ lbl }}</p>
         }
+        @if (isDemoLocation()) {
+          <p class="demo-location-note" data-testid="demo-location-note">{{ 'status.demoLocationNote' | rdTranslate }}</p>
+        }
       </section>
     }
 

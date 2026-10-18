@@ -56,6 +56,7 @@ class ReportStatusResponse(BaseModel):
     place_stated: bool = True
     location_accuracy: Optional[float] = None
     location_source: Optional[str] = None
+    demo_location: bool = False
     synthetic: bool = True
     gate_outcome: Optional[str] = None
     gate_reply: Optional[str] = None

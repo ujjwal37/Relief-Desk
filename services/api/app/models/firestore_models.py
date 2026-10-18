@@ -52,8 +52,11 @@ class StoredReport(BaseModel):
     status_token: Optional[str] = None
     flags: List[str] = Field(default_factory=list)
     photo_base64: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
     location_accuracy: Optional[float] = None
     location_source: Optional[str] = None
+    demo_location: bool = False
     synthetic: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -123,6 +126,7 @@ class StoredRequest(BaseModel):
     lng: Optional[float] = None
     location_accuracy: Optional[float] = None
     location_source: Optional[str] = None
+    demo_location: bool = False
     photo_base64: Optional[str] = None
     has_photo: bool = False
     photo_facts: List[str] = Field(default_factory=list)

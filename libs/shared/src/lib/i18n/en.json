@@ -561,7 +561,8 @@
     "undoFailed": "Could not undo. The team may already be working the case.",
     "doneCard": "Completed {t} · {team} · team free again",
     "locationNeededTitle": "Location needed",
-    "locationNeeded": "wait for the reporter to share location, or escalate"
+    "locationNeeded": "wait for the reporter to share location, or escalate",
+    "demoLocationTag": "Demo location"
   },
   "tour": {
     "prompt": "Take a 60-second tour",
@@ -641,7 +642,8 @@
     "tipLife112": "Call 112 now. Tell them what you told us.",
     "shareLocation": "Share location",
     "locUpdated": "Location updated",
-    "demoLocation": "Demo location"
+    "demoLocation": "Demo location",
+    "demoLocationNote": "Demo: location set to a Kuttanad point (Kerala-only pilot)."
   },
   "nearby": {
     "title2": "Nearby alerts",

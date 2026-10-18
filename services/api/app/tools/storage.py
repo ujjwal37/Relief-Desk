@@ -138,6 +138,9 @@ class StorageService:
         photo_base64: Optional[str] = None,
         location_accuracy: Optional[float] = None,
         location_source: Optional[str] = None,
+        demo_location: bool = False,
+        lat: Optional[float] = None,
+        lng: Optional[float] = None,
     ) -> StoredReport:
         """Stores incoming report raw immediately so nothing is ever lost."""
         report_id = report_id or f"rep_{uuid.uuid4().hex[:10]}"
@@ -155,8 +158,11 @@ class StorageService:
             flags=flags or [],
             status_token=status_token,
             photo_base64=photo_base64,
+            lat=lat,
+            lng=lng,
             location_accuracy=location_accuracy,
             location_source=location_source,
+            demo_location=demo_location,
         )
         self._reports[report_id] = report
         self.record_audit(
@@ -165,6 +171,10 @@ class StorageService:
             target=report_id,
             after=report.model_dump()
         )
+        return report
+
+    def save_report(self, report: StoredReport) -> StoredReport:
+        self._reports[report.id] = report
         return report
 
     def get_report(self, report_id: str) -> Optional[StoredReport]:

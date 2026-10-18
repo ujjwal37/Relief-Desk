@@ -17,6 +17,7 @@ import {
   StructuredReportFacts,
   ScenarioTile,
   canonicalRequestJson,
+  getNextKuttanadDemoPoint,
 } from '@rd/shared';
 
 import { PhotoIntakeComponent } from '../../components/photo-intake/photo-intake.component';
@@ -219,6 +220,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly gpsShared = signal(false);
   readonly locationAccuracy = signal<number | null>(null);
   readonly locationSource = signal<string | null>(null);
+  readonly isDemoLocation = signal(false);
 
   readonly attachedPhoto = signal<string | null>(null);
   readonly isCompressingPhoto = signal(false);
@@ -575,28 +577,21 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   shareGpsLocation(): void {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
-    this.isSharingGps.set(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        this.isSharingGps.set(false);
-        this.locationPin.set({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        this.locationAccuracy.set(Math.round(pos.coords.accuracy));
-        this.locationSource.set(pos.coords.accuracy > 200 ? 'approximate' : 'gps');
-        this.gpsShared.set(true);
-      },
-      () => {
-        this.isSharingGps.set(false);
-      },
-      { timeout: 3000, enableHighAccuracy: true }
-    );
+    const pt = getNextKuttanadDemoPoint();
+    this.locationPin.set({ lat: pt.lat, lng: pt.lng });
+    this.locationAccuracy.set(25);
+    this.locationSource.set('demo_pin');
+    this.gpsShared.set(true);
+    this.isDemoLocation.set(true);
   }
 
   setDemoLocation(): void {
-    this.locationPin.set({ lat: 9.501, lng: 76.432 });
+    const pt = getNextKuttanadDemoPoint();
+    this.locationPin.set({ lat: pt.lat, lng: pt.lng });
     this.locationAccuracy.set(25);
-    this.locationSource.set('demo');
+    this.locationSource.set('demo_pin');
     this.gpsShared.set(true);
+    this.isDemoLocation.set(true);
   }
 
   async onPhotoSelected(event: Event): Promise<void> {

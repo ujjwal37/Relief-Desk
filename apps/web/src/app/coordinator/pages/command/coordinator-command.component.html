@@ -237,6 +237,7 @@
                     <span class="hoax-chip" data-testid="hoax-chip">{{ hoaxLine(req) }}</span>
                   }
                   @if (needsDupReview(req)) { <span class="dup-chip" data-testid="dup-chip">{{ dupAiLine(req) }}</span> }
+                  @if (isDemoLocation(req)) { <span class="demo-loc-tag" data-testid="demo-location-tag">{{ 'coord.demoLocationTag' | rdTranslate }}</span> }
                       <span class="sr-only">{{ getTranslationText(req) }}</span>
                 </div>
 
@@ -455,6 +456,7 @@
             <div class="dec-title-row">
               <h2 class="dec-place-title" [attr.title]="caseTitle(req)">{{ caseTitle(req) }}</h2>
               @if (isHoax(req)) { <span class="hoax-chip hoax-head" data-testid="hoax-head">{{ hoaxLine(req) }}</span> }
+              @if (isDemoLocation(req)) { <span class="demo-loc-tag" data-testid="detail-demo-location-tag">{{ 'coord.demoLocationTag' | rdTranslate }}</span> }
               <button type="button" class="map-toggle" data-testid="map-toggle" [attr.aria-pressed]="mapOpen()" (click)="mapOpen.set(!mapOpen())">{{ (mapOpen() ? 'queue.hideMap' : 'queue.showMap') | rdTranslate }}</button>
               @if (!caseAiBlocked(req) || stepChecked(req, 'urgency')) {
               <span class="dec-band-tag" [class]="'band-' + bandOf(req.urgency_score)">

@@ -132,6 +132,10 @@
 
       <input type="file" accept="image/png,image/jpeg,image/webp" #photoInput style="display:none" (change)="onPhotoSelected($event)" />
 
+      @if (gpsShared() && isDemoLocation()) {
+        <p class="demo-location-note" data-testid="demo-location-note">📍 {{ 'status.demoLocationNote' | rdTranslate }}</p>
+      }
+
       <p class="legal">{{ 'report.noMedical' | rdTranslate }}</p>
       <form class="composer" (submit)="$event.preventDefault(); sendReport()">
         <!-- Photo attach button -->

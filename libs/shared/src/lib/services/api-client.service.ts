@@ -147,6 +147,7 @@ export class ApiClientService {
       lng,
       accuracy,
       source: source || 'gps',
+      location_source: source || 'gps',
     });
   }
 

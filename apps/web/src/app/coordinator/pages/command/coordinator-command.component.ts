@@ -2485,9 +2485,13 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return `/api/requests/${req.id}/photo`;
   }
 
+  isDemoLocation(req: StoredRequest): boolean {
+    return Boolean(req.demo_location || req.location_source === 'demo_pin' || req.location_source === 'demo');
+  }
+
   locationMetaLabel(req: StoredRequest): string {
-    if (req.location_source === 'demo') {
-      return 'Demo location';
+    if (this.isDemoLocation(req)) {
+      return this.langService.translate('coord.demoLocationTag');
     }
     if (req.location_source === 'approximate') {
       return 'Reporter GPS (approximate)';

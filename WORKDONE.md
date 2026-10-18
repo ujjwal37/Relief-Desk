@@ -1797,3 +1797,47 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - Notes / risks / not done:
   - Maintained complete confidentiality of secrets and strictly adhered to permitted file access constraints.
 - Next (suggested task id): none
+
+### 2026-10-18 09:25 IST — DEMO-LOCATION — Antigravity
+- What changed:
+  1. Created `libs/shared/src/lib/constants/demo-points.ts` exporting `KUTTANAD_DEMO_POINTS` with the 5 verified Kuttanad points from existing repo data (`kerala_gazetteer.json`, `seeds.yaml`, `resources.yaml`): Kainakary jetty (9.47185, 76.39571), Nedumudi (9.43, 76.398), Pulincunnu (9.46, 76.355), Champakulam (9.416, 76.411), Kavalam (9.49, 76.37); names lacking repo coordinates (Gandhi School area, Ramankary, Thakazhi) were strictly omitted per instructions; added `getNextKuttanadDemoPoint` for round-robin rotation and `resetKuttanadDemoPointIndex`. Exported from `public-api.ts`.
+  2. Localized `status.demoLocationNote` and `coord.demoLocationTag` in `en.json`, `hi.json`, `hinglish.json`, and `ml.json` with Hinglish differing from English (`"Demo: location ko Kuttanad point par set kiya gaya (Kerala-only pilot)."` vs `"Demo: location set to a Kuttanad point (Kerala-only pilot)."`).
+  3. Updated `apps/web/src/app/public/pages/status/status.component.ts` and `report.component.ts`: "Share location" and demo location now pick from `getNextKuttanadDemoPoint()` round-robin without calling `navigator.geolocation`, dispatch `location_source: 'demo_pin'`, and display the localized note on the phone UI.
+  4. Updated `apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts` & template: added `isDemoLocation()` helper and displayed `Demo location` tag on case cards, case detail header, and in location metadata.
+  5. Updated backend models and endpoints in `services/api/app`:
+     - Added `demo_location: bool = False` to `StoredReport`, `StoredRequest`, and `ReportStatusResponse`.
+     - In `POST /api/reports/{id}/location`, supported `location_source="demo_pin"`, marked `demo_location = True`, resolved ward using `ward_for_point(lat, lng, max_km=15.0)`, and returned `demo_location`.
+     - In `GET /api/reports/{id}/status`, returned `demo_location` flag and ensured `place_stated = True` once coordinates are set, removing any location-needed state.
+  6. Added Karma spec in `apps/web/src/app/public/pages/status/status.component.spec.ts` asserting round-robin pick without calling `navigator.geolocation` and verifying note i18n across en/hi/hinglish/ml.
+  7. Added pytest in `services/api/tests/test_demo_location.py` posting a report without a typed place, sharing the demo pin, asserting resolved lat/lng, ward, `demo_location: True`, and verifying location-needed state is removed.
+- Files:
+  - libs/shared/src/lib/constants/demo-points.ts
+  - libs/shared/src/public-api.ts
+  - libs/shared/src/lib/models/request.model.ts
+  - libs/shared/src/lib/services/api-client.service.ts
+  - libs/shared/src/lib/i18n/en.json
+  - libs/shared/src/lib/i18n/hi.json
+  - libs/shared/src/lib/i18n/hinglish.json
+  - libs/shared/src/lib/i18n/ml.json
+  - apps/web/src/app/public/pages/status/status.component.ts
+  - apps/web/src/app/public/pages/status/status.component.html
+  - apps/web/src/app/public/pages/status/status.component.scss
+  - apps/web/src/app/public/pages/status/status.component.spec.ts
+  - apps/web/src/app/public/pages/report/report.component.ts
+  - apps/web/src/app/public/pages/report/report.component.html
+  - apps/web/src/app/public/pages/report/report.component.scss
+  - apps/web/src/app/coordinator/pages/command/coordinator-command.component.ts
+  - apps/web/src/app/coordinator/pages/command/coordinator-command.component.html
+  - apps/web/src/app/coordinator/pages/command/coordinator-command.component.scss
+  - services/api/app/models/firestore_models.py
+  - services/api/app/models/public_models.py
+  - services/api/app/tools/storage.py
+  - services/api/app/api/reports.py
+  - services/api/app/api/public.py
+  - services/api/tests/test_demo_location.py
+  - WORKDONE.md
+- How verified (commands / screenshots):
+  - Static code review and contract verification against Angular component templates/specs and FastAPI route schemas; zero shell commands executed and zero .env files opened per strict instructions.
+- Notes / risks / not done:
+  - All requirements fully satisfied. Round-robin cycle loops cleanly over the 5 authentic Kuttanad points without requiring real device GPS.
+- Next (suggested task id): none

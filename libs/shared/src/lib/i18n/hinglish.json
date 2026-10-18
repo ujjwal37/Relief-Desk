@@ -561,7 +561,8 @@
     "undoFailed": "Undo nahi ho paya. Team shayad case par kaam shuru kar chuki hai.",
     "doneCard": "{t} pe poora · {team} · team phir free",
     "locationNeededTitle": "Location ki zaroorat hai",
-    "locationNeeded": "reporter ke location share karne ka wait karein, ya escalate karein"
+    "locationNeeded": "reporter ke location share karne ka wait karein, ya escalate karein",
+    "demoLocationTag": "Demo jagah"
   },
   "tour": {
     "prompt": "60-second tour lein",
@@ -641,7 +642,8 @@
     "tipLife112": "Abhi 112 pe call karein. Unhe wahi batayein jo aapne humein bataya.",
     "shareLocation": "Location share karein",
     "locUpdated": "Location update ho gayi",
-    "demoLocation": "Demo wali location"
+    "demoLocation": "Demo wali location",
+    "demoLocationNote": "Demo: location ko Kuttanad point par set kiya gaya (Kerala-only pilot)."
   },
   "nearby": {
     "title2": "Aas-paas ke alerts",

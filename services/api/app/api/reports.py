@@ -57,6 +57,7 @@ class LocationUpdateRequest(BaseModel):
     lng: float
     accuracy: Optional[float] = None
     source: Optional[str] = "gps"
+    location_source: Optional[str] = None
     fix_time: Optional[float] = None
 
 
@@ -302,6 +303,9 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
 
     # 2. Store raw report immediately with generated status token and audio transcript
     status_token = f"tok_{uuid.uuid4().hex[:12]}"
+    is_demo_loc = bool(payload.location_source in ("demo_pin", "demo"))
+    raw_pin_lat = payload.location_pin.get("lat") if payload.location_pin else None
+    raw_pin_lng = payload.location_pin.get("lng") if payload.location_pin else None
     raw_report = storage_service.save_report_raw(
         raw_text=report_text,
         channel=payload.channel,
@@ -314,8 +318,11 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         transcript=transcript,
         asr_confidence=asr_confidence,
         photo_base64=raw_photo,
+        lat=raw_pin_lat,
+        lng=raw_pin_lng,
         location_accuracy=payload.location_accuracy,
         location_source=payload.location_source,
+        demo_location=is_demo_loc,
     )
     if payload.chat_answers:
         raw_report.chat_answers = [str(x)[:500] for x in payload.chat_answers[:10]]
@@ -371,6 +378,7 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         lng=pin_lng,
         location_accuracy=payload.location_accuracy,
         location_source=payload.location_source,
+        demo_location=is_demo_loc,
         photo_base64=raw_photo,
         has_photo=has_photo,
         people_count=_stated_people(
@@ -566,6 +574,9 @@ def _pin_for(payload: ReportSubmitRequest, extracted: ExtractedRequest, report_t
     pin_lat = payload.location_pin.get("lat") if payload.location_pin else None
     pin_lng = payload.location_pin.get("lng") if payload.location_pin else None
     ward_id = _resolve_ward_id(extracted.place_text, report_text)
+    if not ward_id and pin_lat is not None and pin_lng is not None:
+        from app.tools.gazetteer import ward_for_point
+        ward_id = ward_for_point(pin_lat, pin_lng, max_km=15.0)
     geo = gazetteer.lookup(extracted.place_text or report_text or "")
     if not payload.location_pin and geo.lat is not None and geo.lng is not None and not geo.is_low_confidence:
         pin_lat, pin_lng = geo.lat, geo.lng
@@ -1172,9 +1183,11 @@ def _refine_with_model(
     if not place_is_usable(chosen_place):
         chosen_place = extract_place(citizen_text or report_text)
     req_obj.place_text = chosen_place if place_is_usable(chosen_place) else ""
-    req_obj.ward_id = ward_id
-    req_obj.lat = pin_lat
-    req_obj.lng = pin_lng
+    req_obj.ward_id = ward_id or req_obj.ward_id
+    req_obj.lat = pin_lat if pin_lat is not None else req_obj.lat
+    req_obj.lng = pin_lng if pin_lng is not None else req_obj.lng
+    if getattr(raw_report, "demo_location", False) or getattr(req_obj, "demo_location", False):
+        req_obj.demo_location = True
     # Unknown stays unknown (None): never invent a count of 1.
     counted = analysis.people.count or req_obj.people_count or None
     bounds = people_bounds(citizen_text or report_text)
@@ -1386,8 +1399,12 @@ def update_report_location(report_id: str, payload: LocationUpdateRequest):
             detail="Coordinates out of range: lat must be in [-90, 90] and lng in [-180, 180]",
         )
 
-    source = payload.source or "gps"
-    if source != "demo":
+    source_val = payload.location_source or payload.source or "gps"
+    is_demo = (source_val in ("demo_pin", "demo")) or (payload.location_source in ("demo_pin", "demo")) or (payload.source in ("demo_pin", "demo"))
+    if is_demo:
+        source = "demo_pin"
+    else:
+        source = source_val
         now = time.time()
         is_stale_fix = False
         if payload.fix_time is not None:
@@ -1397,8 +1414,13 @@ def update_report_location(report_id: str, payload: LocationUpdateRequest):
         if (payload.accuracy is not None and payload.accuracy > 200) or is_stale_fix:
             source = "approximate"
 
+    report.lat = payload.lat
+    report.lng = payload.lng
     report.location_accuracy = payload.accuracy
     report.location_source = source
+    if is_demo:
+        report.demo_location = True
+
     req_id = report.case_id or report.request_id
     if req_id:
         req = storage_service.get_request(req_id)
@@ -1407,11 +1429,18 @@ def update_report_location(report_id: str, payload: LocationUpdateRequest):
             req.lng = payload.lng
             req.location_accuracy = payload.accuracy
             req.location_source = source
-            if not req.ward_id:
+            if is_demo:
+                req.demo_location = True
+            from app.tools.gazetteer import ward_for_point
+            resolved = ward_for_point(payload.lat, payload.lng, max_km=15.0)
+            if resolved:
+                req.ward_id = resolved
+            elif not req.ward_id:
                 req.ward_id = gazetteer.resolve_ward(req.place_text, req.raw_text)
             from app.agents.matching import matching_agent
             matching_agent.find_matches(req, top_n=3, save_to_storage=True)
             storage_service.save_request(req, actor="location_update")
+    storage_service.save_report(report)
     return {
         "status": "ok",
         "ok": True,
@@ -1420,4 +1449,5 @@ def update_report_location(report_id: str, payload: LocationUpdateRequest):
         "lng": payload.lng,
         "accuracy": payload.accuracy,
         "source": source,
+        "demo_location": report.demo_location,
     }

@@ -384,6 +384,7 @@ def get_report_status(
         receipt_text = build_receipt(req, report, code)
         place_stated = bool(req.place_text and req.place_text.strip()) or (req.lat is not None and req.lng is not None)
 
+    demo_loc = bool((req and getattr(req, "demo_location", False)) or getattr(report, "demo_location", False))
     if (req is not None and ("no_case" in (req.flags or []) or (req.status == RequestStatus.CLOSED and "unrelated_photo" in (req.flags or [])))) or "no_case" in (report.flags or []):
         from app.tools.input_gate import _RESPONSES
         reply_msg = (req.summary if req else None) or _RESPONSES["gibberish"].get(report.lang or "en", _RESPONSES["gibberish"]["en"])
@@ -406,6 +407,7 @@ def get_report_status(
             place_stated=False,
             location_accuracy=None,
             location_source=None,
+            demo_location=demo_loc,
             synthetic=True,
             gate_outcome="gibberish",
             gate_reply=reply_msg,
@@ -431,6 +433,7 @@ def get_report_status(
         place_stated=place_stated,
         location_accuracy=req.location_accuracy if req and req.location_accuracy is not None else report.location_accuracy,
         location_source=req.location_source if req and req.location_source else report.location_source,
+        demo_location=demo_loc,
         synthetic=True,
         gate_outcome="report",
         gate_reply=None,

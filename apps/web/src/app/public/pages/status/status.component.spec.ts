@@ -2,12 +2,19 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { StatusComponent } from './status.component';
-import { ApiClientService, ReportStatusResponse } from '@rd/shared';
+import {
+  ApiClientService,
+  ReportStatusResponse,
+  LanguageService,
+  resetKuttanadDemoPointIndex,
+  KUTTANAD_DEMO_POINTS,
+} from '@rd/shared';
 
 describe('StatusComponent', () => {
   let component: StatusComponent;
   let fixture: ComponentFixture<StatusComponent>;
   let apiSpy: jasmine.SpyObj<ApiClientService>;
+  let langService: LanguageService;
 
   const mockStatus: ReportStatusResponse = {
     report_id: 'R-0412',
@@ -62,9 +69,10 @@ describe('StatusComponent', () => {
   };
 
   beforeEach(async () => {
+    resetKuttanadDemoPointIndex();
     apiSpy = jasmine.createSpyObj('ApiClientService', ['getReportStatus', 'updateReportLocation']);
     apiSpy.getReportStatus.and.returnValue(of(mockStatus));
-    apiSpy.updateReportLocation.and.returnValue(of({ status: 'ok', report_id: 'R-0412', lat: 9.498, lng: 76.338 }));
+    apiSpy.updateReportLocation.and.returnValue(of({ status: 'ok', report_id: 'R-0412', lat: 9.47185, lng: 76.39571 }));
 
     await TestBed.configureTestingModule({
       imports: [StatusComponent],
@@ -79,12 +87,17 @@ describe('StatusComponent', () => {
       ],
     }).compileComponents();
 
+    langService = TestBed.inject(LanguageService);
+    langService.setLanguage('en');
     fixture = TestBed.createComponent(StatusComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  afterEach(() => fixture.destroy());
+  afterEach(() => {
+    langService.setLanguage('en');
+    fixture.destroy();
+  });
 
   it('keeps watching until the request is finished', () => {
     expect(component.stillWaiting('new')).toBeTrue();
@@ -126,28 +139,91 @@ describe('StatusComponent', () => {
     expect(receipt.textContent).toContain('Place: not stated');
   });
 
-  it('renders Share location button when place_stated is false and updates on tap', () => {
+  it('picks fixed Kuttanad demo points round-robin without calling navigator.geolocation', () => {
+    resetKuttanadDemoPointIndex();
     component.statusData.set({
       ...mockStatus,
       receipt: 'Received RD-1234. Place: not stated.',
       place_stated: false,
     });
     fixture.detectChanges();
+
+    let geoCalled = false;
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      spyOn(navigator.geolocation, 'getCurrentPosition').and.callFake(() => {
+        geoCalled = true;
+      });
+    }
+
     const shareBtn = fixture.nativeElement.querySelector('[data-testid="receipt-share-location"]') as HTMLButtonElement;
     expect(shareBtn).toBeTruthy();
 
-    spyOn(navigator.geolocation, 'getCurrentPosition').and.callFake((success: PositionCallback) => {
-      success({
-        coords: { latitude: 9.498, longitude: 76.338, accuracy: 25 } as GeolocationCoordinates,
-        timestamp: Date.now(),
-      } as GeolocationPosition);
-    });
-
+    // First tap: Kainakary jetty
     shareBtn.click();
     fixture.detectChanges();
 
-    expect(apiSpy.updateReportLocation).toHaveBeenCalledWith('R-0412', 'tok_demo', 9.498, 76.338, 25, 'gps');
+    expect(geoCalled).toBeFalse();
+    expect(apiSpy.updateReportLocation).toHaveBeenCalledWith(
+      'R-0412',
+      'tok_demo',
+      KUTTANAD_DEMO_POINTS[0].lat,
+      KUTTANAD_DEMO_POINTS[0].lng,
+      25,
+      'demo_pin'
+    );
     expect(component.locationUpdated()).toBeTrue();
+    expect(component.isDemoLocation()).toBeTrue();
+
+    // Second pick round-robin: Nedumudi
+    component.locationUpdating.set(false);
+    component.shareLocation('R-0412');
+    expect(apiSpy.updateReportLocation).toHaveBeenCalledWith(
+      'R-0412',
+      'tok_demo',
+      KUTTANAD_DEMO_POINTS[1].lat,
+      KUTTANAD_DEMO_POINTS[1].lng,
+      25,
+      'demo_pin'
+    );
+  });
+
+  it('shows demo location note with proper i18n in en, hi, hinglish, and ml', () => {
+    component.statusData.set({
+      ...mockStatus,
+      receipt: 'Received RD-1234. Place: not stated.',
+      place_stated: true,
+      demo_location: true,
+      location_source: 'demo_pin',
+    });
+    component.demoLocationUsed.set(true);
+
+    // English
+    langService.setLanguage('en');
+    fixture.detectChanges();
+    let note = fixture.nativeElement.querySelector('[data-testid="demo-location-note"]');
+    expect(note).toBeTruthy();
+    const enText = note.textContent.trim();
+    expect(enText).toContain('Demo: location set to a Kuttanad point (Kerala-only pilot).');
+
+    // Hindi
+    langService.setLanguage('hi');
+    fixture.detectChanges();
+    note = fixture.nativeElement.querySelector('[data-testid="demo-location-note"]');
+    expect(note.textContent.trim()).toContain('डेमो: स्थान कुट्टनाड बिंदु पर सेट किया गया (केवल केरल पायलट)।');
+
+    // Hinglish (must differ from English)
+    langService.setLanguage('hinglish');
+    fixture.detectChanges();
+    note = fixture.nativeElement.querySelector('[data-testid="demo-location-note"]');
+    const hinglishText = note.textContent.trim();
+    expect(hinglishText).toContain('Demo: location ko Kuttanad point par set kiya gaya (Kerala-only pilot).');
+    expect(hinglishText).not.toEqual(enText);
+
+    // Malayalam
+    langService.setLanguage('ml');
+    fixture.detectChanges();
+    note = fixture.nativeElement.querySelector('[data-testid="demo-location-note"]');
+    expect(note.textContent.trim()).toContain('ഡെമോ: ലൊക്കേഷൻ കുട്ടനാട് പോയിന്റിലേക്ക് മാറ്റി (കേരള പൈലറ്റ് മാത്രം).');
   });
 });
 

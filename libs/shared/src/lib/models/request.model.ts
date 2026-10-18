@@ -164,6 +164,7 @@ export interface StoredRequest {
   lng: number | null;
   location_accuracy?: number | null;
   location_source?: string | null;
+  demo_location?: boolean;
   photo_base64?: string | null;
   has_photo?: boolean;
   photo_facts?: string[];
@@ -421,6 +422,7 @@ export interface ReportStatusResponse {
   place_stated?: boolean;
   location_accuracy?: number | null;
   location_source?: string | null;
+  demo_location?: boolean;
   gate_outcome?: 'greeting' | 'gibberish' | 'report';
   gate_reply?: string;
   is_case?: boolean;

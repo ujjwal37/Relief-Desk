@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { ApiClientService, ReportStatusResponse, RdTranslatePipe } from '@rd/shared';
+import { ApiClientService, ReportStatusResponse, RdTranslatePipe, getNextKuttanadDemoPoint } from '@rd/shared';
 import { MyRequestsService } from '../../../core/services/my-requests.service';
 import { LiveEventsService } from '../../../core/live-events.service';
 
@@ -32,43 +32,43 @@ export class StatusComponent implements OnInit, OnDestroy {
   isNew = signal(false);
   locationUpdating = signal(false);
   locationUpdated = signal(false);
+  demoLocationUsed = signal(false);
   private currentToken = '';
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private watchedId = '';
   private stopEvents?: () => void;
 
   shareLocation(reportId: string): void {
-    if (this.locationUpdating() || typeof navigator === 'undefined' || !navigator.geolocation) return;
+    if (this.locationUpdating()) return;
     this.locationUpdating.set(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        this.api.updateReportLocation(
-          reportId,
-          this.currentToken,
-          pos.coords.latitude,
-          pos.coords.longitude,
-          Math.round(pos.coords.accuracy),
-          pos.coords.accuracy > 200 ? 'approximate' : 'gps'
-        ).subscribe({
-          next: () => {
-            this.locationUpdating.set(false);
-            this.locationUpdated.set(true);
-            this.fetchStatus(reportId, this.currentToken, true);
-          },
-          error: () => this.locationUpdating.set(false)
-        });
-      },
-      () => {
+    const point = getNextKuttanadDemoPoint();
+    this.api.updateReportLocation(
+      reportId,
+      this.currentToken,
+      point.lat,
+      point.lng,
+      25,
+      'demo_pin'
+    ).subscribe({
+      next: () => {
         this.locationUpdating.set(false);
+        this.locationUpdated.set(true);
+        this.demoLocationUsed.set(true);
+        this.fetchStatus(reportId, this.currentToken, true);
       },
-      { timeout: 3000, enableHighAccuracy: true }
-    );
+      error: () => this.locationUpdating.set(false)
+    });
+  }
+
+  isDemoLocation(): boolean {
+    const d = this.statusData();
+    return Boolean(this.demoLocationUsed() || d?.demo_location || d?.location_source === 'demo_pin' || d?.location_source === 'demo');
   }
 
   locationLabel(): string {
     const d = this.statusData();
     if (!d) return '';
-    if (d.location_source === 'demo') return 'Demo location';
+    if (this.isDemoLocation()) return 'Demo location';
     if (d.location_source === 'approximate') return 'Reporter GPS (approximate)';
     if (d.location_accuracy != null) return `Reporter GPS ±${Math.round(d.location_accuracy)} m`;
     if (d.location_source === 'gps') return 'Reporter GPS';
