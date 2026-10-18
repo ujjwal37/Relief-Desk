@@ -1146,7 +1146,7 @@ def _refine_with_model(
         ai_usage.provider = "fallback"
         ai_usage.cached = False
         ai_usage.fallback_reason = "judge_no_replay"
-    ai_source = {"gemini": "gemini", "cache": "recorded", "antigravity-local": "antigravity-local",
+    ai_source = {"gemini": "gemini", "aistudio": "aistudio", "vertex": "vertex", "cache": "recorded", "antigravity-local": "antigravity-local",
                  "openai_compat": "openai_compat"}.get(
         ai_usage.provider, "offline_fallback"
     )

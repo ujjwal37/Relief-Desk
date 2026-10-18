@@ -78,12 +78,184 @@ def _is_transient(exc: BaseException) -> bool:
     return text.startswith(("500", "503", "504")) or "UNAVAILABLE" in text or "DEADLINE_EXCEEDED" in text
 
 
+_vertex_warned = False
+
+
+def reset_vertex_warning() -> None:
+    global _vertex_warned
+    _vertex_warned = False
+
+
+def _log_vertex_warning(msg: str) -> None:
+    global _vertex_warned
+    if not _vertex_warned:
+        logger.warning(msg)
+        _vertex_warned = True
+
+
+def _is_vertex_fallback_error(exc: BaseException) -> bool:
+    status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
+    if status in (401, 403, 404, 417):
+        return True
+    text = str(exc).lower()
+    for cue in (
+        "401", "403", "404", "417",
+        "permission_denied", "permissiondenied", "permission denied",
+        "unauthenticated", "unauthorized",
+        "not_found", "notfound", "not found",
+        "expectation failed", "expectation_failed",
+        "defaultcredentialserror", "could not automatically determine credentials",
+        "credentials", "auth",
+    ):
+        if cue in text:
+            return True
+    cls_name = exc.__class__.__name__.lower()
+    if any(k in cls_name for k in ("auth", "permission", "notfound", "unauthenticated", "unauthorized")):
+        return True
+    return False
+
+
+def _short_fallback_reason(exc: Optional[BaseException | str]) -> str:
+    if exc is None:
+        return "none"
+    if isinstance(exc, str):
+        return exc if exc else "none"
+    status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
+    if status in (401, 403, 404, 417, 429):
+        if status == 403:
+            return "permission_denied"
+        if status == 401:
+            return "unauthorized"
+        if status == 404:
+            return "not_found"
+        if status == 429:
+            return "quota"
+        return f"http_{status}"
+    text = str(exc).lower()
+    for cue in (
+        "permission_denied",
+        "permissiondenied",
+        "permission denied",
+        "unauthenticated",
+        "unauthorized",
+        "not_found",
+        "notfound",
+        "defaultcredentialserror",
+        "credentials",
+        "auth",
+        "timeout",
+        "quota",
+        "resource_exhausted",
+        "403",
+        "401",
+        "404",
+    ):
+        if cue in text:
+            if cue in ("permission_denied", "permissiondenied", "permission denied", "403"):
+                return "permission_denied"
+            if cue in ("unauthenticated", "unauthorized", "401"):
+                return "unauthorized"
+            if cue in ("not_found", "notfound", "404"):
+                return "not_found"
+            if cue in ("defaultcredentialserror", "credentials", "auth"):
+                return "auth_error"
+            if cue in ("quota", "resource_exhausted"):
+                return "quota"
+            if cue == "timeout":
+                return "timeout"
+            return cue.replace(" ", "_")
+    cls_name = exc.__class__.__name__.lower()
+    if "permission" in cls_name:
+        return "permission_denied"
+    if "auth" in cls_name or "credential" in cls_name:
+        return "auth_error"
+    if "notfound" in cls_name:
+        return "not_found"
+    if "timeout" in cls_name:
+        return "timeout"
+    if "quota" in cls_name:
+        return "quota"
+    return "vertex_error"
+
+
+def build_genai_client(
+    timeout_s: float = 20.0,
+    force_studio: bool = False,
+) -> tuple[Any, str]:
+    """Build genai.Client with Vertex AI or AI Studio fallback.
+
+    Returns (client, provider) where provider is 'vertex' or 'aistudio'.
+    When backend is vertex or auto with VERTEX_PROJECT set:
+    builds genai.Client(vertexai=True, project=VERTEX_PROJECT, location=VERTEX_LOCATION)
+    using ADC (no API key).
+    If the Vertex client fails to build, falls back automatically to AI Studio (GEMINI_API_KEY)
+    and logs one warning (never logging keys).
+    """
+    import google.genai as genai  # type: ignore
+
+    http_options = {
+        "timeout": int(timeout_s * 1000),
+        "retry_options": {"attempts": 1},
+    }
+
+    backend = (settings.GEMINI_BACKEND or "auto").strip().lower()
+    use_vertex = not force_studio and (
+        backend == "vertex" or (backend == "auto" and bool((settings.VERTEX_PROJECT or "").strip()))
+    )
+
+    client_fb: Optional[str] = None
+    if use_vertex:
+        try:
+            client = genai.Client(
+                vertexai=True,
+                project=settings.VERTEX_PROJECT,
+                location=settings.VERTEX_LOCATION,
+                http_options=http_options,
+            )
+            return client, "vertex"
+        except Exception as exc:
+            _log_vertex_warning(f"Vertex AI client failed to build ({exc}); falling back to AI Studio.")
+            client_fb = _short_fallback_reason(exc)
+
+    # Fallback or standard path to AI Studio
+    client = genai.Client(
+        api_key=settings.GEMINI_API_KEY,
+        http_options=http_options,
+    )
+    if client_fb:
+        try:
+            setattr(client, "_fallback_reason", client_fb)
+        except Exception:
+            pass
+    return client, "gemini"
+
+
+def resolve_model(provider: Optional[str] = None) -> str:
+    prov = provider or ("vertex" if settings.is_vertex_backend else "gemini")
+    if prov == "vertex":
+        return settings.VERTEX_MODEL
+    return settings.GEMINI_MODEL
+
+
+def gemini_live() -> bool:
+    return llm_client.gemini_live()
+
+
+def vertex_configured() -> bool:
+    return llm_client.vertex_configured()
+
+
+def studio_key_live() -> bool:
+    return llm_client.studio_key_live()
+
+
 class _DailyCallCap(RuntimeError):
     pass
 
 
 class _RetryLimit(RuntimeError):
     pass
+
 
 
 class LLMClient:
@@ -123,12 +295,23 @@ class LLMClient:
     def sent_prompt(self, key: str) -> Optional[str]:
         return self._sent_prompts.get(key)
 
-    def gemini_live(self) -> bool:
-        """True when a real key is set. DEMO_MODE does not block that call."""
-        if (settings.AI_MODE or "auto").lower() == "fallback" or not settings.GEMINI_ENABLED:
-            return False
+    def vertex_configured(self) -> bool:
+        return settings.is_vertex_backend
+
+    def studio_key_live(self) -> bool:
         key = (settings.GEMINI_API_KEY or "").strip()
         return key not in _PLACEHOLDER_KEYS
+
+    def gemini_live(self) -> bool:
+        """True when a real key is set or Vertex AI is configured. DEMO_MODE does not block that call."""
+        if (settings.AI_MODE or "auto").lower() == "fallback" or not settings.GEMINI_ENABLED:
+            return False
+        if self.vertex_configured():
+            return True
+        return self.studio_key_live()
+
+    def resolve_model(self, provider: Optional[str] = None) -> str:
+        return resolve_model(provider=provider)
 
     @property
     def _last_tokens(self) -> Optional[int]:
@@ -161,8 +344,8 @@ class LLMClient:
 
     def _remember(self, usage: AiCall) -> None:
         self.last_ai = usage
-        if usage.provider == "gemini":
-            self.last_source = "gemini"
+        if usage.provider in ("gemini", "vertex", "aistudio"):
+            self.last_source = usage.provider
         elif usage.provider == "cache":
             self.last_source = "cache"
         else:
@@ -186,9 +369,10 @@ class LLMClient:
         self._memory_meta[key] = {
             "model": data.get("model"),
             "tokens": data.get("tokens"),
-            "provider": data.get("provider") or ("gemini" if source == "gemini" else "cache"),
+            "provider": data.get("provider") or ("gemini" if source in ("gemini", "vertex", "aistudio") else "cache"),
         }
         return val
+
 
     def get_cached(self, key: str) -> Optional[str]:
         with self._cache_lock:
@@ -316,7 +500,7 @@ class LLMClient:
                     logger.warning("Cached entry failed validation, not replaying it.")
             else:
                 cache_ok = True
-        recorded = self._memory_source.get(cache_key) in ("gemini", "cache")
+        recorded = self._memory_source.get(cache_key) in ("gemini", "vertex", "aistudio", "cache")
         if cache_ok and cached is not None and mode == "replay" and recorded:
             logger.info("Replay cache hit for prompt hash %s", cache_key[:8])
             self.cache_hits += 1
@@ -369,17 +553,19 @@ class LLMClient:
                             f"{val_err}\nReturn one JSON object only."
                         )
                         continue
+                prov = getattr(self._tls, "provider", None) or ("vertex" if self.vertex_configured() else "gemini")
+                model_used = getattr(self._tls, "model", None) or self.resolve_model(provider=prov)
                 usage = AiCall(
-                    provider=("antigravity-local" if ag.gemini_base_is_local() else "gemini"),
-                    model=settings.GEMINI_MODEL,
+                    provider=("antigravity-local" if ag.gemini_base_is_local() else prov),
+                    model=model_used,
                     latency_ms=int((time.perf_counter() - started) * 1000),
                     tokens=self._last_tokens,
                     cached=False,
-                    fallback_reason=None,
+                    fallback_reason=getattr(self._tls, "fallback_reason", None),
                 )
                 self._remember(usage)
                 self.guard.record_success()
-                self.set_cached(cache_key, text, source="gemini", model=usage.model, tokens=usage.tokens)
+                self.set_cached(cache_key, text, source=usage.provider, model=usage.model, tokens=usage.tokens)
                 return text
         except Exception as exc:
             reason = self.note_failure(exc)
@@ -509,7 +695,11 @@ class LLMClient:
         self._local_cache[key] = text
         return text
 
-    def _call_with_retry(self, system_instruction: str, user_prompt: str) -> str:
+    def _call_with_retry(
+        self,
+        system_instruction: str,
+        user_prompt: str,
+    ) -> str:
         """One live call, plus a single short retry on a transient 503/504/500."""
         def once() -> str:
             if getattr(self._tls, "network_attempts", 0) >= 3:
@@ -549,21 +739,25 @@ class LLMClient:
             self.guard.sleep(1.0)
             return once()
 
-    def _make_genai_client(self, timeout_s: float):
+    def _make_genai_client(self, timeout_s: float, force_studio: bool = False) -> Any:
         """Build the SDK client with an HTTP timeout so a stuck request cannot hold a slot forever."""
-        import google.genai as genai  # type: ignore
+        import google.genai as genai
 
+        http_options = {
+            "timeout": int(timeout_s * 1000),
+            "retry_options": {"attempts": 1},
+        }
         return genai.Client(
             api_key=settings.GEMINI_API_KEY,
-            http_options={
-                "timeout": int(timeout_s * 1000),
-                # One attempt. The SDK's default backoff on 429 is about 20s, and a
-                # per-day quota will not recover inside that wait.
-                "retry_options": {"attempts": 1},
-            },
+            http_options=http_options,
         )
 
-    def _call_gemini(self, system_instruction: str, user_prompt: str, timeout_s: Optional[float] = None) -> str:
+    def _call_gemini(
+        self,
+        system_instruction: str,
+        user_prompt: str,
+        timeout_s: Optional[float] = None,
+    ) -> str:
         """One live generate call. Raises on timeout, missing SDK, or an empty reply.
 
         A full slot gate waits in priority order instead of failing, and the
@@ -580,7 +774,6 @@ class LLMClient:
         image_input = getattr(self._tls, "image_input", None)
         media_input = getattr(self._tls, "media_input", None)
         json_output = "json" in system_instruction.lower()
-        model_name = settings.GEMINI_MODEL
         self._last_tokens = None
         self.guard.slots.acquire(timeout=_queue_budget())
         try:
@@ -589,12 +782,24 @@ class LLMClient:
             self.guard.slots.release()
             raise
 
-        def _run() -> tuple[str, Optional[int]]:
-            client = self._make_genai_client(timeout_s)
+        def _run() -> tuple[str, Optional[int], str, str, str]:
+            call_start = time.perf_counter()
+            if settings.is_vertex_backend:
+                client, provider = build_genai_client(timeout_s=timeout_s)
+            else:
+                raw_client = self._make_genai_client(timeout_s)
+                if isinstance(raw_client, tuple):
+                    client, provider = raw_client
+                else:
+                    client, provider = raw_client, "gemini"
+            model_name = self.resolve_model(provider=provider)
             used: Optional[int] = None
+            fallback_reason: str = getattr(client, "_fallback_reason", "none")
+            call_ok: bool = False
+            last_err: Optional[BaseException] = None
 
             def transport() -> str:
-                nonlocal used
+                nonlocal used, client, provider, model_name, fallback_reason, call_ok, last_err
                 config: Dict[str, Any] = {"system_instruction": system_instruction, "temperature": 0.0, "seed": 7}  # deterministic for the demo
                 if json_output:
                     config["response_mime_type"] = "application/json"
@@ -609,24 +814,104 @@ class LLMClient:
                     from google.genai import types
                     data, mime = blob
                     contents = [types.Part.from_bytes(data=data, mime_type=mime), user_prompt]
-                response_obj = client.models.generate_content(model=model_name, contents=contents, config=config)
+
+                try:
+                    response_obj = client.models.generate_content(model=model_name, contents=contents, config=config)
+                    call_ok = True
+                except Exception as exc:
+                    if provider == "vertex" and _is_vertex_fallback_error(exc) and self.studio_key_live():
+                        _log_vertex_warning(f"Vertex AI call failed ({exc}); falling back to AI Studio.")
+                        fallback_reason = _short_fallback_reason(exc)
+                        studio_raw = build_genai_client(timeout_s=timeout_s, force_studio=True)
+                        if isinstance(studio_raw, tuple):
+                            studio_client, studio_provider = studio_raw
+                        else:
+                            studio_client, studio_provider = studio_raw, "gemini"
+                        studio_model = self.resolve_model(provider=studio_provider)
+                        if studio_model.startswith("gemini-2.5-flash"):
+                            config["thinking_config"] = {"thinking_budget": 0}
+                        elif "thinking_config" in config and not studio_model.startswith("gemini-2.5-flash"):
+                            config.pop("thinking_config", None)
+                        try:
+                            response_obj = studio_client.models.generate_content(
+                                model=studio_model, contents=contents, config=config
+                            )
+                            call_ok = True
+                            close = getattr(client, "close", None)
+                            if close:
+                                try:
+                                    close()
+                                except Exception:
+                                    pass
+                            client = studio_client
+                            provider = studio_provider
+                            model_name = studio_model
+                        except Exception as studio_exc:
+                            call_ok = False
+                            last_err = studio_exc
+                            close = getattr(studio_client, "close", None)
+                            if close:
+                                try:
+                                    close()
+                                except Exception:
+                                    pass
+                            raise
+                    else:
+                        call_ok = False
+                        last_err = exc
+                        raise
+
                 usage = getattr(response_obj, "usage_metadata", None)
                 total = getattr(usage, "total_token_count", None) if usage is not None else None
                 used = int(total) if isinstance(total, int) else None
                 return response_obj.text or ""
 
             try:
-                return run_text_agent(agent_name, model_name, system_instruction, user_prompt, transport), used
+                try:
+                    text = run_text_agent(agent_name, model_name, system_instruction, user_prompt, transport)
+                    return text, used, provider, model_name, fallback_reason
+                except Exception as run_exc:
+                    if not last_err:
+                        last_err = run_exc
+                    raise
             finally:
+                latency_ms = int((time.perf_counter() - call_start) * 1000)
+                ok_str = "true" if call_ok else "false"
+                if not call_ok and fallback_reason == "none":
+                    fallback_reason = _short_fallback_reason(last_err)
+                log_provider = "aistudio" if provider == "gemini" else provider
+                logger.info(
+                    "gemini_call provider=%s model=%s latency_ms=%d ok=%s fallback_reason=%s",
+                    log_provider,
+                    model_name,
+                    latency_ms,
+                    ok_str,
+                    fallback_reason,
+                )
                 close = getattr(client, "close", None)
                 if close:
-                    close()
+                    try:
+                        close()
+                    except Exception:
+                        pass
 
         try:
             future = _GEMINI_POOL.submit(_run)
             try:
-                text, tokens = future.result(timeout=timeout_s)
+                text, tokens, prov, resolved_model, fb_reason = future.result(timeout=timeout_s)
                 self._last_tokens = tokens
+                self._tls.provider = prov
+                self._tls.model = resolved_model
+                self._tls.fallback_reason = fb_reason if fb_reason != "none" else None
+                self._remember(
+                    AiCall(
+                        provider=prov,
+                        model=resolved_model,
+                        tokens=tokens,
+                        cached=False,
+                        fallback_reason=self._tls.fallback_reason,
+                    )
+                )
             except FuturesTimeout as exc:
                 future.cancel()
                 raise TimeoutError("Gemini timed out") from exc
@@ -636,8 +921,16 @@ class LLMClient:
             raise RuntimeError("Gemini returned an empty reply")
         return text
 
-    def generate_image_content(self, instruction: str, prompt: str, image: bytes, validator) -> str:
-        return self.generate_media_content(instruction, prompt, image, "image/jpeg", validator)
+    def generate_image_content(
+        self,
+        instruction: str,
+        prompt: str,
+        image: bytes,
+        validator,
+    ) -> str:
+        return self.generate_media_content(
+            instruction, prompt, image, "image/jpeg", validator
+        )
 
     def generate_media_content(
         self,
@@ -658,7 +951,11 @@ class LLMClient:
         self._tls.media_input = (media, mime_type)
         try:
             return self.generate_content(
-                instruction, keyed, validator=validator, max_retries=1, max_output_tokens=max_output_tokens
+                instruction,
+                keyed,
+                validator=validator,
+                max_retries=1,
+                max_output_tokens=max_output_tokens,
             )
         finally:
             self._tls.media_input = before
@@ -680,6 +977,7 @@ class LLMClient:
         if not isinstance(parsed, dict):
             raise ValueError("Gemini JSON was not an object")
         return parsed
+
 
     def _deterministic_fallback(self, prompt: str) -> str:
         """Deterministic natural-language rule-based extraction for offline & demo resilience."""

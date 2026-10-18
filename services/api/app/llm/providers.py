@@ -15,6 +15,8 @@ def display_name(provider: Optional[str]) -> str:
         return oc.label()
     if provider == ag.PROVIDER:
         return "Local test model (Antigravity)"
+    if provider == "vertex":
+        return "Vertex AI"
     if provider == "gemini":
         return "Gemini"
     if provider in ("cache", "replay"):

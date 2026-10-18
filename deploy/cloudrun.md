@@ -29,6 +29,7 @@ gcloud services enable \
   artifactregistry.googleapis.com \
   cloudbuild.googleapis.com \
   secretmanager.googleapis.com \
+  aiplatform.googleapis.com \
   firebase.googleapis.com \
   firebasehosting.googleapis.com
 ```
@@ -94,11 +95,20 @@ for SECRET in gemini-api-key jwt-secret google-maps-api-key; do
     --role="roles/secretmanager.secretAccessor"
 done
 
+# Grant Vertex AI user role so Cloud Run can call Gemini via ADC without an API key:
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:${RUNTIME_SA}" \
+  --role="roles/aiplatform.user"
+
 # If you created coordinator-password, grant the same role on that secret too:
 # gcloud secrets add-iam-policy-binding coordinator-password \
 #   --member="serviceAccount:${RUNTIME_SA}" \
 #   --role="roles/secretmanager.secretAccessor"
 ```
+
+### Vertex AI with AI Studio Fallback
+When `GEMINI_BACKEND: "auto"` and `VERTEX_PROJECT: "relief-desk"` (configured in `deploy/cloudrun.env.yaml`) are set, the API builds `genai.Client(vertexai=True, project=VERTEX_PROJECT, location=VERTEX_LOCATION)` using Application Default Credentials (ADC) provided by the Cloud Run runtime service account (`$RUNTIME_SA`). `VERTEX_LOCATION` defaults to `global` because Vertex in `asia-south1` returns 417 for these models (Cloud Run and Secret Manager remain in `asia-south1`). Granting `roles/aiplatform.user` enables first-party Vertex AI Gemini calls without needing an API key. If Vertex AI credentials or permissions fail, the API automatically falls back to AI Studio using `GEMINI_API_KEY` from Secret Manager, logging a single warning without exposing keys.
+
 
 ## 2. API container
 

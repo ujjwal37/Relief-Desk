@@ -69,15 +69,24 @@ def ai_health():
         and bool(llm_client.guard.last_success_at)
         and not (llm_client.guard.circuit_open() or llm_client.guard.failing())
     ):
-        provider, model, label = "gemini", settings.GEMINI_MODEL, "Gemini live"
+        last_prov = getattr(getattr(llm_client, "last_ai", None), "provider", None)
+        if last_prov == "vertex" or (llm_client.vertex_configured() and last_prov not in ("gemini", "aistudio")):
+            provider, model, label = "vertex", settings.VERTEX_MODEL, "Vertex AI live"
+        else:
+            provider, model, label = "aistudio" if last_prov == "aistudio" else "gemini", settings.GEMINI_MODEL, "Gemini live"
     elif (
         llm_client.gemini_live()
         and bool(llm_client.guard.last_success_at)
         and llm_client.guard.circuit_open()
     ):
-        provider, model, label = "gemini-paused", settings.GEMINI_MODEL, "Gemini paused, rules for now"
+        last_prov = getattr(getattr(llm_client, "last_ai", None), "provider", None)
+        if last_prov == "vertex" or (llm_client.vertex_configured() and last_prov not in ("gemini", "aistudio")):
+            provider, model, label = "vertex-paused", settings.VERTEX_MODEL, "Vertex AI paused, rules for now"
+        else:
+            provider, model, label = "gemini-paused", settings.GEMINI_MODEL, "Gemini paused, rules for now"
     else:
-        provider, model, label = "fallback", settings.GEMINI_MODEL, "Gemini unavailable, built-in rules used"
+        model = settings.VERTEX_MODEL if llm_client.vertex_configured() else settings.GEMINI_MODEL
+        provider, model, label = "fallback", model, "Gemini unavailable, built-in rules used"
     return {
         "provider": provider,
         "model": model,

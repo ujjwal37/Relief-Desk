@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class AiCall(BaseModel):
-    """One model attempt. provider is gemini, cache, fallback, or a test provider
+    """One model attempt. provider is vertex, gemini, cache, fallback, or a test provider
     (antigravity-local, openai_compat) that is never shown as Gemini."""
 
     provider: str = "fallback"
@@ -22,6 +22,8 @@ class AiCall(BaseModel):
             return "local"
         if self.provider == "cache" or self.cached:
             return "recorded"
+        if self.provider == "vertex":
+            return "vertex"
         if self.provider == "gemini":
             return "gemini"
         return "offline"

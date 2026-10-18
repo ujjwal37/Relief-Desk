@@ -319,10 +319,10 @@ def _matching_payload(req: StoredRequest, best, kind: str) -> str:
 def _intake_row(req: StoredRequest, summary: str, started: float) -> dict:
     """The Intake row reports the model call that actually happened, in English for the coordinator."""
     ai = req.ai
-    provider = (ai.provider if ai else None) or ("gemini" if req.ai_source == "gemini" else "fallback")
-    if provider not in ("gemini", "cache", "antigravity-local", "openai_compat"):
+    provider = (ai.provider if ai else None) or ("vertex" if req.ai_source == "vertex" else "gemini" if req.ai_source in ("gemini", "aistudio") else "fallback")
+    if provider not in ("gemini", "vertex", "aistudio", "cache", "antigravity-local", "openai_compat"):
         provider = "fallback"
-    ran_model = ai.model if ai and provider in ("gemini", "cache", "antigravity-local", "openai_compat") else None
+    ran_model = ai.model if ai and provider in ("gemini", "vertex", "aistudio", "cache", "antigravity-local", "openai_compat") else None
     english = (req.translations or {}).get("en") or req.ai_translation or req.summary or summary or req.type.value
     from app.agents.intake import SYSTEM_INTAKE_PROMPT, intake_user_prompt
     from app.llm.client import llm_client
@@ -523,7 +523,7 @@ def finish(request_id: str) -> None:
     capacity = check_capacity(kind)
     match_at = time.perf_counter()
     ran = req.ai if req.ai and req.ai.provider != "fallback" else None
-    provider = ran.provider if ran else ("gemini" if llm_client.gemini_live() else "fallback")
+    provider = ran.provider if ran else (("vertex" if settings.is_vertex_backend else "gemini") if llm_client.gemini_live() else "fallback")
     model = (ran.model if ran else None) or settings.GEMINI_MODEL
     summary = (req.raw_text or "")[:180]
     tier_words = {"immediate": "Critical", "urgent": "Urgent"}.get(getattr(scored, "tier", ""), "Standard")
@@ -631,7 +631,7 @@ def finish(request_id: str) -> None:
         latest.trace = req.trace
         latest.analysis = req.analysis
         latest.analysis_status = "complete"
-        used_gemini = bool(req.ai and req.ai.provider == "gemini" and not req.ai.cached)
+        used_gemini = bool(req.ai and req.ai.provider in ("gemini", "vertex", "aistudio") and not req.ai.cached)
         mark_steps_done(req, used_gemini=used_gemini and not capped)
         if req.ai_queue is not None:
             latest.ai_queue = req.ai_queue
@@ -693,7 +693,7 @@ def _fill_known_trace_fields(req: StoredRequest) -> None:
             continue
         agent = row.get("agent")
         provider = str(row.get("provider") or "")
-        ran_model = bool(row.get("model")) or provider in ("gemini", "cache", "openai_compat", "antigravity-local")
+        ran_model = bool(row.get("model")) or provider in ("gemini", "vertex", "aistudio", "cache", "openai_compat", "antigravity-local")
         if agent == "Matching":
             if not row.get("tool_calls"):
                 row["tool_calls"] = ["check_capacity", "match_score"]
@@ -755,7 +755,7 @@ def ensure_trace(req: StoredRequest) -> None:
     matching_prompt = "Deterministic Haversine distance and capacity match via Google Maps coordinates"
     explain_prompt = f"{REVIEW_PROMPT}\n\n{review_prompt('Explainer', explain_context)}"
 
-    recorded = req.ai is not None and req.ai.provider in ("gemini", "cache")
+    recorded = req.ai is not None and req.ai.provider in ("gemini", "vertex", "cache")
     ai_prov = req.ai.provider if recorded else "fallback"
     ai_model = req.ai.model if recorded else None
     ai_latency = req.ai.latency_ms if recorded and req.ai and req.ai.latency_ms else None

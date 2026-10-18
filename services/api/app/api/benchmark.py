@@ -28,7 +28,7 @@ def measured_cost(coordinator: CoordinatorUser = Depends(get_current_coordinator
 
     rows = [
         r.ai for r in storage_service.list_requests()
-        if r.ai is not None and r.ai.provider == "gemini" and not r.ai.cached and r.ai.tokens
+        if r.ai is not None and r.ai.provider in ("gemini", "vertex") and not r.ai.cached and r.ai.tokens
     ]
     reports = len(rows)
     tokens = sum(int(a.tokens or 0) for a in rows)

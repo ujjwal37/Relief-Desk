@@ -94,26 +94,52 @@ class ASRService:
                 duration_sec=float(note.get("duration_sec", 5)),
             )
 
-        # Live multimodal ASR when Gemini is on and we have audio bytes.
-        if settings.GEMINI_ENABLED and settings.GEMINI_API_KEY and audio_bytes:
+        # Live multimodal ASR when Gemini (Vertex AI or Studio) is on and we have audio bytes.
+        from app.llm.client import (
+            build_genai_client,
+            resolve_model,
+            gemini_live,
+            _is_vertex_fallback_error,
+            _log_vertex_warning,
+        )
+
+        if gemini_live() and audio_bytes:
             try:
-                from google import genai
                 from google.genai import types
 
-                client = genai.Client(api_key=settings.GEMINI_API_KEY)
+                client, provider = build_genai_client(timeout_s=20.0)
+                model_name = resolve_model(strong=False, provider=provider)
                 prompt = f"""You are a crisis dispatch speech-to-text transcriber.
 Transcribe this emergency voice recording verbatim.
 Supported languages: English and Hindi (Devanagari script).
 Return ONLY the raw transcription without any commentary or quotation marks."""
 
-                response = client.models.generate_content(
-                    model=settings.GEMINI_MODEL,
-                    contents=[
-                        types.Part.from_bytes(data=audio_bytes, mime_type="audio/wav"),
-                        prompt,
-                    ],
-                    config=types.GenerateContentConfig(temperature=0.0),
-                )
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=[
+                            types.Part.from_bytes(data=audio_bytes, mime_type="audio/wav"),
+                            prompt,
+                        ],
+                        config=types.GenerateContentConfig(temperature=0.0),
+                    )
+                except Exception as exc:
+                    if provider == "vertex" and _is_vertex_fallback_error(exc):
+                        _log_vertex_warning(
+                            f"Vertex ASR call failed with auth/perm error ({exc}); falling back to AI Studio"
+                        )
+                        fallback_client, fallback_prov = build_genai_client(timeout_s=20.0, force_studio=True)
+                        response = fallback_client.models.generate_content(
+                            model=resolve_model(strong=False, provider=fallback_prov),
+                            contents=[
+                                types.Part.from_bytes(data=audio_bytes, mime_type="audio/wav"),
+                                prompt,
+                            ],
+                            config=types.GenerateContentConfig(temperature=0.0),
+                        )
+                    else:
+                        raise
+
                 if response.text and response.text.strip():
                     return ASRResult(
                         transcript=response.text.strip(),

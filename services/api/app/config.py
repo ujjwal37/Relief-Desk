@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     # https://ai.google.dev/gemini-api/docs/models
     GEMINI_API_KEY: str = "replace-me"
     GEMINI_MODEL: str = "gemini-3.8-flash"
+    GEMINI_BACKEND: str = "auto"  # auto | vertex | studio
+    VERTEX_PROJECT: str = ""
+    VERTEX_LOCATION: str = "global"
+    VERTEX_MODEL: str = "gemini-2.5-flash"
+    VERTEX_MODEL_LITE: str = "gemini-2.5-flash-lite"
     GEMINI_EMBED_MODEL: str = "gemini-embedding-001"
     GEMINI_EMBED_DIM: int = 768
     GEMINI_EMBED_TASK: str = "SEMANTIC_SIMILARITY"
@@ -78,5 +83,14 @@ class Settings(BaseSettings):
     SUPPORTED_LANGS: List[str] = ["en", "hi", "hinglish", "ml"]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @property
+    def is_vertex_backend(self) -> bool:
+        backend = (self.GEMINI_BACKEND or "auto").strip().lower()
+        if backend == "studio":
+            return False
+        if backend == "vertex":
+            return True
+        return bool((self.VERTEX_PROJECT or "").strip())
 
 settings = Settings()

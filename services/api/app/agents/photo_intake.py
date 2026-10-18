@@ -111,7 +111,7 @@ def analyse_photo(payload: PhotoInput, image: bytes) -> PhotoAnalysis:
     with ai_step('PhotoIntake'):
         raw = llm_client.generate_image_content(PROMPT, caption, image, PhotoReading.model_validate_json)
     ai = llm_client.last_ai.model_copy()
-    if ai.provider not in ('gemini', 'cache'):
+    if ai.provider not in ('gemini', 'vertex', 'cache'):
         return PhotoAnalysis(ai=ai)
     try:
         reading = PhotoReading.model_validate_json(raw)

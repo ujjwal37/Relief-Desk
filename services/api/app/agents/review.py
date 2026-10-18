@@ -45,7 +45,7 @@ def language_review(agent: str, context: dict[str, Any], fallback: str) -> dict:
     key = llm_client.cache_key(REVIEW_PROMPT, prompt)
     full_prompt = f"{REVIEW_PROMPT}\n\n{prompt}"
     cached = llm_client.get_cached(key)
-    has_recording = cached and llm_client._memory_source.get(key) in ("gemini", "cache")
+    has_recording = cached and llm_client._memory_source.get(key) in ("gemini", "vertex", "aistudio", "cache")
     if not llm_client.gemini_live() and not has_recording:
         return {"text": fallback, "provider": "tool", "model": None, "latency_ms": 0, "prompt": full_prompt, "raw_output": fallback}
     allowed = {float(n) for n in re.findall(r"\b\d+(?:\.\d+)?\b", prompt)}
@@ -71,7 +71,7 @@ def language_review(agent: str, context: dict[str, Any], fallback: str) -> dict:
             raw = llm_client.generate_content(REVIEW_PROMPT, prompt, validator=validate, max_retries=1)
         ai = llm_client.last_ai.model_copy()
         sent = llm_client.sent_prompt(key) or full_prompt
-        if ai.provider not in ("gemini", "cache"):
+        if ai.provider not in ("gemini", "vertex", "aistudio", "cache"):
             return {"text": fallback, "prompt": sent, "raw_output": fallback, **ai.model_dump()}
         value = validate(raw)
         return {**ai.model_dump(), "text": value.text, "prompt": sent, "raw_output": raw}
