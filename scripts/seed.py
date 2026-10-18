@@ -13,7 +13,6 @@ from pathlib import Path
 # Credentials for demo-only local environment
 DEMO_COORDINATOR = {
     "email": "demo-coordinator@reliefdesk.internal",
-    "password": "KeralaRelief2026!",
     "role": "coordinator",
     "displayName": "Kerala Emergency Coordinator",
     "uid": "demo-coord-01",
@@ -25,6 +24,13 @@ def seed_coordinator_account():
     print("=" * 60)
     print("Relief Desk — Synthetic Demo Coordinator Seeding")
     print("=" * 60)
+
+    password = (os.getenv("COORDINATOR_PASSWORD") or "").strip()
+    if not password:
+        print("COORDINATOR_PASSWORD environment variable is not set.")
+        print("Skipping coordinator credential creation (no hardcoded fallback).")
+        print("=" * 60)
+        return
 
     # 1. Check / update Firebase Auth emulator if host is present
     emulator_host = os.getenv("FIREBASE_AUTH_EMULATOR_HOST")
@@ -43,7 +49,7 @@ def seed_coordinator_account():
             except Exception:
                 user = fb_auth.create_user(
                     email=DEMO_COORDINATOR["email"],
-                    password=DEMO_COORDINATOR["password"],
+                    password=password,
                     display_name=DEMO_COORDINATOR["displayName"],
                     uid=DEMO_COORDINATOR["uid"],
                 )
@@ -67,7 +73,6 @@ def seed_coordinator_account():
     print(f"\nSynthetic coordinator credentials written to:\n  {creds_path}")
     print("\nDemo Coordinator Credentials:")
     print(f"  Email:    {DEMO_COORDINATOR['email']}")
-    print(f"  Password: {DEMO_COORDINATOR['password']}")
     print(f"  Role:     {DEMO_COORDINATOR['role']}")
     print(f"  Token:    {DEMO_COORDINATOR['token']}")
     print("=" * 60)

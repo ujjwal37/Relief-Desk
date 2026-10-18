@@ -604,7 +604,7 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
 - Next (suggested task id): FP-13
 
 ### 2026-10-11 22:20 IST — FP-13 — Cursor
-- What changed: The flood case study now uses the real districts Alappuzha, Ernakulam, Thrissur and Wayanad, with panchayat names (Kainakary, Champakulam, Nedumudi, Aluva, Varapuzha, Kothamangalam, Chalakudy, Mala, Anthikad, Meppadi, Vythiri, Kalpetta), landmarks and coordinates. People, reports and team names stay synthetic. The visible label is "Synthetic scenario inspired by Kerala floods" on the landing page, the coordinator queue and Nearby. Map centre is 10.50, 76.30. The citizen pin fallback is Alappuzha (9.498, 76.339). Demo password is KeralaRelief2026!. Event id is event_kerala_flood. The old gazetteer file is removed.
+- What changed: The flood case study now uses the real districts Alappuzha, Ernakulam, Thrissur and Wayanad, with panchayat names (Kainakary, Champakulam, Nedumudi, Aluva, Varapuzha, Kothamangalam, Chalakudy, Mala, Anthikad, Meppadi, Vythiri, Kalpetta), landmarks and coordinates. People, reports and team names stay synthetic. The visible label is "Synthetic scenario inspired by Kerala floods" on the landing page, the coordinator queue and Nearby. Map centre is 10.50, 76.30. The citizen pin fallback is Alappuzha (9.498, 76.339). Demo password is [redacted]. Event id is event_kerala_flood. The old gazetteer file is removed.
 - Files: data/synthetic/flood_v1/*, data/gazetteer/kerala_gazetteer.json, data/scenarios/flood.yaml, data/synthetic/dog_attack/*, services/api defaults and public cells, demo seed, alerts map, teams areas, i18n, bench/results, TASKS.md
 - How verified: python scripts/validate_seeds.py (12 wards, 60 landmarks, 40 incidents). pytest tests 110 passed. node scripts/check-i18n.mjs 437 keys. Benchmark test split (168 messages, seed 42): type 51.0% vs keyword 16.3%; place/ward 25.5% vs 13.3%; people exact 79.5%; vulnerable F1 60.0%; duplicate F1 69.4% vs hash 6.2%; false-merge 0%; critical share top-5 60% vs FCFS 0%, top-10 60% vs 20%; mean rank of critical cases 11.3 vs FCFS 13.5; hoax catch 100%; latency p50 0.4 ms.
 - Notes / risks / not done: Historical notes in WORKDONE.md, BUILD_BRIEF.md, AGENTS.md and docs/design still say Riverbend. Type accuracy on this split is 51.0% (was 56.1% on the previous place names). Critical top-5 is 60% (was 80%) and still above first-come-first-served. The old seed generator exits instead of rewriting the pack.
@@ -1779,4 +1779,21 @@ Alerts: SVG ward map (12 synthetic wards via Voronoi cells, landmarks, river), p
   - Code inspection and static contract verification against `e2e/phone-panel.spec.ts` (lines 88-108) and `coordinator-command.component.spec.ts` (lines 611-633); no shell commands executed per user instruction.
 - Notes / risks / not done:
   - Zero shell commands run. No .env files opened or modified. Spec remained completely untouched.
+- Next (suggested task id): none
+
+### 2026-10-18 09:20 IST — REPO-PUBLIC-SECRETS — Antigravity
+- What changed:
+  - In `README.md` (line 13): Kept demo coordinator email `demo-coordinator@reliefdesk.internal` and replaced hardcoded password literal with `password set by COORDINATOR_PASSWORD in your environment (never committed).`.
+  - In `scripts/seed.py`: Removed hardcoded password literal from `DEMO_COORDINATOR` dict; updated `seed_coordinator_account` to read password from `COORDINATOR_PASSWORD` environment variable; if unset, prints a clear message and skips creating credentials with zero hardcoded fallback.
+  - In `data/synthetic/coordinator_credentials.json`: Removed the `password` field while preserving `email`, `role`, `displayName`, `uid`, and `token`. Verified that no components or tests in `services/api` read this field.
+  - In `WORKDONE.md` (line 607): Replaced the demo password literal with `[redacted]`.
+- Files:
+  - `README.md`
+  - `scripts/seed.py`
+  - `data/synthetic/coordinator_credentials.json`
+  - `WORKDONE.md`
+- How verified (commands / screenshots):
+  - Verified static file contents via inspection; negative assertions in `services/api/tests/test_auth.py` preserved; zero shell commands executed and `.env` never opened per strict user instructions.
+- Notes / risks / not done:
+  - Maintained complete confidentiality of secrets and strictly adhered to permitted file access constraints.
 - Next (suggested task id): none

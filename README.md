@@ -10,7 +10,7 @@ Live demo: `<URL to add>` | Demo video: `<link to add>` | Coordinator demo login
 ## Demo
 One PWA, two roles. `/` is the two-card welcome. **"I need help"** opens the reporter at `/report` (no login). **"I'm a coordinator"** goes to `/coordinator/login`.
 The **Enter as demo coordinator** button is shown when the API runs with `DEMO_MODE=true`. That is the default in `services/api/app/config.py`. Set `DEMO_MODE=true` in the API environment if the button is missing. `?demo=1` on the login link shows the button as well. Do not commit secrets; the API reads `services/api/.env`, which stays out of git.
-Demo coordinator (synthetic, demo-only): email `demo-coordinator@reliefdesk.internal` / password `KeralaRelief2026!` (created by `scripts/seed.py`).
+Demo coordinator (synthetic, demo-only): email `demo-coordinator@reliefdesk.internal` / password set by COORDINATOR_PASSWORD in your environment (never committed).
 Side-by-side demo mode: add `?demo=1` on desktop.
 
 ## The problem
