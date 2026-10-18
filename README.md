@@ -48,7 +48,7 @@ Models never set scores or dispatch: Python tools compute urgency and capacity, 
 
 ## Evaluation (synthetic labels, our own)
 - **Gemini vs rules, n=52** (stratified subset of the frozen test split, 18 Oct 2026, `gemini-3.5-flash-lite`): type accuracy 88.6% vs 85.7%; critical cases in top 10: 60% vs 40%; duplicate F1 50.0% vs 16.7%; 0 false merges on hard negatives for both. Subset languages: English, Hindi, Hinglish (no Malayalam/Manglish rows in the split). Small n: one message moves type accuracy ~2.9 points.
-- **Rules baseline, n=168** (full frozen split, seed 42): `make bench`, results in `bench/results/RESULTS.md` (2026-10-11).
+- **Rules baseline, n=168** (full frozen split, seed 42): `make bench`, results in `bench/results/RESULTS.md` (2026-10-11). Rules type accuracy is at 67.3% against a 90% target; ward accuracy 100.0% (from the gazetteer). The Gemini column on this split is not measured (`no_api_key`); the n=52 subset above is the only Gemini measurement.
 
 These are synthetic labels, not real-world accuracy.
 
@@ -77,7 +77,7 @@ See `deploy/cloudrun.md`: root `Dockerfile` → Cloud Run `relief-desk-api` (asi
 - Case data lives in process memory (single instance); Firestore is not used.
 - If Gemini times out, hits a rate limit or returns invalid JSON, that step uses the deterministic rules and the UI labels it **rules fallback**, never Gemini.
 - Language and place understanding can be wrong; the UI always shows the original message.
-- Not built: Gemini Live voice, Search grounding, SMS intake, multi-device offline sync.
+- Gemini Live voice is not built. Also not built: Search grounding, SMS intake, multi-device offline sync.
 
 ## Built with
 Angular, Ionic, Capacitor, FastAPI, `google-adk==2.11.0`, `google-genai`. Built with help from AI coding tools (Antigravity, Cursor).
