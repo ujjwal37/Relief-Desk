@@ -13,8 +13,8 @@ export class MapProviderService {
   /** Set when the browser key is rejected. Later maps stay on the SVG. */
   authFailed = false;
 
-  /** One map style on every page: the Kuttanad schematic. Google tiles mixed two looks across screens. */
-  static readonly ONE_STYLE: MapMode | null = 'svg';
+  /** Force one map style on every page. null means use Google Maps when /api/config/maps gives a key, else the Kuttanad schematic. */
+  static readonly ONE_STYLE: MapMode | null = null;
 
   decide(): Promise<MapMode> {
     if (MapProviderService.ONE_STYLE) return Promise.resolve(MapProviderService.ONE_STYLE);

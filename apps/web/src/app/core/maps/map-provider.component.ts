@@ -182,8 +182,8 @@ export class MapProviderComponent implements AfterContentInit, AfterViewInit, On
   ngAfterViewInit(): void {
     const w = window as unknown as { gm_authFailure?: () => void };
     w.gm_authFailure = () => this.fallBackToSvg();
-    // Never a blank loading panel: after 3 s without tiles, show the ward map labelled offline.
-    this.slowTimer = setTimeout(() => { if (this.loading() && !this.destroyed) this.fallBackToSvg(); }, 3000);
+    // Never a blank loading panel: after 8 s without tiles, show the ward map labelled offline.
+    this.slowTimer = setTimeout(() => { if (this.loading() && !this.destroyed) this.fallBackToSvg(); }, 8000);
     this.maps.decide().then((mode) => {
       if (this.destroyed) return;
       if (this.gaveUp || this.maps.authFailed || mode !== 'google') {
