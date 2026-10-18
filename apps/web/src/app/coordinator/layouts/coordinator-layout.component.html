@@ -63,7 +63,6 @@
               }
               @if (demoTools()) {
                 <h3>{{ 'coord.demoTools' | rdTranslate }}</h3>
-                <button type="button" class="item" data-testid="menu-live-demo" (click)="runLiveDemo()">{{ 'demo.run' | rdTranslate }}</button>
                 <button type="button" class="item" (click)="loadFullScenario()">{{ 'ux.loadFull' | rdTranslate }}</button>
                 <button type="button" class="item" data-testid="menu-replay-tour" (click)="replayTour(); menuOpen.set(false)">{{ 'nav.tour' | rdTranslate }}</button>
               }

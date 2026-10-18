@@ -26,8 +26,10 @@ test('live demo runs eight reports and opens a human step popup', async ({ page,
   await login(page);
   await expect(page.getByTestId('run-live-demo')).toHaveCount(0);
   await page.locator('.more-btn').click();
-  await page.getByTestId('menu-live-demo').click();
-  await page.waitForURL(/\/coordinator\/command/);
+  await expect(page.getByTestId('menu-live-demo')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
+  await request.post(`${API}/api/demo/live-run`, { headers: AUTH });
   // The header progress counters were removed; the run state comes from the API.
   await expect.poll(async () => (await (await request.get(`${API}/api/demo/live-run`, { headers: AUTH })).json()).status, { timeout: 120000 }).toBe('done');
 
@@ -43,6 +45,8 @@ test('live demo runs eight reports and opens a human step popup', async ({ page,
     (row.flags || []).includes('likely_hoax') || (row.flags || []).includes('hoax'),
   );
   expect(hoax?.hoax_reason || '').not.toEqual('');
+  await page.reload();
+  await page.waitForURL(/\/coordinator\/command/);
   await expect(page.getByTestId('hoax-chip').first()).toBeVisible();
   await page.screenshot({ path: path.join(SHOTS, 'live-demo.png'), fullPage: false });
 

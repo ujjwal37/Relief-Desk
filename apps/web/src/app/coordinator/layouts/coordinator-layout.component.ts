@@ -310,12 +310,6 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     });
   }
 
-  /** Backup only: a coordinator starts the 8-report live run from More > Demo tools. Never automatic. */
-  runLiveDemo(): void {
-    this.menuOpen.set(false);
-    window.location.assign('/coordinator/command?live=1');
-  }
-
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/coordinator/login']);

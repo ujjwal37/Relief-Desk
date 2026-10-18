@@ -281,7 +281,6 @@
     "demoDisabled": "Is server par demo mode band hai. Kripya coordinator credentials se sign in karein."
   },
   "demo": {
-    "runShort": "Demo chalao (8)",
     "phone": "Demo phone",
     "hide": "Phone chhupayein",
     "surgeButton": "⚡ 5 reports ka demo",
@@ -292,33 +291,12 @@
     "surgeUnavailable": "Surge available nahi ya chal raha hai. Thodi der baad try karein.",
     "scenarioFailed": "Scenario load nahi hua.",
     "mergeNotice": "Reports {id} mein jodi gayi. Updated count aur evidence review karein.",
-    "run": "Live demo chalao (8 reports)",
-    "problem": "Flood reports aati hain. AI rank karta hai. Faisla aapka.",
-    "running": "Live demo chal raha hai…",
-    "received": "{n}/8 mili",
-    "joined": "{n} judi",
-    "flagged": "{n} flagged",
-    "critical": "{n} critical",
-    "waitingGemini": "Gemini ka intezaar · queue {n}",
-    "done": "Live demo khatam",
-    "recordedNotice": "Pichhle run ka recorded replay.",
-    "samplesLabel": "Aath sample reports",
     "tryOwn": "Apni report try karo",
     "tryOwnPlaceholder": "Kisi bhi bhasha mein flood report likho",
     "tryOwnLimit": "Gemini ki free limit abhi poori hai; ek minute baad try karo.",
-    "brief": "Live counts se chhota brief",
     "geminiCalls": "Gemini calls {n}",
     "exampleMl": "Malayalam mein example",
-    "sendOwn": "Bhejo",
-    "now": "Abhi: {step}",
-    "stepIntake": "report padh raha hai",
-    "stepDedupe": "duplicate check kar raha hai",
-    "stepTriage": "urgency rate kar raha hai",
-    "stepMatching": "sabse paas ki team dhoondh raha hai",
-    "stepExplainer": "choice samjha raha hai",
-    "momentMerged": "Duplicate pakda gaya: nayi report purane case mein jodi gayi.",
-    "momentHoax": "Possible hoax flag hua, review ke liye roka gaya.",
-    "stepSelfCheck": "facts dobara check kar raha hai"
+    "sendOwn": "Bhejo"
   },
   "settings": {
     "title": "Settings",
@@ -1245,9 +1223,6 @@
     "breathing": "Kisi ko saans nahi aa rahi",
     "repeat": "Dohraya gaya sandesh",
     "hoax": "Sandigdh ya afwaah"
-  },
-  "card": {
-    "movedUp": "Upar laya gaya"
   },
   "selfCheck": {
     "ok": "Doosra Gemini check: facts report se match karte hain",

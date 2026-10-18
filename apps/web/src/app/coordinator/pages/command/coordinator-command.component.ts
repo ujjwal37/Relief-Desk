@@ -21,7 +21,7 @@ import { AssistBannerComponent } from '../../agents/assist-banner.component';
 import { AssistPanelComponent, AssistProposalView, AssistShortageView } from '../../agents/assist-panel.component';
 import { GeminiChipComponent } from '../../agents/gemini-chip.component';
 import { MergedChipComponent } from '../../agents/merged-chip.component';
-import { PipelineLiveStep, PipelineStripComponent } from '../../agents/pipeline-strip.component';
+import { PipelineLiveStep } from '../../agents/pipeline-strip.component';
 import { testProviderWord } from '../../agents/provider-label';
 import { JustReportedStripComponent } from '../../just-reported-strip.component';
 import { LIVE_CHANNEL } from '../../../core/live-report';
@@ -54,7 +54,6 @@ import {
 import {
   ApiClientService,
   NoTeamOptions,
-  LiveDemoState,
   RdTranslatePipe,
   LanguageService,
   bandCounts,
@@ -209,12 +208,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   readonly narrow = signal(false);
   readonly resetNote = signal<string | null>(null);
-  readonly liveDemo = signal<LiveDemoState | null>(null);
   readonly ownText = signal('');
   readonly ownError = signal('');
   readonly ownBusy = signal(false);
   readonly hoaxOverride = signal(false);
-  private liveTimer: ReturnType<typeof setInterval> | null = null;
 
   /** Undo this session's merges and dispatches by reloading the two-case demo. */
   resetDemo(): void {
@@ -345,16 +342,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (bf === 'now') list = list.filter((r) => urgencyBand(r.urgency_score) === 'critical');
       if (bf === 'soon') list = list.filter((r) => urgencyBand(r.urgency_score) === 'high');
       if (bf === 'review') list = list.filter((r) => needsReview(r));
-    }
-
-    const pin = this.liveDemo()?.status === 'done' ? this.liveDemo()?.critical_id : null;
-    if (pin) {
-      const idx = list.findIndex((row) => row.id === pin);
-      if (idx > 0) {
-        const next = list.slice();
-        const [row] = next.splice(idx, 1);
-        return [row, ...next];
-      }
     }
     return list;
   });
@@ -1036,7 +1023,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const all = this.filteredRequests();
     const live = [...all.filter((r) => !this.isHoax(r)), ...all.filter((r) => this.isHoax(r))];
     const order = this.frozenOrder();
-    if (!order || this.liveDemo()?.running || this.queueTab() !== 'waiting') return live;
+    if (!order || this.queueTab() !== 'waiting') return live;
     const byId = new Map(live.map((r) => [r.id, r] as const));
     return order.map((id) => byId.get(id)).filter((r): r is StoredRequest => !!r);
   });
@@ -1137,22 +1124,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (event.type === 'alert.created') {
         this.ui.loadAlerts();
       }
-      if (event.type === 'demo.progress') {
-        const prev = this.liveDemo();
-        this.applyLive({
-          running: event.running ?? prev?.running ?? false,
-          status: event.status || prev?.status || (event.running ? 'running' : 'idle'),
-          received: event.received ?? prev?.received ?? 0,
-          total: event.total ?? prev?.total ?? 8,
-          joined: event.joined ?? prev?.joined ?? 0,
-          flagged: event.flagged ?? prev?.flagged ?? 0,
-          critical: event.critical ?? prev?.critical ?? 0,
-          queue_position: event.queue_position ?? prev?.queue_position ?? 0,
-          critical_id: event.critical_id ?? prev?.critical_id,
-          active_id: event.active_id ?? prev?.active_id,
-          case_ids: prev?.case_ids,
-        });
-      }
       if (event.type !== 'pipeline.step' || !event.request_id || !event.agent) return;
       const row: PipelineLiveStep = {
         agent: event.agent,
@@ -1174,13 +1145,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       if (sessionStorage.getItem('rd.aiq.open') === '0') this.stripOpen.set(false);
       else if (window.matchMedia('(max-width: 700px)').matches) this.stripOpen.set(false);
     } catch { /* session storage can be blocked */ }
-    this.refreshLive();
-    // Landing "watch the AI" link: start the shared live run once, then drop the flag from the URL.
-    if (new URLSearchParams(location.search).get('live') === '1' && !this.startFromLink) {
-      this.startFromLink = true;
-      history.replaceState(history.state, '', location.pathname);
-      setTimeout(() => { if (!this.liveDemo()?.running) this.startLiveDemo(); }, 800);
-    }
     window.addEventListener('message', this.handleDemoMessage);
     document.addEventListener('visibilitychange', this.onQueueVisibility);
     try {
@@ -1199,7 +1163,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     window.removeEventListener('message', this.handleDemoMessage);
     document.removeEventListener('visibilitychange', this.onQueueVisibility);
     this.liveChannel?.close();
-    this.stopLivePoll();
     this.stopPipeline?.();
     if (this.queueTimer) clearInterval(this.queueTimer);
     if (this.analysedTimer) clearTimeout(this.analysedTimer);
@@ -2424,28 +2387,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     return this.langService.translate('chip.likelyHoax').replace('{reason}', req.hoax_reason || '');
   }
 
-  isMovedUp(req: StoredRequest): boolean {
-    const demo = this.liveDemo();
-    return !!demo && demo.status === 'done' && !!demo.critical_id && req.id === demo.critical_id;
-  }
-
-  demoRecorded(): boolean {
-    const ids = new Set(this.liveDemo()?.case_ids || []);
-    if (!ids.size) return false;
-    return this.requests().some((row) => ids.has(row.id) && (row.ai?.provider === 'cache' || row.ai_source === 'recorded'));
-  }
-
-  startLiveDemo(): void {
-    this.ownError.set('');
-    this.apiClient.startLiveDemo().subscribe({
-      next: (state) => {
-        this.applyLive(state);
-        this.ensureLivePoll();
-      },
-      error: () => this.ownError.set(this.langService.translate('coord.aiOffline')),
-    });
-  }
-
   fillExample(): void {
     this.ownText.set('കൈനക്കരിയിൽ വെള്ളം കയറി. 4 പേർ മുകളിലുണ്ട്. ബോട്ട് വേണം.');
   }
@@ -2470,32 +2411,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     });
   }
 
-  private refreshLive(): void {
-    this.apiClient.getLiveDemo?.().subscribe({
-      next: (state) => this.applyLive(state),
-      error: () => undefined,
-    });
-  }
-
-  /** i18n key for the step the active demo report is on, from live pipeline events. */
-  liveStepKey(): string | null {
-    const id = this.liveDemo()?.active_id;
-    if (!id) return null;
-    const steps = this.pipelineById()[id] || [];
-    // Server step names (extract, selfcheck, dedupe, triage, matching, explainer, approval) in run order.
-    const order = ['extract', 'selfcheck', 'dedupe', 'triage', 'matching', 'explainer'];
-    const label: Record<string, string> = { extract: 'Intake', intake: 'Intake', selfcheck: 'SelfCheck', dedupe: 'Dedupe', triage: 'Triage', matching: 'Matching', explainer: 'Explainer' };
-    const last = steps[steps.length - 1];
-    if (!last) return 'demo.stepIntake';
-    const name = (last.agent || '').toLowerCase();
-    if (name === 'approval') return null;
-    const working = steps.filter((s) => s.status === 'working').map((s) => (s.agent || '').toLowerCase());
-    // The furthest step that is still working is where the report is now.
-    const current = [...order].reverse().find((a) => working.includes(a));
-    const pick = current || order[Math.min(order.indexOf(name) + 1, order.length - 1)] || name;
-    return label[pick] ? `demo.step${label[pick]}` : null;
-  }
-
   /** Second-pass line for the decision panel. Only real check results are shown. */
   selfCheckLine(sc: { verdict?: string; provider?: string; changes?: Array<{ field: string; from: unknown; to: unknown }>; evidence?: string }): string {
     const t = (k: string) => this.langService.translate(k);
@@ -2509,47 +2424,6 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       return '';
     }
     return sc.provider === 'cache' ? `${text} · ${t('selfCheck.recorded')}` : text;
-  }
-
-  private startFromLink = false;
-
-  private applyLive(state: LiveDemoState): void {
-    const before = this.liveDemo();
-    const prev = before?.status;
-    this.liveDemo.set(state);
-    // Make the AI moments obvious when they happen.
-    if (before && (state.joined || 0) > (before.joined || 0)) {
-      this.actionToast.set({ text: this.langService.translate('demo.momentMerged'), type: 'success' });
-    } else if (before && (state.flagged || 0) > (before.flagged || 0)) {
-      this.actionToast.set({ text: this.langService.translate('demo.momentHoax'), type: 'warning' });
-    }
-    if (state.running) {
-      if (state.active_id && state.active_id !== before?.active_id) {
-        // Select quietly: no scrolling while the demo runs.
-        this.selectedRequestId.set(state.active_id);
-        this.ui.selectedCaseId.set(state.active_id);
-      }
-      this.ensureLivePoll();
-      return;
-    }
-    this.stopLivePoll();
-    if (state.status === 'done' && state.critical_id && prev !== 'done') {
-      this.focusRequestId = state.critical_id;
-      this.selectedRequestId.set(state.critical_id);
-      this.loadRequests(false);
-    }
-  }
-
-  private ensureLivePoll(): void {
-    if (this.liveTimer) return;
-    this.liveTimer = setInterval(() => this.refreshLive(), 1000);
-  }
-
-  private stopLivePoll(): void {
-    if (this.liveTimer) {
-      clearInterval(this.liveTimer);
-      this.liveTimer = null;
-    }
   }
 
   openTraceDrawer(): void {

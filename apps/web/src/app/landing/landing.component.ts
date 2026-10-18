@@ -16,11 +16,11 @@ export class LandingComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
 
-  async openDemo(event?: Event, live = false): Promise<void> {
+  async openDemo(event?: Event): Promise<void> {
     event?.preventDefault();
     try { window.localStorage.setItem('rd.demo', '1'); } catch { /* storage off */ }
     if (await this.auth.loginDemo()) {
-      await this.router.navigateByUrl(live ? '/coordinator/command?live=1' : '/coordinator/command');
+      await this.router.navigateByUrl('/coordinator/command');
     }
   }
 }

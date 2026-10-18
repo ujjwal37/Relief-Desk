@@ -200,7 +200,6 @@
               [class.sel]="isCaseSelected(req)"
               [class.row-flash]="flashIds().has(req.id)"
               [class.your-report-highlight]="ui.yourReport()?.id === req.id || (!!ui.yourReport()?.code && ui.yourReport()?.code === req.public_code)"
-              [class.moved-up]="isMovedUp(req)"
               [class.aiq-enter]="isJustReady(req)"
               [attr.data-case-id]="req.id"
               [attr.data-tour]="needsDupReview(req) ? 'dup' : null"
@@ -234,9 +233,6 @@
                 <!-- Line 2: Title & Location -->
                 <div class="card-line-mid">
                   <strong class="card-place-title">{{ caseTitle(req) }}</strong>@if (caseLifeThreat(req)) { <span class="life-tag" data-testid="life-tag">⚠ {{ 'aiq.lifeTag' | rdTranslate }}</span> }
-                  @if (isMovedUp(req)) {
-                    <span class="moved-tag">{{ 'card.movedUp' | rdTranslate }}</span>
-                  }
                   @if (isHoax(req)) {
                     <span class="hoax-chip" data-testid="hoax-chip">{{ hoaxLine(req) }}</span>
                   }

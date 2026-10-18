@@ -281,7 +281,6 @@
     "demoDisabled": "Demo mode is disabled on this server. Please sign in with coordinator credentials."
   },
   "demo": {
-    "runShort": "Run demo (8)",
     "phone": "Demo phone",
     "hide": "Hide phone",
     "surgeButton": "⚡ Simulate 5 reports",
@@ -292,33 +291,12 @@
     "surgeUnavailable": "Surge unavailable or already running. Try again shortly.",
     "scenarioFailed": "Scenario could not be loaded.",
     "mergeNotice": "Reports joined into {id}. Review the updated count and evidence.",
-    "run": "Run live demo (8 reports)",
-    "problem": "Flood reports in. AI ranks. You decide.",
-    "running": "Running the live demo…",
-    "received": "Received {n}/8",
-    "joined": "Joined {n}",
-    "flagged": "Flagged {n}",
-    "critical": "Critical {n}",
-    "waitingGemini": "Waiting for Gemini · queue {n}",
-    "done": "Live demo finished",
-    "recordedNotice": "Recorded replay of an earlier run.",
-    "samplesLabel": "Eight sample reports",
     "tryOwn": "Try your own report",
     "tryOwnPlaceholder": "Type a flood report in any language",
     "tryOwnLimit": "Gemini is at its free limit right now; try again in a minute.",
-    "brief": "Short brief from the live counts",
     "geminiCalls": "Gemini calls {n}",
     "exampleMl": "Example in Malayalam",
-    "sendOwn": "Send",
-    "now": "Now: {step}",
-    "stepIntake": "reading the report",
-    "stepDedupe": "checking for duplicates",
-    "stepTriage": "rating urgency",
-    "stepMatching": "finding the closest team",
-    "stepExplainer": "explaining the choice",
-    "momentMerged": "Duplicate caught: a new report was joined to an existing case.",
-    "momentHoax": "Possible hoax flagged and held for review.",
-    "stepSelfCheck": "double-checking the facts"
+    "sendOwn": "Send"
   },
   "settings": {
     "title": "Settings",
@@ -1245,9 +1223,6 @@
     "breathing": "Someone not breathing",
     "repeat": "Reworded repeat",
     "hoax": "Suspicious / hoax"
-  },
-  "card": {
-    "movedUp": "Moved up"
   },
   "selfCheck": {
     "ok": "Second Gemini pass: facts match the report",

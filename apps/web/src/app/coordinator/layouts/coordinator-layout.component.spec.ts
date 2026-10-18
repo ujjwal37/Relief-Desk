@@ -144,6 +144,7 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     (fixture.nativeElement.querySelector('.avatar') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(fixture.componentInstance.demoTools()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('[data-testid="menu-replay-tour"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="menu-live-demo"]')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Demo tools');
   });
@@ -153,7 +154,8 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     fixture.componentInstance.demoTools.set(true);
     (fixture.nativeElement.querySelector('.avatar') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('[data-testid="menu-live-demo"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="menu-replay-tour"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="menu-live-demo"]')).toBeNull();
   });
 });
 
