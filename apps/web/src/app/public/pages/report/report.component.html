@@ -30,6 +30,7 @@
       </div>
       <label class="field"><span>{{ 'confirm.location' | rdTranslate }}</span>
         <input type="text" [ngModel]="placeLabel()" (ngModelChange)="updatePlace($event)" /></label>
+      @if (gpsShared() && isDemoLocation()) { <p class="demo-location-note" data-testid="demo-location-note">📍 {{ 'status.demoLocationNote' | rdTranslate }}</p> }
       <label class="field"><span>{{ 'confirm.people' | rdTranslate }}</span>
         <input type="number" min="0" max="99" [ngModel]="pendingCard()?.people_count" (ngModelChange)="updatePeople($event)" /></label>
       <div class="vuln-row">
@@ -56,6 +57,7 @@
           <div class="spark" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7z"/></svg></div>
           <h2>{{ 'landing.previewTitle' | rdTranslate }}</h2>
           <p class="where"><span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>{{ placeLabel() }}</span><button type="button" class="loc-change" (click)="openForm()">{{ 'confirm.change' | rdTranslate }}</button></p>
+          @if (gpsShared() && isDemoLocation()) { <p class="demo-location-note" data-testid="demo-location-note">📍 {{ 'status.demoLocationNote' | rdTranslate }}</p> }
           <div class="chips">
             @for (s of suggestions; track s.key) {
               <button type="button" class="chip" (click)="pickSuggestion(s.key)">{{ s.key | rdTranslate }}</button>
@@ -137,7 +139,7 @@
 
       <input type="file" accept="image/png,image/jpeg,image/webp" #photoInput style="display:none" (change)="onPhotoSelected($event)" />
 
-      @if (gpsShared() && isDemoLocation()) {
+      @if (gpsShared() && isDemoLocation() && chatMessages().length > 0) {
         <p class="demo-location-note" data-testid="demo-location-note">📍 {{ 'status.demoLocationNote' | rdTranslate }}</p>
       }
 

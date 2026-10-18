@@ -18,6 +18,7 @@ import {
   ScenarioTile,
   canonicalRequestJson,
   getNextKuttanadDemoPoint,
+  KUTTANAD_DEMO_POINTS,
 } from '@rd/shared';
 
 import { PhotoIntakeComponent } from '../../components/photo-intake/photo-intake.component';
@@ -221,6 +222,10 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   readonly locationAccuracy = signal<number | null>(null);
   readonly locationSource = signal<string | null>(null);
   readonly isDemoLocation = signal(false);
+  /** Name of the demo point in use, shown on the location line. */
+  readonly demoPlaceName = signal<string | null>(null);
+  /** True while the location is the automatic default, not one the reporter chose. */
+  private autoLocation = false;
 
   readonly attachedPhoto = signal<string | null>(null);
   readonly isCompressingPhoto = signal(false);
@@ -259,6 +264,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.scenarioState.ensureLoaded();
     this.chatMessages.set([]);
     this.tryGeolocation();
+    this.applyDefaultLocation();
     if (typeof window !== 'undefined' && window.visualViewport) {
       window.visualViewport.addEventListener('resize', this.onViewport);
     }
@@ -294,7 +300,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   placeLabel(): string {
     const text = this.locationText();
-    if (!text || text === AUTO_PLACE) return this.langService.translate('report.autoPlace');
+    if (!text || text === AUTO_PLACE) return this.demoPlaceName() || this.langService.translate('report.autoPlace');
     return text;
   }
 
@@ -483,6 +489,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   updatePlace(value: string): void {
+    if (value !== this.placeLabel()) this.clearAutoLocation();
     this.locationText.set(value);
     const current = this.pendingCard() ?? this.blankCard();
     this.pendingCard.set(this.withSummary({ ...current, place_text: value }));
@@ -496,6 +503,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   onCardEdited(card: ConfirmationCardData): void {
     if (card.place_text) {
+      if (card.place_text !== this.placeLabel()) this.clearAutoLocation();
       this.locationText.set(card.place_text);
     }
     this.pendingCard.set(card);
@@ -578,6 +586,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   shareGpsLocation(): void {
     const pt = getNextKuttanadDemoPoint();
+    this.autoLocation = false;
+    this.demoPlaceName.set(pt.name);
     this.locationPin.set({ lat: pt.lat, lng: pt.lng });
     this.locationAccuracy.set(25);
     this.locationSource.set('demo_pin');
@@ -587,11 +597,38 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   setDemoLocation(): void {
     const pt = getNextKuttanadDemoPoint();
+    this.autoLocation = false;
+    this.demoPlaceName.set(pt.name);
     this.locationPin.set({ lat: pt.lat, lng: pt.lng });
     this.locationAccuracy.set(25);
     this.locationSource.set('demo_pin');
     this.gpsShared.set(true);
     this.isDemoLocation.set(true);
+  }
+
+  /** Kerala-only pilot: a report with no chosen location gets a random fixed Kuttanad demo point, as with Demo location. */
+  private applyDefaultLocation(): void {
+    if (this.locationPin() || (this.locationText() && this.locationText() !== AUTO_PLACE)) return;
+    const pt = KUTTANAD_DEMO_POINTS[Math.floor(Math.random() * KUTTANAD_DEMO_POINTS.length)];
+    this.locationPin.set({ lat: pt.lat, lng: pt.lng });
+    this.locationAccuracy.set(25);
+    this.locationSource.set('demo_pin');
+    this.gpsShared.set(true);
+    this.isDemoLocation.set(true);
+    this.demoPlaceName.set(pt.name);
+    this.autoLocation = true;
+  }
+
+  /** The reporter typed a place: drop the automatic pin so their place is used. */
+  private clearAutoLocation(): void {
+    if (!this.autoLocation) return;
+    this.autoLocation = false;
+    this.locationPin.set(null);
+    this.locationAccuracy.set(null);
+    this.locationSource.set(null);
+    this.gpsShared.set(false);
+    this.isDemoLocation.set(false);
+    this.demoPlaceName.set(null);
   }
 
   async onPhotoSelected(event: Event): Promise<void> {
@@ -679,6 +716,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       return;
     }
 
+    this.applyDefaultLocation();
     if (REPORTER_FOLLOWUPS) {
       this.sendOldFollowUp();
       return;
@@ -828,6 +866,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       return;
     }
 
+    this.applyDefaultLocation();
     const canonical = JSON.parse(this.requestJson(card)) as {
       vulnerable: Record<string, boolean>;
     };
@@ -852,6 +891,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
       channel: this.mode() === 'form' ? 'form' : 'text',
       lang: this.langService.currentLang(),
       location_pin: this.locationPin() ?? undefined,
+      location_accuracy: this.locationAccuracy() ?? undefined,
+      location_source: this.locationSource() ?? undefined,
       scenario_id: this.scenarioId(),
       structured: facts,
     };
@@ -959,6 +1000,8 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        // The automatic Kuttanad point stays; only the reporter's own choice replaces it.
+        if (this.autoLocation) return;
         this.locationPin.set({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       },
       () => {
