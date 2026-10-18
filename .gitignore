@@ -39,3 +39,12 @@ yarn-error.log*
 *.swo
 .DS_Store
 Thumbs.db
+
+# internal agent/planning notes (not part of the app)
+/AGENTS.md
+/AGENT_PROMPT.md
+/BUILD_BRIEF.md
+/TASKS.md
+/WORKDONE.md
+/docs/demo-flow-final.md
+/.agents/
