@@ -306,11 +306,17 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly selectedRequest = computed<StoredRequest | undefined>(() => {
     const id = this.selectedRequestId();
     if (!id) return undefined;
-    const held = this.requests().find((r) => r.id === id);
+    const held = this.requests().find((r) => r.id === id || (!!r.public_code && r.public_code === id));
     // A dispatched case leaves the waiting tab. Keep it on screen instead of the next case.
     if (held) return held;
     return this.filteredRequests()[0];
   });
+
+  isCaseSelected(req: StoredRequest): boolean {
+    const sel = this.selectedRequestId();
+    if (!sel) return false;
+    return sel === req.id || (!!req.public_code && sel === req.public_code);
+  }
 
   /** Which case the loaded `matches` belong to, so a proposal never shows on another case. */
   readonly matchesFor = signal<string | null>(null);
@@ -971,7 +977,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly aiWorkingRows = computed(() => {
     const now = this.queueClock();
     if (this.queueTab() !== 'waiting') return [];
-    return this.queueRows().filter((req) => inWorkingStrip(req, now, this.timeoutAt(req)));
+    return this.queueRows().filter((req) => inWorkingStrip(req, now, this.timeoutAt(req)) && req.id !== this.selectedRequestId() && req.id !== this.ui.yourReport()?.id);
   });
 
   readonly queueSplitOn = computed(() => {
@@ -993,7 +999,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly displayRows = computed(() => {
     if (!this.queueSplitOn()) return this.queueRows();
     const parked = new Set(this.parkedReady());
-    const ready = this.queueRows().filter((req) => !inWorkingStrip(req, this.queueClock(), this.timeoutAt(req)) && !parked.has(req.id));
+    const ready = this.queueRows().filter((req) => (!inWorkingStrip(req, this.queueClock(), this.timeoutAt(req)) || req.id === this.selectedRequestId() || req.id === this.ui.yourReport()?.id) && !parked.has(req.id));
     // A handled life-threat card un-pins and drops into the normal order with a small tag.
     const pinned = sortReady(ready.filter((req) => this.lifePinned(req)));
     const rest = ready.filter((req) => !this.lifePinned(req)).sort((a, b) =>
@@ -1254,14 +1260,95 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.onLiveReport(event.data);
   };
 
-  /** A phone in this window, a popup, or another tab just saved a report. Show that case. */
-  onLiveReport(data: { type?: string; requestId?: string } | null): void {
+  /** A phone in this window, a popup, or another tab just saved a report. Highlight 'Your report', keeping current selection. */
+  onLiveReport(data: { type?: string; requestId?: string; reportId?: string; publicCode?: string } | null): void {
     if (data?.type !== 'rd-report-submitted') return;
-    if (data.requestId) {
-      this.focusRequestId = data.requestId;
-      this.selectedRequestId.set(data.requestId);
+    const match = this.requests().find((row) =>
+      (data.requestId && row.id === data.requestId) ||
+      (data.publicCode && row.public_code === data.publicCode) ||
+      (data.reportId && (row as any).report_id === data.reportId) ||
+      (data.reportId && row.report_quotes?.some((q) => q.report_id === data.reportId))
+    );
+    const reqId = match?.id || data.requestId || data.reportId || data.publicCode;
+    if (reqId) {
+      const code = match?.public_code || data.publicCode || this.resolvePublicCode(reqId);
+      this.ui.yourReport.set({ id: reqId, code });
+      this.flashRow(reqId);
     }
     this.loadRequests(false);
+  }
+
+  resolvePublicCode(reqId: string): string {
+    const r = this.requests().find((row) => row.id === reqId || (!!row.public_code && row.public_code === reqId));
+    if ((r as any)?.public_code) return (r as any).public_code;
+    return 'RD-' + reqId.replace(/^req_/, '').slice(0, 4).toUpperCase();
+  }
+
+  jumpToYourReport(id?: string): void {
+    const yr = this.ui.yourReport();
+    const candidateId = id || yr?.id || yr?.code;
+    if (!candidateId) return;
+
+    // 1. Unfreeze queue so newly arrived reports are not hidden by the frozen snapshot
+    this.unfreezeQueue();
+
+    // 2. Clear tab and filters that could hide the new case
+    if (this.queueTab() !== 'waiting') {
+      this.setQueueTab('waiting');
+    }
+    if (this.bandFilter() !== 'all') {
+      this.bandFilter.set('all');
+    }
+    if (this.filterType() !== 'all') {
+      this.filterType.set('all');
+    }
+    if (this.areaFilter() !== 'all') {
+      this.areaFilter.set('all');
+    }
+    if (this.timeFilter() !== 'all') {
+      this.timeFilter.set('all');
+    }
+    if (this.searchQuery()) {
+      this.searchQuery.set('');
+      this.ui.searchQuery.set('');
+    }
+
+    // 3. Resolve the target request
+    const all = this.requests();
+    const targetReq = all.find((r) =>
+      r.id === candidateId ||
+      r.public_code === candidateId ||
+      (yr?.code && r.public_code === yr.code) ||
+      (yr?.id && r.id === yr.id) ||
+      (r as any).report_id === candidateId ||
+      r.report_quotes?.some((q) => q.report_id === candidateId)
+    );
+    const targetId = targetReq?.id || candidateId;
+
+    if (targetReq && yr) {
+      this.ui.yourReport.set({ id: targetReq.id, code: targetReq.public_code || yr.code });
+    }
+
+    // 4. Release from parked ready if it was held back
+    if (this.parkedReady().includes(targetId)) {
+      this.parkedReady.update((ids) => ids.filter((p) => p !== targetId));
+    }
+
+    // 5. Select the case
+    this.selectRequest(targetId, true);
+
+    // 6. Ensure requests are refreshed if not found yet
+    if (!all.some((r) => r.id === targetId || r.public_code === candidateId)) {
+      this.loadRequests(false);
+    }
+
+    // 7. Scroll into view
+    const reveal = (): void => {
+      const el = document.querySelector(`[data-case-id="${targetId}"]`) as HTMLElement | null;
+      el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+    if (typeof queueMicrotask === 'function') queueMicrotask(reveal);
+    else setTimeout(reveal);
   }
 
   loadRequests(incremental = false): void {
@@ -1306,6 +1393,22 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     }
     this.freshIds.set(fresh);
     this.ui.lastRefresh.set(Date.now());
+    const yr = this.ui.yourReport();
+    if (yr) {
+      const match = next.find((row) =>
+        row.id === yr.id ||
+        (yr.code && row.public_code === yr.code) ||
+        row.public_code === yr.id ||
+        (row as any).report_id === yr.id ||
+        row.report_quotes?.some((q) => q.report_id === yr.id)
+      );
+      if (match) {
+        this.ui.yourReport.set({ id: match.id, code: match.public_code || yr.code });
+        if (keep && (keep === yr.id || keep === yr.code || keep === match.public_code)) {
+          this.selectRequest(match.id);
+        }
+      }
+    }
     const focus = this.focusRequestId;
     if (focus && next.some((row) => row.id === focus)) {
       this.focusRequestId = null;
@@ -1570,12 +1673,15 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
 
   isAnalysing(req: StoredRequest): boolean {
+    if (req.analysis_status === 'complete' || this.isAnalysisFailed(req)) return false;
+    if (req.ai_queue && (stepsDone(req) || req.ai_queue.status === 'ready' || this.tookTooLong(req))) return false;
+    if (this.elapsedSec(req) >= 45) return false;
     return req.analysis_status === 'analysing';
   }
 
   isAnalysisFailed(req: StoredRequest): boolean {
     const status = req.analysis_status as string | undefined;
-    return status === 'failed' || status === 'error';
+    return status === 'failed' || status === 'error' || this.tookTooLong(req);
   }
 
   private noteFinished(previous: Map<string, StoredRequest['analysis_status']>, next: StoredRequest[]): void {
@@ -1663,9 +1769,16 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
 
   selectRequest(id: string, openSheet = false): void {
-    this.selectedRequestId.set(id);
+    const match = this.requests().find((r) =>
+      r.id === id ||
+      (!!r.public_code && r.public_code === id) ||
+      (r as any).report_id === id ||
+      r.report_quotes?.some((q) => q.report_id === id)
+    );
+    const resolvedId = match?.id || id;
+    this.selectedRequestId.set(resolvedId);
     this.mapFocus.update((n) => n + 1);
-    this.ui.selectedCaseId.set(id);
+    this.ui.selectedCaseId.set(resolvedId);
     this.matchIdx.set(0);
     this.matches.set([]);
     this.matchesFor.set(null);
@@ -1679,14 +1792,14 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     this.hoaxOverride.set(false);
     this.hoaxAsk.set(false);
     this.hoaxWord = '';
-    if (this.justReadyUntil()[id]) {
+    if (this.justReadyUntil()[resolvedId]) {
       this.justReadyUntil.update((map) => {
         const next = { ...map };
-        delete next[id];
+        delete next[resolvedId];
         return next;
       });
     }
-    this.loadMatches(id);
+    this.loadMatches(resolvedId);
     if (openSheet && this.narrow()) this.sheetOpen.set(true);
   }
 
@@ -2144,10 +2257,12 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   /** The machine card line is not a translation. Show the reading sentence until Gemini finishes. */
   waitingForReading(req: StoredRequest | undefined): boolean {
     if (!req) return false;
+    if (req.analysis_status === 'complete' || this.isAnalysisFailed(req)) return false;
     if (this.isAnalysing(req)) return true;
+    if (req.ai_queue && (stepsDone(req) || req.ai_queue.status === 'ready' || this.tookTooLong(req))) return false;
+    if (this.elapsedSec(req) >= 45) return false;
     const english = (req.ai_translation || '').trim();
     if (english && !isMachineSummary(english)) return false;
-    if (req.analysis_status === 'complete' || this.isAnalysisFailed(req)) return false;
     return isMachineSummary(req.summary) || isMachineSummary(req.ai_translation);
   }
 
@@ -2160,6 +2275,11 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   }
 
   caseTitle(req: StoredRequest): string {
+    if (this.isAnalysing(req)) {
+      const place = (req.place_text || '').trim();
+      const isReal = place && place !== '—' && place.toLowerCase() !== 'unknown';
+      return isReal ? place : this.getTranslationText(req);
+    }
     // Opened early: the place when known, else a neutral "New report · RD-xxxx".
     if (this.waitingForReading(req)) return req.place_text || this.langService.translate('aiq.newReport', { ref: this.shortId(req.id, req.public_code) });
     return req.place_text || this.getTranslationText(req);
@@ -2480,6 +2600,31 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       return this.placeName(req.ward_id);
     }
     return req.place_text || this.langService.translate('coord.noPlaceGiven');
+  }
+
+  hasPhoto(req: StoredRequest): boolean {
+    return Boolean(req.has_photo || req.photo_base64 || req.flags?.includes('has_photo') || req.photo_facts?.length);
+  }
+
+  photoUrl(req: StoredRequest): string {
+    if (req.photo_base64) return req.photo_base64;
+    return `/api/requests/${req.id}/photo`;
+  }
+
+  locationMetaLabel(req: StoredRequest): string {
+    if (req.location_source === 'demo') {
+      return 'Demo location';
+    }
+    if (req.location_source === 'approximate') {
+      return 'Reporter GPS (approximate)';
+    }
+    if (req.location_accuracy != null) {
+      return `Reporter GPS ±${Math.round(req.location_accuracy)} m`;
+    }
+    if (req.location_source === 'gps') {
+      return 'Reporter GPS';
+    }
+    return '';
   }
 
   originalLangName(req: StoredRequest): string {

@@ -1,6 +1,7 @@
 :host { display:block; height:100dvh; background:var(--bg); color:var(--text); font-family:var(--rd-font-family); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; }
 .coordinator-shell { display:flex; height:100%; }
 .coord-column { flex:1; min-width:0; display:flex; flex-direction:column; height:100%; }
+.dashboard-body { flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
 .top-nav { flex:none; height:64px; display:flex; align-items:center; gap:24px; padding:0 24px; background:var(--surface); border-bottom:1px solid var(--border); }
 .brand { display:inline-flex; align-items:center; gap:8px; color:var(--text); text-decoration:none; font-weight:600; font-size:16px; letter-spacing:-.025em; min-height:36px; }
 .brand svg { width:34px; height:34px; padding:6px; border-radius:11px; background:var(--brand); }
@@ -53,9 +54,116 @@ h3 { margin:12px 0 6px; font-size:13px; font-weight: 600; color:var(--text-2); t
 .item.out { color:var(--sos-text); }
 .guide { flex:none; display:flex; align-items:center; gap:12px; margin:0; padding:6px 16px; background:var(--brand-tint); color:var(--text); font-size:12px; font-weight:600; line-height:1.35; }
 .guide button { margin-left:auto; min-height:36px; border:0; background:transparent; color:var(--brand); font:600 12px var(--rd-font-family); cursor:pointer; white-space:nowrap; }
-.dashboard-body { flex:1; min-height:0; overflow:hidden; }
-.demo-phone { width:390px; flex:none; border-left:1px solid var(--border); background:var(--surface); }
-.demo-phone iframe { width:100%; height:100%; border:0; }
+.citizen-phone-panel {
+  width: 390px;
+  flex: none;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: var(--e2);
+  z-index: 100;
+
+  .phone-panel-header {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .phone-panel-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .phone-panel-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .phone-meta-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .phone-text-link {
+    color: var(--brand);
+    text-decoration: underline;
+    font-weight: 500;
+  }
+  .phone-text-link:hover {
+    color: var(--text);
+  }
+  .phone-close-btn {
+    background: transparent;
+    border: 0;
+    color: var(--text-2);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    line-height: 1;
+  }
+  .phone-close-btn:hover {
+    color: var(--text);
+    background: var(--surface);
+  }
+  .phone-frame-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    background: var(--bg);
+  }
+  .citizen-frame {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .citizen-phone-panel {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    z-index: 1200;
+    border-left: 0;
+  }
+}
+
+.btn-try-citizen, .btn-tour-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font: 600 13px var(--rd-font-family);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-try-citizen:hover, .btn-tour-nav:hover {
+  background: var(--brand-tint);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
 @media (max-width: 1100px) { .tour-btn:not(.keep), .live { display:none; } .search { max-width:200px; } }
 @media (max-width: 760px) { .tour-btn.keep { display:none; } }
 @media (max-width: 900px) {

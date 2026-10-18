@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, 
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AiHealthResponse, ApiClientService, AuthService, LanguageService, MORE_LANGUAGES, PRIMARY_LANGUAGES, RdTranslatePipe, SitrepResponse } from '@rd/shared';
+import { environment } from '../../../environments/environment';
 import { ScenarioService } from '../../core/services/scenario.service';
 import { CoordUiService } from '../../core/services/coord-ui.service';
 import { LiveEventsService } from '../../core/live-events.service';
 import { TourComponent } from '../../core/components/tour.component';
 import { SitrepPanelComponent } from '../agents/sitrep-panel.component';
-import { environment } from '../../../environments/environment';
 import { AskDeskComponent } from '../agents/ask-desk.component';
 
 @Component({
@@ -169,7 +169,17 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     }
   }
   openWeights(): void { this.menuOpen.set(false); this.ui.weightsOpen.set(true); }
-  takeTour(): void { this.menuOpen.set(false); this.router.navigateByUrl('/coordinator/command').then(() => this.startTourWhenReady(0)); }
+  replayTour(): void {
+    if (!this.router.url.startsWith('/coordinator/command')) {
+      void this.router.navigateByUrl('/coordinator/command').then(() => {
+        setTimeout(() => this.ui.startTour(), 300);
+      });
+    } else {
+      this.ui.startTour();
+    }
+  }
+  toggleCitizenPhone(): void { this.ui.togglePhonePanel(); }
+  closeCitizenPhone(): void { this.ui.closePhonePanel(); }
   toggleAskDesk(): void { this.askDeskOpen.update((v) => !v); }
   onDeskCasePicked(caseId: string): void {
     this.askDeskOpen.set(false);
@@ -186,14 +196,9 @@ export class CoordinatorLayoutComponent implements OnDestroy {
     } catch {
       return;
     }
-    void this.router.navigateByUrl('/coordinator/command').then(() => this.startTourWhenReady(0));
-  }
-
-  /** Wait for the queue to render (up to about 6 s) so the steps have something to point at. */
-  private startTourWhenReady(tries: number): void {
-    const ready = !!document.querySelector('[data-testid="life-threat-card"], .case-wrap');
-    if (ready || tries > 20) { setTimeout(() => this.ui.startTour(), 200); return; }
-    setTimeout(() => this.startTourWhenReady(tries + 1), 300);
+    void this.router.navigateByUrl('/coordinator/command').then(() => {
+      setTimeout(() => this.ui.showCornerPrompt(), 400);
+    });
   }
 
   aiPillText(): string {

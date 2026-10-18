@@ -135,6 +135,9 @@ class StorageService:
         transcript: Optional[str] = None,
         asr_confidence: Optional[float] = None,
         report_id: Optional[str] = None,
+        photo_base64: Optional[str] = None,
+        location_accuracy: Optional[float] = None,
+        location_source: Optional[str] = None,
     ) -> StoredReport:
         """Stores incoming report raw immediately so nothing is ever lost."""
         report_id = report_id or f"rep_{uuid.uuid4().hex[:10]}"
@@ -151,6 +154,9 @@ class StorageService:
             trust_level=trust_level,
             flags=flags or [],
             status_token=status_token,
+            photo_base64=photo_base64,
+            location_accuracy=location_accuracy,
+            location_source=location_source,
         )
         self._reports[report_id] = report
         self.record_audit(

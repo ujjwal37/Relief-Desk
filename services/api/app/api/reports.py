@@ -1,4 +1,5 @@
 import logging
+import re
 import threading
 import time
 import uuid
@@ -18,11 +19,14 @@ from app.models.firestore_models import PossibleDuplicate, ReportQuote, StoredRe
 from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.tools.request_contract import canonical_request_dict
 from app.agents.summary import guard_summary, summary_from_report
-from app.tools.nlu_rules import extract_place, people_bounds, people_count, place_is_usable, vulnerable_flags
+from app.tools.nlu_rules import extract_place, people_bounds, people_count, place_is_usable, vulnerable_flags, count_is_stated, known_place
 from app.agents.dedupe import confidence_phrase
 from app.tools.trust import detect_hoax_or_flood, hoax_reason_for
 from app.tools.gazetteer import gazetteer
+from app.tools.input_gate import evaluate_input_gate
+from app.api.public import public_code_for
 from app.llm.client import llm_client
+from app.config import settings
 
 logger = logging.getLogger("relief_desk.reports")
 
@@ -47,16 +51,28 @@ class StructuredReportFacts(BaseModel):
     summary: Optional[str] = None
 
 
+class LocationUpdateRequest(BaseModel):
+    token: Optional[str] = None
+    lat: float
+    lng: float
+    accuracy: Optional[float] = None
+    source: Optional[str] = "gps"
+    fix_time: Optional[float] = None
+
+
 class ReportSubmitRequest(BaseModel):
     text: Optional[str] = ""
-    channel: str = "text"  # "text" | "voice"
+    channel: str = "text"  # "text" | "voice" | "photo"
     lang: str = "en"
     source_id: str = "anon_device"
     location_pin: Optional[Dict[str, float]] = None
+    location_accuracy: Optional[float] = None
+    location_source: Optional[str] = None
     scenario_id: str = "flood"
     voice_note_id: Optional[str] = None
     audio_base64: Optional[str] = None
     image_base64: Optional[str] = None
+    photo_base64: Optional[str] = None
     mime_type: Optional[str] = None
     structured: Optional[StructuredReportFacts] = None
     idempotency_key: Optional[str] = None
@@ -68,14 +84,19 @@ class ReportSubmitRequest(BaseModel):
 class ReportSubmitResponse(BaseModel):
     report_id: str
     request_id: str
+    public_code: Optional[str] = None
     status_token: str
     summary: str
+    receipt: Optional[str] = None
     urgency_score: float
     dedupe_decision: str
     flags: List[str]
     safety_line: str
     transcript: Optional[str] = None
     asr_confidence: Optional[float] = None
+    gate_outcome: Optional[str] = "report"
+    gate_reply: Optional[str] = None
+    is_case: bool = True
 
 
 @router.post("/intake/chat", response_model=ChatTurnResponse)
@@ -108,11 +129,15 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
 
     media_bytes = None
     media_mime = None
-    if payload.image_base64:
+    photo_extracted = None
+    photo_reading_fallback = False
+    raw_photo = payload.photo_base64 or payload.image_base64
+    if raw_photo:
         import base64
 
         try:
-            media_bytes = base64.b64decode(payload.image_base64, validate=True)
+            b64_str = raw_photo.split(",", 1)[-1].strip()
+            media_bytes = base64.b64decode(b64_str)
             from app.tools.images import jpeg_downscale
 
             media_bytes = jpeg_downscale(media_bytes)
@@ -136,7 +161,8 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
             import base64
 
             try:
-                media_bytes = base64.b64decode(payload.audio_base64, validate=True)
+                b64_audio = payload.audio_base64.split(",", 1)[-1].strip()
+                media_bytes = base64.b64decode(b64_audio)
                 media_mime = "audio/wav"
             except Exception:
                 media_bytes = None
@@ -147,6 +173,124 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
             if wav.exists():
                 media_bytes = wav.read_bytes()
                 media_mime = "audio/wav"
+
+    # Citizen words stay the raw report. Voice uses the live transcript, not a stored caption.
+    if payload.channel == "voice" and transcript:
+        citizen_text = transcript.strip()
+        report_text = citizen_text
+    else:
+        citizen_text = (payload.raw_text or payload.text or report_text or "").strip()
+        if citizen_text:
+            report_text = citizen_text
+
+    has_photo = bool(media_bytes)
+    if media_bytes and media_mime and payload.channel == "photo":
+        try:
+            photo_extracted = intake_agent.parse_media_report(
+                report_text, media_bytes, media_mime, language_hint=payload.lang
+            )
+        except Exception as e:
+            logger.warning("Intake media parsing at submit failed: %s", e)
+            photo_reading_fallback = True
+            photo_extracted = None
+        if photo_extracted is None:
+            photo_reading_fallback = True
+        else:
+            flags_set = set(getattr(photo_extracted, "flags", None) or [])
+            has_fallback_flag = bool(flags_set & {"photo_fallback", "unparsed", "unparsed_model_output", "needs_human_review"})
+            needs_review = bool(getattr(photo_extracted, "needs_human_review", False))
+            if has_fallback_flag or needs_review:
+                photo_reading_fallback = True
+
+    is_unrelated_photo = False
+    if photo_extracted is not None and not photo_reading_fallback:
+        notes_low = (getattr(photo_extracted, "notes", "") or "").lower()
+        has_em_notes = any(w in notes_low for w in ("rescue", "flood", "water", "trapped", "help", "emergency", "boat", "hazard"))
+        t_val = getattr(getattr(photo_extracted, "type", None), "value", getattr(photo_extracted, "type", None))
+        hz_val = getattr(getattr(photo_extracted, "hazard", None), "value", getattr(photo_extracted, "hazard", None))
+        p_cnt = getattr(getattr(photo_extracted, "people", None), "count", None)
+        has_err_flags = any(f in (getattr(photo_extracted, "flags", None) or []) for f in ("unparsed", "unparsed_model_output", "needs_human_review"))
+        if (
+            t_val == "other"
+            and hz_val in ("none", "unknown")
+            and not p_cnt
+            and not has_em_notes
+            and not has_err_flags
+            and not bool((citizen_text or "").strip())
+        ):
+            is_unrelated_photo = True
+
+    if is_unrelated_photo:
+        status_token = f"tok_{uuid.uuid4().hex[:12]}"
+        from app.tools.input_gate import _RESPONSES
+        gate_reply = _RESPONSES["gibberish"].get(payload.lang or "en", _RESPONSES["gibberish"]["en"])
+        flags = ["no_case", "gibberish", "unrelated_photo"]
+        raw_report = storage_service.save_report_raw(
+            raw_text=report_text,
+            channel=payload.channel,
+            lang=payload.lang,
+            source_id=payload.source_id,
+            trust_level="anonymous",
+            pack_id=payload.scenario_id,
+            flags=flags,
+            status_token=status_token,
+            transcript=transcript,
+            asr_confidence=asr_confidence,
+            photo_base64=raw_photo,
+            location_accuracy=payload.location_accuracy,
+            location_source=payload.location_source,
+        )
+        req_id = f"req_{uuid.uuid4().hex[:10]}"
+        req_obj = StoredRequest(
+            id=req_id,
+            public_code=public_code_for(raw_report.id),
+            event_id="event_kerala_flood",
+            pack_id=payload.scenario_id,
+            type=IncidentType.OTHER,
+            status=RequestStatus.CLOSED,
+            flags=list(flags),
+            summary=gate_reply,
+            analysis_status="complete",
+            raw_text=citizen_text or report_text or "",
+            photo_base64=raw_photo,
+            has_photo=True,
+        )
+        storage_service.save_request(req_obj, actor="photo_gate")
+        _link_report(raw_report, req_obj, req_id, gate_reply, citizen_text or report_text)
+        resp = _response_for(raw_report, req_obj, "new", flags, transcript, asr_confidence)
+        if payload.idempotency_key:
+            storage_service.save_idempotent(payload.idempotency_key, resp.model_dump())
+        return resp
+
+    # A3 Input gate evaluation (applies to text, voice transcript, and photo)
+    outcome, gate_reply = evaluate_input_gate(
+        report_text,
+        lang=payload.lang,
+        lang_hint=payload.lang,
+        has_photo=has_photo,
+        photo_is_emergency=True,
+    )
+    if outcome in ("greeting", "gibberish"):
+        resp = ReportSubmitResponse(
+            report_id="",
+            request_id="",
+            public_code=None,
+            status_token="",
+            summary=gate_reply,
+            receipt=gate_reply,
+            urgency_score=0.0,
+            dedupe_decision="new",
+            flags=["no_case", outcome],
+            safety_line="In an immediate emergency call 112.",
+            transcript=transcript,
+            asr_confidence=asr_confidence,
+            gate_outcome=outcome,
+            gate_reply=gate_reply,
+            is_case=False,
+        )
+        if payload.idempotency_key:
+            storage_service.save_idempotent(payload.idempotency_key, resp.model_dump())
+        return resp
 
     demo_sample = (payload.source_id or "").startswith("demo_sample_")
     # 1. Rate limiting check (flags only, never deletes). Demo sample buttons may be clicked again.
@@ -169,6 +313,9 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         status_token=status_token,
         transcript=transcript,
         asr_confidence=asr_confidence,
+        photo_base64=raw_photo,
+        location_accuracy=payload.location_accuracy,
+        location_source=payload.location_source,
     )
     if payload.chat_answers:
         raw_report.chat_answers = [str(x)[:500] for x in payload.chat_answers[:10]]
@@ -176,15 +323,9 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
             # The stored report is the reporter's first sentence; the answers sit beside it.
             raw_report.raw_text = payload.raw_text.strip()
 
-    # Citizen words stay the raw report. Voice uses the live transcript, not a stored caption.
-    if payload.channel == "voice" and transcript:
-        citizen_text = transcript.strip()
-        report_text = citizen_text
-    else:
-        citizen_text = (payload.raw_text or payload.text or report_text or "").strip()
-        if payload.channel == "photo" and not citizen_text:
-            citizen_text = "Flood photo"
-        if citizen_text:
+    if payload.channel == "photo" and not citizen_text:
+        citizen_text = "Flood photo"
+        if not report_text:
             report_text = citizen_text
 
     hoax_blob = _hoax_blob(payload, citizen_text or report_text)
@@ -204,14 +345,22 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
 
     # Rule-based type, place, and people. The status page can show tips before any model call.
     extracted = extract_with_rules(report_text)
-    if payload.channel == "photo" and extracted.type == IncidentType.OTHER:
-        extracted.type = IncidentType.RESCUE
-        extracted.hazard = HazardType.WATER_RISING
+    if photo_extracted and not photo_reading_fallback:
+        extracted = photo_extracted
+    elif has_photo and photo_reading_fallback:
+        if "needs_human_review" not in flags:
+            flags.append("needs_human_review")
+    elif payload.channel == "photo" and extracted.type == IncidentType.OTHER:
+        if "needs_human_review" not in flags:
+            flags.append("needs_human_review")
+    if has_photo and "has_photo" not in flags:
+        flags.append("has_photo")
     machine_summary = _apply_card(extracted, payload, report_text)
     pin_lat, pin_lng, ward_id = _pin_for(payload, extracted, report_text)
     req_id = f"req_{uuid.uuid4().hex[:10]}"
     req_obj = StoredRequest(
         id=req_id,
+        public_code=public_code_for(raw_report.id),
         event_id="event_kerala_flood",
         pack_id=payload.scenario_id,
         type=extracted.type,
@@ -220,7 +369,16 @@ def _submit_report_impl(payload: ReportSubmitRequest) -> ReportSubmitResponse:
         ward_id=ward_id,
         lat=pin_lat,
         lng=pin_lng,
-        people_count=_stated_people(extracted.people.count, citizen_text or report_text),
+        location_accuracy=payload.location_accuracy,
+        location_source=payload.location_source,
+        photo_base64=raw_photo,
+        has_photo=has_photo,
+        people_count=_stated_people(
+            extracted.people.count,
+            citizen_text or report_text,
+            card_summary=(payload.structured.summary if payload.structured else None),
+            channel=payload.channel,
+        ),
         people_span=(people_bounds(citizen_text or report_text) or (None, None, None))[2],
         vulnerable=extracted.vulnerable,
         hazard=extracted.hazard,
@@ -303,6 +461,27 @@ def _apply_card(extracted: ExtractedRequest, payload: ReportSubmitRequest, repor
     if not payload.structured:
         return None
     facts = payload.structured
+    is_explicit_edit = (
+        payload.channel == "form"
+        or (bool(facts.summary) and facts.summary != report_text)
+    )
+    # A6 RD-9914 fix: server ignores client people/place without a quoted span in report_text or explicit card edit
+    if facts.people_count is not None:
+        stated_in_text = count_is_stated(report_text, facts.people_count)
+        stated_in_card = bool(facts.summary and count_is_stated(facts.summary, facts.people_count))
+        heard_count = people_count(report_text)
+        if not stated_in_text and not (is_explicit_edit and stated_in_card) and not heard_count:
+            facts.people_count = None
+
+    if facts.place_text is not None and facts.place_text.strip():
+        card_p = facts.place_text.strip().lower()
+        in_text = card_p in (report_text or "").lower()
+        in_summary = bool(facts.summary and card_p in facts.summary.lower())
+        kp = known_place(report_text)
+        kp_match = bool(kp and kp.lower() == card_p)
+        extracted_p = extract_place(report_text)
+        if not in_text and not kp_match and not extracted_p and not (is_explicit_edit and in_summary):
+            facts.place_text = None
     canon = canonical_request_dict(
         incident_type=facts.incident_type or extracted.type.value,
         place_text=facts.place_text if facts.place_text is not None else extracted.place_text,
@@ -364,11 +543,20 @@ def _hoax_blob(payload: ReportSubmitRequest, report_text: str) -> str:
     return "\n".join(part for part in parts if part)
 
 
-def _stated_people(count: Optional[int], report_text: str) -> Optional[int]:
+def _stated_people(
+    count: Optional[int],
+    report_text: str,
+    card_summary: Optional[str] = None,
+    channel: Optional[str] = None,
+) -> Optional[int]:
     """Unknown stays null. A card that says 0 is not a headcount the citizen gave."""
     bounds = people_bounds(report_text)
     stated = bounds[1] if bounds else None
     if count is None or count <= 0:
+        return stated if stated else None
+    if channel == "form" or (card_summary and count_is_stated(card_summary, count)):
+        return count
+    if not count_is_stated(report_text, count):
         return stated if stated else None
     return count
 
@@ -402,10 +590,202 @@ def _link_report(
     raw_report.summary = summary[:160]
 
 
+def build_receipt(req_obj: StoredRequest, raw_report: StoredReport, code: str) -> str:
+    """Build receipt in reporter's language from the extracted record:
+    'Received RD-xxxx. I understood: 2 people, water rising, near St. Mary's, Kainakary. Place: not stated.'
+    Gemini failed/timeout/non-JSON -> 'Received RD-xxxx, a coordinator will read it.'
+    """
+    raw_text = raw_report.raw_text or req_obj.raw_text or ""
+    # Detect script and language from raw_text, never blindly using raw_report.lang if script disagrees
+    if re.search(r"[\u0D00-\u0D7F]", raw_text):
+        lang = "ml"
+    elif re.search(r"[\u0900-\u097F]", raw_text):
+        lang = "hi"
+    else:
+        from app.tools.input_gate import is_manglish
+        if is_manglish(raw_text) or (raw_report.lang or "").lower() == "manglish":
+            lang = "manglish"
+        elif (raw_report.lang or "").lower() in ("hinglish", "hi"):
+            lang = "hinglish"
+        else:
+            lang = (raw_report.lang or "en").lower()
+            if lang not in ("en", "hinglish", "manglish", "hi", "ml"):
+                lang = "en"
+
+    # Check if Gemini failed, timed out, unparsed; only fall back if no facts were extracted
+    has_facts = bool(
+        req_obj.people_count
+        or (req_obj.hazard and getattr(req_obj.hazard, "value", req_obj.hazard) not in ("none", "unknown"))
+        or (req_obj.vulnerable and any(req_obj.vulnerable.model_dump().values()))
+        or (req_obj.place_text and req_obj.place_text.strip())
+        or req_obj.photo_facts
+    )
+    is_failed = (
+        req_obj.analysis_status == "failed"
+        or "unparsed" in (req_obj.flags or [])
+        or "unparsed_model_output" in (req_obj.flags or [])
+        or (req_obj.ai and req_obj.ai.fallback_reason in ("timeout_45s", "error"))
+    )
+
+    if is_failed and not has_facts:
+        if lang == "ml":
+            return f"ലഭിച്ചു {code}, ഒരു കോർഡിനേറ്റർ ഇത് പരിശോധിക്കും."
+        elif lang == "hi":
+            return f"प्राप्त हुआ {code}, समन्वयक इसे पढ़ेंगे।"
+        elif lang == "hinglish":
+            return f"Mil gaya {code}, coordinator ise check karenge."
+        elif lang == "manglish":
+            return f"Labhichu {code}, oru coordinator ithu parishodhikkum."
+        else:
+            return f"Received {code}, a coordinator will read it."
+
+    details: List[str] = []
+
+    # 1. People count
+    if req_obj.people_count:
+        if lang == "ml":
+            details.append(f"{req_obj.people_count} പേർ")
+        elif lang == "hi":
+            details.append(f"{req_obj.people_count} लोग")
+        elif lang == "hinglish":
+            details.append(f"{req_obj.people_count} log")
+        elif lang == "manglish":
+            details.append(f"{req_obj.people_count} per")
+        else:
+            details.append(f"{req_obj.people_count} people" if req_obj.people_count != 1 else "1 person")
+
+    # 2. Hazard or condition or vulnerability
+    words_low = raw_text.lower()
+    if req_obj.hazard and req_obj.hazard.value == "water_rising":
+        if lang == "ml":
+            details.append("വെള്ളം ഉയരുന്നു")
+        elif lang == "hi":
+            details.append("पानी बढ़ रहा है")
+        elif lang == "hinglish":
+            details.append("paani badh raha hai")
+        elif lang == "manglish":
+            details.append("vellam kayarunnu")
+        else:
+            details.append("water rising")
+    elif req_obj.hazard and req_obj.hazard.value == "stranded":
+        if lang == "ml":
+            details.append("കുടുങ്ങി")
+        elif lang == "hi":
+            details.append("फंसे हुए")
+        elif lang == "hinglish":
+            details.append("fanse hue")
+        elif lang == "manglish":
+            details.append("kudungi")
+        else:
+            details.append("stranded")
+
+    cant_walk = bool(re.search(r"(?:can'?t|cannot|unable to|not able to)\s+walk|nadakkan\s*pattilla|chal\s*nahi\s*sakt", words_low))
+    if req_obj.vulnerable:
+        if req_obj.vulnerable.elderly:
+            if lang == "ml":
+                details.append("പ്രായമായവർക്ക് നടക്കാൻ കഴിയില്ല" if cant_walk else "പ്രായമായവർ")
+            elif lang == "hi":
+                details.append("बुजुर्ग चल नहीं सकते" if cant_walk else "बुजुर्ग")
+            elif lang == "hinglish":
+                details.append("elderly chal nahi sakte" if cant_walk else "elderly")
+            elif lang == "manglish":
+                details.append("elderly nadakkan pattilla" if cant_walk else "ammachi")
+            else:
+                details.append("elderly can't walk" if cant_walk else "elderly")
+        if req_obj.vulnerable.child:
+            if lang == "ml":
+                details.append("കുട്ടികൾ")
+            elif lang == "hi":
+                details.append("बच्चे")
+            elif lang == "hinglish":
+                details.append("bachche")
+            elif lang == "manglish":
+                details.append("kuttikal")
+            else:
+                details.append("children")
+        if req_obj.vulnerable.medical_need or getattr(req_obj.type, "value", req_obj.type) == "medical":
+            if "breath" in words_low or "breathe" in words_low or "ശ്വാസം" in words_low or "साँस" in words_low or "swasam" in words_low:
+                if lang == "ml":
+                    details.append("ശ്വാസം കിട്ടുന്നില്ല")
+                elif lang == "hi":
+                    details.append("साँस लेने में तकलीफ")
+                elif lang == "hinglish":
+                    details.append("saans lene me dikkat")
+                elif lang == "manglish":
+                    details.append("swasam muttunnu")
+                else:
+                    details.append("someone not breathing")
+            else:
+                if lang == "ml":
+                    details.append("വൈദ്യസഹായം")
+                elif lang == "hi":
+                    details.append("चिकित्सा सहायता")
+                elif lang == "hinglish":
+                    details.append("medical madad")
+                elif lang == "manglish":
+                    details.append("medical sahayam")
+                else:
+                    details.append("medical help")
+        if req_obj.vulnerable.pregnant:
+            if lang == "ml":
+                details.append("ഗർഭിണി")
+            elif lang == "hi":
+                details.append("गर्भवती")
+            elif lang == "hinglish":
+                details.append("pregnant woman")
+            elif lang == "manglish":
+                details.append("garbhini")
+            else:
+                details.append("pregnant woman")
+
+    for pf in (req_obj.photo_facts or []):
+        if pf not in details:
+            details.append(pf)
+
+    # 3. Place
+    if req_obj.place_text and req_obj.place_text.strip():
+        p = req_obj.place_text.strip()
+        if lang == "ml":
+            details.append(f"{p} അടുത്ത്")
+        elif lang == "hi":
+            details.append(f"{p} के पास")
+        elif lang == "hinglish":
+            details.append(f"{p} ke paas")
+        elif lang == "manglish":
+            details.append(f"{p} aduthu")
+        else:
+            details.append(f"near {p}")
+    else:
+        if lang == "ml":
+            details.append("സ്ഥലം: പറഞ്ഞിട്ടില്ല")
+        elif lang == "hi":
+            details.append("स्थान: बताया नहीं")
+        elif lang == "hinglish":
+            details.append("Jagah: not stated")
+        elif lang == "manglish":
+            details.append("Sthalam: paranjittilla")
+        else:
+            details.append("Place: not stated")
+
+    joined_details = ", ".join(details)
+    if lang == "ml":
+        return f"ലഭിച്ചു {code}. മനസ്സിലായത്: {joined_details}."
+    elif lang == "hi":
+        return f"प्राप्त हुआ {code}। समझ आया: {joined_details}।"
+    elif lang == "hinglish":
+        return f"Mil gaya {code}. Samajh aaya: {joined_details}."
+    elif lang == "manglish":
+        return f"Labhichu {code}. Manassilayathu: {joined_details}."
+    else:
+        return f"Received {code}. I understood: {joined_details}."
+
+
 def _reporter_summary(raw_report: StoredReport, req_obj: StoredRequest) -> str:
     """What the reporter sees after sending: a clean one-line summary in their language."""
     if req_obj.hoax_reason or "hoax" in (req_obj.flags or []):
-        return (req_obj.ai_translation or req_obj.summary or "").splitlines()[0].strip()
+        text = req_obj.ai_translation or req_obj.summary or ""
+        non_empty = [line.strip() for line in text.splitlines() if line.strip()]
+        return non_empty[0] if non_empty else (req_obj.summary or "")
     try:
         from app.agents.chat_intake import _slot_summary
 
@@ -414,7 +794,7 @@ def _reporter_summary(raw_report: StoredReport, req_obj: StoredRequest) -> str:
             return short
     except Exception:
         pass
-    fallback = req_obj.ai_translation or req_obj.summary or ""
+    fallback = req_obj.ai_translation or req_obj.summary or raw_report.raw_text or ""
     if fallback:
         from app.agents.summary import short_faithful_summary
         return short_faithful_summary(fallback)
@@ -429,18 +809,47 @@ def _response_for(
     transcript: Optional[str],
     asr_confidence: Optional[float],
 ) -> ReportSubmitResponse:
+    pub_code = req_obj.public_code or public_code_for(raw_report.id)
+    req_obj.public_code = pub_code
     reading = req_obj.analysis_status == "analysing" and not (req_obj.ai_translation or "").strip()
+    receipt = "" if reading else build_receipt(req_obj, raw_report, pub_code)
+    summary_text = _reporter_summary(raw_report, req_obj) or req_obj.summary or ""
+    if "no_case" in flags:
+        from app.tools.input_gate import _RESPONSES
+        gate_reply = _RESPONSES["gibberish"].get(raw_report.lang or "en", _RESPONSES["gibberish"]["en"])
+        return ReportSubmitResponse(
+            report_id=raw_report.id,
+            request_id=req_obj.id,
+            public_code=pub_code,
+            status_token=raw_report.status_token or "",
+            summary=req_obj.summary or gate_reply,
+            receipt=req_obj.summary or gate_reply,
+            urgency_score=0.0,
+            dedupe_decision="new",
+            flags=list(flags),
+            safety_line="In an immediate emergency call 112.",
+            transcript=transcript,
+            asr_confidence=asr_confidence,
+            gate_outcome="gibberish",
+            gate_reply=gate_reply,
+            is_case=False,
+        )
     return ReportSubmitResponse(
         report_id=raw_report.id,
         request_id=req_obj.id,
+        public_code=pub_code,
         status_token=raw_report.status_token or "",
-        summary="" if reading else _reporter_summary(raw_report, req_obj),
+        summary=summary_text,
+        receipt=receipt,
         urgency_score=req_obj.urgency_score,
         dedupe_decision=decision,
         flags=list(flags),
         safety_line="In an immediate emergency call 112.",
         transcript=transcript,
         asr_confidence=asr_confidence,
+        gate_outcome="report",
+        gate_reply=None,
+        is_case=True,
     )
 
 
@@ -597,19 +1006,87 @@ def _refine_with_model(
 
     waiting = storage_service.get_request(req_id)
     with ai_priority(report_priority(waiting.urgency_score if waiting else 0)):
-        if media_bytes and media_mime and payload.channel == "photo":
-            analysis = intake_agent.parse_media_report(
-                report_text, media_bytes, media_mime, language_hint=payload.lang
+        try:
+            if media_bytes and media_mime and payload.channel == "photo":
+                analysis = intake_agent.parse_media_report(
+                    report_text, media_bytes, media_mime, language_hint=payload.lang
+                )
+            elif payload.channel == "voice" and (citizen_text or report_text):
+                analysis = intake_agent.parse_report(citizen_text or report_text, language_hint=payload.lang)
+            elif media_bytes and media_mime:
+                analysis = intake_agent.parse_media_report(
+                    report_text, media_bytes, media_mime, language_hint=payload.lang
+                )
+            else:
+                analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
+        except Exception as e:
+            logger.warning("Intake parsing failed in _refine_with_model: %s", e)
+            from app.agents.intake import ReportAnalysis
+            analysis = ReportAnalysis(
+                type=IncidentType.OTHER,
+                hazard=HazardType.UNKNOWN,
+                notes=f"Parsing error: {str(e)}",
+                needs_human_review=True,
+                flags=["unparsed", "needs_human_review"],
             )
-        elif payload.channel == "voice" and (citizen_text or report_text):
-            analysis = intake_agent.parse_report(citizen_text or report_text, language_hint=payload.lang)
-        elif media_bytes and media_mime:
-            analysis = intake_agent.parse_media_report(
-                report_text, media_bytes, media_mime, language_hint=payload.lang
-            )
+        last_call = getattr(llm_client, "last_ai", None)
+        if last_call is not None:
+            ai_usage = last_call.model_copy()
         else:
-            analysis = intake_agent.parse_report(report_text, language_hint=payload.lang)
-        ai_usage = llm_client.last_ai.model_copy()
+            from app.models.schemas import AiCall
+            ai_usage = AiCall(provider="fallback")
+
+    if bool(media_bytes):
+        flags_set = set(getattr(analysis, "flags", None) or [])
+        has_fallback_flag = bool(flags_set & {"photo_fallback", "unparsed", "unparsed_model_output", "needs_human_review"})
+        needs_rev = bool(getattr(analysis, "needs_human_review", False))
+
+        is_fallback_reading = (analysis is None) or has_fallback_flag or needs_rev
+        if not is_fallback_reading:
+            notes_low = (getattr(analysis, "notes", "") or "").lower()
+            has_em_notes = any(w in notes_low for w in ("rescue", "flood", "water", "trapped", "help", "emergency", "boat", "hazard"))
+            t_val = getattr(getattr(analysis, "type", None), "value", getattr(analysis, "type", None))
+            hz_val = getattr(getattr(analysis, "hazard", None), "value", getattr(analysis, "hazard", None))
+            has_err_flags = any(f in (getattr(analysis, "flags", None) or []) for f in ("unparsed", "unparsed_model_output", "needs_human_review"))
+            is_unrelated = (
+                t_val == "other"
+                and hz_val in ("none", "unknown")
+                and not (getattr(analysis, "people", None) and getattr(analysis.people, "count", None))
+                and not has_em_notes
+                and not has_err_flags
+                and not bool((citizen_text or "").strip() and (citizen_text or "").strip() != "Flood photo")
+            )
+            if is_unrelated:
+                for f in ("no_case", "gibberish", "unrelated_photo"):
+                    if f not in flags:
+                        flags.append(f)
+                from app.tools.input_gate import _RESPONSES
+                gate_reply = _RESPONSES["gibberish"].get(payload.lang or "en", _RESPONSES["gibberish"]["en"])
+                req_target = storage_service.get_request(req_id)
+                if req_target:
+                    req_target.status = RequestStatus.CLOSED
+                    req_target.analysis_status = "complete"
+                    for f in ("no_case", "gibberish", "unrelated_photo"):
+                        if f not in req_target.flags:
+                            req_target.flags.append(f)
+                    req_target.summary = gate_reply
+                    storage_service.save_request(req_target, actor="photo_gate")
+                raw_target = storage_service.get_report(report_id)
+                if raw_target:
+                    for f in ("no_case", "gibberish", "unrelated_photo"):
+                        if f not in raw_target.flags:
+                            raw_target.flags.append(f)
+                    storage_service.save_report(raw_target)
+                from app.models.schemas import DedupeDecision, DedupeDecisionType
+                return DedupeDecision(decision=DedupeDecisionType.NEW, evidence=["unrelated_photo"])
+        else:
+            if "needs_human_review" not in flags:
+                flags.append("needs_human_review")
+            req_target = storage_service.get_request(req_id)
+            if req_target and "needs_human_review" not in req_target.flags:
+                req_target.flags.append("needs_human_review")
+                storage_service.save_request(req_target, actor="photo_fallback_guard")
+
     trans_res = _translation_for(report_text, analysis, ai_usage)
     source_words = citizen_text or report_text
     from app.tools.translation import faithful_english, translation_drops_facts
@@ -637,6 +1114,10 @@ def _refine_with_model(
             if flag not in flags:
                 flags.append(flag)
     machine_summary = _apply_card(analysis, payload, report_text)
+    if getattr(analysis, "flags", None):
+        for f in analysis.flags:
+            if f not in flags:
+                flags.append(f)
     if trans_res.is_low_confidence and "low_translation_confidence" not in flags:
         flags.append("low_translation_confidence")
         flags.append("needs_human_review")
@@ -673,6 +1154,10 @@ def _refine_with_model(
     else:
         req_obj.vulnerable = analysis.vulnerable
     req_obj.hazard = analysis.hazard
+    if payload.channel == "photo":
+        note = (getattr(analysis, "notes", None) or "").strip()
+        if note and note not in ("Flood photo", "Empty report received"):
+            req_obj.photo_facts = [note] if "photo" in note.lower() else [f"from photo: {note}"]
     from app.agents.depth import validate_depth
     depth = validate_depth(getattr(analysis, "water_depth", None), getattr(analysis, "water_depth_quote", None), citizen_text or report_text, ai_source)
     if not depth or depth.get("band") == "unknown":
@@ -851,3 +1336,53 @@ def _replay_idempotent(key: Optional[str]) -> Optional[ReportSubmitResponse]:
             detail="This report is still being saved. It will retry.",
         )
     return None
+
+
+@router.post("/reports/{report_id}/location")
+def update_report_location(report_id: str, payload: LocationUpdateRequest):
+    report = storage_service.get_report(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    if payload.token and report.status_token and report.status_token != payload.token:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    if not (-90.0 <= payload.lat <= 90.0) or not (-180.0 <= payload.lng <= 180.0):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Coordinates out of range: lat must be in [-90, 90] and lng in [-180, 180]",
+        )
+
+    source = payload.source or "gps"
+    if source != "demo":
+        now = time.time()
+        is_stale_fix = False
+        if payload.fix_time is not None:
+            fix_sec = payload.fix_time / 1000.0 if payload.fix_time > 1e11 else payload.fix_time
+            if (now - fix_sec) > 600:
+                is_stale_fix = True
+        if (payload.accuracy is not None and payload.accuracy > 200) or is_stale_fix:
+            source = "approximate"
+
+    report.location_accuracy = payload.accuracy
+    report.location_source = source
+    req_id = report.case_id or report.request_id
+    if req_id:
+        req = storage_service.get_request(req_id)
+        if req:
+            req.lat = payload.lat
+            req.lng = payload.lng
+            req.location_accuracy = payload.accuracy
+            req.location_source = source
+            if not req.ward_id:
+                req.ward_id = gazetteer.resolve_ward(req.place_text, req.raw_text)
+            from app.agents.matching import matching_agent
+            matching_agent.find_matches(req, top_n=3, save_to_storage=True)
+            storage_service.save_request(req, actor="location_update")
+    return {
+        "status": "ok",
+        "ok": True,
+        "report_id": report_id,
+        "lat": payload.lat,
+        "lng": payload.lng,
+        "accuracy": payload.accuracy,
+        "source": source,
+    }

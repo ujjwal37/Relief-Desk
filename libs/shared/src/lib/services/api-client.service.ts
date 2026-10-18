@@ -165,6 +165,16 @@ export class ApiClientService {
     return this.http.post<ReportSubmitResponse>('/api/reports', payload);
   }
 
+  updateReportLocation(reportId: string, token: string, lat: number, lng: number, accuracy?: number, source?: string): Observable<{ status: string; report_id: string; lat: number; lng: number }> {
+    return this.http.post<{ status: string; report_id: string; lat: number; lng: number }>(`/api/reports/${reportId}/location`, {
+      token,
+      lat,
+      lng,
+      accuracy,
+      source: source || 'gps',
+    });
+  }
+
   getUrgencyWeights(): Observable<UrgencyWeights> {
     return this.http.get<UrgencyWeights>('/api/config/weights', this.getAuthHeaders());
   }

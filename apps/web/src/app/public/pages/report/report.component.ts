@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, inject, signal, OnInit, effect, viewChild, AfterViewChecked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy, inject, signal, computed, OnInit, effect, viewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { timeout, TimeoutError } from 'rxjs';
@@ -44,9 +44,106 @@ const EMPTY_VULNERABLE: Record<string, boolean> = {
   medical_need: false,
 };
 
-/** A chat turn that takes longer than this falls back to the form. */
-// A full Gemini read of a long non-English message can take ~20 s; the 6 s 'taking longer' note covers the wait.
 const CHAT_TURN_TIMEOUT_MS = 45000;
+
+export const REPORTER_FOLLOWUPS = false;
+
+export interface GuidedChip {
+  id: string;
+  category: 'stranded' | 'breathing' | 'repeat' | 'hoax';
+  text: string;
+}
+
+export const GUIDED_CHIPS: Record<'en' | 'hi' | 'ml' | 'manglish', GuidedChip[]> = {
+  manglish: [
+    {
+      id: 'mg_stranded',
+      category: 'stranded',
+      text: 'Kainakary jettyde aduthu veettil vellam kayari, 3 per und, oru ammachi nadakkan pattilla',
+    },
+    {
+      id: 'mg_breathing',
+      category: 'breathing',
+      text: 'Kainakary-il oraalkku swasam edukkaan pattunnilla, pettennu ambulance venam',
+    },
+    {
+      id: 'mg_repeat',
+      category: 'repeat',
+      text: 'Kainakary boat jetty-il 4 aalukal trapped aanu, vellam koodunnu, vallam ayakkumo',
+    },
+    {
+      id: 'mg_hoax',
+      category: 'hoax',
+      text: 'Dam ippol pottum ennu NASA warning, 10 min-il ellaavarum maaranam',
+    },
+  ],
+  ml: [
+    {
+      id: 'ml_stranded',
+      category: 'stranded',
+      text: 'കൈനകരി പള്ളിയുടെ അടുത്ത് വീട്ടിൽ വെള്ളം കയറി, 4 പേർ കുടുങ്ങിയിട്ടുണ്ട്. ഒരു കുട്ടിയും പ്രായമായവരും ഉണ്ട്. ബോട്ട് വേണം.',
+    },
+    {
+      id: 'ml_breathing',
+      category: 'breathing',
+      text: 'ശ്വാസം കിട്ടുന്നില്ല, കൈനകരി പള്ളിയുടെ അടുത്ത്, പെട്ടെന്ന് വരണം',
+    },
+    {
+      id: 'ml_repeat',
+      category: 'repeat',
+      text: 'കൈനകരി ബോട്ട് ജെട്ടിയുടെ അടുത്ത് 4 പേർ കുടുങ്ങിക്കിടക്കുന്നു, വെള്ളം ഉയരുന്നു, നടക്കാൻ പറ്റാത്ത പ്രായമായ സ്ത്രീയുണ്ട്',
+    },
+    {
+      id: 'ml_hoax',
+      category: 'hoax',
+      text: 'നാസ മുന്നറിയിപ്പ്: 10 മിനിറ്റിനുള്ളിൽ അണക്കെട്ട് പൊട്ടും, എല്ലാവരും ഉടൻ മാറുക',
+    },
+  ],
+  hi: [
+    {
+      id: 'hi_stranded',
+      category: 'stranded',
+      text: 'वार्ड 7 में शिव मंदिर के पास 4 लोग फंसे हैं। पानी कमर तक है। एक बच्चा और बुजुर्ग हैं। नाव भेजिए।',
+    },
+    {
+      id: 'hi_breathing',
+      category: 'breathing',
+      text: 'आपातकाल! एक व्यक्ति सांस नहीं ले पा रहा है, शिव मंदिर के पास। तुरंत एम्बुलेंस चाहिए।',
+    },
+    {
+      id: 'hi_repeat',
+      category: 'repeat',
+      text: 'शिव मंदिर के पास 4 लोग छत पर फंसे हैं, पानी बढ़ रहा है, मदद चाहिए।',
+    },
+    {
+      id: 'hi_hoax',
+      category: 'hoax',
+      text: 'नासा की चेतावनी: 10 मिनट में बांध टूटने वाला है, तुरंत खाली करें।',
+    },
+  ],
+  en: [
+    {
+      id: 'en_stranded',
+      category: 'stranded',
+      text: 'Stranded family of 4 on the second floor, water rising rapidly near St. Mary Church, Kainakary. Send boat.',
+    },
+    {
+      id: 'en_breathing',
+      category: 'breathing',
+      text: 'Emergency! Elderly person not breathing near Kainakary boat jetty. Need ambulance or doctor immediately.',
+    },
+    {
+      id: 'en_repeat',
+      category: 'repeat',
+      text: 'Four people stuck near Kainakary boat jetty, water rising, elderly woman cannot walk',
+    },
+    {
+      id: 'en_hoax',
+      category: 'hoax',
+      text: 'NASA says the dam will burst in 10 minutes, everyone evacuate, forward this',
+    },
+  ],
+};
 
 interface SpeechRec {
   lang: string;
@@ -115,6 +212,20 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     { id: 'shelter_needed', label_en: 'Need Shelter', label_hi: 'आश्रय चाहिए', incident_type: 'shelter', icon: 'home' },
   ]);
 
+  readonly selectedChipLang = signal<'manglish' | 'ml' | 'hi' | 'en'>('manglish');
+  readonly guidedChips = computed(() => GUIDED_CHIPS[this.selectedChipLang()]);
+
+  readonly isSharingGps = signal(false);
+  readonly gpsShared = signal(false);
+  readonly locationAccuracy = signal<number | null>(null);
+  readonly locationSource = signal<string | null>(null);
+
+  readonly attachedPhoto = signal<string | null>(null);
+  readonly isCompressingPhoto = signal(false);
+
+  readonly isOfflineQueued = signal(false);
+  draftIdempotencyKey = `idemp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
   constructor() {
     effect(() => {
       const read = this.offlineSync.lastSynced;
@@ -160,6 +271,10 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     window.visualViewport?.removeEventListener('resize', this.onViewport);
     this.closeVoice();
     if (this.slowTimer) clearTimeout(this.slowTimer);
+    if (this.autoRetryTimer) {
+      clearTimeout(this.autoRetryTimer);
+      this.autoRetryTimer = null;
+    }
   }
 
   ngAfterViewChecked(): void {
@@ -281,6 +396,15 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
   typeInstead(): void {
     this.userInput.set(this.transcript());
     this.closeVoice();
+  }
+
+  prefillExample(kind: 'manglish' | 'not_breathing' | 'reworded'): void {
+    const examples: Record<string, string> = {
+      manglish: 'Kainakary-il vellam keri, veedinte mukalil 4 aalukal trapped aanu, oru kuttiyum undu. Vallam venam.',
+      not_breathing: 'കൈനക്കരിയിൽ ഒരാൾക്ക് ശ്വാസമെടുക്കാൻ പറ്റുന്നില്ല. വേഗം ആംബുലൻസ് അല്ലെങ്കിൽ ഡോക്ടർ വേണം.',
+      reworded: 'Champakulam church-nte aduthu vellam koodi, aalukal ottappettu, sahayam ethikkumo.',
+    };
+    this.userInput.set(examples[kind] || '');
   }
 
   finishVoice(): void {
@@ -446,7 +570,193 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.photoUsed.set(true);
   }
 
+  pickGuidedChip(text: string): void {
+    this.userInput.set(text);
+  }
+
+  shareGpsLocation(): void {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    this.isSharingGps.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.isSharingGps.set(false);
+        this.locationPin.set({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        this.locationAccuracy.set(Math.round(pos.coords.accuracy));
+        this.locationSource.set(pos.coords.accuracy > 200 ? 'approximate' : 'gps');
+        this.gpsShared.set(true);
+      },
+      () => {
+        this.isSharingGps.set(false);
+      },
+      { timeout: 3000, enableHighAccuracy: true }
+    );
+  }
+
+  setDemoLocation(): void {
+    this.locationPin.set({ lat: 9.501, lng: 76.432 });
+    this.locationAccuracy.set(25);
+    this.locationSource.set('demo');
+    this.gpsShared.set(true);
+  }
+
+  async onPhotoSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    this.isCompressingPhoto.set(true);
+    try {
+      const b64 = await this.compressImage(file);
+      this.attachedPhoto.set(b64);
+    } catch {
+      // ignore
+    } finally {
+      this.isCompressingPhoto.set(false);
+      input.value = '';
+    }
+  }
+
+  removePhoto(): void {
+    this.attachedPhoto.set(null);
+  }
+
+  async compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          const maxDim = 1280;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(e.target?.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  private autoRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  retryOffline(): void {
+    if (this.autoRetryTimer) {
+      clearTimeout(this.autoRetryTimer);
+      this.autoRetryTimer = null;
+    }
+    this.sendReport();
+  }
+
+  @HostListener('window:online')
+  onWindowOnline(): void {
+    if (this.isOfflineQueued()) {
+      if (this.autoRetryTimer) clearTimeout(this.autoRetryTimer);
+      this.autoRetryTimer = setTimeout(() => {
+        if (this.isOfflineQueued()) {
+          this.sendReport();
+        }
+      }, 2000);
+    }
+  }
+
+  sendReport(): void {
+    const text = this.userInput().trim();
+    const photo = this.attachedPhoto();
+    if ((!text && !photo) || this.isLoading()) {
+      return;
+    }
+
+    if (REPORTER_FOLLOWUPS) {
+      this.sendOldFollowUp();
+      return;
+    }
+
+    const payload: ReportSubmitRequest = {
+      text,
+      raw_text: text,
+      channel: 'text',
+      lang: this.langService.currentLang(),
+      location_pin: this.locationPin() ?? undefined,
+      location_accuracy: this.locationAccuracy() ?? undefined,
+      location_source: this.locationSource() ?? undefined,
+      photo_base64: photo ?? undefined,
+      scenario_id: this.scenarioId(),
+      idempotency_key: this.draftIdempotencyKey,
+    };
+
+    if (!this.onlineNow()) {
+      this.offlineSync.saveReportOffline(payload);
+      this.isOfflineQueued.set(true);
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.apiClient.submitReport(payload).subscribe({
+      next: (res: ReportSubmitResponse) => {
+        this.isLoading.set(false);
+        this.isOfflineQueued.set(false);
+        if (this.autoRetryTimer) {
+          clearTimeout(this.autoRetryTimer);
+          this.autoRetryTimer = null;
+        }
+        if (res.is_case === false) {
+          // Greeting or gibberish gate: show assistant response in thread, no case
+          if (text) {
+            this.chatMessages.update((msgs) => [
+              ...msgs,
+              { id: `usr_${Date.now()}`, role: 'user', text, timestamp: new Date() },
+            ]);
+          }
+          if (res.gate_reply) {
+            this.chatMessages.update((msgs) => [
+              ...msgs,
+              { id: `ast_${Date.now()}`, role: 'assistant', text: res.gate_reply!, timestamp: new Date() },
+            ]);
+          }
+          this.userInput.set('');
+          this.attachedPhoto.set(null);
+          this.draftIdempotencyKey = `idemp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          return;
+        }
+
+        this.submittedResult.set(res);
+        this.myRequests.add(res.report_id, res.status_token, 'rescue');
+        announceReport(res.report_id, res.request_id, res.public_code);
+        this.router.navigate(['/status'], {
+          queryParams: { id: res.report_id, token: res.status_token, new: 1 },
+        });
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.offlineSync.saveReportOffline(payload);
+        this.isOfflineQueued.set(true);
+      },
+    });
+  }
+
   sendUserMessage(): void {
+    this.sendReport();
+  }
+
+  private sendOldFollowUp(): void {
     const text = this.userInput().trim();
     if (!text || this.isLoading()) {
       return;
@@ -488,7 +798,6 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
           if (this.slowTimer) clearTimeout(this.slowTimer);
           if (resp.confirmation_card) {
             this.pendingCard.set(resp.confirmation_card);
-            // A life threat skips the review form: Call 112 and one-tap send come first.
             if (resp.confirmation_card.life_threat) this.lifeCard.set(true);
             else this.reviewOpen.set(true);
           }
@@ -506,7 +815,6 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.slow.set(false);
           if (this.slowTimer) clearTimeout(this.slowTimer);
           if (err instanceof TimeoutError) {
-            // Never leave the citizen on a spinner: offer the form with what we have.
             this.chatMessages.update((msgs) => [
               ...msgs,
               { id: `ast_${Date.now()}`, role: 'assistant', text: this.langService.translate('report.takingLonger'), timestamp: new Date() },
@@ -565,7 +873,7 @@ export class ReportComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.isLoading.set(false);
         this.submittedResult.set(res);
         this.myRequests.add(res.report_id, res.status_token, card.incident_type);
-        announceReport(res.report_id, res.request_id);
+        announceReport(res.report_id, res.request_id, res.public_code);
         this.router.navigate(['/status'], {
           queryParams: { id: res.report_id, token: res.status_token, new: 1 },
         });

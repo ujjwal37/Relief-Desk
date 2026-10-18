@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Header, Query, status
 from pydantic import BaseModel, Field
 from app.tools.storage import storage_service
 from app.models.firestore_models import StoredCluster, StoredRequest
@@ -338,7 +338,14 @@ def list_requests(
         refreshed = sorted(refreshed, key=lambda r: r.urgency_score, reverse=True)
     # A merge can land while this list is being built. Drop the copy that joined another case.
     visible = [req for req in refreshed if not req.merged_into]
-    return _collapse_identical_hoaxes(visible)
+    out = []
+    for req in _collapse_identical_hoaxes(visible):
+        c = req.model_copy()
+        if c.photo_base64 or "has_photo" in (c.flags or []):
+            c.has_photo = True
+        c.photo_base64 = None
+        out.append(c)
+    return out
 
 
 def _collapse_identical_hoaxes(rows):
@@ -372,7 +379,66 @@ def get_request_detail(
     from app.tools.case_queue import refresh_queue
     if refresh_queue([req]):
         storage_service.save_request(req, actor="ai_queue")
-    return req
+    c = req.model_copy()
+    if c.photo_base64 or "has_photo" in (c.flags or []):
+        c.has_photo = True
+    c.photo_base64 = None
+    return c
+
+
+@router.get("/requests/{id}/photo", summary="Get request photo by id")
+def get_request_photo(
+    id: str,
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+    token: Optional[str] = Query(None),
+):
+    from app.api.auth import verify_coordinator_token
+    raw_token = None
+    if authorization and authorization.startswith("Bearer "):
+        raw_token = authorization.split("Bearer ", 1)[1].strip()
+    elif token:
+        raw_token = token.strip()
+    if not raw_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized: Missing Authorization header or token query param",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    verify_coordinator_token(raw_token)
+
+    req = storage_service.get_request(id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    photo_b64 = req.photo_base64
+    if not photo_b64 and req.report_ids:
+        for r_id in req.report_ids:
+            rep = storage_service.get_report(r_id)
+            if rep and rep.photo_base64:
+                photo_b64 = rep.photo_base64
+                break
+
+    if not photo_b64:
+        raise HTTPException(status_code=404, detail="No photo for this request")
+
+    import base64
+    from fastapi.responses import Response
+
+    media_type = "image/jpeg"
+    data = photo_b64
+    if "base64," in data:
+        header, b64_str = data.split("base64,", 1)
+        if "image/png" in header:
+            media_type = "image/png"
+        elif "image/webp" in header:
+            media_type = "image/webp"
+        data = b64_str
+    try:
+        photo_bytes = base64.b64decode(data)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid photo encoding")
+
+    return Response(content=photo_bytes, media_type=media_type)
 
 
 def _fix_place(req) -> None:

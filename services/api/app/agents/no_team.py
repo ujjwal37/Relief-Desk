@@ -67,32 +67,37 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
         reason, detail = "all_busy", {"busy": len(busy)}
 
     reserve = None
-    if busy:
-        nearest = min(busy, key=lambda r: _km(req, r) if _km(req, r) is not None else 1e9)
-        km = _km(req, nearest)
-        wait = _finish_minutes(nearest)
-        travel = _eta(km, nearest)
-        reserve = {"team_id": nearest.id, "team": nearest.name, "job": nearest.assigned_request_id,
-                   "free_in_min": wait, "eta_min": (wait + travel) if travel is not None else None, "km": km}
-
     road = None
-    # A road team only when it can help with this need (an ambulance for a medical case), never a food hub.
-    useful = {"medical": {"medical"}, "rescue": {"medical"}, "shelter": {"shelter"}, "food": {"food"}}.get(
-        getattr(req.type, "value", req.type), set())
-    others = [r for r in resources if r.kind not in kinds and r.kind.value in useful and r.status == ResourceStatus.AVAILABLE
-              and travel_mode_for(r) != "water" and (r.capacity_remaining or 0) > 0 and not _stale(r)]
-    # A jetty or ghat needs a boat. A road ambulance is not offered as if it could reach them.
-    if others and not water_access_case(req) and not deep:
-        best = min(others, key=lambda r: _km(req, r) if _km(req, r) is not None else 1e9)
-        km = _km(req, best)
-        road = {"team_id": best.id, "team": best.name, "kind": best.kind.value, "km": km, "eta_min": _eta(km, best)}
-
     wider = None
-    if far:
-        res, km = far[0]
-        eta = _eta(km, res)
-        if km is not None and km <= 25.0 and (eta is None or eta <= 120):
-            wider = {"team_id": res.id, "team": res.name, "km": km, "eta_min": eta}
+
+    if req.lat is not None and req.lng is not None:
+        if busy:
+            nearest = min(busy, key=lambda r: _km(req, r) if _km(req, r) is not None else 1e9)
+            km = _km(req, nearest)
+            wait = _finish_minutes(nearest)
+            travel = _eta(km, nearest)
+            if km is not None and travel is not None:
+                reserve = {"team_id": nearest.id, "team": nearest.name, "job": nearest.assigned_request_id,
+                           "free_in_min": wait, "eta_min": wait + travel, "km": km}
+
+        # A road team only when it can help with this need (an ambulance for a medical case), never a food hub.
+        useful = {"medical": {"medical"}, "rescue": {"medical"}, "shelter": {"shelter"}, "food": {"food"}}.get(
+            getattr(req.type, "value", req.type), set())
+        others = [r for r in resources if r.kind not in kinds and r.kind.value in useful and r.status == ResourceStatus.AVAILABLE
+                  and travel_mode_for(r) != "water" and (r.capacity_remaining or 0) > 0 and not _stale(r)]
+        # A jetty or ghat needs a boat. A road ambulance is not offered as if it could reach them.
+        if others and not water_access_case(req) and not deep:
+            best = min(others, key=lambda r: _km(req, r) if _km(req, r) is not None else 1e9)
+            km = _km(req, best)
+            travel = _eta(km, best)
+            if km is not None and travel is not None:
+                road = {"team_id": best.id, "team": best.name, "kind": best.kind.value, "km": km, "eta_min": travel}
+
+        if far:
+            res, km = far[0]
+            travel = _eta(km, res)
+            if km is not None and km <= 25.0 and (travel is None or travel <= 120):
+                wider = {"team_id": res.id, "team": res.name, "km": km, "eta_min": travel}
 
     return {"request_id": req.id, "reason": reason, "detail": detail, "limit_km": limit,
             "kind": kinds[0].value if kinds else None,
@@ -103,4 +108,37 @@ def no_team_options(req: StoredRequest, resources: List[StoredResource]) -> dict
 def _life_threat(req: StoredRequest) -> bool:
     from app.agents.intake import _LIFE_THREAT
     kind = getattr(req.type, "value", req.type)
-    return kind == "medical" or bool(_LIFE_THREAT.search(req.raw_text or ""))
+    return kind == "medical" or bool(_LIFE_THREAT.search(req.raw_text or ""))
+
+
+class _OptionsObj:
+    def __init__(self, d: dict):
+        self.call112 = d.get("call112")
+        self.reserve = d.get("reserve")
+        self.road = d.get("road")
+        self.wider = d.get("wider")
+        self.escalate = d.get("escalate")
+        self.share = d.get("share")
+
+
+class NoTeamResult:
+    def __init__(self, d: dict):
+        self.request_id = d.get("request_id")
+        self.reason = d.get("reason")
+        self.detail = d.get("detail", {})
+        self.limit_km = d.get("limit_km")
+        self.kind = d.get("kind")
+        self.options = _OptionsObj(d.get("options", {}))
+        self._raw = d
+
+    def __getitem__(self, item):
+        return self._raw[item]
+
+    def get(self, item, default=None):
+        return self._raw.get(item, default)
+
+
+def calculate_no_team(req: StoredRequest, resources: List[StoredResource], boats_free: bool = False, medical_free: bool = True) -> NoTeamResult:
+    res_dict = no_team_options(req, resources)
+    return NoTeamResult(res_dict)
+

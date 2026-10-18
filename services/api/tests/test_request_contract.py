@@ -16,6 +16,7 @@ VOLATILE = {
     "id", "created_at", "updated_at", "report_ids", "merged_count", "merged_into", "cluster_id",
     "analysis", "analysis_status", "trace",
     "report_quotes", "dedupe_trace", "possible_duplicate", "count_note", "count_spans", "people_span",
+    "public_code",
 }
 
 

@@ -65,14 +65,14 @@ interface PlacedTeam { id: string; name: string; lat: number; lng: number; kind:
   `,
   styles: [`
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
-    .summary { flex: none; padding: 28px 28px 16px; }
+    .summary { flex: none; padding: 14px 24px 8px; }
     h1 { margin: 0; font: var(--t-page, 600 24px/30px var(--rd-font-family)); letter-spacing: var(--t-page-ls, -0.02em); }
-    .lead-line { margin: 6px 0 8px; color: var(--text-2); font: 400 14px/22px var(--rd-font-family); }
+    .lead-line { margin: 4px 0 6px; color: var(--text-2); font: 400 14px/20px var(--rd-font-family); }
     p { margin: 4px 0 8px; color: var(--text-2); font-size: 14px; }
     .stage {
       flex: 1; min-height: 0; display: grid;
       grid-template-columns: minmax(0, 1fr) 380px;
-      gap: 20px; padding: 0 28px 28px;
+      gap: 16px; padding: 0 24px 16px;
     }
     app-coordinator-alerts { width: 380px; min-height: 0; height: 100%; overflow: hidden; display: block; }
     .map-stage {

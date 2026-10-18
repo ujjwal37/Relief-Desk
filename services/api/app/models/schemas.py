@@ -107,6 +107,7 @@ class ExtractedRequest(BaseModel):
     confidence: FieldConfidences = Field(default_factory=FieldConfidences)
     evidence_spans: Dict[str, str] = Field(default_factory=dict)
     notes: str = Field(default="")
+    flags: List[str] = Field(default_factory=list)
     needs_human_review: bool = False
     ward_id: Optional[str] = None
     hoax_score: float = Field(default=0.0, ge=0.0, le=1.0)

@@ -1,0 +1,110 @@
+[
+  {
+    "name": "hi",
+    "input": "hi",
+    "expected": "greeting",
+    "lang": "en"
+  },
+  {
+    "name": "ok",
+    "input": "ok",
+    "expected": "greeting",
+    "lang": "en"
+  },
+  {
+    "name": "blank",
+    "input": "   ",
+    "expected": "greeting",
+    "lang": "en"
+  },
+  {
+    "name": "Malayalam greeting",
+    "input": "ഹായ്",
+    "expected": "greeting",
+    "lang": "ml"
+  },
+  {
+    "name": "namaste",
+    "input": "namaste",
+    "expected": "greeting",
+    "lang": "hinglish"
+  },
+  {
+    "name": "test",
+    "input": "test",
+    "expected": "greeting",
+    "lang": "en"
+  },
+  {
+    "name": "gibberish",
+    "input": "asdfghjk qwerty zzz",
+    "expected": "gibberish",
+    "lang": "en"
+  },
+  {
+    "name": "off-topic",
+    "input": "What is the capital of France and what is the weather today?",
+    "expected": "gibberish",
+    "lang": "en"
+  },
+  {
+    "name": "help only",
+    "input": "help",
+    "expected": "report",
+    "lang": "en"
+  },
+  {
+    "name": "place only",
+    "input": "Kainakary boat jetty",
+    "expected": "report",
+    "lang": "en"
+  },
+  {
+    "name": "count only",
+    "input": "4 people",
+    "expected": "report",
+    "lang": "en"
+  },
+  {
+    "name": "Manglish typos",
+    "input": "Kainakary-il vellam keri, veedinte mukalil 4 aalukal trapped aanu, oru kuttiyum undu. Vallam venam.",
+    "expected": "report",
+    "lang": "manglish"
+  },
+  {
+    "name": "mixed ML+EN",
+    "input": "കൈനകരി boat jetty-il flood water rising, 4 people trapped",
+    "expected": "report",
+    "lang": "ml"
+  },
+  {
+    "name": "voice-style run-on",
+    "input": "hello relief desk listen we are stranded near the temple water is coming inside very fast there are four of us please send someone fast",
+    "expected": "report",
+    "lang": "en"
+  },
+  {
+    "name": "Hindi",
+    "input": "वार्ड 7 में शिव मंदिर के पास 4 लोग फंसे हैं, पानी कमर तक है, नाव भेजिए",
+    "expected": "report",
+    "lang": "hi"
+  },
+  {
+    "name": "Malayalam not-breathing",
+    "input": "ശ്വാസം കിട്ടുന്നില്ല, കൈനകരി പള്ളിയുടെ അടുത്ത്, പെട്ടെന്ന് വരണം",
+    "expected": "report",
+    "lang": "ml"
+  },
+  {
+    "name": "full English",
+    "input": "Four people stuck near Kainakary boat jetty, water rising, elderly woman cannot walk",
+    "expected": "report",
+    "lang": "en"
+  },
+  {
+    "name": "reworded repeat",
+    "input": "Champakulam church-nte aduthu vellam koodi, aalukal ottappettu, sahayam ethikkumo",
+    "expected": "report",
+    "lang": "manglish"
+  }
+]

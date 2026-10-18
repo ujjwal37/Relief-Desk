@@ -14,6 +14,11 @@
         <button type="button" class="btn-ask-desk" data-tour="ask" (click)="toggleAskDesk()">
           {{ 'nav.ask' | rdTranslate }}
         </button>
+        <button type="button" class="btn-tour-nav" data-testid="header-tour" (click)="replayTour()">{{ 'nav.tour' | rdTranslate }}</button>
+        <button type="button" class="btn-try-citizen" data-testid="try-citizen" (click)="toggleCitizenPhone()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          <span>{{ 'coord.tryCitizen' | rdTranslate }}</span>
+        </button>
         <button type="button" class="more-tab" (click)="menuOpen.set(true)">{{ 'coord.more' | rdTranslate }}</button>
       </nav>
 
@@ -60,8 +65,7 @@
                 <h3>{{ 'coord.demoTools' | rdTranslate }}</h3>
                 <button type="button" class="item" data-testid="menu-live-demo" (click)="runLiveDemo()">{{ 'demo.run' | rdTranslate }}</button>
                 <button type="button" class="item" (click)="loadFullScenario()">{{ 'ux.loadFull' | rdTranslate }}</button>
-                <button type="button" class="item" (click)="takeTour()">{{ 'xfactor.restartTour' | rdTranslate }}</button>
-                <button type="button" class="item" (click)="toggleDemo()">{{ (showPhone() ? 'demo.hide' : 'coord.demoPhone') | rdTranslate }}</button>
+                <button type="button" class="item" data-testid="menu-replay-tour" (click)="replayTour(); menuOpen.set(false)">{{ 'nav.tour' | rdTranslate }}</button>
               }
               <button type="button" class="item out" (click)="logout()">{{ 'coord.signOut' | rdTranslate }}</button>
             </div>
@@ -85,9 +89,25 @@
     </main>
   </div>
 
-  @if (showPhone()) {
-    <aside class="demo-phone" [attr.aria-label]="'ui.publicReport' | rdTranslate">
-      <iframe [attr.title]="'ui.publicReport' | rdTranslate" src="/report"></iframe>
+  @if (ui.phonePanelOpen()) {
+    <aside class="citizen-phone-panel" data-testid="citizen-phone-panel" [attr.aria-label]="'coord.tryCitizen' | rdTranslate">
+      <header class="phone-panel-header">
+        <div class="phone-panel-title">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          <span>{{ 'coord.tryCitizen' | rdTranslate }}</span>
+        </div>
+        <div class="phone-panel-links">
+          <button type="button" class="phone-close-btn" data-testid="close-phone-panel" [attr.aria-label]="'coord.closePhone' | rdTranslate" (click)="closeCitizenPhone()">✕</button>
+        </div>
+      </header>
+      <div class="phone-meta-bar">
+        <a class="phone-text-link" href="/report" target="_blank" rel="noopener">{{ 'coord.openOnPhone' | rdTranslate }}</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a class="phone-text-link" href="/report" target="_blank" rel="noopener">{{ 'coord.openNewTab' | rdTranslate }}</a>
+      </div>
+      <div class="phone-frame-wrap">
+        <iframe class="citizen-frame" data-testid="citizen-phone-frame" src="/report" allow="microphone; geolocation" [attr.title]="'coord.tryCitizen' | rdTranslate"></iframe>
+      </div>
     </aside>
   }
   <app-tour />

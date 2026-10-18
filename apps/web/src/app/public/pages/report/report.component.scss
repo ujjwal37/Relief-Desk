@@ -24,6 +24,9 @@
 @keyframes b { 0%,80%,100% { opacity:.3; transform:translateY(0); } 40% { opacity:1; transform:translateY(-3px); } }
 .review-btn { align-self:stretch; min-height:52px; border-radius:var(--r2); border:0; background:var(--brand); color:var(--on-brand); font:600 16px var(--rd-font-family); cursor:pointer; }
 .composer-wrap { flex:none; padding:4px 12px calc(12px + env(safe-area-inset-bottom)); background:var(--surface); border-top:1px solid var(--border); padding-top:12px; }
+.example-chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+.example-chip { flex: none; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: 500 13px/1 var(--rd-font-family); cursor: pointer; white-space: nowrap; }
+.example-chip:hover { border-color: var(--brand); color: var(--brand); }
 .legal { margin:0 0 6px; text-align:center; font:var(--tp-meta); color:var(--text-2); }
 .composer { display:flex; align-items:flex-end; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r4); padding:6px 6px 6px 18px; box-shadow:var(--e2);
   textarea { flex:1; border:0; outline:0; resize:none; background:transparent; color:var(--text); font:var(--tp-body); padding:10px 0; max-height:144px; } }
@@ -67,3 +70,124 @@
 .life-112 { display:flex; align-items:center; justify-content:center; min-height:48px; border-radius:var(--r2, 8px); background:var(--danger, #b42318); color:#fff; font-weight:700; font-size:18px; text-decoration:none; }
 .life-112:focus-visible, .life-send:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
 .life-send { min-height:48px; border-radius:var(--r2, 8px); border:1.5px solid var(--danger, #b42318); background:var(--surface); color:var(--danger, #b42318); font:600 16px/1 var(--rd-font-family); cursor:pointer; }
+
+.offline-queue-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--amber-tint, #fffbeb);
+  border: 1px solid var(--amber, #f59e0b);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  .btn-retry-offline {
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--amber, #f59e0b);
+    color: #fff;
+    border: 0;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}
+
+.chip-lang-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+  overflow-x: auto;
+}
+.chip-lang-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: 600 12px var(--rd-font-family);
+  cursor: pointer;
+  &.on {
+    background: var(--brand);
+    color: var(--on-brand, #fff);
+    border-color: var(--brand);
+  }
+}
+
+.attached-photo-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  position: relative;
+  .thumb-preview {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .remove-photo-btn {
+    position: absolute;
+    top: -6px;
+    right: 48px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #000;
+    color: #fff;
+    border: 0;
+    font-size: 11px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .photo-badge {
+    font-size: 11px;
+    color: var(--brand);
+    font-weight: 600;
+  }
+}
+
+.composer-icon-btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--surface-2);
+  color: var(--text-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  position: relative;
+  &:hover {
+    color: var(--brand);
+  }
+  &.on {
+    color: var(--brand);
+    background: var(--brand-tint, rgba(16, 185, 129, 0.15));
+  }
+  .gps-tick {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--brand);
+  }
+}
+
+.demo-loc-btn {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--brand);
+  background: var(--brand-tint, rgba(16, 185, 129, 0.1));
+  color: var(--brand);
+  cursor: pointer;
+}

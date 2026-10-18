@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 # Shared pool. Never used in a `with` block: leaving one would join a hung call.
 _GEMINI_POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="gemini")
 
-_PLACEHOLDER_KEYS = {"", "replace-me", "synthetic-demo-gemini-key"}
+_PLACEHOLDER_KEYS = {"", "replace-me", "synthetic-demo-gemini-key", "test-key-mocked"}
 
 
 def _queue_budget() -> float:

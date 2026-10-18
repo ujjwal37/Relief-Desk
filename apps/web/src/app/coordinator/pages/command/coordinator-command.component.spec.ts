@@ -14,6 +14,11 @@ describe('CoordinatorCommandComponent', () => {
   const mockRequests: StoredRequest[] = [
     {
       id: 'INC-001',
+      public_code: 'RD-1001',
+      receipt: 'Received RD-1001. I understood: 5 people, water rising, near Ward 7.',
+      has_photo: true,
+      location_source: 'gps',
+      location_accuracy: 12,
       type: 'rescue',
       place_text: 'Ward 7 · Gandhi School lane',
       ward_id: 'ward_7',
@@ -46,6 +51,11 @@ describe('CoordinatorCommandComponent', () => {
     },
     {
       id: 'INC-002',
+      public_code: 'RD-1002',
+      receipt: 'Received RD-1002. I understood: 3 people, medical emergency, near Ward 4.',
+      has_photo: false,
+      location_source: 'gps',
+      location_accuracy: 25,
       type: 'medical',
       place_text: 'Ward 4 · Canal Road',
       ward_id: 'ward_4',
@@ -603,16 +613,22 @@ describe('CoordinatorCommandComponent', () => {
     const live = {
       ...mockRequests[0],
       id: 'req_phone',
+      public_code: 'RD-9999',
       place_text: 'Temple Road',
       urgency_score: 90,
       updated_at: '2026-10-12T18:00:00+00:00',
     };
     apiClientSpy.getRequests.and.returnValue(of([...mockRequests, live]));
     apiClientSpy.getRequests.calls.reset();
-    component.onLiveReport({ type: 'rd-report-submitted', requestId: 'req_phone' });
+    component.onLiveReport({ type: 'rd-report-submitted', requestId: 'req_phone', publicCode: 'RD-9999' });
     const args = apiClientSpy.getRequests.calls.mostRecent().args;
     expect(args[2]).toBeUndefined();
     expect(component.requests().some((row) => row.id === 'req_phone')).toBeTrue();
+    // Section B6: keeps current selection; sets yourReport chip; jumpToYourReport selects it
+    expect(component.selectedRequestId()).toBe('INC-001');
+    expect(component.ui.yourReport()?.id).toBe('req_phone');
+    expect(component.ui.yourReport()?.code).toBe('RD-9999');
+    component.jumpToYourReport('req_phone');
     expect(component.selectedRequestId()).toBe('req_phone');
   });
 

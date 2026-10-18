@@ -52,4 +52,11 @@ class ReportStatusResponse(BaseModel):
     while_you_wait_tips: List[str] = Field(default_factory=list)
     emergency_phone: str = "112"
     analysis_status: str = "complete"
+    receipt: Optional[str] = None
+    place_stated: bool = True
+    location_accuracy: Optional[float] = None
+    location_source: Optional[str] = None
     synthetic: bool = True
+    gate_outcome: Optional[str] = None
+    gate_reply: Optional[str] = None
+    is_case: bool = True

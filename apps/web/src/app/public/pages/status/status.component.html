@@ -34,6 +34,24 @@
       <p class="ai" data-testid="ai-analysing" role="status">{{ 'flow.readingReport' | rdTranslate }}</p>
     }
 
+    @if (data.receipt) {
+      <section class="card receipt-card" data-testid="status-receipt">
+        <p class="receipt-text">{{ data.receipt }}</p>
+        @if (!data.place_stated && !locationUpdated()) {
+          <button type="button" class="btn-share-loc" data-testid="receipt-share-location" [disabled]="locationUpdating()" (click)="shareLocation(data.report_id)">
+            📍 {{ (locationUpdating() ? 'report.sharingLoc' : 'status.shareLocation') | rdTranslate }}
+          </button>
+        }
+        @if (locationUpdated()) {
+          <p class="loc-updated-note">✓ {{ 'status.locUpdated' | rdTranslate }} @if (locationLabel(); as lbl) { · {{ lbl }} }</p>
+        } @else if (data.location_source === 'demo') {
+          <p class="loc-updated-note">📍 {{ 'status.demoLocation' | rdTranslate }}</p>
+        } @else if (locationLabel(); as lbl) {
+          <p class="loc-updated-note">📍 {{ lbl }}</p>
+        }
+      </section>
+    }
+
     <section class="idcard" aria-label="{{ 'status.requestId' | rdTranslate }}">
       <p class="cap">{{ 'status.requestId' | rdTranslate }}</p>
       <p class="rid">{{ data.public_code || data.report_id }}</p>

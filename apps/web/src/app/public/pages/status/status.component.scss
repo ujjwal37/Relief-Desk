@@ -34,3 +34,40 @@ h1 { margin:8px 0 0; font-size:28px; font-weight: 600; letter-spacing:-.01em; }
   .field-row { display:flex; gap:8px; } .paste { flex:none; min-height:52px; padding:0 14px; border-radius:12px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); font:600 16px var(--rd-font-family); cursor:pointer; }
   .go { margin-top:10px; min-height:56px; border:0; border-radius:var(--r2); background:var(--brand); color:var(--on-brand); font:600 18px var(--rd-font-family); cursor:pointer; } .invalid { margin:0; color:var(--sev-crit); font-weight:600; font-size:16px; } }
 .other { align-self:center; min-height:48px; display:grid; place-items:center; color:var(--brand); font-weight: 600; text-decoration:underline; }
+
+.receipt-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand);
+  border-radius: var(--r3);
+  padding: 16px;
+  .receipt-text {
+    margin: 0 0 10px;
+    font-size: 16px;
+    line-height: 1.45;
+    font-weight: 500;
+  }
+  .btn-share-loc {
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--brand);
+    background: var(--brand-tint, rgba(16, 185, 129, 0.1));
+    color: var(--brand);
+    font: 600 14px var(--rd-font-family);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    &:hover {
+      background: var(--brand);
+      color: var(--on-brand, #fff);
+    }
+  }
+  .loc-updated-note {
+    margin: 6px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brand);
+  }
+}

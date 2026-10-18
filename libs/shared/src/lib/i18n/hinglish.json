@@ -24,7 +24,8 @@
     "status2": "Status",
     "reportFab": "Report",
     "ask": "Desk se poochho",
-    "command": "Command"
+    "command": "Command",
+    "tour": "Tour dekhein"
   },
   "landing": {
     "title": "Relief Desk",
@@ -117,7 +118,21 @@
     "saidSick": "Yahan koi bimaar hai",
     "saidNone": "Bachche, bujurg ya bimaar koi nahi",
     "autoPlace": "Location abhi share nahi hui",
-    "speakLang": "Aap kis bhasha mein bolenge"
+    "speakLang": "Aap kis bhasha mein bolenge",
+    "exampleChips": "Sample reports dekhein",
+    "exampleManglish": "Manglish sample",
+    "exampleNotBreathing": "Malayalam (saans nahi le rahe)",
+    "exampleReworded": "Reworded repeat report",
+    "queuedOffline": "Queue mein hai, network aane par bhejenge",
+    "retry": "Dobara bhejo",
+    "chooseLang": "Bhasha chunein",
+    "attachPhoto": "Photo jodein",
+    "shareLocation": "Location share karein",
+    "sharingLoc": "Location share ho raha hai…",
+    "gpsNotice": "Sirf is rescue request ke liye istemaal hoga",
+    "demoLocation": "Demo jagah",
+    "langHi": "Hindi mein",
+    "langManglish": "Manglish bhasha"
   },
   "confirm": {
     "title": "Humne Ye Samjha",
@@ -186,7 +201,8 @@
     "tabsLabel": "Queue ka view",
     "tabSent": "Bheja",
     "tabDone": "Ho gaya",
-    "tabWaiting": "Intezaar mein"
+    "tabWaiting": "Intezaar mein",
+    "yourReport": "Aapki report · {code}"
   },
   "alerts": {
     "title": "Alerts",
@@ -514,6 +530,10 @@
     "minAgo": "{n} min pehle",
     "mapKey": "Map ki chaabi",
     "demoPhone": "Demo phone",
+    "tryCitizen": "Citizen bankar dekhein",
+    "openOnPhone": "Phone par kholein",
+    "openNewTab": "Naye tab mein kholein",
+    "closePhone": "Citizen panel band karein",
     "dismissTour": "Tour chhodein",
     "reportDetails": "Report ki poori baat",
     "scenarioLabel": "Kerala baadh se prerit synthetic scenario",
@@ -561,23 +581,28 @@
     "aiChecking": "Check ho raha hai…",
     "undone": "Dispatch undo ho gaya. Case wapas Waiting mein hai.",
     "undoFailed": "Undo nahi ho paya. Team shayad case par kaam shuru kar chuki hai.",
-    "doneCard": "{t} pe poora · {team} · team phir free"
+    "doneCard": "{t} pe poora · {team} · team phir free",
+    "locationNeededTitle": "Location ki zaroorat hai",
+    "locationNeeded": "reporter ke location share karne ka wait karein, ya escalate karein"
   },
   "tour": {
+    "prompt": "60-second tour lein",
+    "start": "Shuru karein",
+    "skip": "Skip karein",
     "next": "Aage",
     "back": "Peeche",
     "done": "Samajh gaya",
     "step": "Step {a} / {b}",
     "s1t": "Pehle jaan ka khatra",
-    "s1b": "Jin reports mein koi saans nahi le raha ya doob raha hai, woh is laal lane mein sabse upar aati hain. 112 call karo ya sabse paas ki naav bhejo.",
-    "s2t": "Gemini ne kaise decide kiya",
-    "s2b": "Case kholo aur har step dekho: report padhna, duplicate check, urgency, team dhoondhna.",
-    "s3t": "Team aap approve karte ho",
-    "s3b": "Desk doori aur time ke saath sabse paas ki khaali team suggest karta hai. Approve dabane tak kuch nahi jaata.",
-    "s4t": "Possible duplicate hai",
-    "s4b": "Ek hi jagah se kuch minute ke gap mein do reports. Kholo aur decide karo: merge ya dono rakho.",
-    "s5t": "Reporter chat try karo",
-    "s5b": "Naye tab mein public chat khulti hai. 5 mein se kisi bhi bhasha mein likho aur case yahan aata dekho.",
+    "s1b": "Top lane matched words aur one-tap Call 112 ke saath life threats highlight karti hai.",
+    "s2t": "Step-by-step trace dekhein",
+    "s2b": "Har AI step ko real execution times aur quoted source words ke saath dekhein.",
+    "s3t": "Suggested team dekhein",
+    "s3b": "Desk team suggest karta hai, aur har dispatch ko ek person hi approve karta hai.",
+    "s4t": "Possible duplicate check",
+    "s4b": "Paas ki similar reports flag hoti hain taaki dispatch se pehle review kar sakein.",
+    "s5t": "Citizen bankar try karein",
+    "s5b": "Malayalam ya Manglish mein khud try karne ke liye citizen report kholein.",
     "s6t": "Aap approve karein, phir desk se poochhein",
     "s6b": "Approve team bhejta hai. Phir poochhein kitne pending cases? Desk asli counts se jawab deta hai.",
     "reporterLink": "Reporter chat kholo ↗"
@@ -635,7 +660,10 @@
     "copied": "Copy ho gaya",
     "copyLink": "Link copy karein",
     "inQueue": "Aapki report coordinator ki queue mein hai.",
-    "tipLife112": "Abhi 112 pe call karein. Unhe wahi batayein jo aapne humein bataya."
+    "tipLife112": "Abhi 112 pe call karein. Unhe wahi batayein jo aapne humein bataya.",
+    "shareLocation": "Location share karein",
+    "locUpdated": "Location update ho gayi",
+    "demoLocation": "Demo wali location"
   },
   "nearby": {
     "title2": "Aas-paas ke alerts",
@@ -1036,6 +1064,7 @@
     "ephemeral": "Neeche tap karne par image analyse hogi. Image save nahi hoti. Sirf aapke review kiye details report mein judenge.",
     "synthetic": "Yeh synthetic demo image hai",
     "remove": "Photo hatayein",
+    "attachedAlt": "Attach ki gayi emergency photo",
     "offline": "Photo analyse karne ke liye connect karein, ya text se jaari rakhein.",
     "analyse": "Gemini se analyse karein",
     "analysing": "Analysis jaari hai…",
@@ -1211,7 +1240,11 @@
   },
   "ward": "Ward {n}",
   "chip": {
-    "likelyHoax": "Roka gaya · shayad hoax: {reason}"
+    "likelyHoax": "Roka gaya · shayad hoax: {reason}",
+    "stranded": "Fasa hua parivaar",
+    "breathing": "Kisi ko saans nahi aa rahi",
+    "repeat": "Dohraya gaya sandesh",
+    "hoax": "Sandigdh ya afwaah"
   },
   "card": {
     "movedUp": "Upar laya gaya"
@@ -1304,7 +1337,7 @@
     "help": "Ye sheet dikhayein"
   },
   "teams.goCommand": "Command par jaayein",
-  "teams.sub": "{a} free · {b} busy",
+  "teams.sub": "{a} khaali · {b} vyast",
   "people": {
     "notStated": "Log: nahi bataya",
     "one": "1 vyakti",
@@ -1474,11 +1507,15 @@
     "sendAmbulance": "Sabse nazdeeki ambulance abhi bhejein",
     "lockReason": "{step} ke baad Approve khulega · {n} mein se {done} AI steps poore (ya 45 sec baad rules)."
   },
-  "teams": {
-    "sub": "{a} khaali · {b} vyast"
-  },
   "dup": {
     "levelHigh": "Bharosa: high",
     "levelMedium": "Bharosa: medium"
+  },
+  "desk": {
+    "unparsedTitle": "Unparsed hai, kisi insaan ko dekhna padega",
+    "unparsedNote": "Rules fallback ke saath raw text dikhaya hai. Coordinator details verify karein.",
+    "fromPhoto": "photo se mila",
+    "rulesFallback": "Niyam fallback",
+    "reportPhoto": "Report ki photo"
   }
 }

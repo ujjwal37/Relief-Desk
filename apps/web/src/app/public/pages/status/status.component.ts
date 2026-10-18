@@ -30,10 +30,50 @@ export class StatusComponent implements OnInit, OnDestroy {
   showFind = signal(false);
   invalidInput = signal(false);
   isNew = signal(false);
+  locationUpdating = signal(false);
+  locationUpdated = signal(false);
   private currentToken = '';
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private watchedId = '';
   private stopEvents?: () => void;
+
+  shareLocation(reportId: string): void {
+    if (this.locationUpdating() || typeof navigator === 'undefined' || !navigator.geolocation) return;
+    this.locationUpdating.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.api.updateReportLocation(
+          reportId,
+          this.currentToken,
+          pos.coords.latitude,
+          pos.coords.longitude,
+          Math.round(pos.coords.accuracy),
+          pos.coords.accuracy > 200 ? 'approximate' : 'gps'
+        ).subscribe({
+          next: () => {
+            this.locationUpdating.set(false);
+            this.locationUpdated.set(true);
+            this.fetchStatus(reportId, this.currentToken, true);
+          },
+          error: () => this.locationUpdating.set(false)
+        });
+      },
+      () => {
+        this.locationUpdating.set(false);
+      },
+      { timeout: 3000, enableHighAccuracy: true }
+    );
+  }
+
+  locationLabel(): string {
+    const d = this.statusData();
+    if (!d) return '';
+    if (d.location_source === 'demo') return 'Demo location';
+    if (d.location_source === 'approximate') return 'Reporter GPS (approximate)';
+    if (d.location_accuracy != null) return `Reporter GPS ±${Math.round(d.location_accuracy)} m`;
+    if (d.location_source === 'gps') return 'Reporter GPS';
+    return '';
+  }
 
   ngOnInit(): void {
     const q = this.route.snapshot.queryParams;
@@ -107,7 +147,6 @@ export class StatusComponent implements OnInit, OnDestroy {
   private startPoll(): void {
     if (this.pollTimer) return;
     this.pollTimer = setInterval(() => {
-      if (this.live.state() === 'live') return;
       const data = this.statusData();
       const id = data?.report_id || this.reportIdInput().trim();
       if (!id || !this.stillWaiting(data?.status)) {

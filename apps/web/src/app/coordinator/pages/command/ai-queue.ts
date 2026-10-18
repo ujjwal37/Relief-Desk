@@ -7,7 +7,8 @@ export function isLifeThreat(req: Pick<StoredRequest, 'ai_queue'>): boolean {
   return !!req.ai_queue?.flags?.includes('lifeThreat');
 }
 
-export function stepsDone(req: Pick<StoredRequest, 'ai_queue'>): boolean {
+export function stepsDone(req: Pick<StoredRequest, 'ai_queue'> & { analysis_status?: StoredRequest['analysis_status'] }): boolean {
+  if (req.analysis_status === 'analysing') return false;
   if (!req.ai_queue) return true;
   const steps = req.ai_queue.steps || {};
   return AI_STEPS.every((step) => steps[step] === 'done');

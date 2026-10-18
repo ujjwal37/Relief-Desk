@@ -37,6 +37,7 @@ describe('ReportComponent confirmation gate', () => {
       request_id: 'req_1',
       status_token: 'tok_1',
       summary: 'ok',
+      receipt: 'Received RD-1001. I understood: 5 people, water rising, near Gandhi school.',
       urgency_score: 10,
       dedupe_decision: 'new',
       flags: [],
@@ -112,15 +113,12 @@ describe('ReportComponent confirmation gate', () => {
   it('does not call submitReport until the shared card Send now is tapped', () => {
     fixture.componentInstance.setQuickChip('Gandhi school ke paas 5 log');
     fixture.detectChanges();
-    expect(api.sendChatTurn).toHaveBeenCalled();
-    expect(api.submitReport).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.querySelector('rd-confirmation-card')).toBeTruthy();
-
-    fixture.nativeElement.querySelector('.send-now').click();
+    expect(api.sendChatTurn).not.toHaveBeenCalled();
     expect(api.submitReport).toHaveBeenCalledTimes(1);
     const payload = api.submitReport.calls.mostRecent().args[0];
-    expect(payload.structured?.people_count).toBe(5);
-    expect(payload.structured?.incident_type).toBe('rescue');
+    expect(payload.raw_text).toBe('Gandhi school ke paas 5 log');
+    expect(payload.text).toBe('Gandhi school ke paas 5 log');
+    expect(fixture.componentInstance.submittedResult()?.receipt).toContain('Received RD-1001');
   });
 
   it('form mode uses the same card and still waits for Send now', () => {
@@ -228,13 +226,62 @@ describe('ReportComponent confirmation gate', () => {
 
   it('fast path stays at chip then Send now, with no login control', () => {
     expect(fixture.nativeElement.querySelector('input[type="password"]')).toBeNull();
-    const chip = fixture.nativeElement.querySelector('.chip') as HTMLButtonElement;
-    expect(chip.getBoundingClientRect).toBeTruthy();
+    const chip = fixture.nativeElement.querySelector('.example-chip') as HTMLButtonElement;
+    expect(chip).toBeTruthy();
     chip.click();
     fixture.detectChanges();
     expect(api.submitReport).not.toHaveBeenCalled();
-    const send = fixture.nativeElement.querySelector('.send-now') as HTMLButtonElement;
+    expect(fixture.componentInstance.userInput()).toBeTruthy();
+    const send = fixture.nativeElement.querySelector('[data-testid="send-report-btn"]') as HTMLButtonElement;
     send.click();
     expect(api.submitReport).toHaveBeenCalledTimes(1);
+    expect(fixture.componentInstance.submittedResult()?.receipt).toContain('Received RD-1001');
+  });
+
+  it('prefills guided chip text into userInput without auto-sending', () => {
+    fixture.componentInstance.selectedChipLang.set('manglish');
+    fixture.detectChanges();
+    const chip = fixture.nativeElement.querySelector('[data-testid="example-chip-manglish"]') as HTMLButtonElement;
+    expect(chip).toBeTruthy();
+    chip.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.userInput()).toContain('Kainakary');
+    expect(api.submitReport).not.toHaveBeenCalled();
+  });
+
+  it('submits one-shot report directly through submitReport without follow-up loop', () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.userInput.set('3 people trapped in water near jetty');
+    fixture.componentInstance.sendReport();
+    expect(api.submitReport).toHaveBeenCalledTimes(1);
+    const req = api.submitReport.calls.mostRecent().args[0];
+    expect(req.raw_text).toBe('3 people trapped in water near jetty');
+  });
+
+  it('handles greeting gate outcome without creating a case or navigating away', () => {
+    const router = TestBed.inject(Router);
+    const navSpy = spyOn(router, 'navigate').and.resolveTo(true);
+    api.submitReport.and.returnValue(of({
+      report_id: '',
+      request_id: '',
+      status_token: '',
+      summary: '',
+      urgency_score: 0,
+      dedupe_decision: 'none',
+      flags: [],
+      safety_line: '',
+      is_case: false,
+      gate_outcome: 'greeting',
+      gate_reply: "Tell me what's happening and where",
+    }));
+
+    fixture.componentInstance.userInput.set('hi');
+    fixture.componentInstance.sendReport();
+
+    expect(navSpy).not.toHaveBeenCalled();
+    const msgs = fixture.componentInstance.chatMessages();
+    expect(msgs.some(m => m.text.includes("Tell me what's happening and where"))).toBeTrue();
   });
 });
+

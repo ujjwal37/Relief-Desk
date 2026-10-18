@@ -56,19 +56,25 @@ describe('CoordinatorLayoutComponent demo phone', () => {
     localStorage.setItem('rd_tour_done', '1');
   });
 
-  it('shows a 390px phone frame beside the coordinator when ?demo=1 on a wide screen', async () => {
-    const fixture = await setup('1', true);
-    const frame = fixture.nativeElement.querySelector('.demo-phone') as HTMLElement;
-    const iframe = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
-    expect(frame).toBeTruthy();
-    expect(iframe.getAttribute('src')).toBe('/report');
-    expect(getComputedStyle(frame).width === '' || frame.classList.contains('demo-phone')).toBeTrue();
-    expect(fixture.nativeElement.querySelector('.coordinator-shell.with-phone')).toBeTruthy();
-  });
+  it('opens and closes the 390px citizen phone panel via try-citizen button', async () => {
+    const fixture = await setup(null, true);
+    expect(fixture.nativeElement.querySelector('.citizen-phone-panel')).toBeNull();
 
-  it('hides the phone frame when the viewport is under 600px', async () => {
-    const fixture = await setup('1', false);
-    expect(fixture.nativeElement.querySelector('.demo-phone')).toBeNull();
+    const tryCitizen = fixture.nativeElement.querySelector('[data-testid="try-citizen"]') as HTMLButtonElement;
+    expect(tryCitizen).toBeTruthy();
+    tryCitizen.click();
+    fixture.detectChanges();
+
+    const panel = fixture.nativeElement.querySelector('.citizen-phone-panel') as HTMLElement;
+    const iframe = fixture.nativeElement.querySelector('.citizen-frame') as HTMLIFrameElement;
+    expect(panel).toBeTruthy();
+    expect(iframe.getAttribute('src')).toBe('/report');
+
+    const closeBtn = fixture.nativeElement.querySelector('[data-testid="close-phone-panel"]') as HTMLButtonElement;
+    expect(closeBtn).toBeTruthy();
+    closeBtn.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.citizen-phone-panel')).toBeNull();
   });
 
   it('keeps the logo, tabs and avatar on at most two rows', async () => {

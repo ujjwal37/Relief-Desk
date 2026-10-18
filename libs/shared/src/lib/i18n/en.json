@@ -24,7 +24,8 @@
     "status2": "Status",
     "reportFab": "Report",
     "ask": "Ask the desk",
-    "command": "Command"
+    "command": "Command",
+    "tour": "Tour"
   },
   "landing": {
     "title": "Relief Desk",
@@ -117,7 +118,21 @@
     "saidSick": "Someone here is sick",
     "saidNone": "No children, elderly or sick people",
     "autoPlace": "Location not shared yet",
-    "speakLang": "Language you will speak"
+    "speakLang": "Language you will speak",
+    "exampleChips": "Example reports",
+    "exampleManglish": "Manglish",
+    "exampleNotBreathing": "Malayalam (not breathing)",
+    "exampleReworded": "Reworded repeat",
+    "queuedOffline": "Queued, will send when network returns",
+    "retry": "Retry",
+    "chooseLang": "Choose language",
+    "attachPhoto": "Attach photo",
+    "shareLocation": "Share location",
+    "sharingLoc": "Sharing location…",
+    "gpsNotice": "Used only for this rescue request",
+    "demoLocation": "Demo location",
+    "langHi": "Hindi",
+    "langManglish": "Manglish"
   },
   "confirm": {
     "title": "What We Understood",
@@ -186,7 +201,8 @@
     "tabsLabel": "Queue view",
     "tabSent": "Sent",
     "tabDone": "Done",
-    "tabWaiting": "Waiting"
+    "tabWaiting": "Waiting",
+    "yourReport": "Your report · {code}"
   },
   "alerts": {
     "title": "Alerts",
@@ -514,6 +530,10 @@
     "minAgo": "{n} min ago",
     "mapKey": "Map key",
     "demoPhone": "Demo phone",
+    "tryCitizen": "Try as a citizen",
+    "openOnPhone": "Open on your phone",
+    "openNewTab": "Open in new tab",
+    "closePhone": "Close citizen panel",
     "dismissTour": "Skip tour",
     "reportDetails": "Report details",
     "scenarioLabel": "Synthetic scenario inspired by Kerala floods",
@@ -561,23 +581,28 @@
     "aiChecking": "Checking…",
     "undone": "Dispatch undone. The case is back in Waiting.",
     "undoFailed": "Could not undo. The team may already be working the case.",
-    "doneCard": "Completed {t} · {team} · team free again"
+    "doneCard": "Completed {t} · {team} · team free again",
+    "locationNeededTitle": "Location needed",
+    "locationNeeded": "wait for the reporter to share location, or escalate"
   },
   "tour": {
+    "prompt": "Take a 60-second tour",
+    "start": "Start",
+    "skip": "Skip",
     "next": "Next",
     "back": "Back",
     "done": "Got it",
     "step": "Step {a} of {b}",
     "s1t": "Life threats first",
-    "s1b": "Reports that say someone is not breathing or drowning jump to this red lane, in any of the 5 languages. Call 112 or send the nearest boat.",
-    "s2t": "How Gemini decided",
-    "s2b": "Open a case to see each step: read the report, check for duplicates, rate urgency, find a team. Tap a step for the details.",
-    "s3t": "You approve the team",
-    "s3b": "The desk suggests the nearest free team with the distance and time. Nothing moves until you press Approve.",
+    "s1b": "The top lane highlights life threats with matched words and one-tap Call 112.",
+    "s2t": "Step-by-step trace",
+    "s2b": "See each AI step with real execution times and quoted source words.",
+    "s3t": "Suggested team",
+    "s3b": "The desk suggests the nearest team, and a person approves every dispatch.",
     "s4t": "Possible duplicate",
-    "s4b": "Two reports from the same place a few minutes apart. Open it and decide: merge them or keep both.",
-    "s5t": "Try the reporter chat",
-    "s5b": "Opens the public chat in a new tab. Write in English, Hindi, Hinglish, Malayalam or Manglish and watch the case arrive here.",
+    "s4b": "Nearby similar reports are flagged so you can review before dispatching.",
+    "s5t": "Try as a citizen",
+    "s5b": "Open the citizen report to try it yourself in Malayalam or Manglish.",
     "s6t": "You approve, then ask the desk",
     "s6b": "Approve sends the team. Then ask how many pending cases? The desk answers from live counts.",
     "reporterLink": "Reporter chat ↗"
@@ -635,7 +660,10 @@
     "copied": "Copied",
     "copyLink": "Copy link",
     "inQueue": "Your report is in the coordinator queue.",
-    "tipLife112": "Call 112 now. Tell them what you told us."
+    "tipLife112": "Call 112 now. Tell them what you told us.",
+    "shareLocation": "Share location",
+    "locUpdated": "Location updated",
+    "demoLocation": "Demo location"
   },
   "nearby": {
     "title2": "Nearby alerts",
@@ -1036,6 +1064,7 @@
     "ephemeral": "The image is analysed only when you tap below. It is not stored. Only details you review can be added to your report.",
     "synthetic": "This is a synthetic demo image",
     "remove": "Remove photo",
+    "attachedAlt": "Attached emergency photo",
     "offline": "Connect to analyse the photo, or continue with text.",
     "analyse": "Analyse with Gemini",
     "analysing": "Analysing…",
@@ -1211,7 +1240,11 @@
   },
   "ward": "Ward {n}",
   "chip": {
-    "likelyHoax": "Held · likely hoax: {reason}"
+    "likelyHoax": "Held · likely hoax: {reason}",
+    "stranded": "Stranded family",
+    "breathing": "Someone not breathing",
+    "repeat": "Reworded repeat",
+    "hoax": "Suspicious / hoax"
   },
   "card": {
     "movedUp": "Moved up"
@@ -1477,5 +1510,12 @@
   "dup": {
     "levelHigh": "Confidence: high",
     "levelMedium": "Confidence: medium"
+  },
+  "desk": {
+    "unparsedTitle": "Unparsed, needs a human",
+    "unparsedNote": "Raw text shown with rules fallback. Coordinator must verify details.",
+    "fromPhoto": "from photo",
+    "rulesFallback": "Rules fallback",
+    "reportPhoto": "Report photo"
   }
 }

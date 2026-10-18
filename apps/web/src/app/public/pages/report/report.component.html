@@ -98,21 +98,70 @@
     </div>
 
     <div class="composer-wrap">
-      <app-photo-intake [caption]="citizenWords() + ' ' + userInput()" [online]="offlineSync.isOnline()" (accepted)="usePhotoObservation($event)" />
+      @if (isOfflineQueued()) {
+        <div class="offline-queue-bar" data-testid="offline-queue-bar" role="alert">
+          <span>{{ 'report.queuedOffline' | rdTranslate }}</span>
+          <button type="button" class="btn-retry-offline" data-testid="retry-offline-btn" (click)="retryOffline()">{{ 'report.retry' | rdTranslate }}</button>
+        </div>
+      }
+
+      <!-- Language selector row: EN / हिंदी / മലയാളം / Manglish -->
+      <div class="chip-lang-row" role="tablist" [attr.aria-label]="'report.chooseLang' | rdTranslate">
+        <button type="button" role="tab" class="chip-lang-btn" [class.on]="selectedChipLang() === 'en'" [attr.aria-selected]="selectedChipLang() === 'en'" (click)="selectedChipLang.set('en')">EN</button>
+        <button type="button" role="tab" class="chip-lang-btn" [class.on]="selectedChipLang() === 'hi'" [attr.aria-selected]="selectedChipLang() === 'hi'" (click)="selectedChipLang.set('hi')">{{ 'report.langHi' | rdTranslate }}</button>
+        <button type="button" role="tab" class="chip-lang-btn" [class.on]="selectedChipLang() === 'ml'" [attr.aria-selected]="selectedChipLang() === 'ml'" (click)="selectedChipLang.set('ml')">മലയാളം</button>
+        <button type="button" role="tab" class="chip-lang-btn" [class.on]="selectedChipLang() === 'manglish'" [attr.aria-selected]="selectedChipLang() === 'manglish'" (click)="selectedChipLang.set('manglish')">{{ 'report.langManglish' | rdTranslate }}</button>
+      </div>
+
+      <!-- 4 Guided chips for active language (prefill only) -->
+      <div class="example-chips" role="group" [attr.aria-label]="'report.exampleChips' | rdTranslate">
+        @for (chip of guidedChips(); track chip.id) {
+          <button type="button" class="example-chip" [attr.data-testid]="chip.id === 'mg_stranded' ? 'example-chip-manglish' : ('guided-chip-' + chip.category)" [attr.data-guided-category]="chip.category" (click)="pickGuidedChip(chip.text)">
+            {{ ('chip.' + chip.category) | rdTranslate }}
+          </button>
+        }
+      </div>
+
+      @if (attachedPhoto()) {
+        <div class="attached-photo-preview" data-testid="attached-photo-preview">
+          <img [src]="attachedPhoto()" [alt]="'photo.attachedAlt' | rdTranslate" class="thumb-preview" />
+          <button type="button" class="remove-photo-btn" (click)="removePhoto()" [attr.aria-label]="'photo.remove' | rdTranslate">✕</button>
+          <span class="photo-badge">{{ 'desk.fromPhoto' | rdTranslate }}</span>
+        </div>
+      }
+
+      <input type="file" accept="image/png,image/jpeg,image/webp" #photoInput style="display:none" (change)="onPhotoSelected($event)" />
+
       <p class="legal">{{ 'report.noMedical' | rdTranslate }}</p>
-      <form class="composer" (submit)="$event.preventDefault(); sendUserMessage()">
+      <form class="composer" (submit)="$event.preventDefault(); sendReport()">
+        <!-- Photo attach button -->
+        <button type="button" class="composer-icon-btn btn-photo" data-testid="attach-photo-btn" [attr.aria-label]="'report.attachPhoto' | rdTranslate" (click)="photoInput.click()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+
+        <!-- Share location GPS button -->
+        <button type="button" class="composer-icon-btn btn-gps" data-testid="share-gps-btn" [class.on]="gpsShared()" [attr.aria-label]="'report.shareLocation' | rdTranslate" [title]="'report.gpsNotice' | rdTranslate" (click)="shareGpsLocation()">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+          @if (gpsShared()) { <span class="gps-tick">✓</span> }
+        </button>
+
+        @if (demoTools) {
+          <button type="button" class="demo-loc-btn" data-testid="demo-location-btn" (click)="setDemoLocation()">
+            📍 {{ 'report.demoLocation' | rdTranslate }}
+          </button>
+        }
+
         <textarea #ta rows="1" [attr.lang]="inputLocale()" [placeholder]="'report.placeholder2' | rdTranslate" [attr.aria-label]="'report.placeholder' | rdTranslate"
           [ngModel]="userInput()" (ngModelChange)="userInput.set($event)" [ngModelOptions]="{ standalone: true }" (input)="autoGrow(ta)"
           (keydown.enter)="onEnter($event)"></textarea>
-        @if (userInput().trim()) {
-          <button type="submit" class="send-btn" [disabled]="isLoading() && !slow()" [attr.aria-label]="'report.sendMsg' | rdTranslate">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </button>
-        } @else {
-          <button type="button" class="voice-btn" (click)="toggleVoice()" [attr.aria-label]="'report.speak' | rdTranslate">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
-          </button>
-        }
+
+        <button type="button" class="voice-btn" (click)="toggleVoice()" [attr.aria-label]="'report.speak' | rdTranslate">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        </button>
+
+        <button type="submit" class="send-btn" data-testid="send-report-btn" [disabled]="(!userInput().trim() && !attachedPhoto()) || (isLoading() && !slow())" [attr.aria-label]="'report.sendMsg' | rdTranslate">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
       </form>
     </div>
   }

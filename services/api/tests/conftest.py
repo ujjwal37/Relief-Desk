@@ -18,7 +18,12 @@ from app.config import settings  # noqa: E402
 @pytest.fixture(autouse=True)
 def _no_live_gemini(monkeypatch):
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "replace-me")
+    from app.llm.client import llm_client
+    llm_client.guard.failures = 0
+    llm_client.guard.opened_at = 0.0
     yield
+    llm_client.guard.failures = 0
+    llm_client.guard.opened_at = 0.0
 
 
 @pytest.fixture(autouse=True)

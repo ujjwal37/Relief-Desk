@@ -6,10 +6,17 @@ export interface LiveReportMessage {
   type: typeof LIVE_REPORT;
   reportId: string;
   requestId?: string;
+  publicCode?: string;
 }
 
-export function announceReport(reportId: string, requestId?: string): void {
-  const msg: LiveReportMessage = { type: LIVE_REPORT, reportId, requestId };
+export function announceReport(reportId: string, requestId?: string, publicCode?: string): void {
+  const msg: LiveReportMessage = { type: LIVE_REPORT, reportId };
+  if (requestId !== undefined) {
+    msg.requestId = requestId;
+  }
+  if (publicCode !== undefined) {
+    msg.publicCode = publicCode;
+  }
   try {
     if (window.parent && window.parent !== window) {
       window.parent.postMessage(msg, window.location.origin);

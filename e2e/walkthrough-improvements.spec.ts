@@ -28,7 +28,7 @@ test('landing report entry works immediately on desktop and mobile', async ({ pa
     await page.locator('a.sos').click();
     await expect(page).toHaveURL(/\/report$/);
     await expect(page.locator('.composer textarea')).toBeVisible();
-    await expect(page.locator('app-photo-intake label.attach')).toBeVisible();
+    await expect(page.locator('[data-testid="attach-photo-btn"]')).toBeVisible();
     await fits(page);
     await page.screenshot({ path: path.join(SHOTS, `report-${viewport.width}.png`) });
   }
@@ -120,17 +120,14 @@ test('surge, medical stock scenario and arrival/completion status updates', asyn
 test('photo outage stays reviewable and leaves text reporting available', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/report');
-  const photo = page.locator('app-photo-intake');
   const tinyPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', 'base64');
-  await photo.locator('input[type=file]').setInputFiles({ name: 'synthetic.png', mimeType: 'image/png', buffer: tinyPng });
-  await expect(photo.getByRole('button', { name: 'Analyse with Gemini' })).toBeDisabled();
-  await photo.getByRole('checkbox', { name: 'This is a synthetic demo image' }).check();
-  await photo.getByRole('button', { name: 'Analyse with Gemini' }).click();
-  await expect(photo.locator('.error')).toContainText('Photo analysis is unavailable');
-  await expect(photo).not.toContainText('AI photo suggestions');
+  await page.locator('input[type=file]').setInputFiles({ name: 'synthetic.png', mimeType: 'image/png', buffer: tinyPng });
+  const preview = page.getByTestId('attached-photo-preview');
+  await expect(preview).toBeVisible();
   await fits(page);
   await page.screenshot({ path: path.join(SHOTS, 'photo-offline-fallback.png') });
-  await photo.getByRole('button', { name: 'Remove photo' }).click();
+  await page.locator('.remove-photo-btn').click();
+  await expect(preview).toHaveCount(0);
   await page.locator('.composer textarea').fill('Synthetic. 4 people stranded at Cedar ferry, need a boat');
   await expect(page.getByRole('button', { name: /Send/  })).toBeEnabled();
 });

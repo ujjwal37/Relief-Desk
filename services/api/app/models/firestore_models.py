@@ -51,6 +51,9 @@ class StoredReport(BaseModel):
     ward_id: Optional[str] = None
     status_token: Optional[str] = None
     flags: List[str] = Field(default_factory=list)
+    photo_base64: Optional[str] = None
+    location_accuracy: Optional[float] = None
+    location_source: Optional[str] = None
     synthetic: bool = True
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -118,6 +121,11 @@ class StoredRequest(BaseModel):
     ward_id: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
+    location_accuracy: Optional[float] = None
+    location_source: Optional[str] = None
+    photo_base64: Optional[str] = None
+    has_photo: bool = False
+    photo_facts: List[str] = Field(default_factory=list)
     people_count: Optional[int] = None
     # Reporter-facing reference (RD-1234) for the first report, so both sides quote the same id.
     public_code: Optional[str] = None

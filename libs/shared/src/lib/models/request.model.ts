@@ -109,6 +109,8 @@ export interface ReportSubmitRequest {
   lang?: string;
   source_id?: string;
   location_pin?: { lat: number; lng: number };
+  location_accuracy?: number;
+  location_source?: string;
   scenario_id?: string;
   structured?: StructuredReportFacts;
   /** Client retry key. The server returns the original request when this repeats. */
@@ -120,6 +122,7 @@ export interface ReportSubmitRequest {
   voice_note_id?: string;
   audio_base64?: string;
   image_base64?: string;
+  photo_base64?: string;
   mime_type?: 'image/jpeg' | 'image/png' | 'image/webp';
 }
 
@@ -128,10 +131,15 @@ export interface ReportSubmitResponse {
   request_id: string;
   status_token: string;
   summary: string;
+  receipt?: string;
   urgency_score: number;
   dedupe_decision: string;
   flags: string[];
   safety_line: string;
+  public_code?: string;
+  gate_outcome?: 'greeting' | 'gibberish' | 'report';
+  gate_reply?: string;
+  is_case?: boolean;
 }
 
 export interface UrgencyWeights {
@@ -154,6 +162,11 @@ export interface StoredRequest {
   ward_id: string | null;
   lat: number | null;
   lng: number | null;
+  location_accuracy?: number | null;
+  location_source?: string | null;
+  photo_base64?: string | null;
+  has_photo?: boolean;
+  photo_facts?: string[];
   /** Frozen at Approve: the team actually sent. */
   alias_codes?: string[];
   dispatch?: { match_id?: string; resource_id?: string; resource_name?: string | null; resource_kind?: string | null; distance_km?: number | null; eta_minutes?: number | null; travel_mode?: string; seats?: number | null; approved_at?: string } | null;
@@ -197,6 +210,7 @@ export interface StoredRequest {
   flags?: string[];
   hoax_reason?: string | null;
   public_code?: string | null;
+  receipt?: string | null;
   raw_text?: string | null;
   /** The confirmed card summary. A case title falls back to it while the model works. */
   summary?: string | null;
@@ -403,6 +417,13 @@ export interface ReportStatusResponse {
   while_you_wait_tips: string[];
   emergency_phone: string;
   analysis_status?: string;
+  receipt?: string | null;
+  place_stated?: boolean;
+  location_accuracy?: number | null;
+  location_source?: string | null;
+  gate_outcome?: 'greeting' | 'gibberish' | 'report';
+  gate_reply?: string;
+  is_case?: boolean;
   synthetic: boolean;
 }
 

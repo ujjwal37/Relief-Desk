@@ -181,7 +181,8 @@ class IntakeAgent:
             model_ok = False
             extracted = ReportAnalysis(
                 notes=f"Parsing error: {str(e)}",
-                needs_human_review=True
+                needs_human_review=True,
+                flags=["unparsed", "unparsed_model_output"],
             )
 
         # Validate evidence spans strictly against the actual raw text
@@ -239,7 +240,21 @@ class IntakeAgent:
             if caption and not is_photo:
                 return self.parse_report(caption, language_hint=language_hint)
             model_ok = False
-            extracted = ReportAnalysis(notes=f"Parsing error: {exc}", needs_human_review=True)
+            extracted = ReportAnalysis(
+                type=IncidentType.OTHER,
+                hazard=HazardType.UNKNOWN,
+                notes=f"Parsing error: {exc}",
+                needs_human_review=True,
+                flags=["unparsed", "unparsed_model_output", "needs_human_review", "photo_fallback"],
+            )
+        if is_photo and not model_ok:
+            extracted = ReportAnalysis(
+                type=IncidentType.OTHER,
+                hazard=HazardType.UNKNOWN,
+                notes="Photo analysis unavailable (offline fallback)",
+                needs_human_review=True,
+                flags=["unparsed", "unparsed_model_output", "needs_human_review", "photo_fallback"],
+            )
         if caption:
             extracted.validate_spans_against_raw(caption)
         return _repair_with_rules(extracted, caption, model_ok=model_ok)

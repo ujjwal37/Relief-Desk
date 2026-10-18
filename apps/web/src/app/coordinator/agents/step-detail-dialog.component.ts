@@ -35,7 +35,7 @@ export interface StepDetailData {
         <div class="h-left">
           <div class="title-wrap">
             <h2>{{ data.stepNameKey | rdTranslate }}</h2>
-            <p class="case-sub">{{ 'flow.forCase' | rdTranslate:{ id: ref, title: data.request.place_text || '' } }}</p>
+            <p class="case-sub">{{ 'flow.forCase' | rdTranslate:{ id: ref, title: data.request.place_text || ('dec.notStated' | rdTranslate) } }}</p>
           </div>
         </div>
         <button type="button" class="close-btn" (click)="close()" [attr.aria-label]="'ux.close' | rdTranslate">✕</button>
@@ -203,7 +203,7 @@ export class StepDetailDialogComponent {
     const req = this.data.request;
     const t = (key: string) => this.lang.translate(key);
     const people = peopleText(req.people_count, t);
-    const place = req.place_text || t('field.place');
+    const place = req.place_text || t('dec.notStated');
     const kind = req.type ? t(`incidentType.${req.type}`) : t('incidentType.rescue');
     if (this.data.stepIndex === 0) {
       return t('step.headlineIntake').replace('{type}', kind).replace('{people}', people).replace('{place}', place);

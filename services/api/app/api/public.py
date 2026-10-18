@@ -320,10 +320,9 @@ def get_report_status(
         RequestStatus.RESOLVED,
         RequestStatus.CLOSED,
     )
-    # dispatched/completed are added later; treat the string values the same way.
-    approved = approved or req_status.value in ("dispatched", "completed")
-    fulfilled = req_status in (RequestStatus.RESOLVED, RequestStatus.CLOSED) or req_status.value == "completed"
-    arrived = req_status == RequestStatus.IN_PROGRESS
+    approved = approved or getattr(req_status, "value", req_status) in ("dispatched", "completed")
+    fulfilled = req_status in (RequestStatus.RESOLVED, RequestStatus.CLOSED) or getattr(req_status, "value", req_status) == "completed"
+    arrived = req_status == RequestStatus.IN_PROGRESS or getattr(req_status, "value", req_status) == "in_progress"
     matched_state = "done" if approved else "pending"
     on_way_state = "done" if fulfilled or arrived else ("current" if approved else "pending")
     fulfilled_state = "done" if fulfilled else "pending"
@@ -378,6 +377,41 @@ def get_report_status(
         ),
     ]
 
+    receipt_text = None
+    place_stated = True
+    if req is not None:
+        from app.api.reports import build_receipt
+        receipt_text = build_receipt(req, report, code)
+        place_stated = bool(req.place_text and req.place_text.strip()) or (req.lat is not None and req.lng is not None)
+
+    if (req is not None and ("no_case" in (req.flags or []) or (req.status == RequestStatus.CLOSED and "unrelated_photo" in (req.flags or [])))) or "no_case" in (report.flags or []):
+        from app.tools.input_gate import _RESPONSES
+        reply_msg = (req.summary if req else None) or _RESPONSES["gibberish"].get(report.lang or "en", _RESPONSES["gibberish"]["en"])
+        return ReportStatusResponse(
+            report_id=report.id,
+            request_id=req.id if req else report.id,
+            public_code=code,
+            status=req_status.value,
+            hero_title="status.heroDone",
+            hero_subtitle=code,
+            eta_minutes=None,
+            eta_display="",
+            team_expected=False,
+            delivery_status="status.closed",
+            timeline=timeline,
+            while_you_wait_tips=[],
+            emergency_phone="112",
+            analysis_status="complete",
+            receipt=reply_msg,
+            place_stated=False,
+            location_accuracy=None,
+            location_source=None,
+            synthetic=True,
+            gate_outcome="gibberish",
+            gate_reply=reply_msg,
+            is_case=False,
+        )
+
     return ReportStatusResponse(
         report_id=report.id,
         request_id=req.id if req else report.id,
@@ -393,5 +427,12 @@ def get_report_status(
         while_you_wait_tips=tips_for_request(req),
         emergency_phone="112",
         analysis_status=req.analysis_status if req else "complete",
+        receipt=receipt_text,
+        place_stated=place_stated,
+        location_accuracy=req.location_accuracy if req and req.location_accuracy is not None else report.location_accuracy,
+        location_source=req.location_source if req and req.location_source else report.location_source,
         synthetic=True,
+        gate_outcome="report",
+        gate_reply=None,
+        is_case=True,
     )

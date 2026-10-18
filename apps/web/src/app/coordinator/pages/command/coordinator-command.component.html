@@ -95,6 +95,20 @@
 
       <!-- Case List -->
       <div class="list case-list-wrap" role="listbox" [attr.aria-label]="'coord.cases' | rdTranslate" (scroll)="onCaseListScroll($event)">
+        @if (ui.yourReport(); as yr) {
+          <div class="your-report-bar">
+            <button
+              type="button"
+              class="your-report-chip"
+              data-testid="your-report-chip"
+              (click)="jumpToYourReport(yr.id || yr.code)"
+            >
+              <span class="yr-pulse" aria-hidden="true">●</span>
+              <span>{{ 'queue.yourReport' | rdTranslate:{ code: yr.code || yr.id } }}</span>
+              <span class="yr-jump" aria-hidden="true">↗</span>
+            </button>
+          </div>
+        }
         @if (newSinceFreeze() > 0) {
           <button type="button" class="new-pill" data-testid="new-pill" (click)="unfreezeQueue()">{{ 'queue.newPill' | rdTranslate:{ n: newSinceFreeze() } }}</button>
         }
@@ -157,7 +171,7 @@
         }
         @for (req of displayRows(); track req.id) {
           @if (queueSplitOn() && lifePinned(req)) {
-            <article class="aiq-life" [class.sel]="selectedRequestId() === req.id" data-testid="life-threat-card" [attr.aria-live]="'assertive'">
+            <article class="aiq-life case-wrap" [class.sel]="isCaseSelected(req)" [class.your-report-highlight]="ui.yourReport()?.id === req.id || (!!ui.yourReport()?.code && ui.yourReport()?.code === req.public_code)" [attr.data-case-id]="req.id" data-testid="life-threat-card" [attr.aria-live]="'assertive'" (click)="freezeQueue(); selectRequest(req.id, true)">
               <p class="aiq-life-label">{{ 'aiq.lifeThreat' | rdTranslate }}</p>
               <button type="button" class="aiq-life-title" (click)="freezeQueue(); selectRequest(req.id, true)">{{ req.place_text || caseTitle(req) }}</button>
               <p class="aiq-life-quote">“{{ getOriginalQuote(req) }}”</p>
@@ -175,7 +189,7 @@
               <p class="sr-only">{{ 'aiq.lifeAnnounce' | rdTranslate:{ place: req.place_text || shortId(req.id, req.public_code) } }}</p>
             </article>
           } @else if (isAnalysisFailed(req)) {
-            <article class="case-wrap failed">
+            <article class="case-wrap failed" [class.sel]="isCaseSelected(req)" [attr.data-case-id]="req.id" (click)="freezeQueue(); selectRequest(req.id, true)">
               <p class="title">{{ getTranslationText(req) || ('ux.notRecorded' | rdTranslate) }}</p>
               <app-agent-badge source="fallback" />
               <button type="button" class="trace-chip" (click)="retryAnalysis()">{{ 'ux.retry' | rdTranslate }}</button>
@@ -183,20 +197,22 @@
           } @else {
             <div
               class="case-wrap"
-              [class.sel]="selectedRequestId() === req.id"
+              [class.sel]="isCaseSelected(req)"
               [class.row-flash]="flashIds().has(req.id)"
+              [class.your-report-highlight]="ui.yourReport()?.id === req.id || (!!ui.yourReport()?.code && ui.yourReport()?.code === req.public_code)"
               [class.moved-up]="isMovedUp(req)"
               [class.aiq-enter]="isJustReady(req)"
               [attr.data-case-id]="req.id"
-          [attr.data-tour]="needsDupReview(req) ? 'dup' : null"
+              [attr.data-tour]="needsDupReview(req) ? 'dup' : null"
+              (click)="freezeQueue(); selectRequest(req.id, true)"
             >
               <button
                 type="button"
                 role="option"
                 class="case case-card-compact"
-                [class.sel]="selectedRequestId() === req.id"
+                [class.sel]="isCaseSelected(req)"
                 [attr.data-band]="bandOf(req.urgency_score)"
-                [attr.aria-selected]="selectedRequestId() === req.id"
+                [attr.aria-selected]="isCaseSelected(req)"
                 (click)="freezeQueue(); selectRequest(req.id, true)"
               >
                 <!-- Line 1: Band badge & Need text -->
@@ -250,6 +266,8 @@
 
                 @if (isAnalysing(req)) {
                   <span class="tag ai" data-testid="ai-analysing">{{ 'ux.aiAnalysing' | rdTranslate }}</span>
+                } @else if (analysedLabel(req.id); as doneChip) {
+                  <span class="tag ai done" data-testid="ai-analysed">{{ doneChip }}</span>
                 }
               </button>
 
@@ -467,6 +485,24 @@
                 <div><dt>{{ 'dec.depth' | rdTranslate }}</dt><dd data-testid="dec-depth-row">@if (depthChip(req); as dc) { {{ dc }} <q class="dec-quote">{{ req.water_depth?.quote }}</q> } @else { {{ 'dec.notStated' | rdTranslate }} }</dd></div>
               </dl>
             }
+            @if (req.flags?.includes('unparsed')) {
+              <section class="unparsed-card" data-testid="unparsed-card">
+                <div class="unparsed-head">
+                  <span class="unparsed-tag">⚠ {{ 'desk.unparsedTitle' | rdTranslate }}</span>
+                  <span class="unparsed-fallback-badge">{{ 'desk.rulesFallback' | rdTranslate }}</span>
+                </div>
+                <p class="unparsed-body">“{{ req.raw_text }}”</p>
+                <p class="unparsed-note">{{ 'desk.unparsedNote' | rdTranslate }}</p>
+              </section>
+            }
+            @if (hasPhoto(req)) {
+              <div class="case-photo-box" data-testid="case-photo">
+                @if (req.has_photo) {
+                  <img [src]="photoUrl(req)" [alt]="'desk.reportPhoto' | rdTranslate" class="case-photo-thumb" />
+                }
+                <span class="photo-badge">{{ 'desk.fromPhoto' | rdTranslate }}</span>
+              </div>
+            }
             <p class="dec-case-sub">
               <span [attr.title]="req.id">{{ shortId(req.id, req.public_code) }}</span> · {{ getWardText(req) }} · {{ ageLabel(req) || ('coord.justNow' | rdTranslate) }}
               @if (caseAiBlocked(req)) {
@@ -572,8 +608,17 @@
             <div class="field-cell">
               <span class="fc-label">{{ 'field.place' | rdTranslate }}</span>
               <strong class="fc-value">{{ isAnalysing(req) ? '—' : getWardText(req) }}</strong>
+              @if (locationMetaLabel(req); as locMeta) {
+                <span class="fc-sub" data-testid="loc-meta">{{ locMeta }}</span>
+              }
             </div>
           </div>
+
+          @if ((!req.lat || !req.lng) && !isCompleted(req) && !isDispatched(req)) {
+            <div class="location-needed-banner" data-testid="location-needed-banner">
+              <p><strong>{{ 'coord.locationNeededTitle' | rdTranslate }}:</strong> {{ 'coord.locationNeeded' | rdTranslate }}</p>
+            </div>
+          }
 
           <!-- 4. Decision: Best team for this -->
           <div class="decision-block">

@@ -114,4 +114,19 @@ describe('StepDetailDialogComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Rules mode');
     expect(fixture.nativeElement.querySelector('[data-testid="prompt-and-response"]')).toBeNull();
   });
+
+  it('renders "not stated" when place_text is missing and never the literal placeholder token "Place"', async () => {
+    const fixture = await setup({
+      request: {
+        ...request,
+        place_text: null,
+      },
+      stepIndex: 0,
+      stepNameKey: 'flow.intake',
+    });
+    const headline = fixture.nativeElement.querySelector('.headline')?.textContent || '';
+    expect(headline).toContain('not stated');
+    expect(headline).not.toContain('at Place');
+  });
 });
+

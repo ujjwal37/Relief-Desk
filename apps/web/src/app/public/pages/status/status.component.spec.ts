@@ -62,8 +62,9 @@ describe('StatusComponent', () => {
   };
 
   beforeEach(async () => {
-    apiSpy = jasmine.createSpyObj('ApiClientService', ['getReportStatus']);
+    apiSpy = jasmine.createSpyObj('ApiClientService', ['getReportStatus', 'updateReportLocation']);
     apiSpy.getReportStatus.and.returnValue(of(mockStatus));
+    apiSpy.updateReportLocation.and.returnValue(of({ status: 'ok', report_id: 'R-0412', lat: 9.498, lng: 76.338 }));
 
     await TestBed.configureTestingModule({
       imports: [StatusComponent],
@@ -111,4 +112,42 @@ describe('StatusComponent', () => {
     component.onTrackSubmit();
     expect(apiSpy.getReportStatus).toHaveBeenCalledWith('REQ-999', 'tok-999');
   });
+
+  it('renders receipt card when receipt is present', () => {
+    component.statusData.set({
+      ...mockStatus,
+      receipt: 'Received RD-1234. I understood: 2 people, water rising. Place: not stated.',
+      place_stated: false,
+    });
+    fixture.detectChanges();
+    const receipt = fixture.nativeElement.querySelector('[data-testid="status-receipt"]');
+    expect(receipt).toBeTruthy();
+    expect(receipt.textContent).toContain('Received RD-1234');
+    expect(receipt.textContent).toContain('Place: not stated');
+  });
+
+  it('renders Share location button when place_stated is false and updates on tap', () => {
+    component.statusData.set({
+      ...mockStatus,
+      receipt: 'Received RD-1234. Place: not stated.',
+      place_stated: false,
+    });
+    fixture.detectChanges();
+    const shareBtn = fixture.nativeElement.querySelector('[data-testid="receipt-share-location"]') as HTMLButtonElement;
+    expect(shareBtn).toBeTruthy();
+
+    spyOn(navigator.geolocation, 'getCurrentPosition').and.callFake((success: PositionCallback) => {
+      success({
+        coords: { latitude: 9.498, longitude: 76.338, accuracy: 25 } as GeolocationCoordinates,
+        timestamp: Date.now(),
+      } as GeolocationPosition);
+    });
+
+    shareBtn.click();
+    fixture.detectChanges();
+
+    expect(apiSpy.updateReportLocation).toHaveBeenCalledWith('R-0412', 'tok_demo', 9.498, 76.338, 25, 'gps');
+    expect(component.locationUpdated()).toBeTrue();
+  });
 });
+
