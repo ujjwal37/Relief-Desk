@@ -1331,8 +1331,10 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     if (incremental && previous.size) {
       const byId = new Map(this.requests().map((row) => [row.id, row]));
       for (const row of incoming) {
-        if (!byId.has(row.id)) fresh.add(row.id);
-        byId.set(row.id, row);
+        const old = byId.get(row.id);
+        if (!old) fresh.add(row.id);
+        // An unchanged row keeps its object so a poll does not re-render the open case.
+        if (!old || JSON.stringify(old) !== JSON.stringify(row)) byId.set(row.id, row);
       }
       next = [...byId.values()].sort((a, b) => (b.urgency_score || 0) - (a.urgency_score || 0));
     }
@@ -1367,7 +1369,7 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
       );
       if (match) {
         this.ui.yourReport.set({ id: match.id, code: match.public_code || yr.code });
-        if (keep && (keep === yr.id || keep === yr.code || keep === match.public_code)) {
+        if (keep && keep !== match.id && (keep === yr.id || keep === yr.code || keep === match.public_code)) {
           this.selectRequest(match.id);
         }
       }
@@ -1404,6 +1406,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
   readonly noTeam = signal<NoTeamOptions | null>(null);
   readonly noTeamPick = signal<string | null>(null);
   readonly noTeamDone = signal<string | null>(null);
+  /** Choice logged per case, so a refresh does not undo the Escalate state. */
+  private readonly noTeamDoneById = new Map<string, string>();
+  private noTeamFor: string | null = null;
   noTeamReason(n: NoTeamOptions): string {
     const t = (k: string) => this.langService.translate(k);
     const d = n.detail || {};
@@ -1484,13 +1489,16 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
     const k = this.noTeamPick();
     if (!k) return;
     this.apiClient.chooseNoTeam(req.id, k).subscribe({
-      next: () => { this.noTeamDone.set(k); this.actionToast.set({ text: this.langService.translate('noTeam.logged.' + k), type: 'warning' }); },
+      next: () => { this.noTeamDoneById.set(req.id, k); this.noTeamDone.set(k); this.actionToast.set({ text: this.langService.translate('noTeam.logged.' + k), type: 'warning' }); },
       error: () => this.actionToast.set({ text: this.langService.translate('noTeam.failed'), type: 'warning' }),
     });
   }
 
   loadMatches(requestId: string): void {
-    this.noTeam.set(null); this.noTeamPick.set(null); this.noTeamDone.set(null);
+    // Same case: keep the no-team card and pick on screen until the new answer arrives.
+    if (this.noTeamFor !== requestId) { this.noTeam.set(null); this.noTeamPick.set(null); }
+    this.noTeamFor = requestId;
+    this.noTeamDone.set(this.noTeamDoneById.get(requestId) ?? null);
     this.apiClient.getRequestMatches(requestId, 5).subscribe({
       next: (proposals) => {
         if (this.selectedRequestId() !== requestId) return;
@@ -1499,8 +1507,9 @@ export class CoordinatorCommandComponent implements OnInit, OnDestroy {
         const picked = this.pickedMatch.get(requestId);
         const pi = picked ? proposals.findIndex((p) => p.match_id === picked) : -1;
         if (pi >= 0) { this.matchIdx.set(pi); this.choseTeam.set(true); }
-        if (!proposals.length) {
-          this.apiClient.getNoTeam(requestId).subscribe({ next: (n) => { if (this.selectedRequestId() === requestId) { this.noTeam.set(n); this.noTeamPick.set(this.noTeamKey(n)); } }, error: () => this.noTeam.set(null) });
+        if (proposals.length) this.noTeam.set(null);
+        else {
+          this.apiClient.getNoTeam(requestId).subscribe({ next: (n) => { if (this.selectedRequestId() === requestId) { const pick = this.noTeamPick(); this.noTeam.set(n); if (!pick || !this.noTeamOptionKeys(n).includes(pick)) { this.noTeamPick.set(null); this.noTeamPick.set(this.noTeamKey(n)); } } }, error: () => this.noTeam.set(null) });
         }
       },
       error: (err) => {
