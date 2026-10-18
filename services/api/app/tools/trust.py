@@ -42,8 +42,18 @@ def evaluate_stale_status(
     return False
 
 
+import re
+
 VIRAL_HOAX_PHRASES = (
     "forward this to 10 groups",
+    "forward to all",
+    "forward-to-all",
+    "forward this to all",
+    "share widely",
+    "share-widely",
+    "share this widely",
+    "army says",
+    "army has said",
     "nasa announced",
     "free helicopter rescue call this number",
     "100% verified news share fast",
@@ -56,7 +66,21 @@ VIRAL_HOAX_PHRASES = (
 
 def hoax_phrases(text: str) -> List[str]:
     clean = " ".join((text or "").lower().split())
-    return [phrase for phrase in VIRAL_HOAX_PHRASES if phrase in clean]
+    norm = re.sub(r"[-_:]+", " ", clean)
+    hits = []
+    for phrase in VIRAL_HOAX_PHRASES:
+        if phrase in clean or phrase in norm:
+            hits.append(phrase)
+
+    has_dam = ("dam broke" in clean or "dam broke" in norm or "dam has broken" in clean or "dam has broken" in norm)
+    has_co_cue = any(cue in clean or cue in norm for cue in ("forward", "share", "everyone evacuate"))
+    if has_dam and has_co_cue:
+        if "dam broke" in clean or "dam broke" in norm:
+            hits.append("dam broke")
+        if "dam has broken" in clean or "dam has broken" in norm:
+            hits.append("dam has broken")
+
+    return hits
 
 
 def hoax_reason_for(text: str) -> Optional[str]:
@@ -64,7 +88,7 @@ def hoax_reason_for(text: str) -> Optional[str]:
     hits = hoax_phrases(text)
     if not hits:
         return None
-    return f"Known spam phrase: {hits[0]}"
+    return f"Known hoax / spam phrase: {hits[0]}"
 
 
 def hoax_score_for(text: str) -> float:

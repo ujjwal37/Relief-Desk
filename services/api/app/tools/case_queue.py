@@ -28,34 +28,70 @@ _LIFE_PATTERNS = [
     # English
     r"\b(?:not|isn'?t|stopped|stop|no longer|can'?t|cannot|unable to|difficulty|trouble)\s+breath(?:ing|e)\b",
     r"\bno pulse\b", r"\bunconscious\b", r"\bunresponsive\b", r"\bnot responding\b", r"\bpassed out\b", r"\bfainted\b",
+    r"\b(?:lost|loss of)\s+consciousness\b", r"\bsemi-?conscious\b",
     r"\bdrown(?:ing|ed|s)?\b", r"\bheart attack\b", r"\bchest pain\b",
-    r"\b(?:bleeding (?:a lot|heavily|badly|profusely|non ?stop)|heavy bleeding|severe bleeding|lot of blood|losing blood)\b",
+    r"\b(?:bleeding (?:a lot|heavily|badly|profusely|severely|non ?stop)|heavy bleeding|severe bleeding|profuse bleeding|severe blood loss|lot of blood|losing blood)\b",
+    r"\b(?:profuse|excessive|continuous|uncontrolled)\s+bleeding\b",
     r"\btrapped under\b", r"\b(?:child|kid|baby|boy|girl|son|daughter)\b[^.]{0,20}\b(?:in|into|under) (?:the )?(?:water|flood)\b",
     r"\bswept away\b",
+    # Ventilator or dialysis power cut (English)
+    r"\b(?:ventilator|dialysis)\b[^.]{0,40}\b(?:power\s*(?:cut|outage|failure|loss|off)|no\s*(?:power|electricity)|electricity\s*(?:cut|off|loss)|current\s*(?:cut|off|loss)|generator\s*(?:failure|stopped))\b",
+    r"\b(?:power\s*(?:cut|outage|failure|loss|off)|no\s*(?:power|electricity)|electricity\s*cut|current\s*(?:cut|off))\b[^.]{0,40}\b(?:ventilator|dialysis)\b",
     # Hindi (Devanagari)
-    r"सा[ंँ]?स\s*(?:नहीं|नही|नहि|नहीँ|रुक|बंद|नहीं\s*ले)", r"बेहोश", r"(?:बच्चा|बच्ची|बेटा|बेटी|आदमी|औरत|कोई|पिताजी|पापा|मां|माँ|दादा|दादी)[^।.]{0,15}डूब\s*(?:रहा|रही|रहे|गया|गई|गयी|गए)",
-    r"(?:सीने|छाती)\s*में\s*दर्द", r"(?:बहुत|ज़्यादा|ज्यादा)\s*खून", r"खून\s*बह", r"(?:बच्चा|बच्ची|बेटा|बेटी)[^।.]{0,15}पानी\s*में",
+    r"सा[ंँ]?स\s*(?:नहीं|नही|नहि|नहीँ|रुक|बंद|नहीं\s*ले)", r"बेहोश", r"बेहोशी", r"होश\s*(?:नहीं|खो)",
+    r"(?:बच्चा|बच्ची|बेटा|बेटी|आदमी|औरत|कोई|पिताजी|पापा|मां|माँ|दादा|दादी)[^।.]{0,15}डूब\s*(?:रहा|रही|रहे|गया|गई|गयी|गए)",
+    r"(?:सीने|छाती)\s*में\s*दर्द", r"(?:बहुत|ज़्यादा|ज्यादा)\s*खून", r"खून\s*बह", r"खून\s*(?:बह\s*रहा|निकल\s*रहा|रुक\s*नहीं)", r"(?:भारी|गंभीर)\s*रक्तस्राव",
+    r"(?:बच्चा|बच्ची|बेटा|बेटी)[^।.]{0,15}पानी\s*में",
+    r"(?:वेंटिलेटर|डायलिसिस)[^।.]{0,40}(?:बिजली\s*(?:गई|कटी|बंद|नहीं)|पावर\s*कट|करंट\s*गया|लाइट\s*गई)",
+    r"(?:बिजली\s*(?:गई|कटी|बंद)|पावर\s*कट)[^।.]{0,40}(?:वेंटिलेटर|डायलिसिस)",
     # Hinglish
-    r"\bsaa?n?s\s*(?:nahi|nahin|nai|ruk|band|nhi)\b", r"\bbehosh\b", r"\b(?:bachcha|bacha|bachchi|beta|beti|aadmi|koi|papa|maa|dada|dadi)\b[^.]{0,15}\bdoo?b\s*(?:raha|rahi|rahe|gaya|gayi|gaye)\b",
-    r"\b(?:seene|chhati|chati)\s*m(?:e|ei|ein|en)\s*dard\b", r"\bbahut\s*khoon\b", r"\bkhoon\s*beh",
+    r"\bsaa?n?s\s*(?:nahi|nahin|nai|ruk|band|nhi)\b", r"\bbehosh(?:i)?\b", r"\bhosh\s*(?:nahi|kho\s*diya|mein\s*nahi)\b",
+    r"\b(?:bachcha|bacha|bachchi|beta|beti|aadmi|koi|papa|maa|dada|dadi)\b[^.]{0,15}\bdoo?b\s*(?:raha|rahi|rahe|gaya|gayi|gaye)\b",
+    r"\b(?:seene|chhati|chati)\s*m(?:e|ei|ein|en)\s*dard\b", r"\b(?:bahut|zyada|bohot)\s*khoon\b", r"\bkhoon\s*(?:beh|nikal)\b",
     r"\b(?:bachcha|bacha|bachchi|beta|beti)\b[^.]{0,15}\bpaani\s*m(?:e|ein|en)\b",
+    r"\b(?:ventilator|dialysis)\b[^.]{0,40}\b(?:bijli|current|light|power)\s*(?:chali\s*gayi|chala\s*gaya|nahi\s*hai|cut|band|off|gul|fail)\b",
+    r"\b(?:bijli|current|light|power)\s*(?:chali\s*gayi|chala\s*gaya|cut|band)\b[^.]{0,40}\b(?:ventilator|dialysis)\b",
     # Malayalam
     r"(?:ശ്വാസ|ശ്വസി)[^\s.,!?]*(?:\s+[^\s.,!?]+)?" + _NEG_ML, r"ശ്വാസം\s*കിട്ടുന്നില്ല",
-    r"ബോധ[^\s.,!?]*(?:\s*ഇല്ല|ില്ല|\s*കെട്ടു|ംകെട്ടു|ം\s*പോയി|ക്ഷയം)", r"അനക്ക[^\s.,!?]*(?:\s*ഇല്ല|ില്ല)",
-    r"(?:കുട്ടി|കുഞ്ഞ്|ആൾ|അച്ഛൻ|അമ്മ|മോൻ|മോൾ|ചേട്ടൻ)[^.]{0,15}മുങ്ങ[^\s.,!?]*", r"മുങ്ങിത്താഴ[^\s.,!?]*", r"നെഞ്ച്?\s*വേദന|നെഞ്ചുവേദന", r"(?:ഒരുപാട്|ധാരാളം|കുറേ)\s*(?:ചോര|രക്തം)", r"(?:ചോര|രക്തം)\s*(?:പോകുന്നു|വരുന്നു|ഒഴുകുന്നു)", r"രക്തസ്രാവം",
+    r"ബോധ[^\s.,!?]*(?:\s*ഇല്ല|ില്ല|\s*കെട്ടു|ംകെട്ടു|ം\s*പോയി|ക്ഷയം)", r"അബോധാവസ്ഥ", r"അനക്ക[^\s.,!?]*(?:\s*ഇല്ല|ില്ല)",
+    r"(?:കുട്ടി|കുഞ്ഞ്|ആൾ|അച്ഛൻ|അമ്മ|മോൻ|മോൾ|ചേട്ടൻ)[^.]{0,15}മുങ്ങ[^\s.,!?]*", r"മുങ്ങിത്താഴ[^\s.,!?]*", r"നെഞ്ച്?\s*വേദന|നെഞ്ചുവേദന",
+    r"(?:ഒരുപാട്|ധാരാളം|കുറേ|കഠിനമായ|ഗുരുതരമായ|അമിതമായ)\s*(?:ചോര|രക്തം|രക്തസ്രാവം)", r"(?:ചോര|രക്തം)\s*(?:പോകുന്നു|വരുന്നു|ഒഴുകുന്നു|വാർന്നു|നിൽക്കുന്നില്ല)", r"രക്തസ്രാവം",
     r"(?:കുട്ടി|കുഞ്ഞ്|മോൻ|മോൾ)[^.]{0,15}വെള്ളത്തിൽ",
+    r"(?:വെന്റിലേറ്റർ|ഡയാലിസിസ്|വെന്റിലേറ്ററ|ഡയാലിസിസ)[^.]{0,40}(?:കറന്റ്\s*(?:പോയി|ഇല്ല|കട്ട്|ഓഫ്)|കറന്റില്ല|വൈദ്യുതി\s*(?:ഇല്ല|പോയി|മുങ്ങി|തടസ്സപ്പെട്ടു)|പവർ\s*കട്ട്)",
+    r"(?:കറന്റ്\s*പോയി|കറന്റില്ല|വൈദ്യുതി\s*ഇല്ല|പവർ\s*കട്ട്)[^.]{0,40}(?:വെന്റിലേറ്റർ|ഡയാലിസിസ്)",
     # Manglish
     r"\b(?:sh|s)waa?sam\s*(?:illa|kittunnilla)\b", r"\b(?:sh|s)wasamilla\b", r"\b(?:sh|s)wasikkunnilla\b", r"\bshwaasam\s*illa\b",
     r"\bbodham\s*(?:illa|kettu|poyi)\b", r"\bbodhamilla\b", r"\banakkam\s*illa\b", r"\banakkamilla\b",
-    r"\b(?:kutti|kunju|achan|amma|mon|mol|chettan)\b[^.]{0,15}\bmung(?:i|unnu)\w*", r"\bmungi\s*thazhunnu\b", r"\bnenju\s*vedana\b", r"\bchora\s*(?:pokunnu|varunnu)\b",
+    r"\b(?:kutti|kunju|achan|amma|mon|mol|chettan)\b[^.]{0,15}\bmung(?:i|unnu)\w*", r"\bmungi\s*thazhunnu\b", r"\bnenju\s*vedana\b",
+    r"\b(?:chora|raktham)\s*(?:pokunnu|varunnu|ozhukunnu|nilkkunnilla)\b", r"\b(?:kooduthal|valare\s*kooduthal|othiri|kure|bhayankara)\s*(?:chora|raktham)\b", r"\brakthasravam\b",
     r"\b(?:kutti|kunju|mon|mol)\b[^.]{0,15}\bvellathil\b",
-    # Oxygen running out and active labour (all five languages)
-    r"\boxygen\b[^.]{0,30}\b(?:running out|run out|ran out|finished|over|empty|almost gone)\b", r"\b(?:running out of|out of|no more) oxygen\b",
+    r"\b(?:ventilator|dialysis)\b[^.]{0,40}\b(?:current\s*(?:poyi|illa|cut|off|kazhinju)|power\s*cut|electricity\s*poyi|currentilla)\b",
+    r"\b(?:current\s*(?:poyi|illa|cut)|power\s*cut|currentilla)\b[^.]{0,40}\b(?:ventilator|dialysis)\b",
+    # Oxygen running out and active labour (all languages)
+    # English
+    r"\boxygen\b[^.]{0,40}\b(?:running out|run out|runs out|ran out|finish(?:ing|ed|es)?|over|empty|emptied|almost (?:gone|empty)|exhausted|depleted|low)\b",
+    r"\b(?:running out of|out of|no more|need urgent|lack of|low on)\s+oxygen\b",
+    r"\b(?:oxygen\s+)?cylinder\b[^.]{0,35}\b(?:empty|emptied|finish(?:ing|ed|es)?|over|running out|run out)\b",
+    r"\bempty\s+(?:oxygen\s+)?cylinder\b",
     r"\b(?:in|having|started|gone into) (?:active )?labou?r\b", r"\blabou?r pains?\b", r"\b(?:her )?water(?:s)? (?:has |have )?broken\b",
-    r"ऑक्सीजन[^।.]{0,20}(?:खत्म|ख़त्म|खतम|नहीं|ना\s*के\s*बराबर)", r"प्रसव\s*पीड़ा", r"लेबर\s*पेन", r"दर्द\s*शुरू[^।.]{0,15}(?:डिलीवरी|प्रसव)",
-    r"\boxygen\s*(?:khatam|khatm|khtm|khatma|nahi\s*bacha)\b", r"\b(?:labou?r|delivery)\s*(?:pain|dard)\b", r"\bprasav\s*(?:pida|peeda|dard)\b",
-    r"ഓക്സിജൻ[^.]{0,20}(?:തീർ|തീരാ|ഇല്ല|കഴിഞ്ഞ)", r"പ്രസവ\s*വേദന|പ്രസവവേദന",
-    r"\boxygen\s*(?:theernnu|theerarayi|theerunnu|kazhinju|illa)\b", r"\bprasava\s*vedana\b",
+    # Hindi (Devanagari)
+    r"ऑक्सीजन[^।.]{0,35}(?:खत्म|ख़त्म|खतम|समाप्त|नहीं|खाली|ना\s*के\s*बराबर)",
+    r"(?:ऑक्सीजन\s+)?(?:सिलेंडर|सिलिंडर)[^।.]{0,35}(?:खत्म|ख़त्म|खतम|खाली)",
+    r"प्रसव\s*पीड़ा", r"लेबर\s*पेन", r"दर्द\s*शुरू[^।.]{0,15}(?:डिलीवरी|प्रसव)",
+    # Hinglish
+    r"\boxygen\b[^.]{0,35}\b(?:khatam|khatm|khtm|khatma|khali|nahi\s*bacha|samapt|chala\s*gaya|ruk\s*gaya)\b",
+    r"\b(?:oxygen\s+)?(?:cylinder|silendar)\b[^.]{0,35}\b(?:khatam|khatm|khtm|khatma|khali)\b",
+    r"\b(?:khatam|khali)\s*(?:oxygen|cylinder)\b",
+    r"\b(?:labou?r|delivery)\s*(?:pain|dard)\b", r"\bprasav\s*(?:pida|peeda|dard)\b",
+    # Malayalam
+    r"ഓക്സിജൻ[^.]{0,35}(?:തീർ|തീരാ|തീരുന്നു|തീരാറായി|തീരാൻ|ഇല്ല|കഴിഞ്ഞ|കാലി|അവസാനിക്കാറായ)",
+    r"(?:ഓക്സിജൻ\s+)?(?:സിലിണ്ടർ|സിലിണ്ടറ)[^.]{0,35}(?:തീർ|തീരാ|തീരുന്നു|തീരാറായി|തീരാൻ|കഴിഞ്ഞ|കാലി)",
+    r"പ്രസവ\s*വേദന|പ്രസവവേദന",
+    # Manglish
+    r"\boxygen\b[^.]{0,35}\b(?:theeran|theerunnu|theernnu|theerarayi|theerukayanu|theerapoyi|theeraru|kazhinju|illa|kaali|empty)\b",
+    r"\b(?:oxygen\s+)?(?:cylinder|silindar)\b[^.]{0,35}\b(?:theeran|theerunnu|theernnu|theerarayi|kazhinju|illa|kaali|empty)\b",
+    r"\b(?:theeran|theerunnu|theernnu|theerarayi)\s*(?:aayi|pokunnu)?\s*oxygen\b",
+    r"\bprasava\s*vedana\b",
 ]
 _LIFE_RE = [re.compile(p, re.IGNORECASE) for p in _LIFE_PATTERNS]
 # "not breathing well yesterday, now ok": a recovered past state is not a life threat.

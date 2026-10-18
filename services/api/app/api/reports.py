@@ -19,7 +19,7 @@ from app.models.firestore_models import PossibleDuplicate, ReportQuote, StoredRe
 from app.models.schemas import ExtractedRequest, HazardType, IncidentType
 from app.tools.request_contract import canonical_request_dict
 from app.agents.summary import guard_summary, summary_from_report
-from app.tools.nlu_rules import extract_place, people_bounds, people_count, place_is_usable, vulnerable_flags, count_is_stated, known_place
+from app.tools.nlu_rules import extract_place, people_bounds, people_count, place_is_usable, vulnerable_flags, count_is_stated, known_place, is_nobody_stranded
 from app.agents.dedupe import confidence_phrase
 from app.tools.trust import detect_hoax_or_flood, hoax_reason_for
 from app.tools.gazetteer import gazetteer
@@ -656,7 +656,42 @@ def build_receipt(req_obj: StoredRequest, raw_report: StoredReport, code: str) -
 
     # 2. Hazard or condition or vulnerability
     words_low = raw_text.lower()
-    if req_obj.hazard and req_obj.hazard.value == "water_rising":
+    pf_text = " ".join(req_obj.photo_facts or []).lower()
+
+    water_rising_supported = (
+        bool(re.search(
+            r"\b(?:water\s+(?:is\s+)?rising|rising\s+water|water\s+level|flood|flooding|floodwater|submerged|water\s+entered|water\s+entering|water\s+came\s+in|water\s+inside)\b"
+            r"|\b(?:paani|pani)\b[^.]{0,25}\b(?:badh|bhar|aa\s+gaya|ghus|chad)\b"
+            r"|\b(?:vellam)\b[^.]{0,25}\b(?:kayar|kood|uyar|keri|vannu)\b"
+            r"|വെള്ളം[^\s.,!?]*(?:\s+[^\s.,!?]+){0,3}\s*(?:ഉയര|കൂട|കയറ|വന്നു)"
+            r"|പ്രളയം"
+            r"|(?:पानी|जलस्तर)\s*(?:बढ़|बढ़|भर|आ\s*गया|घुस|आ\s*रहा)"
+            r"|बाढ़",
+            words_low,
+            re.IGNORECASE,
+        ))
+        or bool(re.search(
+            r"\b(?:water\s+(?:is\s+)?rising|rising\s+water|water\s+level|flood|flooding|flooded|submerged|water\s+entered|water\s+entering)\b",
+            pf_text,
+            re.IGNORECASE,
+        ))
+    )
+
+    stranded_supported = (
+        bool(re.search(
+            r"\b(?:stranded|trapped|marooned|stuck|cut\s+off|isolated|fanse|fase|phase|atke|kudungi|ottappettu)\b"
+            r"|കുടുങ്ങി|ഒറ്റപ്പെട്ടു|ഫംസേ|ഫംസ്|फंसे|फंस",
+            words_low,
+            re.IGNORECASE,
+        )) and not is_nobody_stranded(raw_text)
+        or bool(re.search(
+            r"\b(?:stranded|trapped|marooned|stuck)\b",
+            pf_text,
+            re.IGNORECASE,
+        ))
+    )
+
+    if req_obj.hazard and req_obj.hazard.value == "water_rising" and water_rising_supported:
         if lang == "ml":
             details.append("വെള്ളം ഉയരുന്നു")
         elif lang == "hi":
@@ -667,7 +702,7 @@ def build_receipt(req_obj: StoredRequest, raw_report: StoredReport, code: str) -
             details.append("vellam kayarunnu")
         else:
             details.append("water rising")
-    elif req_obj.hazard and req_obj.hazard.value == "stranded":
+    elif req_obj.hazard and req_obj.hazard.value == "stranded" and stranded_supported:
         if lang == "ml":
             details.append("കുടുങ്ങി")
         elif lang == "hi":
